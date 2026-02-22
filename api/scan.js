@@ -125,4 +125,10 @@ export default async function handler(req) {
 
         return new Response(match[0], {
             status: 200,
-            headers: { 'Content-Type': 'application
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+        });
+
+    } catch (error) {
+        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Access-Control-Allow-Origin': '*' } });
+    }
+}
