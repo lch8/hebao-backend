@@ -10,7 +10,6 @@ export default async function handler(req) {
     try {
         const data = await req.json();
         
-        // 读取 Turso 钥匙，并把 libsql 协议强行转成 https 协议以便我们发纯 HTTP 请求！
         let dbUrl = process.env.TURSO_DATABASE_URL;
         const authToken = process.env.TURSO_AUTH_TOKEN;
 
@@ -20,7 +19,7 @@ export default async function handler(req) {
 
         dbUrl = dbUrl.replace('libsql://', 'https://');
 
-        // 发送原生 HTTP 请求给 Turso 执行 SQL (INSERT OR REPLACE 防止重复报错)
+        // 发送原生 HTTP 请求，并严格遵守 Turso 的数据类型标签格式 (Tagged Enum)
         const response = await fetch(`${dbUrl}/v2/pipeline`, {
             method: 'POST',
             headers: {
@@ -33,14 +32,15 @@ export default async function handler(req) {
                         type: "execute", 
                         stmt: { 
                             sql: "INSERT OR REPLACE INTO products (dutch_name, chinese_name, category, is_recommended, insight, pairing, warning) VALUES (?, ?, ?, ?, ?, ?, ?)", 
+                            // 💡 修复点：给每个数据贴上 type 标签，Turso 就能完美识别了！
                             args: [
-                                data.dutch_name || "", 
-                                data.chinese_name || "", 
-                                data.category || "", 
-                                data.is_recommended ? 1 : 0, 
-                                data.insight || "", 
-                                data.pairing || "", 
-                                data.warning || ""
+                                { type: "text", value: String(data.dutch_name || "") },
+                                { type: "text", value: String(data.chinese_name || "") },
+                                { type: "text", value: String(data.category || "") },
+                                { type: "integer", value: data.is_recommended ? "1" : "0" }, 
+                                { type: "text", value: String(data.insight || "") },
+                                { type: "text", value: String(data.pairing || "") },
+                                { type: "text", value: String(data.warning || "") }
                             ] 
                         } 
                     },
