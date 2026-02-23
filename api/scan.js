@@ -113,7 +113,8 @@ export default async function handler(req) {
   "pairing": "神仙吃法/烹饪时间",
   "warning": "奇葩口味或过敏源预警（无则留空）",
   "alternatives": "💰平替推荐：xxx | ✨升级版本：xxx"
-}`;
+}`
+            "⚠️ 极其重要：所有的 value 必须直接输出纯内容！绝对不要在开头加上'管家锐评：'、'神仙吃法：'、'避雷：'等前缀废话，因为前端界面已经有这些标题了！";
 
         const dsUserPrompt = `Gemini识别到的商品名是：${productInfo}。请输出JSON点评。`;
 
