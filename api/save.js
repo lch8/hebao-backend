@@ -31,8 +31,7 @@ export default async function handler(req) {
                     { 
                         type: "execute", 
                         stmt: { 
-sql: "INSERT OR REPLACE INTO products (dutch_name, chinese_name, category, is_recommended, insight, pairing, warning, alternatives) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",                            // 💡 修复点：给每个数据贴上 type 标签，Turso 就能完美识别了！
-                            args: [
+sql: "INSERT OR REPLACE INTO products (dutch_name, chinese_name, category, is_recommended, insight, pairing, warning, alternatives, features) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",                            args: [
                                 { type: "text", value: String(data.dutch_name || "") },
                                 { type: "text", value: String(data.chinese_name || "") },
                                 { type: "text", value: String(data.category || "") },
@@ -40,7 +39,8 @@ sql: "INSERT OR REPLACE INTO products (dutch_name, chinese_name, category, is_re
                                 { type: "text", value: String(data.insight || "") },
                                 { type: "text", value: String(data.pairing || "") },
                                 { type: "text", value: String(data.warning || "") },
-                                { type: "text", value: String(data.alternatives || "") } // 👈 新加的平替字段
+                                { type: "text", value: String(data.alternatives || "") }，
+    { type: "text", value: String(data.features || "") }            // 👈 新加的平替字段
                             ] 
                         } 
                     },
