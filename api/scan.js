@@ -82,7 +82,7 @@ export default async function handler(req) {
                 pairing: getVal('pairing'),
                 warning: getVal('warning'),
                 alternatives: getVal('alternatives'),
-                features: getVal('features'),// 确保从数据库读取平替
+                features: getVal('features')// 确保从数据库读取平替
             };
 
             return new Response(JSON.stringify(cachedResult), {
