@@ -83,7 +83,8 @@ export default async function handler(req) {
                 is_recommended: getVal('is_recommended') === "1" || getVal('is_recommended') === 1,
                 insight: getVal('insight') + " ⚡️(由数据库秒回)", // 加个小尾巴，让你知道这是白嫖的数据！
                 pairing: getVal('pairing'),
-                warning: getVal('warning')
+                warning: getVal('warning'),
+                alternatives: getVal('alternatives')
             };
 
             return new Response(JSON.stringify(cachedResult), {
@@ -110,15 +111,16 @@ export default async function handler(req) {
         - 其他类别：保持幽默干货。
 
         严格返回纯 JSON 格式（直接大括号起手，不要带 markdown 标记）：
-        {
-          "dutch_name": "荷兰语商品名",
-          "chinese_name": "接地气中文名",
-          "category": "具体的商品分类",
-          "is_recommended": true或false,
-          "insight": "严格基于上述【分类点评规则】写的幽默测评",
-          "pairing": "神仙吃法 / 具体的空气炸锅或烤箱时间",
-          "warning": "奇葩口味预警（如八角甘草糖、致死量糖分）或过敏源，无则留空"
-        }`;
+        `{
+  "dutch_name": "荷兰语商品名", 
+  "chinese_name": "接地气中文名", 
+  "category": "商品分类",
+  "is_recommended": true或false, 
+  "insight": "幽默干货评价", 
+  "pairing": "神仙吃法", 
+  "warning": "过敏源或奇葩口味预警，无则留空",
+  "alternatives": "💰 平替推荐：(写出更便宜的同类超市品牌) | ✨ 升级版本：(写出更高端的品牌或更好的选择)。如果实在没有，就留空"
+}`;
 
         const dsUserPrompt = `Gemini识别到的商品名是：${productInfo}。请输出JSON点评。`;
 
