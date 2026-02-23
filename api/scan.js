@@ -111,7 +111,7 @@ export default async function handler(req) {
         - 其他类别：保持幽默干货。
 
         严格返回纯 JSON 格式（直接大括号起手，不要带 markdown 标记）：
-        `{
+        {
   "dutch_name": "荷兰语商品名", 
   "chinese_name": "接地气中文名", 
   "category": "商品分类",
