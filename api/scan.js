@@ -81,7 +81,8 @@ export default async function handler(req) {
                 insight: getVal('insight') + " ⚡️(由数据库秒回)", 
                 pairing: getVal('pairing'),
                 warning: getVal('warning'),
-                alternatives: getVal('alternatives') // 确保从数据库读取平替
+                alternatives: getVal('alternatives'),
+                features: getVal('features'),// 确保从数据库读取平替
             };
 
             return new Response(JSON.stringify(cachedResult), {
@@ -103,15 +104,16 @@ export default async function handler(req) {
 
         你必须严格返回纯 JSON 格式（直接大括号起手，不要 \`\`\`json 标记），且必须包含以下所有字段：
         {
-          "dutch_name": "荷兰语商品名",
-          "chinese_name": "接地气中文名",
-          "category": "具体的商品分类",
-          "is_recommended": true或false,
-          "insight": "幽默干货测评",
-          "pairing": "神仙吃法/烹饪时间",
-          "warning": "奇葩口味或过敏源预警（无则留空）",
-          "alternatives": "💰平替推荐：xxx | ✨升级版本：xxx（必须写，如果实在没有就写'暂无平替，它就是性价比之王'）"
-        }`;
+  "dutch_name": "荷兰语商品名",
+  "chinese_name": "接地气中文名",
+  "category": "具体的商品分类",
+  "is_recommended": true或false,
+  "features": "🌟 产品核心卖点提炼（如：百年老牌、无糖低卡、高蛋白等，控制在 15 个字以内！）",
+  "insight": "幽默干货测评",
+  "pairing": "神仙吃法/烹饪时间",
+  "warning": "奇葩口味或过敏源预警（无则留空）",
+  "alternatives": "💰平替推荐：xxx | ✨升级版本：xxx"
+}`;
 
         const dsUserPrompt = `Gemini识别到的商品名是：${productInfo}。请输出JSON点评。`;
 
