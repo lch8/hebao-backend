@@ -39,7 +39,7 @@ sql: "INSERT OR REPLACE INTO products (dutch_name, chinese_name, category, is_re
                                 { type: "text", value: String(data.insight || "") },
                                 { type: "text", value: String(data.pairing || "") },
                                 { type: "text", value: String(data.warning || "") },
-                                { type: "text", value: String(data.alternatives || "") }，
+                                { type: "text", value: String(data.alternatives || "") },
     { type: "text", value: String(data.features || "") }            // 👈 新加的平替字段
                             ] 
                         } 
