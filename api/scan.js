@@ -10,7 +10,6 @@ export default async function handler(req) {
     try {
         const { imageBase64 } = await req.json();
         
-        // 拿满 3 把钥匙（加入 Turso 的钥匙，用于读取）
         const geminiKey = process.env.GEMINI_API_KEY; 
         const deepseekKey = process.env.DEEPSEEK_API_KEY;
         let dbUrl = process.env.TURSO_DATABASE_URL;
@@ -23,7 +22,7 @@ export default async function handler(req) {
         dbUrl = dbUrl.replace('libsql://', 'https://');
 
         // ==========================================
-        // 🏃‍♂️ 第一棒：Gemini（纯净版，只提取名字用于数据库匹配）
+        // 🏃‍♂️ 第一棒：Gemini 提取纯净名字
         // ==========================================
         const geminiPrompt = "你是一个极简提取器。请仅提取图片中商品最核心的准确荷兰语名称（纯文本，不要任何标点、翻译或解释）。看不清请回复'未识别'。";
         
@@ -43,7 +42,7 @@ export default async function handler(req) {
         if (productInfo.includes('未识别')) throw new Error("图片太模糊，管家看不清包装上的字！");
 
         // ==========================================
-        // 🛡️ 记忆拦截系统：去 Turso 金库查有没有人拍过！
+        // 🛡️ 记忆拦截系统（带 alternatives 字段）
         // ==========================================
         const tursoRes = await fetch(`${dbUrl}/v2/pipeline`, {
             method: 'POST',
@@ -53,7 +52,6 @@ export default async function handler(req) {
                     { 
                         type: "execute", 
                         stmt: { 
-                            // 用 LIKE 模糊匹配，防止大小写或一点点偏差导致找不到
                             sql: "SELECT * FROM products WHERE dutch_name LIKE ? LIMIT 1", 
                             args: [{ type: "text", value: `%${productInfo}%` }] 
                         } 
@@ -66,7 +64,6 @@ export default async function handler(req) {
         const tursoData = await tursoRes.json();
         const resultSet = tursoData.results[0]?.response?.result;
 
-        // 💡 如果在数据库里找到了，直接秒回！狠狠省下 DeepSeek 的钱！
         if (resultSet && resultSet.rows && resultSet.rows.length > 0) {
             const cols = resultSet.cols.map(c => c.name);
             const rowData = resultSet.rows[0];
@@ -81,10 +78,10 @@ export default async function handler(req) {
                 chinese_name: getVal('chinese_name'),
                 category: getVal('category'),
                 is_recommended: getVal('is_recommended') === "1" || getVal('is_recommended') === 1,
-                insight: getVal('insight') + " ⚡️(由数据库秒回)", // 加个小尾巴，让你知道这是白嫖的数据！
+                insight: getVal('insight') + " ⚡️(由数据库秒回)", 
                 pairing: getVal('pairing'),
                 warning: getVal('warning'),
-                alternatives: getVal('alternatives')
+                alternatives: getVal('alternatives') // 确保从数据库读取平替
             };
 
             return new Response(JSON.stringify(cachedResult), {
@@ -94,33 +91,27 @@ export default async function handler(req) {
         }
 
         // ==========================================
-        // 🏃‍♂️ 第二棒：如果在库里没找到，唤醒 DeepSeek 现编一段
-        // ==========================================
-        // ==========================================
-        // 🏃‍♂️ 第二棒：唤醒 DeepSeek 大脑（全行业专家升级版！）
+        // 🏃‍♂️ 第二棒：唤醒 DeepSeek 大脑（强制输出 alternatives）
         // ==========================================
         const dsSystemPrompt = `你是极度幽默的荷兰华人超市排雷专家“荷包管家”。
-        请根据用户拍的商品，先在你的大脑里判断它属于什么类别，然后【必须严格遵守】以下特定领域的点评规则写 insight 和 pairing：
+        请根据用户拍的商品，先判断类别，然后【必须严格遵守】以下分类点评规则：
+        - 🍺 酒水饮料：点评酒精度/风味，推荐下酒菜。
+        - 🥦 生鲜蔬果：给出留学生续命做法，奇葩蔬菜必须高亮避雷。
+        - 🍫 零食甜点：给出甜度指数和口感。
+        - 🍗 速食半成品：必须给出具体的“空气炸锅/烤箱的温度和时间”！
+        - 🥛 乳制品：点明全脂/脱脂及浓郁度。
 
-        🎯 【分类点评规则】：
-        - 🍺 如果是【酒水饮料】：重点点评酒精度(ABV)、风味（果香/麦香/涩度），说明适合微醺还是容易断片，推荐最佳下酒菜。
-        - 🥦 如果是【生鲜蔬菜/水果】：重点给出“留学生续命做法”（如：切碎炒鸡蛋、烤箱烤），如果是荷兰奇葩蔬菜（如苦苣、球状甘蓝）必须高亮避雷或给出脱苦方法。
-        - 🍫 如果是【零食甜点】：必须给出“甜度指数”（以荷兰人丧心病狂的嗜甜程度为基准），是否属于热量核弹，口感是脆还是软。
-        - 🍗 如果是【肉类/速食半成品】：必须在 pairing 中给出极其具体的“空气炸锅/烤箱/微波炉的温度和时间”！(如：空气炸锅180度12分钟)。
-        - 🥛 如果是【乳制品】：点明全脂/脱脂，口感浓郁度，以及能不能用来做拿铁打奶泡。
-        - 其他类别：保持幽默干货。
-
-        严格返回纯 JSON 格式（直接大括号起手，不要带 markdown 标记）：
+        你必须严格返回纯 JSON 格式（直接大括号起手，不要 \`\`\`json 标记），且必须包含以下所有字段：
         {
-  "dutch_name": "荷兰语商品名", 
-  "chinese_name": "接地气中文名", 
-  "category": "商品分类",
-  "is_recommended": true或false, 
-  "insight": "幽默干货评价", 
-  "pairing": "神仙吃法", 
-  "warning": "过敏源或奇葩口味预警，无则留空",
-  "alternatives": "💰 平替推荐：(写出更便宜的同类超市品牌) | ✨ 升级版本：(写出更高端的品牌或更好的选择)。如果实在没有，就留空"
-}`;
+          "dutch_name": "荷兰语商品名",
+          "chinese_name": "接地气中文名",
+          "category": "具体的商品分类",
+          "is_recommended": true或false,
+          "insight": "幽默干货测评",
+          "pairing": "神仙吃法/烹饪时间",
+          "warning": "奇葩口味或过敏源预警（无则留空）",
+          "alternatives": "💰平替推荐：xxx | ✨升级版本：xxx（必须写，如果实在没有就写'暂无平替，它就是性价比之王'）"
+        }`;
 
         const dsUserPrompt = `Gemini识别到的商品名是：${productInfo}。请输出JSON点评。`;
 
