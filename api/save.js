@@ -31,17 +31,18 @@ export default async function handler(req) {
                     { 
                         type: "execute", 
                         stmt: { 
-sql: "INSERT OR REPLACE INTO products (dutch_name, chinese_name, category, is_recommended, insight, pairing, warning, alternatives, features, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                            { type: "text", value: String(data.dutch_name || "") },
+                            sql: "INSERT OR REPLACE INTO products (dutch_name, chinese_name, category, is_recommended, insight, pairing, warning, alternatives, features, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                            args: [ // 👈 就是这里！刚才你不小心把这行删了！
+                                { type: "text", value: String(data.dutch_name || "") },
                                 { type: "text", value: String(data.chinese_name || "") },
                                 { type: "text", value: String(data.category || "") },
                                 { type: "integer", value: data.is_recommended ? "1" : "0" }, 
-{ type: "text", value: String(data.insight || "").replace(/⚡️\(由数据库秒回\)/g, '').trim() }, 
-    { type: "text", value: String(data.pairing || "") },
+                                { type: "text", value: String(data.insight || "").replace(/⚡️\(由数据库秒回\)/g, '').trim() }, 
+                                { type: "text", value: String(data.pairing || "") },
                                 { type: "text", value: String(data.warning || "") },
                                 { type: "text", value: String(data.alternatives || "") },
-    { type: "text", value: String(data.features || "") },
-                    { type: "text", value: String(data.image_url || "") } // 👈 新加的平替字段
+                                { type: "text", value: String(data.features || "") },
+                                { type: "text", value: String(data.image_url || "") } // 👈 完美的第10个参数
                             ] 
                         } 
                     },
