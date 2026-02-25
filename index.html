@@ -97,24 +97,16 @@
         /* 🖼️ 小红书风 极简海报模板 */
         #poster-template { position: fixed; left: -9999px; top: 0; width: 340px; background: #F3F4F6; padding: 20px; box-sizing: border-box; font-family: -apple-system, sans-serif; }
         .pt-wrapper { background: #FFF; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); overflow: hidden; }
-        
-        /* 图片与情绪印章区 */
         .pt-img-box { position: relative; width: 100%; height: 260px; background: #F9FAFB; }
         .pt-img { width: 100%; height: 100%; object-fit: cover; }
         .pt-badge { position: absolute; bottom: 12px; right: 12px; padding: 6px 14px; border-radius: 20px; font-weight: 900; font-size: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); border: 2px solid #FFF; }
         .pt-badge.like { background: #10B981; color: #FFF; }
         .pt-badge.dislike { background: #EF4444; color: #FFF; }
-
-        /* 文字信息区 */
         .pt-body { padding: 20px; }
         .pt-dutch { font-size: 24px; font-weight: 900; color: #111827; line-height: 1.2; margin-bottom: 6px; word-wrap: break-word; }
         .pt-chinese { font-size: 14px; color: #6B7280; margin-bottom: 15px; }
-        
-        /* 一句话短评区 */
         .pt-review-box { background: #F9FAFB; border-radius: 10px; padding: 15px; position: relative; border-left: 4px solid #F59E0B; }
         .pt-review-text { font-size: 15px; color: #374151; font-weight: bold; line-height: 1.5; }
-
-        /* 底部信息栏 */
         .pt-footer { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px 20px; background: #FFF; border-top: 1px dashed #E5E7EB; }
         .pt-brand { font-size: 16px; font-weight: 900; color: #111827; }
         .pt-slogan { font-size: 13px; color: #10B981; margin-top: 4px; font-weight: bold; }
@@ -127,12 +119,9 @@
 
         /* ✨ 狂点连击的浮动 +1 动画 */
         .floating-plus { position: fixed; font-size: 20px; font-weight: 900; pointer-events: none; animation: floatUp 0.8s ease-out forwards; z-index: 9999; }
-        @keyframes floatUp {
-            0% { opacity: 1; transform: translateY(0) scale(1); }
-            100% { opacity: 0; transform: translateY(-50px) scale(1.5); }
-        }
+        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-50px) scale(1.5); } }
 
-        /* 🧑‍🍳 扫雷主页的神仙吃法输入框 */
+        /* 🧑‍🍳 UGC神仙吃法输入框 */
         .ugc-box { background: #FFF7ED; border: 1px dashed #F59E0B; padding: 15px; border-radius: 12px; margin-top: 15px; }
         .ugc-title { font-size: 14px; font-weight: 900; color: #D97706; margin-bottom: 8px; }
         .ugc-input-group { display: flex; gap: 8px; }
@@ -161,11 +150,9 @@
         .vote-label { font-size: 14px; font-weight: bold; color: #4B5563; display: flex; align-items: center; gap: 5px; cursor: pointer; }
         .vote-label input[type="radio"] { accent-color: #10B981; }
         .vote-label.dislike input[type="radio"] { accent-color: #EF4444; }
-        
     </style>
 </head>
 
-    
 <body>
 
 <div class="tab-bar">
@@ -185,26 +172,6 @@
 
 <div class="container">
     <div id="page-scan" class="page-section active">
-        <div class="header">
-            <h1 class="title">荷包管家 🇳🇱</h1>
-            <div class="subtitle">留学生专属的荷兰超市避雷神器</div>
-        </div>
-
-        <div class="upload-box" id="uploadBox" onclick="document.getElementById('fileInput').click()">
-            <div id="uploadHint">
-                <div class="icon-camera">📸</div>
-                <div class="upload-text">点击拍个照，管家帮你排雷</div>
-            </div>
-            <img id="previewImg" class="preview-img" src="" alt="预览">
-            <div class="scan-overlay" id="scanOverlay">
-                <div class="scan-line"></div>
-                <div class="spinner"></div>
-                <div class="scan-text">管家大脑飞速运转中...</div>
-            </div>
-            <input type="file" id="fileInput" accept="image/*" onchange="handleFileSelect(event)">
-        </div>
-
-       <div id="page-scan" class="page-section active">
         <div class="header">
             <h1 class="title">荷包管家 🇳🇱</h1>
             <div class="subtitle">留学生专属的荷兰超市避雷神器</div>
@@ -287,7 +254,7 @@
                     <label class="vote-label dislike"><input type="radio" name="ugcAttitude" value="💣 避大雷"> 💣 避雷</label>
                 </div>
                 <div class="ugc-input-group">
-                    <input type="text" id="detailRecipeInput" class="ugc-input" placeholder="输入你的神仙吃法或拔草原因...">
+                    <input type="text" id="detailRecipeInput" class="ugc-input" placeholder="输入神仙吃法或避雷原因...">
                     <button class="ugc-btn" onclick="submitRecipeDetail()">发布</button>
                 </div>
             </div>
@@ -307,15 +274,13 @@
             </div>
         </div>
     </div>
-    </div>
 
     <div id="page-footprint" class="page-section">
         <div class="header">
             <h1 class="title">我的足迹 👣</h1>
             <div class="subtitle">你扫过的都在这里，赶紧写评价吧</div>
         </div>
-        <div id="footprintList">
-            </div>
+        <div id="footprintList"></div>
     </div>
 
     <div id="page-trending" class="page-section">
@@ -327,31 +292,25 @@
             榜单正在紧锣密鼓施工中...敬请期待！
         </div>
     </div>
-
-    <div class="poster-modal" id="posterModal">
+</div> <div class="poster-modal" id="posterModal">
     <div style="color:white; margin-bottom:15px; font-weight:bold; letter-spacing: 1px;">✨ 长按下方图片保存 / 转发给微信好友 ✨</div>
     <img id="posterResultImg" class="poster-result-img" src="">
     <button class="close-poster-btn" onclick="document.getElementById('posterModal').classList.remove('show')">关闭</button>
 </div>
 
-
-    
 <div id="poster-template">
     <div class="pt-wrapper">
         <div class="pt-img-box">
             <img id="ptImage" class="pt-img" src="" crossorigin="anonymous">
             <div id="ptBadge" class="pt-badge" style="display:none;"></div>
         </div>
-        
         <div class="pt-body">
             <div class="pt-dutch" id="ptDutch">Dutch Name</div>
             <div class="pt-chinese" id="ptChinese">中文名</div>
-            
             <div class="pt-review-box" id="ptUserReviewBox" style="display:none;">
                 <div class="pt-review-text" id="ptUserReview"></div>
             </div>
         </div>
-        
         <div class="pt-footer">
             <div>
                 <div class="pt-brand">荷包管家 🇳🇱</div>
@@ -361,15 +320,14 @@
         </div>
     </div>
 </div>
-</div>
 
 <script>
     // ==========================================
     // 🌍 核心数据总管 (全局变量)
     // ==========================================
-    let currentProductData = null; // 首页正在扫的商品
-    let lastTab = 'scan';          // 记录你刚才在哪个标签页
-    let currentDetailData = null;  // 详情页正在看的商品数据
+    let currentProductData = null; 
+    let lastTab = 'scan';          
+    let currentDetailData = null;  
 
     // ==========================================
     // 1. 📱 导航与页面切换
@@ -384,7 +342,6 @@
         
         document.getElementById('page-' + pageId).classList.add('active');
         
-        // 详情页隐藏底部的 3 个导航按钮，沉浸式阅读
         const tabBar = document.querySelector('.tab-bar');
         if (pageId === 'details') {
             tabBar.style.display = 'none';
@@ -436,9 +393,8 @@
             
             currentProductData = data;
             renderResult(data);
-            saveToLocalFootprint(data); // 自动存入本地足迹
+            saveToLocalFootprint(data); 
 
-            // 静默收录进大数据库，造福社区
             fetch('/api/save', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
@@ -450,37 +406,37 @@
         }
     }
 
-    // ==========================================
-    // 升级：首页极简卡片内容丰富化
-    // ==========================================
     function renderResult(data) {
         document.getElementById('scanOverlay').style.display = 'none';
         document.getElementById('miniResultCard').style.display = 'block';
         
         document.getElementById('miniChineseName').innerText = data.chinese_name || '未知商品';
         document.getElementById('miniDutchName').innerText = data.dutch_name || 'Unknown';
-        
-        // 渲染 AI 简介
         document.getElementById('miniInsight').innerText = data.insight || '管家还在思考...';
 
-        // 渲染致命预警
-        if (data.warning) {
+        if (data.features && String(data.features).trim() !== '') {
+            document.getElementById('miniTag').style.display = 'inline-block';
+            document.getElementById('miniTag').innerText = `✨ ${data.features}`;
+        } else { 
+            document.getElementById('miniTag').style.display = 'none'; 
+        }
+
+        if (data.warning && String(data.warning).trim() !== '') {
             document.getElementById('miniWarning').style.display = 'block';
             document.getElementById('miniWarning').innerText = `⚠️ 致命预警：${data.warning}`;
         } else { 
             document.getElementById('miniWarning').style.display = 'none'; 
         }
 
-        // 提取最高赞点评 (从 pairing 字段里提取第一条网友点评)
-        if (data.pairing && data.pairing.includes('网友')) {
+        if (data.pairing && String(data.pairing).includes('网友')) {
             document.getElementById('miniUgc').style.display = 'block';
-            // 简单处理：按换行符切分，取出带有"网友"的那一行作为精选
             const firstUgc = data.pairing.split('\n').find(line => line.includes('网友'));
             document.getElementById('miniUgcText').innerText = firstUgc ? firstUgc.replace('🧑‍🍳 网友点评：', '') : '快来抢首评！';
         } else {
             document.getElementById('miniUgc').style.display = 'none';
         }
     }
+
     function resetApp() {
         document.getElementById('fileInput').value = '';
         document.getElementById('previewImg').style.display = 'none';
@@ -513,10 +469,12 @@
         document.getElementById('detailChineseName').innerText = d.chinese_name || '未知商品';
         document.getElementById('detailDutchName').innerText = d.dutch_name || '';
         
+        // 【核心防崩溃修复区】：防止文本为 null 时调用 .trim() 导致白屏
         const fillBlock = (boxId, textId, content) => {
             const box = document.getElementById(boxId);
-            if (content && content.trim() !== '') {
-                box.style.display = 'block'; document.getElementById(textId).innerText = content;
+            if (content && String(content).trim() !== '') {
+                box.style.display = 'block'; 
+                document.getElementById(textId).innerText = content;
             } else { 
                 box.style.display = 'none'; 
             }
@@ -568,14 +526,10 @@
         sendBtn.disabled = false;
     }
 
-    // ==========================================
-    // 升级：详情页提交点评 (带上顶/踩态度)
-    // ==========================================
     async function submitRecipeDetail() {
         const recipeText = document.getElementById('detailRecipeInput').value.trim();
         if (!recipeText || !currentDetailData) return;
         
-        // 获取用户选的是推荐还是避雷
         const attitude = document.querySelector('input[name="ugcAttitude"]:checked').value;
         const finalUgcText = `🧑‍🍳 网友点评 [${attitude}]：${recipeText}`;
 
@@ -589,7 +543,6 @@
             });
             alert("🎉 发布成功！造福全体留学生！");
             
-            // 清空输入框，并在当前详情页立刻显示出来
             document.getElementById('detailRecipeInput').value = "";
             const pairingBlock = document.getElementById('detailPairing');
             pairingBlock.innerText += `\n\n${finalUgcText}`;
@@ -599,6 +552,7 @@
         }
         btn.innerText = "发布"; btn.disabled = false;
     }
+
     // ==========================================
     // 5. 👣 极简足迹列表
     // ==========================================
@@ -657,13 +611,11 @@
             setTimeout(() => plus.remove(), 800);
         }
 
-        // 静默发给后端
         fetch('/api/vote', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ dutch_name: dutchName, action: action })
         }).catch(err => console.error("投票小错误", err));
 
-        // 记在本地
         let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
         let idx = history.findIndex(item => item.dutch_name === dutchName);
         if(idx !== -1) {
