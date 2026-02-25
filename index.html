@@ -138,6 +138,18 @@
         .ugc-input-group { display: flex; gap: 8px; }
         .ugc-input { flex: 1; border: 1px solid #FCD34D; border-radius: 6px; padding: 8px; font-size: 13px; outline: none; background: #FFF; }
         .ugc-btn { background: #F59E0B; color: #FFF; border: none; padding: 0 15px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+
+        /* 📦 扫码后的极简卡片 (Mini Card) */
+        #miniResultCard { display: none; margin-top: 20px; background: #FFF; border-radius: 20px; padding: 25px; box-shadow: 0 8px 30px rgba(0,0,0,0.08); text-align: center; animation: fadeIn 0.4s ease; }
+        .mini-warning { background: #FEF2F2; color: #DC2626; padding: 10px; border-radius: 10px; font-size: 14px; font-weight: bold; margin: 15px 0; border: 1px dashed #FCA5A5; }
+        .btn-view-detail { background: #111827; color: #FFF; border: none; padding: 14px; width: 100%; border-radius: 25px; font-size: 16px; font-weight: bold; margin-top: 10px; cursor: pointer; box-shadow: 0 4px 15px rgba(17, 24, 39, 0.2); }
+        
+        /* 📄 独立的商品详情页 (PDP) */
+        #page-details { background: #F7F8FA; min-height: 100vh; padding-bottom: 40px; }
+        .top-nav { position: sticky; top: 0; background: #FFF; padding: 15px 20px; display: flex; align-items: center; z-index: 50; box-shadow: 0 2px 10px rgba(0,0,0,0.04); }
+        .back-btn { font-size: 16px; font-weight: 900; color: #111827; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+        .detail-hero { background: #FFF; padding: 20px; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 15px; }
+        .detail-img { width: 100%; height: 220px; object-fit: contain; background: #F9FAFB; border-radius: 12px; margin-bottom: 15px; }
         
     </style>
 </head>
@@ -181,51 +193,79 @@
             <input type="file" id="fileInput" accept="image/*" onchange="handleFileSelect(event)">
         </div>
 
-        <div id="resultCard">
-            <div class="name-box">
-                <span class="item-name" id="resChineseName"></span>
-                <span class="item-dutch" id="resDutchName"></span>
+        <div id="page-scan" class="page-section active">
+        <div id="miniResultCard">
+            <div class="name-box" style="margin-bottom: 5px;">
+                <span class="item-name" id="miniChineseName"></span>
+                <span class="item-dutch" id="miniDutchName"></span>
             </div>
-            <div class="feature-tag" id="resFeatures" style="display: none;"></div>
+            <div class="feature-tag" id="miniTag" style="display:none; margin-bottom: 5px;"></div>
+            
+            <div class="mini-warning" id="miniWarning" style="display:none;"></div>
+            
+            <button class="btn-view-detail" onclick="openDetailsFromScan()">👉 查看完整排雷报告 & 网友吃法</button>
+            <button class="btn btn-secondary" style="margin-top: 15px;" onclick="resetApp()">🔴 测下一个</button>
+        </div>
+    </div>
 
-            <div class="info-block" id="blockInsight" style="display: none;">
+    <div id="page-details" class="page-section">
+        <div class="top-nav">
+            <div class="back-btn" onclick="goBack()">‹ 返回上一页</div>
+        </div>
+        
+        <div class="detail-hero">
+            <img id="detailImg" class="detail-img" src="" alt="商品图">
+            <div class="name-box">
+                <span class="item-name" id="detailChineseName"></span>
+                <span class="item-dutch" id="detailDutchName"></span>
+            </div>
+            
+            <div class="history-actions" style="margin-top: 15px;">
+                <button class="action-btn" onclick="voteProductDetail('like', event)">👍 狂赞</button>
+                <button class="action-btn" onclick="voteProductDetail('dislike', event)">💣 狂踩</button>
+                <button class="action-btn" style="background:#111827; color:#FFF;" onclick="generatePosterFromDetail()">📸 生成海报</button>
+            </div>
+        </div>
+
+        <div style="padding: 0 20px;">
+            <div class="info-block" id="detailInsightBox">
                 <div class="block-title">💡 管家锐评</div>
-                <p class="block-text" id="resInsight"></p>
+                <p class="block-text" id="detailInsight"></p>
             </div>
-            <div class="info-block" id="blockPairing" style="display: none;">
-                <div class="block-title">🍳 神仙吃法 / 爆改指南</div>
-                <p class="block-text" id="resPairing"></p>
+            
+            <div class="info-block warning" id="detailWarningBox" style="display:none;">
+                <div class="block-title warning-title">⚠️ 避雷预警</div>
+                <p class="block-text" id="detailWarning"></p>
             </div>
-            <div class="ugc-box" id="ugcBox" style="display: none;">
-                <div class="ugc-title">🧑‍🍳 管家不知道怎么吃？你来教！</div>
+
+            <div class="info-block" id="detailPairingBox" style="display:none;">
+                <div class="block-title">🍳 神仙吃法 & 网友实测</div>
+                <p class="block-text" id="detailPairing" style="white-space: pre-wrap;"></p>
+            </div>
+
+            <div class="ugc-box" id="detailUgcBox">
+                <div class="ugc-title">🧑‍🍳 你有更好的吃法或吐槽？</div>
                 <div class="ugc-input-group">
-                    <input type="text" id="recipeInput" class="ugc-input" placeholder="输入你的隐藏吃法，造福全体留学生...">
-                    <button class="ugc-btn" onclick="submitRecipe()">分享</button>
+                    <input type="text" id="detailRecipeInput" class="ugc-input" placeholder="输入隐藏吃法，造福全体留学生...">
+                    <button class="ugc-btn" onclick="submitRecipeDetail()">分享</button>
                 </div>
             </div>
-            <div class="info-block warning" id="blockWarning" style="display: none;">
-                <div class="block-title warning-title">⚠️ 避雷预警</div>
-                <p class="block-text" id="resWarning"></p>
-            </div>
-            <div class="info-block" id="blockAlternatives" style="display: none;">
+
+            <div class="info-block" id="detailAltBox" style="display:none;">
                 <div class="block-title">🛍️ 穷鬼平替 / 土豪升级</div>
-                <p class="block-text" id="resAlternatives"></p>
+                <p class="block-text" id="detailAlternatives"></p>
             </div>
 
             <div class="qa-section">
-                <div class="qa-divider">💬 追加拷问</div>
+                <div class="qa-divider">💬 追加拷问管家</div>
                 <div id="chatHistory"></div>
                 <div class="input-area">
-                    <input type="text" id="askInput" placeholder="例如：空气炸锅怎么定时间？" onkeypress="handleEnter(event)">
+                    <input type="text" id="askInput" placeholder="例如：空气炸锅怎么定时间？" onkeypress="if(event.key==='Enter') sendQuestion()">
                     <button id="sendBtn" onclick="sendQuestion()">发送</button>
                 </div>
             </div>
-
-            <div class="action-buttons">
-                <button class="btn btn-primary" id="saveBtn" onclick="saveData()">🟢 神准！收录进库</button>
-                <button class="btn btn-secondary" onclick="resetApp()">🔴 测下一个</button>
-            </div>
         </div>
+    </div>
     </div>
 
     <div id="page-footprint" class="page-section">
@@ -284,28 +324,44 @@
 
 <script>
     // ==========================================
-    // 1. 导航切换逻辑 (解决你点不动的问题)
+    // 🌍 核心数据总管 (全局变量)
+    // ==========================================
+    let currentProductData = null; // 首页正在扫的商品
+    let lastTab = 'scan';          // 记录你刚才在哪个标签页
+    let currentDetailData = null;  // 详情页正在看的商品数据
+
+    // ==========================================
+    // 1. 📱 导航与页面切换
     // ==========================================
     function switchTab(pageId, element) {
-        // 隐藏所有 section，去掉所有 active 类
         document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
-        
-        // 显示对应的 section，高亮被点击的底部图标
-        document.getElementById('page-' + pageId).classList.add('active');
-        element.classList.add('active');
-
-        // 如果切到了足迹页，立刻去本地缓存里读取数据并渲染
-        if (pageId === 'footprint') {
-            renderFootprints();
+        if (element) {
+            document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+            lastTab = pageId; 
         }
+        
+        document.getElementById('page-' + pageId).classList.add('active');
+        
+        // 详情页隐藏底部的 3 个导航按钮，沉浸式阅读
+        const tabBar = document.querySelector('.tab-bar');
+        if (pageId === 'details') {
+            tabBar.style.display = 'none';
+        } else {
+            tabBar.style.display = 'flex';
+        }
+
+        if (pageId === 'footprint') renderFootprints();
+    }
+
+    function goBack() {
+        const targetTab = document.querySelector(`.tab-item[onclick*="${lastTab}"]`);
+        switchTab(lastTab, targetTab);
     }
 
     // ==========================================
-    // 2. 扫雷核心逻辑 (保留之前的完美代码)
+    // 2. 📸 扫雷核心逻辑 (极简首页)
     // ==========================================
-    let currentProductData = null;
-
     function handleFileSelect(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -316,7 +372,7 @@
             document.getElementById('previewImg').src = e.target.result;
             document.getElementById('previewImg').style.display = 'block';
             document.getElementById('scanOverlay').style.display = 'flex';
-            document.getElementById('resultCard').style.display = 'none';
+            document.getElementById('miniResultCard').style.display = 'none'; 
 
             const base64String = e.target.result.split(',')[1];
             scanProduct(base64String);
@@ -327,152 +383,51 @@
     async function scanProduct(base64Str) {
         try {
             const response = await fetch('/api/scan', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ imageBase64: base64Str })
             });
             const data = await response.json();
             
-            if (!response.ok) {
-                alert("管家遇到问题了：" + (data.error || '未知错误'));
-                resetApp();
-                return;
+            if (!response.ok) { 
+                alert("管家遇到问题了：" + (data.error || '未知错误')); 
+                resetApp(); return; 
             }
-
+            
             currentProductData = data;
             renderResult(data);
-            
-            // 💡 重点：一扫完，不管用户有没有点“收录”，都自动记入本地足迹！
-            saveToLocalFootprint(data);
+            saveToLocalFootprint(data); // 自动存入本地足迹
 
-        } catch (error) {
-            alert("网络断开了：" + error.message);
-            resetApp();
+            // 静默收录进大数据库，造福社区
+            fetch('/api/save', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).catch(e => console.log("收录失败", e));
+
+        } catch (error) { 
+            alert("网络断开了：" + error.message); 
+            resetApp(); 
         }
     }
 
     function renderResult(data) {
         document.getElementById('scanOverlay').style.display = 'none';
-        document.getElementById('resultCard').style.display = 'block';
-        document.getElementById('resChineseName').innerText = data.chinese_name || '未知商品';
-        document.getElementById('resDutchName').innerText = data.dutch_name || 'Unknown';
-
-        toggleBlock('resFeatures', data.features, '✨ ' + data.features);
-        toggleBlock('blockInsight', data.insight, data.insight, 'resInsight');
-        toggleBlock('blockPairing', data.pairing, data.pairing, 'resPairing');
-        toggleBlock('blockWarning', data.warning, data.warning, 'resWarning');
-        toggleBlock('blockAlternatives', data.alternatives, data.alternatives, 'resAlternatives');
+        document.getElementById('miniResultCard').style.display = 'block';
         
-        document.getElementById('chatHistory').innerHTML = '';
-        document.getElementById('askInput').value = '';
-        document.getElementById('ugcBox').style.display = 'block';
-    }
-
-    function toggleBlock(blockId, condition, text, textId = null) {
-        const block = document.getElementById(blockId);
-        if (condition && condition.trim() !== "") {
-            block.style.display = blockId === 'resFeatures' ? 'inline-block' : 'block';
-            if (textId) document.getElementById(textId).innerText = text;
-            else block.innerText = text;
-        } else {
-            block.style.display = 'none';
-        }
-    }
-
-    function handleEnter(e) { if (e.key === 'Enter') sendQuestion(); }
-
-// 提交神仙吃法的逻辑
-    async function submitRecipe() {
-        const recipeText = document.getElementById('recipeInput').value.trim();
-        if (!recipeText || !currentProductData) return;
+        document.getElementById('miniChineseName').innerText = data.chinese_name || '未知商品';
+        document.getElementById('miniDutchName').innerText = data.dutch_name || 'Unknown';
         
-        const btn = document.querySelector('.ugc-btn');
-        btn.innerText = "提交中...";
-        btn.disabled = true;
-
-        try {
-            // 调用我们即将写的新后端接口
-            const response = await fetch('/api/recipe', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    dutch_name: currentProductData.dutch_name, 
-                    recipe: `🧑‍🍳 网友神仙吃法：${recipeText}` 
-                })
-            });
-            
-            if(response.ok) {
-                alert("🎉 提交成功！你的神仙吃法已被收录，下一个扫到它的人就能看到啦！");
-                document.getElementById('recipeInput').value = "";
-                // 顺便把本地当前显示的内容也更新一下
-                const pairingBlock = document.getElementById('resPairing');
-                pairingBlock.innerText += `\n\n🧑‍🍳 网友神仙吃法：${recipeText}`;
-                document.getElementById('blockPairing').style.display = 'block';
-            }
-        } catch(e) {
-            alert("网络开小差了...");
+        if (data.features) {
+            document.getElementById('miniTag').style.display = 'inline-block';
+            document.getElementById('miniTag').innerText = `✨ ${data.features}`;
+        } else { 
+            document.getElementById('miniTag').style.display = 'none'; 
         }
-        btn.innerText = "分享";
-        btn.disabled = false;
-    }
-    
-    async function sendQuestion() {
-        const input = document.getElementById('askInput');
-        const question = input.value.trim();
-        if (!question || !currentProductData) return;
 
-        const chatBox = document.getElementById('chatHistory');
-        const sendBtn = document.getElementById('sendBtn');
-        
-        chatBox.innerHTML += `<div class="chat-row row-user"><div class="chat-bubble bubble-user">${question}</div></div>`;
-        input.value = '';
-        sendBtn.disabled = true;
-
-        const loadingId = 'loading-' + Date.now();
-        chatBox.innerHTML += `<div class="chat-row row-ai" id="${loadingId}"><div class="chat-bubble bubble-ai">敲字中...</div></div>`;
-
-        try {
-            const response = await fetch('/api/ask', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ productName: currentProductData.dutch_name, insight: currentProductData.insight, question: question })
-            });
-            const data = await response.json();
-            document.getElementById(loadingId).remove();
-            if (response.ok) {
-                chatBox.innerHTML += `<div class="chat-row row-ai"><div class="chat-bubble bubble-ai">${data.reply}</div></div>`;
-            } else {
-                chatBox.innerHTML += `<div class="chat-row row-ai"><div class="chat-bubble bubble-ai" style="color:red;">哎呀，管家走神了：${data.error}</div></div>`;
-            }
-        } catch (err) {
-            document.getElementById(loadingId).remove();
-            chatBox.innerHTML += `<div class="chat-row row-ai"><div class="chat-bubble bubble-ai" style="color:red;">网络似乎断了...</div></div>`;
-        }
-        sendBtn.disabled = false;
-    }
-
-    async function saveData() {
-        if (!currentProductData) return;
-        const btn = document.getElementById('saveBtn');
-        btn.innerText = "收录中..."; btn.disabled = true;
-
-        try {
-            const response = await fetch('/api/save', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(currentProductData)
-            });
-            const data = await response.json();
-            if (response.ok) {
-                btn.innerText = "✅ 已永久收录到大金库！";
-                btn.style.background = "#10B981";
-            } else {
-                alert("收录失败：" + data.error);
-                btn.innerText = "🟢 神准！收录进库"; btn.disabled = false;
-            }
-        } catch (err) {
-            alert("网络请求失败！");
-            btn.innerText = "🟢 神准！收录进库"; btn.disabled = false;
+        if (data.warning) {
+            document.getElementById('miniWarning').style.display = 'block';
+            document.getElementById('miniWarning').innerText = `⚠️ 致命预警：${data.warning}`;
+        } else { 
+            document.getElementById('miniWarning').style.display = 'none'; 
         }
     }
 
@@ -481,93 +436,146 @@
         document.getElementById('previewImg').style.display = 'none';
         document.getElementById('scanOverlay').style.display = 'none';
         document.getElementById('uploadHint').style.display = 'block';
-        document.getElementById('resultCard').style.display = 'none';
+        document.getElementById('miniResultCard').style.display = 'none';
         currentProductData = null;
     }
 
     // ==========================================
-    // 3. 终极版：足迹系统 + 缩略图保存 + 极简海报
+    // 3. 📄 详情页逻辑 (PDP)
     // ==========================================
-    
-    // 改造1：存入足迹时，把图片也存进去
+    function openDetailsFromScan() {
+        currentDetailData = { ...currentProductData, img_src: document.getElementById('previewImg').src };
+        populateAndOpenDetails();
+    }
+
+    function openDetailsFromHistory(index) {
+        let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
+        currentDetailData = history[index];
+        populateAndOpenDetails();
+    }
+
+    function populateAndOpenDetails() {
+        const d = currentDetailData;
+        if(!d) return;
+
+        document.getElementById('chatHistory').innerHTML = '';
+        document.getElementById('detailImg').src = d.img_src || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23eee'/%3E%3C/svg%3E";
+        document.getElementById('detailChineseName').innerText = d.chinese_name || '未知商品';
+        document.getElementById('detailDutchName').innerText = d.dutch_name || '';
+        
+        const fillBlock = (boxId, textId, content) => {
+            const box = document.getElementById(boxId);
+            if (content && content.trim() !== '') {
+                box.style.display = 'block'; document.getElementById(textId).innerText = content;
+            } else { 
+                box.style.display = 'none'; 
+            }
+        };
+
+        fillBlock('detailInsightBox', 'detailInsight', d.insight);
+        fillBlock('detailWarningBox', 'detailWarning', d.warning);
+        fillBlock('detailPairingBox', 'detailPairing', d.pairing);
+        fillBlock('detailAltBox', 'detailAlternatives', d.alternatives);
+        
+        switchTab('details', null);
+    }
+
+    // ==========================================
+    // 4. 💬 互动、问答与 UGC
+    // ==========================================
+    function handleEnter(e) { if (e.key === 'Enter') sendQuestion(); }
+
+    async function sendQuestion() {
+        const input = document.getElementById('askInput');
+        const question = input.value.trim();
+        if (!question || !currentDetailData) return;
+
+        const chatBox = document.getElementById('chatHistory');
+        const sendBtn = document.getElementById('sendBtn');
+        
+        chatBox.innerHTML += `<div class="chat-row row-user"><div class="chat-bubble bubble-user">${question}</div></div>`;
+        input.value = ''; sendBtn.disabled = true;
+
+        const loadingId = 'loading-' + Date.now();
+        chatBox.innerHTML += `<div class="chat-row row-ai" id="${loadingId}"><div class="chat-bubble bubble-ai">敲字中...</div></div>`;
+
+        try {
+            const response = await fetch('/api/ask', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ productName: currentDetailData.dutch_name, insight: currentDetailData.insight, question: question })
+            });
+            const data = await response.json();
+            document.getElementById(loadingId).remove();
+            if (response.ok) {
+                chatBox.innerHTML += `<div class="chat-row row-ai"><div class="chat-bubble bubble-ai">${data.reply}</div></div>`;
+            } else {
+                chatBox.innerHTML += `<div class="chat-row row-ai"><div class="chat-bubble bubble-ai" style="color:red;">管家走神了：${data.error}</div></div>`;
+            }
+        } catch (err) {
+            document.getElementById(loadingId).remove();
+            chatBox.innerHTML += `<div class="chat-row row-ai"><div class="chat-bubble bubble-ai" style="color:red;">网络似乎断了...</div></div>`;
+        }
+        sendBtn.disabled = false;
+    }
+
+    async function submitRecipeDetail() {
+        const recipeText = document.getElementById('detailRecipeInput').value.trim();
+        if (!recipeText || !currentDetailData) return;
+        const btn = document.querySelector('.ugc-btn');
+        btn.innerText = "提交中..."; btn.disabled = true;
+
+        try {
+            await fetch('/api/recipe', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ dutch_name: currentDetailData.dutch_name, recipe: `🧑‍🍳 网友神仙吃法：${recipeText}` })
+            });
+            alert("🎉 提交成功！");
+            document.getElementById('detailRecipeInput').value = "";
+            const pairingBlock = document.getElementById('detailPairing');
+            pairingBlock.innerText += `\n\n🧑‍🍳 网友神仙吃法：${recipeText}`;
+            document.getElementById('detailPairingBox').style.display = 'block';
+        } catch(e) { 
+            alert("网络开小差了..."); 
+        }
+        btn.innerText = "分享"; btn.disabled = false;
+    }
+
+    // ==========================================
+    // 5. 👣 极简足迹列表
+    // ==========================================
     function saveToLocalFootprint(data) {
         let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
         const exists = history.find(item => item.dutch_name === data.dutch_name);
         if (!exists) {
-            data.my_review = '';
-            data.my_vote = ''; // 记录你是 like 还是 dislike
-            // 拿到刚刚上传的图片 (压缩版以防撑爆缓存)
+            data.my_review = ''; data.my_vote = ''; 
             data.img_src = document.getElementById('previewImg').src; 
-            
             history.unshift(data);
-            try {
-                localStorage.setItem('hebao_history', JSON.stringify(history));
-            } catch(e) {
-                console.log("缓存满了，清理一下最老的记录");
-                history.pop();
-                localStorage.setItem('hebao_history', JSON.stringify(history));
+            try { 
+                localStorage.setItem('hebao_history', JSON.stringify(history)); 
+            } catch(e) { 
+                history.pop(); localStorage.setItem('hebao_history', JSON.stringify(history)); 
             }
-        }
-    }
-
-    // 改造2：点赞/排雷时，不仅发给服务器，还要存在本地，让海报能读取
-    async function voteProduct(dutchName, action) {
-        try {
-            const response = await fetch('/api/vote', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ dutch_name: dutchName, action: action })
-            });
-            if(response.ok) {
-                // 更新本地足迹状态
-                let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
-                let index = history.findIndex(item => item.dutch_name === dutchName);
-                if(index !== -1) {
-                    history[index].my_vote = action;
-                    localStorage.setItem('hebao_history', JSON.stringify(history));
-                }
-                alert(action === 'like' ? '👍 已推荐！快去生成海报看看！' : '💣 已排雷！快去生成海报提醒大家！');
-            }
-        } catch(err) {
-            alert('网络错误');
         }
     }
 
     function renderFootprints() {
         const listDiv = document.getElementById('footprintList');
         let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
-        
-        if (history.length === 0) {
-            listDiv.innerHTML = '<div style="text-align:center; color:#888; margin-top:40px;">快去首页扫几个超市盲盒吧~</div>'; return;
-        }
+        if (history.length === 0) { listDiv.innerHTML = '<div style="text-align:center; color:#888; margin-top:40px;">空空如也</div>'; return; }
 
         let html = '';
         history.forEach((item, index) => {
             html += `
-                <div class="history-card">
-                    <div style="display:flex; gap:15px; margin-bottom:10px;">
-                        <img src="${item.img_src || ''}" style="width:60px; height:60px; object-fit:cover; border-radius:8px; background:#eee;">
-                        <div>
-                            <div class="history-header" style="margin:0;">${item.dutch_name || ''}</div>
-                            <div class="history-dutch" style="margin:2px 0 0 0;">${item.chinese_name || '未命名'}</div>
+                <div class="history-card" onclick="openDetailsFromHistory(${index})" style="cursor:pointer;">
+                    <div style="display:flex; gap:15px;">
+                        <img src="${item.img_src || ''}" style="width:70px; height:70px; object-fit:cover; border-radius:10px; background:#f0f0f0;">
+                        <div style="flex:1;">
+                            <div class="history-header" style="margin:0;">${item.chinese_name || '未命名'}</div>
+                            <div class="history-dutch" style="margin:2px 0 6px 0;">${item.dutch_name || ''}</div>
+                            <div style="font-size: 13px; color: #6B7280; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                                ${item.insight || ''}
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="review-box">
-                        <input type="text" id="reviewInput_${index}" class="review-input" placeholder="留下一句你的辣评..." value="${item.my_review || ''}">
-                        <button class="review-save-btn" onclick="saveMyReview(${index})">保存</button>
-                    </div>
-                    <div class="quick-tags">
-                        <span class="tag-pill" onclick="fillReview(${index}, '太好吃了！闭眼入！🤤')">闭眼入</span>
-                        <span class="tag-pill" onclick="fillReview(${index}, '巨雷！狗都不吃 🤢')">巨雷</span>
-                        <span class="tag-pill" onclick="fillReview(${index}, '无限回购的好物 🛒')">无限回购</span>
-                        <span class="tag-pill" onclick="fillReview(${index}, '勉强能吃，不推荐 😕')">勉强能吃</span>
-                    </div>
-
-                    <div class="history-actions" style="margin-top: 15px;">
-                        <button class="action-btn" onclick="voteProduct('${item.dutch_name}', 'like', event)">👍 狂赞</button>
-                        <button class="action-btn" onclick="voteProduct('${item.dutch_name}', 'dislike', event)">💣 狂踩</button>
-                        <button class="action-btn" style="background:#111827; color:#FFF;" onclick="generatePoster(${index})">📸 海报</button>
                     </div>
                 </div>
             `;
@@ -575,32 +583,28 @@
         listDiv.innerHTML = html;
     }
 
-    // 快捷填入短评
-    function fillReview(index, text) {
-        document.getElementById(`reviewInput_${index}`).value = text;
-        saveMyReview(index); // 自动保存
-    }
-
-    // 狂点连击与特效
+    // ==========================================
+    // 6. 👍 狂点连击与特效
+    // ==========================================
     async function voteProduct(dutchName, action, event) {
-        // 1. 触发屏幕飞出 +1 特效
-        const plus = document.createElement('div');
-        plus.className = 'floating-plus';
-        plus.innerText = action === 'like' ? '👍 +1' : '💣 +1';
-        plus.style.color = action === 'like' ? '#10B981' : '#EF4444';
-        plus.style.left = (event.clientX - 10) + 'px';
-        plus.style.top = (event.clientY - 20) + 'px';
-        document.body.appendChild(plus);
-        setTimeout(() => plus.remove(), 800);
+        if(event) {
+            const plus = document.createElement('div');
+            plus.className = 'floating-plus';
+            plus.innerText = action === 'like' ? '👍 +1' : '💣 +1';
+            plus.style.color = action === 'like' ? '#10B981' : '#EF4444';
+            plus.style.left = (event.clientX - 10) + 'px';
+            plus.style.top = (event.clientY - 20) + 'px';
+            document.body.appendChild(plus);
+            setTimeout(() => plus.remove(), 800);
+        }
 
-        // 2. 静默发送请求给服务器（去掉 await 和 alert，让用户可以疯狂连点）
+        // 静默发给后端
         fetch('/api/vote', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ dutch_name: dutchName, action: action })
         }).catch(err => console.error("投票小错误", err));
 
-        // 3. 记录本地状态供海报使用
+        // 记在本地
         let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
         let idx = history.findIndex(item => item.dutch_name === dutchName);
         if(idx !== -1) {
@@ -609,72 +613,57 @@
         }
     }
 
-    function saveMyReview(index) {
-        const inputVal = document.getElementById(`reviewInput_${index}`).value.trim();
-        let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
-        history[index].my_review = inputVal;
-        localStorage.setItem('hebao_history', JSON.stringify(history));
-        alert("✅ 短评已保存！点『生成海报』看看效果吧！");
+    function voteProductDetail(action, event) {
+        event.stopPropagation(); 
+        if(!currentDetailData) return;
+        voteProduct(currentDetailData.dutch_name, action, event);
     }
 
-    // 改造3：极简大图版海报生成器
-    async function generatePoster(index) {
-        let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
-        const item = history[index];
+    // ==========================================
+    // 7. 📸 海报引擎 (支持从详情页生成)
+    // ==========================================
+    async function generatePosterFromDetail() {
+        if(!currentDetailData) return;
+        const item = currentDetailData;
         
-        // 填装数据：荷兰语霸占 C 位，中文变小
         document.getElementById('ptDutch').innerText = item.dutch_name || 'Unknown';
         document.getElementById('ptChinese').innerText = item.chinese_name || '未知商品';
         
-        // 填装图片
         const imgElement = document.getElementById('ptImage');
-        if(item.img_src) {
-            imgElement.src = item.img_src;
-        } else {
-            imgElement.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23eee'/%3E%3Ctext x='50%25' y='50%25' font-size='14' fill='%23aaa' text-anchor='middle' dy='.3em'%3E暂无图片%3C/text%3E%3C/svg%3E";
+        if(item.img_src) { 
+            imgElement.src = item.img_src; 
+        } else { 
+            imgElement.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23eee'/%3E%3C/svg%3E"; 
         }
 
-        // 显示印章 (判断用户点的是顶还是踩)
         const badge = document.getElementById('ptBadge');
         if(item.my_vote === 'like') {
-            badge.className = 'pt-badge like';
-            badge.innerText = '👍 闭眼入';
-            badge.style.display = 'block';
+            badge.className = 'pt-badge like'; badge.innerText = '👍 闭眼入'; badge.style.display = 'block';
         } else if (item.my_vote === 'dislike') {
-            badge.className = 'pt-badge dislike';
-            badge.innerText = '💣 快逃！';
-            badge.style.display = 'block';
-        } else {
-            badge.style.display = 'none'; // 没评价就不显示印章
-        }
+            badge.className = 'pt-badge dislike'; badge.innerText = '💣 快逃！'; badge.style.display = 'block';
+        } else { badge.style.display = 'none'; }
         
-        // 显示一句话短评
         const userReviewBox = document.getElementById('ptUserReviewBox');
         if (item.my_review && item.my_review.trim() !== '') {
-            userReviewBox.style.display = 'block';
-            document.getElementById('ptUserReview').innerText = `“${item.my_review}”`;
-        } else {
-            userReviewBox.style.display = 'none';
+            userReviewBox.style.display = 'block'; document.getElementById('ptUserReview').innerText = `“${item.my_review}”`;
+        } else { 
+            userReviewBox.style.display = 'none'; 
         }
 
         wxLoadingMock("正在生成美图...");
 
         const templateNode = document.getElementById('poster-template');
         try {
-            const canvas = await html2canvas(templateNode, {
-                scale: 2, 
-                useCORS: true,
-                backgroundColor: null
-            });
-
+            const canvas = await html2canvas(templateNode, { scale: 2, useCORS: true, backgroundColor: null });
             const imgUrl = canvas.toDataURL("image/png");
             document.getElementById('posterResultImg').src = imgUrl;
-            
             document.body.removeChild(document.getElementById('mockLoadingBox'));
             document.getElementById('posterModal').classList.add('show');
         } catch (error) {
             alert("海报生成失败了，请重试！");
-            document.body.removeChild(document.getElementById('mockLoadingBox'));
+            if (document.getElementById('mockLoadingBox')) {
+                document.body.removeChild(document.getElementById('mockLoadingBox'));
+            }
         }
     }
 
@@ -684,28 +673,6 @@
         div.style.cssText = 'position:fixed; top:45%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.8); color:#fff; padding:15px 25px; border-radius:10px; z-index:9999; font-size:14px;';
         div.innerText = text;
         document.body.appendChild(div);
-    }
-
-    // ==========================================
-    // 下方保留原来的 voteProduct 接口调用...
-    // ==========================================
-
-    async function voteProduct(dutchName, action) {
-        try {
-            const response = await fetch('/api/vote', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ dutch_name: dutchName, action: action })
-            });
-            const resData = await response.json();
-            if(response.ok) {
-                alert(action === 'like' ? '👍 收到！已为该神仙商品打 Call' : '💣 收到！已帮大家排雷');
-            } else {
-                alert('投票失败: ' + resData.error);
-            }
-        } catch(err) {
-            alert('网络出了点小差错');
-        }
     }
 </script>
 
