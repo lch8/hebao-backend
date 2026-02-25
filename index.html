@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>荷包管家 🇳🇱 - 荷兰超市避雷神器</title>
     <style>
-        /* 🎨 网页版高颜值 CSS */
+        /* 🎨 全局 CSS */
         body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #F7F8FA; color: #333; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; min-height: 100vh; box-sizing: border-box; }
         
@@ -13,15 +13,20 @@
         .title { font-size: 28px; font-weight: 800; color: #111827; margin: 0; }
         .subtitle { font-size: 14px; color: #888; margin-top: 5px; }
 
-        /* 📸 拍照上传区 */
+        /* 📱 页面容器切换逻辑 */
+        .page-section { display: none; padding-bottom: 80px; animation: fadeIn 0.3s ease; }
+        .page-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* 📸 扫雷页: 拍照上传区 */
         .upload-box { position: relative; width: 100%; height: 220px; background: #FFF; border-radius: 16px; border: 2px dashed #D1D5DB; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); transition: all 0.3s; }
         .upload-box:hover { background: #F9FAFB; }
         .icon-camera { font-size: 48px; margin-bottom: 10px; }
         .upload-text { font-size: 16px; color: #6B7280; font-weight: 500; }
         .preview-img { width: 100%; height: 100%; object-fit: contain; display: none; }
-        #fileInput { display: none; } /* 隐藏原生文件输入框 */
+        #fileInput { display: none; }
 
-        /* 🟢 扫描动画 */
+        /* 🟢 扫描特效 */
         .scan-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.6); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
         .scan-line { position: absolute; top: 0; left: 0; right: 0; height: 4px; background: #10B981; box-shadow: 0 0 10px #10B981; animation: scanAnim 2s linear infinite; }
         @keyframes scanAnim { 0% { top: 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
@@ -30,14 +35,11 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         /* 📇 结果卡片 */
-        #resultCard { display: none; margin-top: 30px; background: #FFF; border-radius: 20px; padding: 25px; box-shadow: 0 8px 30px rgba(0,0,0,0.08); animation: fadeIn 0.5s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
+        #resultCard { display: none; margin-top: 30px; background: #FFF; border-radius: 20px; padding: 25px; box-shadow: 0 8px 30px rgba(0,0,0,0.08); }
         .name-box { margin-bottom: 15px; }
         .item-name { display: block; font-size: 24px; font-weight: 800; color: #111827; }
         .item-dutch { display: block; font-size: 14px; color: #9CA3AF; margin-top: 4px; font-style: italic; }
         .feature-tag { display: inline-block; background: #FEF3C7; color: #D97706; font-size: 13px; padding: 6px 14px; border-radius: 20px; font-weight: bold; margin-bottom: 20px; }
-
         .info-block { background: #F9FAFB; border-radius: 12px; padding: 15px; margin-bottom: 15px; }
         .info-block.warning { background: #FEF2F2; border: 1px solid #FCA5A5; }
         .block-title { font-size: 15px; font-weight: 800; color: #374151; margin-bottom: 8px; display: flex; align-items: center; }
@@ -54,111 +56,110 @@
         .chat-bubble { max-width: 80%; padding: 10px 15px; border-radius: 12px; font-size: 14px; line-height: 1.5; word-wrap: break-word; }
         .bubble-user { background: #10B981; color: #FFF; border-bottom-right-radius: 2px; }
         .bubble-ai { background: #F3F4F6; color: #1F2937; border-bottom-left-radius: 2px; }
-        
         .input-area { display: flex; gap: 10px; }
         #askInput { flex: 1; height: 44px; background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 22px; padding: 0 20px; font-size: 14px; outline: none; }
-        #askInput:focus { border-color: #10B981; }
-        #sendBtn { height: 46px; padding: 0 20px; background: #10B981; color: #FFF; border: none; border-radius: 23px; font-size: 14px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        #sendBtn:disabled { background: #E5E7EB; color: #9CA3AF; cursor: not-allowed; }
-
-        /* 👆 操作按钮 */
+        #sendBtn { height: 46px; padding: 0 20px; background: #10B981; color: #FFF; border: none; border-radius: 23px; font-size: 14px; font-weight: bold; cursor: pointer; }
+        #sendBtn:disabled { background: #E5E7EB; color: #9CA3AF; }
+        
+        /* 👆 扫雷页操作按钮 */
         .action-buttons { margin-top: 30px; display: flex; flex-direction: column; gap: 15px; }
-        .btn { width: 100%; height: 50px; border-radius: 25px; font-size: 16px; font-weight: bold; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.2s; }
+        .btn { width: 100%; height: 50px; border-radius: 25px; font-size: 16px; font-weight: bold; border: none; cursor: pointer; display: flex; justify-content: center; align-items: center; }
         .btn-primary { background: #111827; color: #FFF; }
-        .btn-primary:active { background: #374151; }
         .btn-secondary { background: transparent; color: #EF4444; border: 2px solid #EF4444; }
-        .btn-secondary:active { background: #FEF2F2; }
 
-        /* 📱 页面容器，留出底部导航的空间 */
-    .page-section { display: none; padding-bottom: 80px; }
-    .page-section.active { display: block; }
+        /* 🔽 底部导航栏 */
+        .tab-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 65px; background: #FFF; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-around; align-items: center; z-index: 100; }
+        .tab-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #9CA3AF; cursor: pointer; width: 33%; }
+        .tab-item.active { color: #10B981; }
+        .tab-icon { font-size: 24px; margin-bottom: 4px; }
+        .tab-text { font-size: 12px; font-weight: bold; }
 
-    /* 🔽 底部导航栏 */
-    .tab-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 65px; background: #FFF; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-around; align-items: center; z-index: 100; max-width: 600px; margin: 0 auto; }
-    .tab-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #9CA3AF; cursor: pointer; transition: 0.2s; width: 33%; }
-    .tab-item.active { color: #10B981; }
-    .tab-icon { font-size: 24px; margin-bottom: 4px; }
-    .tab-text { font-size: 12px; font-weight: bold; }
-
-    /* 👣 足迹列表样式 */
-    .history-card { background: #FFF; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); display: flex; flex-direction: column; }
-    .history-header { font-weight: bold; font-size: 16px; margin-bottom: 5px; }
-    .history-dutch { font-size: 12px; color: #888; margin-bottom: 10px; }
-    .history-actions { display: flex; justify-content: space-between; margin-top: 10px; border-top: 1px dashed #eee; padding-top: 10px; }
-    .action-btn { background: #f0f0f0; border: none; padding: 5px 15px; border-radius: 15px; font-size: 12px; cursor: pointer; }
-</style>
+        /* 👣 足迹列表样式 */
+        .history-card { background: #FFF; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); display: flex; flex-direction: column; }
+        .history-header { font-weight: bold; font-size: 16px; margin-bottom: 5px; color: #111827; }
+        .history-dutch { font-size: 12px; color: #9CA3AF; margin-bottom: 10px; font-style: italic; }
+        .history-actions { display: flex; justify-content: space-between; margin-top: 10px; border-top: 1px dashed #eee; padding-top: 10px; }
+        .action-btn { background: #f3f4f6; color:#374151; border: none; padding: 6px 15px; border-radius: 15px; font-size: 12px; cursor: pointer; font-weight:bold; }
+        .action-btn:active { background: #e5e7eb; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="header">
-        <h1 class="title">荷包管家 🇳🇱</h1>
-        <div class="subtitle">留学生专属的荷兰超市避雷神器</div>
+<div class="tab-bar">
+    <div class="tab-item active" onclick="switchTab('scan', this)">
+        <span class="tab-icon">📸</span>
+        <span class="tab-text">扫雷</span>
     </div>
-
-    <div class="upload-box" id="uploadBox" onclick="document.getElementById('fileInput').click()">
-        <div id="uploadHint">
-            <div class="icon-camera">📸</div>
-            <div class="upload-text">点击拍个照，管家帮你排雷</div>
-        </div>
-        <img id="previewImg" class="preview-img" src="" alt="商品预览">
-        
-        <div class="scan-overlay" id="scanOverlay">
-            <div class="scan-line"></div>
-            <div class="spinner"></div>
-            <div class="scan-text">管家大脑飞速运转中...</div>
-        </div>
-        
-        <input type="file" id="fileInput" accept="image/*" onchange="handleFileSelect(event)">
+    <div class="tab-item" onclick="switchTab('footprint', this)">
+        <span class="tab-icon">👣</span>
+        <span class="tab-text">足迹</span>
     </div>
-
-    <div id="resultCard">
-        <div class="name-box">
-            <span class="item-name" id="resChineseName">加载中...</span>
-            <span class="item-dutch" id="resDutchName">Loading...</span>
-        </div>
-        <div class="feature-tag" id="resFeatures" style="display: none;">✨ 核心卖点</div>
-
-        <div class="info-block" id="blockInsight" style="display: none;">
-            <div class="block-title">💡 管家锐评</div>
-            <p class="block-text" id="resInsight"></p>
-        </div>
-
-        <div class="info-block" id="blockPairing" style="display: none;">
-            <div class="block-title">🍳 神仙吃法 / 爆改指南</div>
-            <p class="block-text" id="resPairing"></p>
-        </div>
-
-        <div class="info-block warning" id="blockWarning" style="display: none;">
-            <div class="block-title warning-title">⚠️ 避雷预警</div>
-            <p class="block-text" id="resWarning"></p>
-        </div>
-
-        <div class="info-block" id="blockAlternatives" style="display: none;">
-            <div class="block-title">🛍️ 穷鬼平替 / 土豪升级</div>
-            <p class="block-text" id="resAlternatives"></p>
-        </div>
-
-        <div class="qa-section">
-            <div class="qa-divider">💬 追加拷问</div>
-            <div id="chatHistory"></div>
-            <div class="input-area">
-                <input type="text" id="askInput" placeholder="例如：空气炸锅怎么定时间？" onkeypress="handleEnter(event)">
-                <button id="sendBtn" onclick="sendQuestion()">发送</button>
-            </div>
-        </div>
-
-        <div class="action-buttons">
-            <button class="btn btn-primary" id="saveBtn" onclick="saveData()">🟢 神准！收录进库</button>
-            <button class="btn btn-secondary" onclick="resetApp()">🔴 测下一个</button>
-        </div>
+    <div class="tab-item" onclick="switchTab('trending', this)">
+        <span class="tab-icon">🔥</span>
+        <span class="tab-text">榜单</span>
     </div>
 </div>
 
-    <div class="container">
+<div class="container">
     <div id="page-scan" class="page-section active">
+        <div class="header">
+            <h1 class="title">荷包管家 🇳🇱</h1>
+            <div class="subtitle">留学生专属的荷兰超市避雷神器</div>
         </div>
+
+        <div class="upload-box" id="uploadBox" onclick="document.getElementById('fileInput').click()">
+            <div id="uploadHint">
+                <div class="icon-camera">📸</div>
+                <div class="upload-text">点击拍个照，管家帮你排雷</div>
+            </div>
+            <img id="previewImg" class="preview-img" src="" alt="预览">
+            <div class="scan-overlay" id="scanOverlay">
+                <div class="scan-line"></div>
+                <div class="spinner"></div>
+                <div class="scan-text">管家大脑飞速运转中...</div>
+            </div>
+            <input type="file" id="fileInput" accept="image/*" onchange="handleFileSelect(event)">
+        </div>
+
+        <div id="resultCard">
+            <div class="name-box">
+                <span class="item-name" id="resChineseName"></span>
+                <span class="item-dutch" id="resDutchName"></span>
+            </div>
+            <div class="feature-tag" id="resFeatures" style="display: none;"></div>
+
+            <div class="info-block" id="blockInsight" style="display: none;">
+                <div class="block-title">💡 管家锐评</div>
+                <p class="block-text" id="resInsight"></p>
+            </div>
+            <div class="info-block" id="blockPairing" style="display: none;">
+                <div class="block-title">🍳 神仙吃法 / 爆改指南</div>
+                <p class="block-text" id="resPairing"></p>
+            </div>
+            <div class="info-block warning" id="blockWarning" style="display: none;">
+                <div class="block-title warning-title">⚠️ 避雷预警</div>
+                <p class="block-text" id="resWarning"></p>
+            </div>
+            <div class="info-block" id="blockAlternatives" style="display: none;">
+                <div class="block-title">🛍️ 穷鬼平替 / 土豪升级</div>
+                <p class="block-text" id="resAlternatives"></p>
+            </div>
+
+            <div class="qa-section">
+                <div class="qa-divider">💬 追加拷问</div>
+                <div id="chatHistory"></div>
+                <div class="input-area">
+                    <input type="text" id="askInput" placeholder="例如：空气炸锅怎么定时间？" onkeypress="handleEnter(event)">
+                    <button id="sendBtn" onclick="sendQuestion()">发送</button>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-primary" id="saveBtn" onclick="saveData()">🟢 神准！收录进库</button>
+                <button class="btn btn-secondary" onclick="resetApp()">🔴 测下一个</button>
+            </div>
+        </div>
+    </div>
 
     <div id="page-footprint" class="page-section">
         <div class="header">
@@ -175,62 +176,60 @@
             <div class="subtitle">全网华人票选高赞/巨坑商品</div>
         </div>
         <div style="text-align: center; color: #888; margin-top: 50px;">
-            榜单接口正在紧锣密鼓开发中...
+            榜单正在紧锣密鼓施工中...敬请期待！
         </div>
     </div>
 </div>
 
-<div class="tab-bar">
-    <div class="tab-item active" onclick="switchTab('scan', this)">
-        <span class="tab-icon">📸</span>
-        <span class="tab-text">扫码避雷</span>
-    </div>
-    <div class="tab-item" onclick="switchTab('footprint', this)">
-        <span class="tab-icon">👣</span>
-        <span class="tab-text">我的足迹</span>
-    </div>
-    <div class="tab-item" onclick="switchTab('trending', this)">
-        <span class="tab-icon">🔥</span>
-        <span class="tab-text">避雷榜单</span>
-    </div>
-</div>
-
 <script>
-    // 全局存放当前识别的商品数据，方便追问和收录
+    // ==========================================
+    // 1. 导航切换逻辑 (解决你点不动的问题)
+    // ==========================================
+    function switchTab(pageId, element) {
+        // 隐藏所有 section，去掉所有 active 类
+        document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+        
+        // 显示对应的 section，高亮被点击的底部图标
+        document.getElementById('page-' + pageId).classList.add('active');
+        element.classList.add('active');
+
+        // 如果切到了足迹页，立刻去本地缓存里读取数据并渲染
+        if (pageId === 'footprint') {
+            renderFootprints();
+        }
+    }
+
+    // ==========================================
+    // 2. 扫雷核心逻辑 (保留之前的完美代码)
+    // ==========================================
     let currentProductData = null;
 
-    // 处理图片选择
     function handleFileSelect(event) {
         const file = event.target.files[0];
         if (!file) return;
 
         const reader = new FileReader();
         reader.onload = function(e) {
-            // UI 切换：隐藏提示，显示图片和扫描特效
             document.getElementById('uploadHint').style.display = 'none';
-            const preview = document.getElementById('previewImg');
-            preview.src = e.target.result;
-            preview.style.display = 'block';
+            document.getElementById('previewImg').src = e.target.result;
+            document.getElementById('previewImg').style.display = 'block';
             document.getElementById('scanOverlay').style.display = 'flex';
             document.getElementById('resultCard').style.display = 'none';
 
-            // 提取 Base64 开始请求
             const base64String = e.target.result.split(',')[1];
             scanProduct(base64String);
         };
         reader.readAsDataURL(file);
     }
 
-    // 调用后端接口
     async function scanProduct(base64Str) {
         try {
-            // 💡 重点：由于 index.html 和 api 在同一个 Vercel 域名下，直接用相对路径 /api/scan 即可！
             const response = await fetch('/api/scan', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ imageBase64: base64Str })
             });
-            
             const data = await response.json();
             
             if (!response.ok) {
@@ -241,6 +240,9 @@
 
             currentProductData = data;
             renderResult(data);
+            
+            // 💡 重点：一扫完，不管用户有没有点“收录”，都自动记入本地足迹！
+            saveToLocalFootprint(data);
 
         } catch (error) {
             alert("网络断开了：" + error.message);
@@ -248,23 +250,18 @@
         }
     }
 
-    // 渲染结果卡片
     function renderResult(data) {
         document.getElementById('scanOverlay').style.display = 'none';
         document.getElementById('resultCard').style.display = 'block';
-
-        // 填充文字
         document.getElementById('resChineseName').innerText = data.chinese_name || '未知商品';
         document.getElementById('resDutchName').innerText = data.dutch_name || 'Unknown';
 
-        // 控制各个区块的显示与隐藏
         toggleBlock('resFeatures', data.features, '✨ ' + data.features);
         toggleBlock('blockInsight', data.insight, data.insight, 'resInsight');
         toggleBlock('blockPairing', data.pairing, data.pairing, 'resPairing');
         toggleBlock('blockWarning', data.warning, data.warning, 'resWarning');
         toggleBlock('blockAlternatives', data.alternatives, data.alternatives, 'resAlternatives');
         
-        // 清空历史聊天
         document.getElementById('chatHistory').innerHTML = '';
         document.getElementById('askInput').value = '';
     }
@@ -280,12 +277,8 @@
         }
     }
 
-    // 监听回车键发送
-    function handleEnter(e) {
-        if (e.key === 'Enter') sendQuestion();
-    }
+    function handleEnter(e) { if (e.key === 'Enter') sendQuestion(); }
 
-    // 追问功能 (对接 ask.js)
     async function sendQuestion() {
         const input = document.getElementById('askInput');
         const question = input.value.trim();
@@ -294,12 +287,10 @@
         const chatBox = document.getElementById('chatHistory');
         const sendBtn = document.getElementById('sendBtn');
         
-        // 渲染用户的气泡
         chatBox.innerHTML += `<div class="chat-row row-user"><div class="chat-bubble bubble-user">${question}</div></div>`;
         input.value = '';
         sendBtn.disabled = true;
 
-        // 添加 AI 的 loading 气泡
         const loadingId = 'loading-' + Date.now();
         chatBox.innerHTML += `<div class="chat-row row-ai" id="${loadingId}"><div class="chat-bubble bubble-ai">敲字中...</div></div>`;
 
@@ -307,16 +298,10 @@
             const response = await fetch('/api/ask', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    productName: currentProductData.dutch_name,
-                    insight: currentProductData.insight,
-                    question: question
-                })
+                body: JSON.stringify({ productName: currentProductData.dutch_name, insight: currentProductData.insight, question: question })
             });
             const data = await response.json();
-            
             document.getElementById(loadingId).remove();
-            
             if (response.ok) {
                 chatBox.innerHTML += `<div class="chat-row row-ai"><div class="chat-bubble bubble-ai">${data.reply}</div></div>`;
             } else {
@@ -329,12 +314,10 @@
         sendBtn.disabled = false;
     }
 
-    // 收录进数据库 (对接 save.js)
     async function saveData() {
         if (!currentProductData) return;
         const btn = document.getElementById('saveBtn');
-        btn.innerText = "收录中...";
-        btn.disabled = true;
+        btn.innerText = "收录中..."; btn.disabled = true;
 
         try {
             const response = await fetch('/api/save', {
@@ -343,23 +326,19 @@
                 body: JSON.stringify(currentProductData)
             });
             const data = await response.json();
-            
             if (response.ok) {
-                btn.innerText = "✅ 已永久收录！";
+                btn.innerText = "✅ 已永久收录到大金库！";
                 btn.style.background = "#10B981";
             } else {
                 alert("收录失败：" + data.error);
-                btn.innerText = "🟢 神准！收录进库";
-                btn.disabled = false;
+                btn.innerText = "🟢 神准！收录进库"; btn.disabled = false;
             }
         } catch (err) {
             alert("网络请求失败！");
-            btn.innerText = "🟢 神准！收录进库";
-            btn.disabled = false;
+            btn.innerText = "🟢 神准！收录进库"; btn.disabled = false;
         }
     }
 
-    // 重置状态拍下一个
     function resetApp() {
         document.getElementById('fileInput').value = '';
         document.getElementById('previewImg').style.display = 'none';
@@ -369,80 +348,63 @@
         currentProductData = null;
     }
 
-    // 切换底部 Tab 的逻辑
-function switchTab(pageId, element) {
-    // 隐藏所有页面，去掉所有 Tab 的高亮
-    document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
-    
-    // 显示对应的页面和高亮
-    document.getElementById('page-' + pageId).classList.add('active');
-    element.classList.add('active');
-
-    // 如果切换到足迹页，重新渲染足迹列表
-    if (pageId === 'footprint') {
-        renderFootprints();
-    }
-}
-
-// 修改你之前的 scanProduct 成功后的逻辑，把结果存进 LocalStorage
-// 在 scanProduct 的 success 拿到 data 后，加入这行：
-function saveToLocalFootprint(data) {
-    let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
-    // 检查是否已经存过，防止重复
-    const exists = history.find(item => item.dutch_name === data.dutch_name);
-    if (!exists) {
-        history.unshift(data); // 插到最前面
-        localStorage.setItem('hebao_history', JSON.stringify(history));
-    }
-}
-
-// 渲染足迹列表
-function renderFootprints() {
-    const listDiv = document.getElementById('footprintList');
-    let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
-    
-    if (history.length === 0) {
-        listDiv.innerHTML = '<div style="text-align:center; color:#888; margin-top:40px;">还没扫过任何商品哦~</div>';
-        return;
-    }
-
-    let html = '';
-    history.forEach((item, index) => {
-        html += `
-            <div class="history-card">
-                <div class="history-header">${item.chinese_name}</div>
-                <div class="history-dutch">${item.dutch_name}</div>
-                <div style="font-size: 13px; color: #555;">${item.insight}</div>
-                <div class="history-actions">
-                    <button class="action-btn" onclick="voteProduct('${item.dutch_name}', 'like')">👍 推荐</button>
-                    <button class="action-btn" onclick="voteProduct('${item.dutch_name}', 'dislike')">💣 避雷</button>
-                    <button class="action-btn" style="background:#10B981; color:#FFF;" onclick="generatePoster(${index})">📤 生成海报</button>
-                </div>
-            </div>
-        `;
-    });
-    listDiv.innerHTML = html;
-}
-
-// 调用你后端的 vote.js 点赞接口
-async function voteProduct(dutchName, action) {
-    try {
-        const response = await fetch('/api/vote', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ dutch_name: dutchName, action: action })
-        });
-        const resData = await response.json();
-        if(response.ok) {
-            alert(action === 'like' ? '👍 点赞成功！' : '💣 排雷成功！');
-        } else {
-            alert('投票失败: ' + resData.error);
+    // ==========================================
+    // 3. 足迹本地缓存系统
+    // ==========================================
+    function saveToLocalFootprint(data) {
+        let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
+        // 防止同一个商品存好几次
+        const exists = history.find(item => item.dutch_name === data.dutch_name);
+        if (!exists) {
+            history.unshift(data); // 永远把最新扫的放在数组最前面
+            localStorage.setItem('hebao_history', JSON.stringify(history));
         }
-    } catch(err) {
-        alert('网络错误');
     }
-}
+
+    function renderFootprints() {
+        const listDiv = document.getElementById('footprintList');
+        let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
+        
+        if (history.length === 0) {
+            listDiv.innerHTML = '<div style="text-align:center; color:#888; margin-top:40px;">快去首页扫几个超市盲盒吧~</div>';
+            return;
+        }
+
+        let html = '';
+        history.forEach((item, index) => {
+            html += `
+                <div class="history-card">
+                    <div class="history-header">${item.chinese_name || '未命名'}</div>
+                    <div class="history-dutch">${item.dutch_name || ''}</div>
+                    <div style="font-size: 13px; color: #4B5563; margin-bottom: 10px; line-height: 1.5;">${item.insight || '暂无评价'}</div>
+                    <div class="history-actions">
+                        <button class="action-btn" onclick="voteProduct('${item.dutch_name}', 'like')">👍 推荐</button>
+                        <button class="action-btn" onclick="voteProduct('${item.dutch_name}', 'dislike')">💣 避雷</button>
+                        <button class="action-btn" style="background:#10B981; color:#FFF;" onclick="alert('即将上线：生成精美朋友圈海报！')">📤 炫耀一下</button>
+                    </div>
+                </div>
+            `;
+        });
+        listDiv.innerHTML = html;
+    }
+
+    async function voteProduct(dutchName, action) {
+        try {
+            const response = await fetch('/api/vote', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ dutch_name: dutchName, action: action })
+            });
+            const resData = await response.json();
+            if(response.ok) {
+                alert(action === 'like' ? '👍 收到！已为该神仙商品打 Call' : '💣 收到！已帮大家排雷');
+            } else {
+                alert('投票失败: ' + resData.error);
+            }
+        } catch(err) {
+            alert('网络出了点小差错');
+        }
+    }
 </script>
 
 </body>
