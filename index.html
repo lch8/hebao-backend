@@ -68,6 +68,25 @@
         .btn-primary:active { background: #374151; }
         .btn-secondary { background: transparent; color: #EF4444; border: 2px solid #EF4444; }
         .btn-secondary:active { background: #FEF2F2; }
+
+        /* 📱 页面容器，留出底部导航的空间 */
+    .page-section { display: none; padding-bottom: 80px; }
+    .page-section.active { display: block; }
+
+    /* 🔽 底部导航栏 */
+    .tab-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 65px; background: #FFF; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); display: flex; justify-content: space-around; align-items: center; z-index: 100; max-width: 600px; margin: 0 auto; }
+    .tab-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #9CA3AF; cursor: pointer; transition: 0.2s; width: 33%; }
+    .tab-item.active { color: #10B981; }
+    .tab-icon { font-size: 24px; margin-bottom: 4px; }
+    .tab-text { font-size: 12px; font-weight: bold; }
+
+    /* 👣 足迹列表样式 */
+    .history-card { background: #FFF; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); display: flex; flex-direction: column; }
+    .history-header { font-weight: bold; font-size: 16px; margin-bottom: 5px; }
+    .history-dutch { font-size: 12px; color: #888; margin-bottom: 10px; }
+    .history-actions { display: flex; justify-content: space-between; margin-top: 10px; border-top: 1px dashed #eee; padding-top: 10px; }
+    .action-btn { background: #f0f0f0; border: none; padding: 5px 15px; border-radius: 15px; font-size: 12px; cursor: pointer; }
+</style>
     </style>
 </head>
 <body>
@@ -134,6 +153,45 @@
             <button class="btn btn-primary" id="saveBtn" onclick="saveData()">🟢 神准！收录进库</button>
             <button class="btn btn-secondary" onclick="resetApp()">🔴 测下一个</button>
         </div>
+    </div>
+</div>
+
+    <div class="container">
+    <div id="page-scan" class="page-section active">
+        </div>
+
+    <div id="page-footprint" class="page-section">
+        <div class="header">
+            <h1 class="title">我的足迹 👣</h1>
+            <div class="subtitle">你扫过的都在这里，赶紧写评价吧</div>
+        </div>
+        <div id="footprintList">
+            </div>
+    </div>
+
+    <div id="page-trending" class="page-section">
+        <div class="header">
+            <h1 class="title">避雷榜单 🔥</h1>
+            <div class="subtitle">全网华人票选高赞/巨坑商品</div>
+        </div>
+        <div style="text-align: center; color: #888; margin-top: 50px;">
+            榜单接口正在紧锣密鼓开发中...
+        </div>
+    </div>
+</div>
+
+<div class="tab-bar">
+    <div class="tab-item active" onclick="switchTab('scan', this)">
+        <span class="tab-icon">📸</span>
+        <span class="tab-text">扫码避雷</span>
+    </div>
+    <div class="tab-item" onclick="switchTab('footprint', this)">
+        <span class="tab-icon">👣</span>
+        <span class="tab-text">我的足迹</span>
+    </div>
+    <div class="tab-item" onclick="switchTab('trending', this)">
+        <span class="tab-icon">🔥</span>
+        <span class="tab-text">避雷榜单</span>
     </div>
 </div>
 
@@ -310,6 +368,81 @@
         document.getElementById('resultCard').style.display = 'none';
         currentProductData = null;
     }
+
+    // 切换底部 Tab 的逻辑
+function switchTab(pageId, element) {
+    // 隐藏所有页面，去掉所有 Tab 的高亮
+    document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+    
+    // 显示对应的页面和高亮
+    document.getElementById('page-' + pageId).classList.add('active');
+    element.classList.add('active');
+
+    // 如果切换到足迹页，重新渲染足迹列表
+    if (pageId === 'footprint') {
+        renderFootprints();
+    }
+}
+
+// 修改你之前的 scanProduct 成功后的逻辑，把结果存进 LocalStorage
+// 在 scanProduct 的 success 拿到 data 后，加入这行：
+function saveToLocalFootprint(data) {
+    let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
+    // 检查是否已经存过，防止重复
+    const exists = history.find(item => item.dutch_name === data.dutch_name);
+    if (!exists) {
+        history.unshift(data); // 插到最前面
+        localStorage.setItem('hebao_history', JSON.stringify(history));
+    }
+}
+
+// 渲染足迹列表
+function renderFootprints() {
+    const listDiv = document.getElementById('footprintList');
+    let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
+    
+    if (history.length === 0) {
+        listDiv.innerHTML = '<div style="text-align:center; color:#888; margin-top:40px;">还没扫过任何商品哦~</div>';
+        return;
+    }
+
+    let html = '';
+    history.forEach((item, index) => {
+        html += `
+            <div class="history-card">
+                <div class="history-header">${item.chinese_name}</div>
+                <div class="history-dutch">${item.dutch_name}</div>
+                <div style="font-size: 13px; color: #555;">${item.insight}</div>
+                <div class="history-actions">
+                    <button class="action-btn" onclick="voteProduct('${item.dutch_name}', 'like')">👍 推荐</button>
+                    <button class="action-btn" onclick="voteProduct('${item.dutch_name}', 'dislike')">💣 避雷</button>
+                    <button class="action-btn" style="background:#10B981; color:#FFF;" onclick="generatePoster(${index})">📤 生成海报</button>
+                </div>
+            </div>
+        `;
+    });
+    listDiv.innerHTML = html;
+}
+
+// 调用你后端的 vote.js 点赞接口
+async function voteProduct(dutchName, action) {
+    try {
+        const response = await fetch('/api/vote', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ dutch_name: dutchName, action: action })
+        });
+        const resData = await response.json();
+        if(response.ok) {
+            alert(action === 'like' ? '👍 点赞成功！' : '💣 排雷成功！');
+        } else {
+            alert('投票失败: ' + resData.error);
+        }
+    } catch(err) {
+        alert('网络错误');
+    }
+}
 </script>
 
 </body>
