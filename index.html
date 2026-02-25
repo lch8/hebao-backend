@@ -100,8 +100,8 @@
         .action-icon.disliked { color: #EF4444; }
 
         /* ✨ 高奢版海报按钮 */
-        .poster-btn-chic { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 900; color: #854D0E; background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); padding: 6px 14px; border-radius: 20px; cursor: pointer; box-shadow: 0 2px 8px rgba(251, 191, 36, 0.2); transition: 0.2s;}
-        .poster-btn-chic:active { transform: scale(0.95); box-shadow: none; }
+        .-btn-chic { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 900; color: #854D0E; background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); padding: 6px 14px; border-radius: 20px; cursor: pointer; box-shadow: 0 2px 8px rgba(251, 191, 36, 0.2); transition: 0.2s;}
+        .-btn-chic:active { transform: scale(0.95); box-shadow: none; }
 
         /* ✍️ 无缝融合的点评框 (删除单选按钮) */
         .ugc-compact-box { margin: 0 15px 15px; border: 1px solid #E5E7EB; border-radius: 12px; display: flex; align-items: center; overflow: hidden; background: #FFF; transition: border-color 0.3s, background 0.3s, box-shadow 0.3s; }
@@ -117,7 +117,7 @@
         }
 
         /* 海报 */
-        .poster-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 999; justify-content: center; align-items: center; flex-direction: column; animation: fadeIn 0.3s ease; }
+        .-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 999; justify-content: center; align-items: center; flex-direction: column; animation: fadeIn 0.3s ease; }
         .poster-modal.show { display: flex; }
         .poster-result-img { max-width: 80%; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .close-poster-btn { margin-top: 25px; background: #FFF; color: #111827; border: none; padding: 12px 35px; border-radius: 25px; font-weight: bold; font-size: 15px; cursor: pointer; }
@@ -249,16 +249,25 @@
 </div>
 
 <div id="poster-template">
-    <div style="background: #FFF; border-radius: 16px; overflow: hidden; padding: 20px;">
-        <img id="ptImage" style="width: 100%; height: 260px; object-fit: cover; border-radius: 12px; margin-bottom: 15px;" src="" crossorigin="anonymous">
-        <div style="font-size: 24px; font-weight: 900; color: #111827; line-height: 1.2; margin-bottom: 6px; word-wrap: break-word;" id="ptDutch">Dutch Name</div>
-        <div style="font-size: 14px; color: #6B7280; margin-bottom: 15px;" id="ptChinese">中文名</div>
-        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #E5E7EB; padding-top: 15px;">
+    <div id="ptWrapper" style="background: #FFF; border-radius: 16px; overflow: hidden; padding: 20px; border: 3px solid transparent;">
+        <div style="position: relative; width: 100%; height: 260px; background: #F9FAFB; border-radius: 12px; margin-bottom: 15px;">
+            <img id="ptImage" style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;" src="" crossorigin="anonymous">
+            <div id="ptBadge" style="display:none; position: absolute; bottom: 12px; right: 12px; padding: 6px 16px; border-radius: 20px; font-weight: 900; font-size: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); border: 2px solid #FFF;"></div>
+        </div>
+        
+        <div id="ptDutch" style="font-size: 24px; font-weight: 900; color: #111827; line-height: 1.2; margin-bottom: 6px; word-wrap: break-word;">Dutch Name</div>
+        <div id="ptChinese" style="font-size: 14px; color: #6B7280; margin-bottom: 15px;">中文名</div>
+        
+        <div id="ptUserReviewBox" style="display:none; background: rgba(255,255,255,0.6); border-radius: 10px; padding: 12px; margin-bottom: 15px; font-size: 14px; font-weight: bold; color: #111827; border-left: 4px solid #10B981;">
+            <span id="ptUserReview"></span>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #E5E7EB; padding-top: 15px;" id="ptDivider">
             <div>
-                <div style="font-size: 16px; font-weight: 900; color: #111827;">荷包管家 🇳🇱</div>
-                <div style="font-size: 13px; color: #10B981; margin-top: 4px; font-weight: bold;">来和大家一起排雷！</div>
+                <div style="font-size: 16px; font-weight: 900; color: #111827;" id="ptBrand">荷包管家 🇳🇱</div>
+                <div style="font-size: 13px; font-weight: bold; margin-top: 4px;" id="ptSlogan">来和大家一起排雷！</div>
             </div>
-            <img style="width: 55px; height: 55px; border-radius: 6px;" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://hebao-backend.vercel.app/" crossorigin="anonymous">
+            <img style="width: 55px; height: 55px; border-radius: 8px; border: 1px solid #eee;" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://hebao-backend.vercel.app/" crossorigin="anonymous">
         </div>
     </div>
 </div>
@@ -584,11 +593,76 @@
         let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
         const item = history[index];
         
+        // 1. 填入基础信息
         document.getElementById('ptDutch').innerText = item.dutch_name || 'Unknown';
         document.getElementById('ptChinese').innerText = item.chinese_name || '未知商品';
         document.getElementById('ptImage').src = item.img_src || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23eee'/%3E%3C/svg%3E"; 
 
-        wxLoadingMock("正在生成神图...");
+        // 2. 获取我们要“施法”的元素
+        const wrapper = document.getElementById('ptWrapper');
+        const badge = document.getElementById('ptBadge');
+        const dutchText = document.getElementById('ptDutch');
+        const slogan = document.getElementById('ptSlogan');
+        const divider = document.getElementById('ptDivider');
+        
+        const reviewBox = document.getElementById('ptUserReviewBox');
+        const reviewText = document.getElementById('ptUserReview');
+        
+        // 尝试提取用户在足迹里自己写的那条最新点评
+        let myLatestReview = "";
+        if (item.pairing) {
+            const lines = item.pairing.split('\n\n');
+            const myLine = lines.reverse().find(l => l.includes('网友点评')); 
+            if (myLine) myLatestReview = myLine.replace(/🧑‍🍳 网友点评 \[.*?\]：/, '').trim();
+        }
+
+        // 💡 核心大招：根据顶踩状态，海报全面换肤！
+        if (item.my_vote === 'like') {
+            // 🟢 狂赞风格：清新薄荷绿渐变
+            wrapper.style.background = 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)';
+            wrapper.style.borderColor = '#A7F3D0';
+            dutchText.style.color = '#064E3B';
+            slogan.innerText = '👍 这玩意绝了，疯狂安利！';
+            slogan.style.color = '#059669';
+            divider.style.borderTopColor = '#A7F3D0';
+            
+            badge.style.display = 'block'; badge.style.background = '#10B981';
+            badge.style.color = '#FFF'; badge.innerText = '👍 闭眼入';
+            
+            if(myLatestReview) {
+                reviewBox.style.display = 'block'; reviewBox.style.borderLeftColor = '#10B981';
+                reviewText.innerText = `“${myLatestReview}”`;
+            } else { reviewBox.style.display = 'none'; }
+
+        } else if (item.my_vote === 'dislike') {
+            // 🔴 狂踩风格：警报暗红色渐变
+            wrapper.style.background = 'linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%)';
+            wrapper.style.borderColor = '#FECACA';
+            dutchText.style.color = '#7F1D1D';
+            slogan.innerText = '💣 纯纯大冤种，快跑！';
+            slogan.style.color = '#DC2626';
+            divider.style.borderTopColor = '#FECACA';
+
+            badge.style.display = 'block'; badge.style.background = '#EF4444';
+            badge.style.color = '#FFF'; badge.innerText = '💣 巨雷';
+            
+            if(myLatestReview) {
+                reviewBox.style.display = 'block'; reviewBox.style.borderLeftColor = '#EF4444';
+                reviewText.innerText = `“${myLatestReview}”`;
+            } else { reviewBox.style.display = 'none'; }
+
+        } else {
+            // ⚪ 中性风格：极简纯白
+            wrapper.style.background = '#FFF';
+            wrapper.style.borderColor = 'transparent';
+            dutchText.style.color = '#111827';
+            slogan.innerText = '来和大家一起排雷！';
+            slogan.style.color = '#10B981';
+            divider.style.borderTopColor = '#E5E7EB';
+            badge.style.display = 'none'; reviewBox.style.display = 'none';
+        }
+
+        wxLoadingMock("正在渲染专属神图...");
         const templateNode = document.getElementById('poster-template');
         try {
             const canvas = await html2canvas(templateNode, { scale: 2, useCORS: true, backgroundColor: null });
