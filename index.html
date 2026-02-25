@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>荷包管家 🇳🇱 - 荷兰超市避雷神器</title>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <style>
         /* 🎨 全局 CSS */
         body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #F7F8FA; color: #333; }
@@ -81,8 +82,32 @@
         .history-actions { display: flex; justify-content: space-between; margin-top: 10px; border-top: 1px dashed #eee; padding-top: 10px; }
         .action-btn { background: #f3f4f6; color:#374151; border: none; padding: 6px 15px; border-radius: 15px; font-size: 12px; cursor: pointer; font-weight:bold; }
         .action-btn:active { background: #e5e7eb; }
+
+        /* 🎨 私人评价输入框 */
+        .review-box { display: flex; gap: 8px; margin-top: 10px; background: #F9FAFB; padding: 10px; border-radius: 8px; border: 1px solid #E5E7EB; }
+        .review-input { flex: 1; border: none; background: transparent; font-size: 13px; outline: none; color: #4B5563; }
+        .review-save-btn { background: #111827; color: #FFF; border: none; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; }
+
+        /* 🖼️ 海报弹窗样式 */
+        .poster-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 999; justify-content: center; align-items: center; flex-direction: column; animation: fadeIn 0.3s ease; }
+        .poster-modal.show { display: flex; }
+        .poster-result-img { max-width: 85%; max-height: 70vh; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .close-poster-btn { margin-top: 25px; background: #FFF; color: #111827; border: none; padding: 12px 35px; border-radius: 25px; font-weight: bold; font-size: 15px; cursor: pointer; }
+        
+        /* 👻 隐藏的海报模板 (用户看不见，只用来给代码截图) */
+        #poster-template { position: fixed; left: -9999px; top: 0; width: 340px; background: linear-gradient(135deg, #10B981 0%, #047857 100%); padding: 25px; box-sizing: border-box; border-radius: 20px; color: #FFF; }
+        .pt-card { background: #FFF; border-radius: 15px; padding: 20px; color: #333; margin-top: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+        .pt-title { font-size: 22px; font-weight: 900; margin: 0; color: #111827; line-height: 1.3; }
+        .pt-sub { font-size: 13px; color: #9CA3AF; font-style: italic; margin-top: 5px; }
+        .pt-insight { background: #F9FAFB; padding: 12px; border-radius: 10px; font-size: 14px; margin-top: 15px; line-height: 1.6; color: #4B5563; }
+        .pt-user-review { background: #FEF3C7; color: #D97706; padding: 12px; border-radius: 10px; font-size: 14px; margin-top: 10px; font-weight: bold; }
+        .pt-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 25px; }
+        .pt-qr { width: 65px; height: 65px; background: #FFF; padding: 5px; border-radius: 8px; }
+        .pt-slogan { font-size: 14px; font-weight: bold; opacity: 0.95; line-height: 1.4; }
     </style>
 </head>
+
+    
 <body>
 
 <div class="tab-bar">
@@ -179,6 +204,29 @@
             榜单正在紧锣密鼓施工中...敬请期待！
         </div>
     </div>
+
+    <div class="poster-modal" id="posterModal">
+    <div style="color:white; margin-bottom:15px; font-weight:bold; letter-spacing: 1px;">✨ 长按下方图片保存 / 转发给微信好友 ✨</div>
+    <img id="posterResultImg" class="poster-result-img" src="">
+    <button class="close-poster-btn" onclick="document.getElementById('posterModal').classList.remove('show')">关闭</button>
+</div>
+
+<div id="poster-template">
+    <div style="font-size: 20px; font-weight: 900; letter-spacing: 1px;">🇳🇱 荷包管家 · 超市排雷日记</div>
+    <div class="pt-card">
+        <h2 class="pt-title" id="ptName">商品名</h2>
+        <div class="pt-sub" id="ptDutch">dutch name</div>
+        <div class="pt-insight">💡 <span id="ptInsight">管家评价</span></div>
+        <div class="pt-user-review" id="ptUserReview" style="display:none;"></div>
+    </div>
+    <div class="pt-footer">
+        <div class="pt-slogan">
+            扫码直达避雷神器 👉<br>
+            <span style="font-size: 11px; font-weight: normal; opacity: 0.8;">留学生专属的荷兰超市指南</span>
+        </div>
+        <img class="pt-qr" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://hebao-backend.vercel.app/" crossorigin="anonymous">
+    </div>
+</div>
 </div>
 
 <script>
@@ -349,14 +397,15 @@
     }
 
     // ==========================================
-    // 3. 足迹本地缓存系统
+    // 3. 升级版：足迹系统 + 一句话评价 + 海报裂变
     // ==========================================
     function saveToLocalFootprint(data) {
         let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
-        // 防止同一个商品存好几次
         const exists = history.find(item => item.dutch_name === data.dutch_name);
         if (!exists) {
-            history.unshift(data); // 永远把最新扫的放在数组最前面
+            // 给存入的数据加一个 my_review 字段，初始为空
+            data.my_review = '';
+            history.unshift(data);
             localStorage.setItem('hebao_history', JSON.stringify(history));
         }
     }
@@ -376,17 +425,90 @@
                 <div class="history-card">
                     <div class="history-header">${item.chinese_name || '未命名'}</div>
                     <div class="history-dutch">${item.dutch_name || ''}</div>
-                    <div style="font-size: 13px; color: #4B5563; margin-bottom: 10px; line-height: 1.5;">${item.insight || '暂无评价'}</div>
+                    <div style="font-size: 13px; color: #4B5563; margin-bottom: 5px; line-height: 1.5;">${item.insight || '暂无评价'}</div>
+                    
+                    <div class="review-box">
+                        <input type="text" id="reviewInput_${index}" class="review-input" placeholder="写一句你的神仙吃法或吐槽..." value="${item.my_review || ''}">
+                        <button class="review-save-btn" onclick="saveMyReview(${index})">保存</button>
+                    </div>
+
                     <div class="history-actions">
                         <button class="action-btn" onclick="voteProduct('${item.dutch_name}', 'like')">👍 推荐</button>
                         <button class="action-btn" onclick="voteProduct('${item.dutch_name}', 'dislike')">💣 避雷</button>
-                        <button class="action-btn" style="background:#10B981; color:#FFF;" onclick="alert('即将上线：生成精美朋友圈海报！')">📤 炫耀一下</button>
+                        <button class="action-btn" style="background:#10B981; color:#FFF;" onclick="generatePoster(${index})">📤 生成海报</button>
                     </div>
                 </div>
             `;
         });
         listDiv.innerHTML = html;
     }
+
+    // 保存用户的私人评价到 LocalStorage
+    function saveMyReview(index) {
+        const inputVal = document.getElementById(`reviewInput_${index}`).value.trim();
+        let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
+        history[index].my_review = inputVal;
+        localStorage.setItem('hebao_history', JSON.stringify(history));
+        alert("✅ 你的私人评价已保存！");
+    }
+
+    // 核心大招：生成朋友圈海报
+    async function generatePoster(index) {
+        // 1. 获取数据
+        let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
+        const item = history[index];
+        
+        // 2. 塞入隐藏的模板中
+        document.getElementById('ptName').innerText = item.chinese_name || '未知商品';
+        document.getElementById('ptDutch').innerText = item.dutch_name || 'Unknown';
+        document.getElementById('ptInsight').innerText = item.insight || '无';
+        
+        const userReviewBox = document.getElementById('ptUserReview');
+        if (item.my_review) {
+            userReviewBox.style.display = 'block';
+            userReviewBox.innerHTML = `✍️ 我的短评：${item.my_review}`;
+        } else {
+            userReviewBox.style.display = 'none';
+        }
+
+        // 显示加载提示
+        wxLoadingMock("正在排版海报...");
+
+        // 3. 呼叫 html2canvas 对模板进行“拍照截图”
+        const templateNode = document.getElementById('poster-template');
+        try {
+            const canvas = await html2canvas(templateNode, {
+                scale: 2, // 提高清晰度，相当于 retina 屏幕
+                useCORS: true, // 允许加载跨域的二维码图片
+                backgroundColor: null
+            });
+
+            // 4. 把截图转成图片地址，塞进弹窗里展示
+            const imgUrl = canvas.toDataURL("image/png");
+            document.getElementById('posterResultImg').src = imgUrl;
+            
+            // 关掉加载提示，显示弹窗
+            document.body.removeChild(document.getElementById('mockLoadingBox'));
+            document.getElementById('posterModal').classList.add('show');
+            
+        } catch (error) {
+            alert("海报生成失败了，请重试！");
+            document.body.removeChild(document.getElementById('mockLoadingBox'));
+        }
+    }
+
+    // 一个简单的前端加载框组件 (辅助体验)
+    function wxLoadingMock(text) {
+        const div = document.createElement('div');
+        div.id = 'mockLoadingBox';
+        div.style.cssText = 'position:fixed; top:45%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.8); color:#fff; padding:15px 25px; border-radius:10px; z-index:9999; font-size:14px;';
+        div.innerText = text;
+        document.body.appendChild(div);
+    }
+
+    // ==========================================
+    // 下方保留原来的 voteProduct 接口调用...
+    // ==========================================
 
     async function voteProduct(dutchName, action) {
         try {
