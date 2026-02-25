@@ -404,13 +404,21 @@
             pairingBox.style.display = 'block';
             const lines = String(d.pairing).split('\n\n').filter(l => l.trim() !== '');
             lines.forEach((line) => {
+                // 💡 这里就是根据文本长度生成的初始模拟点赞数
+                const fakeInitialVotes = (line.length * 7) % 45 + 5; 
+                
                 if (line.includes('网友点评')) {
                     const isLike = line.includes('👍');
                     const textContent = line.replace(/🧑‍🍳 网友点评 \[.*?\]：/, '').trim();
                     const styleClass = isLike ? 'ugc-card-like' : 'ugc-card-dislike';
+                    
+                    // 💡 把点亮 +1 按钮加回去了！
                     listContainer.innerHTML += `
                         <div class="ugc-card ${styleClass}">
-                            <div class="ugc-card-header"><span style="font-size:14px;">${isLike ? '👍' : '💣'}</span></div>
+                            <div class="ugc-card-header">
+                                <span style="font-size:14px;">${isLike ? '👍' : '💣'}</span>
+                                <div class="ugc-upvote" onclick="upvoteComment(this, '${isLike ? 'like' : 'dislike'}')">🔺 ${fakeInitialVotes}</div>
+                            </div>
                             <div class="ugc-card-text">${textContent}</div>
                         </div>`;
                 }
