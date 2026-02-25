@@ -14,7 +14,7 @@
         .title { font-size: 28px; font-weight: 900; color: #111827; margin: 0; letter-spacing: 1px;}
         .subtitle { font-size: 13px; color: #888; margin-top: 5px; }
 
-        /* 📱 页面容器切换逻辑 */
+        /* 📱 页面容器 */
         .page-section { display: none; padding-bottom: 90px; animation: fadeIn 0.3s ease; }
         .page-section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
@@ -27,26 +27,21 @@
         .preview-img { width: 100%; height: 100%; object-fit: contain; display: none; }
         #fileInput { display: none; }
 
-        /* 🟢 扫描特效 */
         .scan-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
         .scan-line { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: #10B981; box-shadow: 0 0 15px #10B981; animation: scanAnim 2s linear infinite; }
         @keyframes scanAnim { 0% { top: 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
         .scan-text { color: #FFF; font-size: 14px; font-weight: bold; margin-top: 15px; letter-spacing: 1px;}
 
-        /* 📦 首页极简卡片丰富版 */
+        /* 📦 首页极简卡片 */
         #miniResultCard { display: none; margin-top: 25px; background: #FFF; border-radius: 20px; padding: 25px; box-shadow: 0 8px 30px rgba(0,0,0,0.06); text-align: center; animation: fadeIn 0.4s ease; }
         .name-box { margin-bottom: 10px; }
         .item-name { display: block; font-size: 22px; font-weight: 900; color: #111827; }
         .item-dutch { display: block; font-size: 13px; color: #9CA3AF; margin-top: 4px; font-style: italic; }
         .feature-tag { display: inline-block; background: #FEF3C7; color: #D97706; font-size: 12px; padding: 4px 12px; border-radius: 20px; font-weight: bold; margin-bottom: 15px; }
-        
         .mini-insight { font-size: 14px; color: #374151; line-height: 1.6; margin: 15px 0; padding: 12px; background: #F3F4F6; border-radius: 12px; text-align: left; border-left: 4px solid #111827;}
         .mini-warning { background: #FEF2F2; color: #DC2626; padding: 10px; border-radius: 10px; font-size: 13px; font-weight: bold; margin: 15px 0; border: 1px dashed #FCA5A5; }
-        
-        /* 首页高赞点评钩子 */
-        .mini-ugc { background: #ECFDF5; border: 1px solid #A7F3D0; padding: 12px; border-radius: 12px; text-align: left; margin-bottom: 15px; position: relative;}
+        .mini-ugc { background: #ECFDF5; border: 1px solid #A7F3D0; padding: 12px; border-radius: 12px; text-align: left; margin-bottom: 15px;}
         .ugc-badge { display: inline-block; background: #10B981; color: #FFF; font-size: 11px; padding: 3px 8px; border-radius: 6px; font-weight: bold; margin-bottom: 8px; }
-        
         .btn-view-detail { background: #111827; color: #FFF; border: none; padding: 14px; width: 100%; border-radius: 25px; font-size: 15px; font-weight: bold; margin-top: 10px; cursor: pointer; box-shadow: 0 4px 15px rgba(17, 24, 39, 0.2); }
         .btn-secondary { background: transparent; color: #EF4444; border: 2px solid #EF4444; width: 100%; height: 48px; border-radius: 25px; font-size: 15px; font-weight: bold; margin-top: 15px; cursor: pointer;}
 
@@ -57,7 +52,7 @@
         .tab-icon { font-size: 22px; margin-bottom: 4px; }
         .tab-text { font-size: 11px; font-weight: bold; }
 
-        /* ================= 详情页专属 UI ================= */
+        /* ================= 详情页专属 UI (极简阅读模式) ================= */
         #page-details { background: #F7F8FA; min-height: 100vh; padding-bottom: 100px; }
         .top-nav { position: sticky; top: 0; background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); padding: 15px 20px; display: flex; align-items: center; z-index: 50; border-bottom: 1px solid #E5E7EB;}
         .back-btn { font-size: 16px; font-weight: 900; color: #111827; cursor: pointer; display: flex; align-items: center; gap: 5px; }
@@ -65,24 +60,14 @@
         .detail-hero { background: #FFF; padding: 20px; border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 20px; text-align: center;}
         .detail-img { width: 100%; height: 200px; object-fit: contain; background: #F9FAFB; border-radius: 16px; margin-bottom: 15px; }
         
-        /* 💡 新增大招：三等分操作区 */
-        .action-buttons-grid { display: flex; gap: 10px; margin-top: 20px; width: 100%; }
-        .grid-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 12px 0; border-radius: 16px; font-size: 13px; font-weight: 900; cursor: pointer; transition: transform 0.1s; border: 1px solid transparent; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
-        .grid-btn:active { transform: scale(0.92); }
-        .grid-btn.like-btn { background: #ECFDF5; color: #047857; border-color: #A7F3D0; }
-        .grid-btn.dislike-btn { background: #FEF2F2; color: #B91C1C; border-color: #FECACA; }
-        .grid-btn.poster-btn { background: #111827; color: #FFF; box-shadow: 0 4px 15px rgba(17, 24, 39, 0.2); }
-
         .info-block { background: #FFF; border-radius: 16px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);}
         .block-title { font-size: 16px; font-weight: 900; color: #111827; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;}
         .block-text { font-size: 14px; color: #4B5563; line-height: 1.6; margin: 0; }
         
-        /* 紧凑版平替标签 */
         .alt-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px;}
         .alt-tag { background: #F3F4F6; border: 1px solid #E5E7EB; font-size: 12px; padding: 6px 12px; border-radius: 8px; color: #4B5563;}
-        .alt-tag strong { color: #111827; }
-
-        /* 👑 网友点评卡片 (不同颜色区分情绪) */
+        
+        /* 评论卡片 */
         .ugc-card { border-radius: 12px; padding: 15px; margin-bottom: 12px; position: relative; }
         .ugc-card-like { background: #ECFDF5; border: 1px solid #A7F3D0; }
         .ugc-card-dislike { background: #FEF2F2; border: 1px solid #FECACA; }
@@ -91,27 +76,13 @@
         .ugc-card-like .ugc-card-header span { color: #047857; }
         .ugc-card-dislike .ugc-card-header span { color: #B91C1C; }
         .ugc-card-text { font-size: 14px; color: #374151; line-height: 1.5; font-weight: 500;}
-        
-        /* +1 按钮 */
         .ugc-upvote { background: rgba(255,255,255,0.8); padding: 4px 10px; border-radius: 20px; font-size: 12px; color: #6B7280; cursor: pointer; transition: 0.2s; border: 1px solid rgba(0,0,0,0.05);}
         .ugc-upvote:active { transform: scale(0.9); background: #111827; color: #FFF; }
 
-        /* 🧑‍🍳 动态发布点评区 (随态度变色) */
-        .ugc-publish-box { background: #FFF; border: 2px solid #E5E7EB; padding: 20px; border-radius: 16px; margin-bottom: 15px; transition: all 0.3s ease;}
-        .vote-toggle { display: flex; gap: 15px; margin-bottom: 15px; }
-        .vote-label { font-size: 14px; font-weight: bold; color: #4B5563; display: flex; align-items: center; gap: 5px; cursor: pointer; padding: 8px 15px; background: #F3F4F6; border-radius: 20px; transition: 0.2s;}
-        .vote-label input[type="radio"] { display: none; }
-        .vote-label:has(input:checked) { background: #10B981; color: #FFF; }
-        .vote-label.dislike:has(input:checked) { background: #EF4444; color: #FFF; }
-        .ugc-input-group { display: flex; gap: 8px; flex-direction: column;}
-        .ugc-input { border: 2px solid #E5E7EB; border-radius: 10px; padding: 12px; font-size: 14px; outline: none; background: #F9FAFB; resize: none; font-family: inherit; transition: all 0.3s ease;}
-        .ugc-btn { background: #111827; color: #FFF; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 5px; transition: all 0.3s ease;}
-
-        /* 💬 悬浮追问栏 (微信聊天窗体验) */
+        /* 💬 悬浮追问栏 */
         .sticky-chat-bar { position: fixed; bottom: 0; left: 0; right: 0; max-width: 600px; margin: 0 auto; background: #FFF; padding: 12px 20px; box-shadow: 0 -4px 20px rgba(0,0,0,0.08); display: none; align-items: center; gap: 10px; z-index: 100; box-sizing: border-box; border-top-left-radius: 20px; border-top-right-radius: 20px;}
         .chat-input { flex: 1; height: 40px; background: #F3F4F6; border: none; border-radius: 20px; padding: 0 15px; font-size: 14px; outline: none; }
         .chat-send-btn { background: #10B981; color: #FFF; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 16px; display: flex; justify-content: center; align-items: center; cursor: pointer; }
-        
         #chatHistory { margin-bottom: 20px; display: flex; flex-direction: column; gap: 12px; }
         .chat-bubble { max-width: 85%; padding: 12px 16px; border-radius: 16px; font-size: 14px; line-height: 1.5; word-wrap: break-word; }
         .bubble-user { background: #10B981; color: #FFF; border-bottom-right-radius: 4px; align-self: flex-end;}
@@ -121,10 +92,32 @@
         .floating-plus { position: fixed; font-size: 20px; font-weight: 900; pointer-events: none; animation: floatUp 0.8s ease-out forwards; z-index: 9999; text-shadow: 0 2px 5px rgba(0,0,0,0.2);}
         @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-50px) scale(1.5); } }
 
-        /* 足迹与海报样式 */
-        .history-card { background: #FFF; padding: 15px; border-radius: 16px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); display: flex; gap:15px; align-items: center; cursor: pointer; border: 1px solid transparent;}
-        .history-card:active { border-color: #10B981; background: #F9FAFB;}
+        /* ================= 足迹卡片超级进化版 (含所有操作) ================= */
+        .history-card-wrap { background: #FFF; border-radius: 20px; margin-bottom: 20px; box-shadow: 0 6px 20px rgba(0,0,0,0.04); overflow: hidden; border: 1px solid #F3F4F6;}
         
+        .hc-top-clickable { display: flex; gap: 15px; padding: 15px; cursor: pointer; background: transparent; transition: background 0.2s;}
+        .hc-top-clickable:active { background: #F9FAFB; }
+        
+        /* 三等分金刚键 */
+        .action-buttons-grid { display: flex; gap: 10px; padding: 0 15px; width: auto; margin-top: 5px; }
+        .grid-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 0; border-radius: 12px; font-size: 12px; font-weight: 900; cursor: pointer; transition: transform 0.1s; border: 1px solid transparent; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+        .grid-btn:active { transform: scale(0.92); }
+        .grid-btn.like-btn { background: #ECFDF5; color: #047857; border-color: #A7F3D0; }
+        .grid-btn.dislike-btn { background: #FEF2F2; color: #B91C1C; border-color: #FECACA; }
+        .grid-btn.poster-btn { background: #111827; color: #FFF; box-shadow: 0 4px 15px rgba(17, 24, 39, 0.15); }
+
+        /* 足迹里的动态点评框 */
+        .ugc-publish-box { background: #FFF; border: 2px solid #E5E7EB; padding: 15px; border-radius: 12px; margin: 15px; transition: all 0.3s ease;}
+        .vote-toggle { display: flex; gap: 10px; margin-bottom: 12px; }
+        .vote-label { font-size: 13px; font-weight: bold; color: #4B5563; display: flex; align-items: center; gap: 5px; cursor: pointer; padding: 6px 12px; background: #F3F4F6; border-radius: 20px; transition: 0.2s;}
+        .vote-label input[type="radio"] { display: none; }
+        .vote-label:has(input:checked) { background: #10B981; color: #FFF; }
+        .vote-label.dislike:has(input:checked) { background: #EF4444; color: #FFF; }
+        .ugc-input-group { display: flex; gap: 8px;}
+        .ugc-input { flex: 1; border: 2px solid #E5E7EB; border-radius: 8px; padding: 8px 12px; font-size: 13px; outline: none; background: #F9FAFB; transition: all 0.3s ease;}
+        .ugc-btn { background: #111827; color: #FFF; border: none; padding: 0 15px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: all 0.3s ease;}
+
+        /* 海报 */
         .poster-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 999; justify-content: center; align-items: center; flex-direction: column; animation: fadeIn 0.3s ease; }
         .poster-modal.show { display: flex; }
         .poster-result-img { max-width: 80%; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -190,7 +183,7 @@
                 <div id="miniUgcText" style="font-size: 13px; color: #047857; font-weight: bold;"></div>
             </div>
             
-            <button class="btn-view-detail" onclick="openDetailsFromScan()">👉 查看完整报告 & 所有点评</button>
+            <button class="btn-view-detail" onclick="openDetailsFromScan()">👉 查看完整报告</button>
             <button class="btn-secondary" onclick="resetApp()">🔴 测下一个</button>
         </div>
     </div>
@@ -205,18 +198,6 @@
             <div class="name-box">
                 <span class="item-name" id="detailChineseName"></span>
                 <span class="item-dutch" id="detailDutchName"></span>
-            </div>
-            
-            <div class="action-buttons-grid">
-                <div class="grid-btn like-btn" onclick="voteProductDetail('like', event)">
-                    <span style="font-size:18px; margin-bottom:2px;">👍</span>狂赞
-                </div>
-                <div class="grid-btn dislike-btn" onclick="voteProductDetail('dislike', event)">
-                    <span style="font-size:18px; margin-bottom:2px;">💣</span>狂踩
-                </div>
-                <div class="grid-btn poster-btn" onclick="generatePosterFromDetail()">
-                    <span style="font-size:18px; margin-bottom:2px;">📸</span>生成海报
-                </div>
             </div>
         </div>
 
@@ -241,18 +222,6 @@
                 <div id="ugcCardList"></div>
             </div>
 
-            <div class="ugc-publish-box" id="detailUgcBox">
-                <div class="block-title" id="ugcTitleText" style="margin-bottom: 15px; transition: 0.3s;">✍️ 轮到你点评了</div>
-                <div class="vote-toggle">
-                    <label class="vote-label"><input type="radio" name="ugcAttitude" value="👍 推荐" onchange="updateUgcStyle()" checked> 👍 推荐</label>
-                    <label class="vote-label dislike"><input type="radio" name="ugcAttitude" value="💣 避雷" onchange="updateUgcStyle()"> 💣 避雷</label>
-                </div>
-                <div class="ugc-input-group">
-                    <textarea id="detailRecipeInput" class="ugc-input" rows="2" placeholder="输入你的神仙吃法，疯狂安利给大家..."></textarea>
-                    <button class="ugc-btn" id="submitUgcBtn" onclick="submitRecipeDetail()">马上发布</button>
-                </div>
-            </div>
-
             <div id="chatHistory" style="margin-top: 20px;"></div>
         </div>
     </div>
@@ -260,7 +229,7 @@
     <div id="page-footprint" class="page-section">
         <div class="header">
             <h1 class="title">我的足迹 👣</h1>
-            <div class="subtitle">点击卡片查看完整点评</div>
+            <div class="subtitle">这里是你扫过的商品，尽情打分吐槽吧！</div>
         </div>
         <div id="footprintList"></div>
     </div>
@@ -300,9 +269,6 @@
     let lastTab = 'scan';          
     let currentDetailData = null;  
 
-    // ==========================================
-    // 1. 导航与页面切换
-    // ==========================================
     function switchTab(pageId, element) {
         document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
         if (element) {
@@ -316,11 +282,9 @@
         const chatBar = document.getElementById('stickyChatBar');
         
         if (pageId === 'details') {
-            tabBar.style.display = 'none';
-            chatBar.style.display = 'flex';
+            tabBar.style.display = 'none'; chatBar.style.display = 'flex';
         } else {
-            tabBar.style.display = 'flex';
-            chatBar.style.display = 'none';
+            tabBar.style.display = 'flex'; chatBar.style.display = 'none';
         }
 
         if (pageId === 'footprint') renderFootprints();
@@ -331,13 +295,9 @@
         switchTab(lastTab, targetTab);
     }
 
-    // ==========================================
-    // 2. 核心扫雷
-    // ==========================================
     function handleFileSelect(event) {
         const file = event.target.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = function(e) {
             document.getElementById('uploadHint').style.display = 'none';
@@ -345,7 +305,6 @@
             document.getElementById('previewImg').style.display = 'block';
             document.getElementById('scanOverlay').style.display = 'flex';
             document.getElementById('miniResultCard').style.display = 'none'; 
-
             const base64String = e.target.result.split(',')[1];
             scanProduct(base64String);
         };
@@ -359,31 +318,21 @@
                 body: JSON.stringify({ imageBase64: base64Str })
             });
             const data = await response.json();
-            
-            if (!response.ok) { 
-                alert("管家遇到问题了：" + (data.error || '未知错误')); 
-                resetApp(); return; 
-            }
+            if (!response.ok) { alert("管家遇到问题了：" + (data.error || '未知错误')); resetApp(); return; }
             
             currentProductData = data;
             renderResult(data);
             saveToLocalFootprint(data); 
 
             fetch('/api/save', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
             }).catch(e => console.log("收录失败", e));
-
-        } catch (error) { 
-            alert("网络断开了：" + error.message); 
-            resetApp(); 
-        }
+        } catch (error) { alert("网络断开了：" + error.message); resetApp(); }
     }
 
     function renderResult(data) {
         document.getElementById('scanOverlay').style.display = 'none';
         document.getElementById('miniResultCard').style.display = 'block';
-        
         document.getElementById('miniChineseName').innerText = data.chinese_name || '未知商品';
         document.getElementById('miniDutchName').innerText = data.dutch_name || 'Unknown';
         document.getElementById('miniInsight').innerText = data.insight || '管家还在思考...';
@@ -402,9 +351,7 @@
             document.getElementById('miniUgc').style.display = 'block';
             const firstUgc = data.pairing.split('\n\n').find(line => line.includes('网友点评'));
             document.getElementById('miniUgcText').innerText = firstUgc ? firstUgc.replace(/🧑‍🍳 网友点评 \[.*?\]：/, '') : '好评如潮！';
-        } else {
-            document.getElementById('miniUgc').style.display = 'none';
-        }
+        } else { document.getElementById('miniUgc').style.display = 'none'; }
     }
 
     function resetApp() {
@@ -416,9 +363,6 @@
         currentProductData = null;
     }
 
-    // ==========================================
-    // 3. 详情页渲染 & UGC 情绪 UI
-    // ==========================================
     function openDetailsFromScan() {
         currentDetailData = { ...currentProductData, img_src: document.getElementById('previewImg').src };
         populateAndOpenDetails();
@@ -448,7 +392,6 @@
         fillText('detailInsightBox', 'detailInsight', d.insight);
         fillText('detailWarningBox', 'detailWarning', d.warning);
         
-        // 平替化为紧凑标签
         const altBox = document.getElementById('detailAltBox');
         if (d.alternatives && String(d.alternatives).trim() !== '') {
             altBox.style.display = 'block';
@@ -456,7 +399,6 @@
             document.getElementById('detailAlternatives').innerHTML = parts.map(p => `<div class="alt-tag">${p}</div>`).join('');
         } else { altBox.style.display = 'none'; }
 
-        // 解析渲染网友点评卡片 (自动加模拟赞)
         const pairingBox = document.getElementById('detailPairingBox');
         const listContainer = document.getElementById('ugcCardList');
         listContainer.innerHTML = '';
@@ -464,148 +406,40 @@
         if (d.pairing && String(d.pairing).trim() !== '') {
             pairingBox.style.display = 'block';
             const lines = String(d.pairing).split('\n\n').filter(l => l.trim() !== '');
-            
             lines.forEach((line) => {
                 const fakeInitialVotes = (line.length * 7) % 45 + 5; 
                 if (line.includes('网友点评')) {
                     const isLike = line.includes('👍');
                     const textContent = line.replace(/🧑‍🍳 网友点评 \[.*?\]：/, '').trim();
                     const styleClass = isLike ? 'ugc-card-like' : 'ugc-card-dislike';
-                    const icon = isLike ? '👍' : '💣';
-                    
                     listContainer.innerHTML += `
                         <div class="ugc-card ${styleClass}">
-                            <div class="ugc-card-header">
-                                <span>${icon} ${isLike ? '推荐' : '避雷'}</span>
-                                <div class="ugc-upvote" onclick="upvoteComment(this, '${isLike ? 'like' : 'dislike'}')">🔺 ${fakeInitialVotes}</div>
-                            </div>
+                            <div class="ugc-card-header"><span>${isLike ? '👍 推荐' : '💣 避雷'}</span><div class="ugc-upvote" onclick="upvoteComment(this, '${isLike ? 'like' : 'dislike'}')">🔺 ${fakeInitialVotes}</div></div>
                             <div class="ugc-card-text">${textContent}</div>
-                        </div>
-                    `;
+                        </div>`;
                 } else {
-                    listContainer.innerHTML += `
-                        <div class="ugc-card ugc-card-ai">
-                            <div class="ugc-card-header"><span style="color:#4B5563;">🤖 管家神仙吃法</span></div>
-                            <div class="ugc-card-text">${line}</div>
-                        </div>
-                    `;
+                    listContainer.innerHTML += `<div class="ugc-card ugc-card-ai"><div class="ugc-card-header"><span style="color:#4B5563;">🤖 管家建议</span></div><div class="ugc-card-text">${line}</div></div>`;
                 }
             });
-        } else {
-            pairingBox.style.display = 'none';
-        }
+        } else { pairingBox.style.display = 'none'; }
         
-        // 重置发布框状态
-        document.querySelector('input[name="ugcAttitude"][value="👍 推荐"]').checked = true;
-        updateUgcStyle();
-
         switchTab('details', null);
     }
 
     function upvoteComment(btnElement, type) {
         if(btnElement.dataset.voted) return; 
-        const currentVotes = parseInt(btnElement.innerText.replace('🔺 ', ''));
-        btnElement.innerText = `🔺 ${currentVotes + 1}`;
-        btnElement.style.background = '#111827'; btnElement.style.color = '#FFF';
-        btnElement.dataset.voted = 'true';
-
+        btnElement.innerText = `🔺 ${parseInt(btnElement.innerText.replace('🔺 ', '')) + 1}`;
+        btnElement.style.background = '#111827'; btnElement.style.color = '#FFF'; btnElement.dataset.voted = 'true';
         const rect = btnElement.getBoundingClientRect();
         const plus = document.createElement('div');
-        plus.className = 'floating-plus';
-        plus.innerText = '+1';
+        plus.className = 'floating-plus'; plus.innerText = '+1';
         plus.style.color = type === 'like' ? '#10B981' : '#EF4444';
         plus.style.left = rect.left + 'px'; plus.style.top = (rect.top - 20) + 'px';
-        document.body.appendChild(plus);
-        setTimeout(() => plus.remove(), 800);
-    }
-
-    // 💡 核心大招：评论框根据态度动态变色
-    function updateUgcStyle() {
-        const attitude = document.querySelector('input[name="ugcAttitude"]:checked').value;
-        const publishBox = document.getElementById('detailUgcBox');
-        const titleText = document.getElementById('ugcTitleText');
-        const inputArea = document.getElementById('detailRecipeInput');
-        const submitBtn = document.getElementById('submitUgcBtn');
-
-        if (attitude.includes('推荐')) {
-            publishBox.style.backgroundColor = '#ECFDF5';
-            publishBox.style.borderColor = '#A7F3D0';
-            titleText.style.color = '#047857';
-            inputArea.style.borderColor = '#6EE7B7';
-            inputArea.placeholder = "输入你的神仙吃法，疯狂安利给大家...";
-            submitBtn.style.background = '#10B981';
-        } else {
-            publishBox.style.backgroundColor = '#FEF2F2';
-            publishBox.style.borderColor = '#FECACA';
-            titleText.style.color = '#B91C1C';
-            inputArea.style.borderColor = '#FCA5A5';
-            inputArea.placeholder = "输入这玩意儿有多难吃，帮大家避雷...";
-            submitBtn.style.background = '#EF4444';
-        }
-    }
-
-    async function submitRecipeDetail() {
-        const recipeText = document.getElementById('detailRecipeInput').value.trim();
-        if (!recipeText || !currentDetailData) return;
-        
-        const attitude = document.querySelector('input[name="ugcAttitude"]:checked').value;
-        const finalUgcText = `🧑‍🍳 网友点评 [${attitude}]：${recipeText}`;
-
-        const btn = document.getElementById('submitUgcBtn');
-        const oldText = btn.innerText;
-        btn.innerText = "发布中..."; btn.disabled = true;
-
-        try {
-            await fetch('/api/recipe', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ dutch_name: currentDetailData.dutch_name, recipe: finalUgcText })
-            });
-            alert("🎉 发布成功！你的智慧已收录进数据库！");
-            
-            currentDetailData.pairing = (currentDetailData.pairing || '') + '\n\n' + finalUgcText;
-            document.getElementById('detailRecipeInput').value = "";
-            populateAndOpenDetails(); 
-
-        } catch(e) { alert("网络开小差了..."); }
-        btn.innerText = oldText; btn.disabled = false;
+        document.body.appendChild(plus); setTimeout(() => plus.remove(), 800);
     }
 
     // ==========================================
-    // 4. 狂赞狂踩特效
-    // ==========================================
-    async function voteProduct(dutchName, action, event) {
-        if(event) {
-            const plus = document.createElement('div');
-            plus.className = 'floating-plus';
-            plus.innerText = action === 'like' ? '👍 +1' : '💣 +1';
-            plus.style.color = action === 'like' ? '#10B981' : '#EF4444';
-            plus.style.left = (event.clientX - 10) + 'px';
-            plus.style.top = (event.clientY - 30) + 'px';
-            document.body.appendChild(plus);
-            setTimeout(() => plus.remove(), 800);
-        }
-
-        fetch('/api/vote', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ dutch_name: dutchName, action: action })
-        }).catch(err => console.error("投票错误", err));
-
-        let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
-        let idx = history.findIndex(item => item.dutch_name === dutchName);
-        if(idx !== -1) {
-            history[idx].my_vote = action;
-            localStorage.setItem('hebao_history', JSON.stringify(history));
-        }
-    }
-
-    function voteProductDetail(action, event) {
-        event.stopPropagation(); 
-        if(!currentDetailData) return;
-        voteProduct(currentDetailData.dutch_name, action, event);
-    }
-
-    // ==========================================
-    // 5. 悬浮追问系统
+    // 悬浮追问系统
     // ==========================================
     async function sendQuestion() {
         const input = document.getElementById('askInput');
@@ -619,7 +453,6 @@
         window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
         
         input.value = ''; sendBtn.disabled = true;
-
         const loadingId = 'loading-' + Date.now();
         chatBox.innerHTML += `<div class="chat-bubble bubble-ai" id="${loadingId}">敲字中...</div>`;
 
@@ -630,21 +463,17 @@
             });
             const data = await response.json();
             document.getElementById(loadingId).remove();
-            if (response.ok) {
-                chatBox.innerHTML += `<div class="chat-bubble bubble-ai">${data.reply}</div>`;
-            } else {
-                chatBox.innerHTML += `<div class="chat-bubble bubble-ai" style="color:red;">管家走神了：${data.error}</div>`;
-            }
+            if (response.ok) { chatBox.innerHTML += `<div class="chat-bubble bubble-ai">${data.reply}</div>`; } 
+            else { chatBox.innerHTML += `<div class="chat-bubble bubble-ai" style="color:red;">管家走神了：${data.error}</div>`; }
         } catch (err) {
             document.getElementById(loadingId).remove();
             chatBox.innerHTML += `<div class="chat-bubble bubble-ai" style="color:red;">网络似乎断了...</div>`;
         }
-        sendBtn.disabled = false;
-        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        sendBtn.disabled = false; window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     }
 
     // ==========================================
-    // 6. 足迹与海报
+    // 足迹核心渲染 (包含三等分按钮和动态 UGC 框)
     // ==========================================
     function saveToLocalFootprint(data) {
         let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
@@ -661,28 +490,117 @@
         let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
         if (history.length === 0) { listDiv.innerHTML = '<div style="text-align:center; color:#888; margin-top:40px;">空空如也</div>'; return; }
 
-        listDiv.innerHTML = history.map((item, index) => `
-            <div class="history-card" onclick="openDetailsFromHistory(${index})">
-                <img src="${item.img_src || ''}" style="width:70px; height:70px; object-fit:cover; border-radius:10px; background:#f0f0f0;">
-                <div style="flex:1;">
-                    <div style="font-weight:900; font-size:16px; color:#111827;">${item.chinese_name || '未命名'}</div>
-                    <div style="font-size:12px; color:#9CA3AF; margin:4px 0;">${item.dutch_name || ''}</div>
-                    <div style="font-size:13px; color:#6B7280; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden;">${item.insight || ''}</div>
+        let html = '';
+        history.forEach((item, index) => {
+            // 注意：上半部分点击进详情页，下半部分是互动区
+            html += `
+                <div class="history-card-wrap">
+                    <div class="hc-top-clickable" onclick="openDetailsFromHistory(${index})">
+                        <img src="${item.img_src || ''}" style="width:70px; height:70px; object-fit:cover; border-radius:10px; background:#f0f0f0;">
+                        <div style="flex:1;">
+                            <div style="font-weight:900; font-size:16px; color:#111827;">${item.chinese_name || '未命名'}</div>
+                            <div style="font-size:12px; color:#9CA3AF; margin:4px 0;">${item.dutch_name || ''}</div>
+                            <div style="font-size:13px; color:#6B7280; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden;">${item.insight || ''}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="action-buttons-grid">
+                        <div class="grid-btn like-btn" onclick="voteProductFromHistory('${item.dutch_name}', 'like', event)">
+                            <span style="font-size:16px; margin-bottom:2px;">👍</span>狂赞
+                        </div>
+                        <div class="grid-btn dislike-btn" onclick="voteProductFromHistory('${item.dutch_name}', 'dislike', event)">
+                            <span style="font-size:16px; margin-bottom:2px;">💣</span>狂踩
+                        </div>
+                        <div class="grid-btn poster-btn" onclick="generatePoster(${index})">
+                            <span style="font-size:16px; margin-bottom:2px;">📸</span>海报
+                        </div>
+                    </div>
+
+                    <div class="ugc-publish-box" id="ugcBox_${index}">
+                        <div class="vote-toggle">
+                            <label class="vote-label"><input type="radio" name="att_${index}" value="👍 推荐" onchange="updateUgcStyle(${index})" checked> 👍 推荐</label>
+                            <label class="vote-label dislike"><input type="radio" name="att_${index}" value="💣 避雷" onchange="updateUgcStyle(${index})"> 💣 避雷</label>
+                        </div>
+                        <div class="ugc-input-group">
+                            <input type="text" id="recipeInput_${index}" class="ugc-input" placeholder="输入神仙吃法，疯狂安利给大家...">
+                            <button class="ugc-btn" id="submitBtn_${index}" onclick="submitRecipeFromHistory(${index})">发布</button>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        `).join('');
+            `;
+        });
+        listDiv.innerHTML = html;
+        
+        // 初始化每个框的颜色
+        history.forEach((_, i) => updateUgcStyle(i));
     }
 
-    async function generatePosterFromDetail() {
-        if(!currentDetailData) return;
-        const item = currentDetailData;
+    // 足迹专属投票特效
+    async function voteProductFromHistory(dutchName, action, event) {
+        const plus = document.createElement('div');
+        plus.className = 'floating-plus'; plus.innerText = action === 'like' ? '👍 +1' : '💣 +1';
+        plus.style.color = action === 'like' ? '#10B981' : '#EF4444';
+        plus.style.left = (event.clientX - 10) + 'px'; plus.style.top = (event.clientY - 30) + 'px';
+        document.body.appendChild(plus); setTimeout(() => plus.remove(), 800);
+
+        fetch('/api/vote', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dutch_name: dutchName, action: action })
+        }).catch(err => {});
+    }
+
+    // 独立控制足迹里每个点评框的颜色
+    function updateUgcStyle(index) {
+        const attitude = document.querySelector(`input[name="att_${index}"]:checked`).value;
+        const publishBox = document.getElementById(`ugcBox_${index}`);
+        const inputArea = document.getElementById(`recipeInput_${index}`);
+        const submitBtn = document.getElementById(`submitBtn_${index}`);
+
+        if (attitude.includes('推荐')) {
+            publishBox.style.backgroundColor = '#ECFDF5'; publishBox.style.borderColor = '#A7F3D0';
+            inputArea.style.borderColor = '#6EE7B7'; inputArea.placeholder = "输入神仙吃法，疯狂安利给大家..."; submitBtn.style.background = '#10B981';
+        } else {
+            publishBox.style.backgroundColor = '#FEF2F2'; publishBox.style.borderColor = '#FECACA';
+            inputArea.style.borderColor = '#FCA5A5'; inputArea.placeholder = "输入有多难吃，帮大家避雷..."; submitBtn.style.background = '#EF4444';
+        }
+    }
+
+    // 足迹卡片提交 UGC
+    async function submitRecipeFromHistory(index) {
+        let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
+        const item = history[index];
+        const recipeText = document.getElementById(`recipeInput_${index}`).value.trim();
+        if (!recipeText) return;
+        
+        const attitude = document.querySelector(`input[name="att_${index}"]:checked`).value;
+        const finalUgcText = `🧑‍🍳 网友点评 [${attitude}]：${recipeText}`;
+
+        const btn = document.getElementById(`submitBtn_${index}`);
+        const oldText = btn.innerText; btn.innerText = "中..."; btn.disabled = true;
+
+        try {
+            await fetch('/api/recipe', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ dutch_name: item.dutch_name, recipe: finalUgcText })
+            });
+            alert("🎉 发布成功！你的评价已全网同步！");
+            
+            // 追加到本地记录，以便进详情页能立刻看到
+            item.pairing = (item.pairing || '') + '\n\n' + finalUgcText;
+            localStorage.setItem('hebao_history', JSON.stringify(history));
+            document.getElementById(`recipeInput_${index}`).value = "";
+        } catch(e) { alert("网络开小差了..."); }
+        btn.innerText = oldText; btn.disabled = false;
+    }
+
+    async function generatePoster(index) {
+        let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
+        const item = history[index];
         
         document.getElementById('ptDutch').innerText = item.dutch_name || 'Unknown';
         document.getElementById('ptChinese').innerText = item.chinese_name || '未知商品';
         document.getElementById('ptImage').src = item.img_src || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23eee'/%3E%3C/svg%3E"; 
 
         wxLoadingMock("正在生成美图...");
-
         const templateNode = document.getElementById('poster-template');
         try {
             const canvas = await html2canvas(templateNode, { scale: 2, useCORS: true, backgroundColor: null });
@@ -697,10 +615,8 @@
 
     function wxLoadingMock(text) {
         const div = document.createElement('div');
-        div.id = 'mockLoadingBox';
-        div.style.cssText = 'position:fixed; top:45%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.8); color:#fff; padding:15px 25px; border-radius:10px; z-index:9999; font-size:14px;';
-        div.innerText = text;
-        document.body.appendChild(div);
+        div.id = 'mockLoadingBox'; div.style.cssText = 'position:fixed; top:45%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.8); color:#fff; padding:15px 25px; border-radius:10px; z-index:9999; font-size:14px;';
+        div.innerText = text; document.body.appendChild(div);
     }
 </script>
 
