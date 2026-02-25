@@ -150,6 +150,17 @@
         .back-btn { font-size: 16px; font-weight: 900; color: #111827; cursor: pointer; display: flex; align-items: center; gap: 5px; }
         .detail-hero { background: #FFF; padding: 20px; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 15px; }
         .detail-img { width: 100%; height: 220px; object-fit: contain; background: #F9FAFB; border-radius: 12px; margin-bottom: 15px; }
+
+        /* 📦 首页极简卡片丰富版 */
+        .mini-insight { font-size: 14px; color: #4B5563; line-height: 1.6; margin: 15px 0; padding: 10px; background: #F9FAFB; border-radius: 8px; text-align: left; }
+        .mini-ugc { background: #FFF7ED; border: 1px dashed #F59E0B; padding: 12px; border-radius: 10px; text-align: left; margin-bottom: 15px; }
+        .ugc-badge { display: inline-block; background: #F59E0B; color: #FFF; font-size: 12px; padding: 3px 8px; border-radius: 4px; font-weight: bold; margin-bottom: 5px; }
+        
+        /* 🧑‍🍳 详情页评价态度选择器 (站队) */
+        .vote-toggle { display: flex; gap: 15px; margin-bottom: 10px; }
+        .vote-label { font-size: 14px; font-weight: bold; color: #4B5563; display: flex; align-items: center; gap: 5px; cursor: pointer; }
+        .vote-label input[type="radio"] { accent-color: #10B981; }
+        .vote-label.dislike input[type="radio"] { accent-color: #EF4444; }
         
     </style>
 </head>
@@ -193,7 +204,26 @@
             <input type="file" id="fileInput" accept="image/*" onchange="handleFileSelect(event)">
         </div>
 
-        <div id="page-scan" class="page-section active">
+       <div id="page-scan" class="page-section active">
+        <div class="header">
+            <h1 class="title">荷包管家 🇳🇱</h1>
+            <div class="subtitle">留学生专属的荷兰超市避雷神器</div>
+        </div>
+
+        <div class="upload-box" id="uploadBox" onclick="document.getElementById('fileInput').click()">
+            <div id="uploadHint">
+                <div class="icon-camera">📸</div>
+                <div class="upload-text">点击拍个照，管家帮你排雷</div>
+            </div>
+            <img id="previewImg" class="preview-img" src="" alt="预览">
+            <div class="scan-overlay" id="scanOverlay">
+                <div class="scan-line"></div>
+                <div class="spinner"></div>
+                <div class="scan-text">管家大脑飞速运转中...</div>
+            </div>
+            <input type="file" id="fileInput" accept="image/*" onchange="handleFileSelect(event)">
+        </div>
+
         <div id="miniResultCard">
             <div class="name-box" style="margin-bottom: 5px;">
                 <span class="item-name" id="miniChineseName"></span>
@@ -203,7 +233,14 @@
             
             <div class="mini-warning" id="miniWarning" style="display:none;"></div>
             
-            <button class="btn-view-detail" onclick="openDetailsFromScan()">👉 查看完整排雷报告 & 网友吃法</button>
+            <div class="mini-insight" id="miniInsight"></div>
+
+            <div class="mini-ugc" id="miniUgc" style="display:none;">
+                <div class="ugc-badge">🔥 网友高赞点评</div>
+                <div id="miniUgcText" style="font-size: 13px; color: #D97706; font-weight: bold;"></div>
+            </div>
+            
+            <button class="btn-view-detail" onclick="openDetailsFromScan()">👉 查看完整排雷报告 & 所有点评</button>
             <button class="btn btn-secondary" style="margin-top: 15px;" onclick="resetApp()">🔴 测下一个</button>
         </div>
     </div>
@@ -239,15 +276,19 @@
             </div>
 
             <div class="info-block" id="detailPairingBox" style="display:none;">
-                <div class="block-title">🍳 神仙吃法 & 网友实测</div>
-                <p class="block-text" id="detailPairing" style="white-space: pre-wrap;"></p>
+                <div class="block-title">🍳 网友真实点评 & 神仙吃法</div>
+                <p class="block-text" id="detailPairing" style="white-space: pre-wrap; line-height: 1.8;"></p>
             </div>
 
             <div class="ugc-box" id="detailUgcBox">
-                <div class="ugc-title">🧑‍🍳 你有更好的吃法或吐槽？</div>
+                <div class="ugc-title">🧑‍🍳 轮到你来点评了！</div>
+                <div class="vote-toggle">
+                    <label class="vote-label"><input type="radio" name="ugcAttitude" value="👍 强烈推荐" checked> 👍 推荐</label>
+                    <label class="vote-label dislike"><input type="radio" name="ugcAttitude" value="💣 避大雷"> 💣 避雷</label>
+                </div>
                 <div class="ugc-input-group">
-                    <input type="text" id="detailRecipeInput" class="ugc-input" placeholder="输入隐藏吃法，造福全体留学生...">
-                    <button class="ugc-btn" onclick="submitRecipeDetail()">分享</button>
+                    <input type="text" id="detailRecipeInput" class="ugc-input" placeholder="输入你的神仙吃法或拔草原因...">
+                    <button class="ugc-btn" onclick="submitRecipeDetail()">发布</button>
                 </div>
             </div>
 
@@ -409,6 +450,9 @@
         }
     }
 
+    // ==========================================
+    // 升级：首页极简卡片内容丰富化
+    // ==========================================
     function renderResult(data) {
         document.getElementById('scanOverlay').style.display = 'none';
         document.getElementById('miniResultCard').style.display = 'block';
@@ -416,21 +460,27 @@
         document.getElementById('miniChineseName').innerText = data.chinese_name || '未知商品';
         document.getElementById('miniDutchName').innerText = data.dutch_name || 'Unknown';
         
-        if (data.features) {
-            document.getElementById('miniTag').style.display = 'inline-block';
-            document.getElementById('miniTag').innerText = `✨ ${data.features}`;
-        } else { 
-            document.getElementById('miniTag').style.display = 'none'; 
-        }
+        // 渲染 AI 简介
+        document.getElementById('miniInsight').innerText = data.insight || '管家还在思考...';
 
+        // 渲染致命预警
         if (data.warning) {
             document.getElementById('miniWarning').style.display = 'block';
             document.getElementById('miniWarning').innerText = `⚠️ 致命预警：${data.warning}`;
         } else { 
             document.getElementById('miniWarning').style.display = 'none'; 
         }
-    }
 
+        // 提取最高赞点评 (从 pairing 字段里提取第一条网友点评)
+        if (data.pairing && data.pairing.includes('网友')) {
+            document.getElementById('miniUgc').style.display = 'block';
+            // 简单处理：按换行符切分，取出带有"网友"的那一行作为精选
+            const firstUgc = data.pairing.split('\n').find(line => line.includes('网友'));
+            document.getElementById('miniUgcText').innerText = firstUgc ? firstUgc.replace('🧑‍🍳 网友点评：', '') : '快来抢首评！';
+        } else {
+            document.getElementById('miniUgc').style.display = 'none';
+        }
+    }
     function resetApp() {
         document.getElementById('fileInput').value = '';
         document.getElementById('previewImg').style.display = 'none';
@@ -518,28 +568,37 @@
         sendBtn.disabled = false;
     }
 
+    // ==========================================
+    // 升级：详情页提交点评 (带上顶/踩态度)
+    // ==========================================
     async function submitRecipeDetail() {
         const recipeText = document.getElementById('detailRecipeInput').value.trim();
         if (!recipeText || !currentDetailData) return;
+        
+        // 获取用户选的是推荐还是避雷
+        const attitude = document.querySelector('input[name="ugcAttitude"]:checked').value;
+        const finalUgcText = `🧑‍🍳 网友点评 [${attitude}]：${recipeText}`;
+
         const btn = document.querySelector('.ugc-btn');
-        btn.innerText = "提交中..."; btn.disabled = true;
+        btn.innerText = "发布中..."; btn.disabled = true;
 
         try {
             await fetch('/api/recipe', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ dutch_name: currentDetailData.dutch_name, recipe: `🧑‍🍳 网友神仙吃法：${recipeText}` })
+                body: JSON.stringify({ dutch_name: currentDetailData.dutch_name, recipe: finalUgcText })
             });
-            alert("🎉 提交成功！");
+            alert("🎉 发布成功！造福全体留学生！");
+            
+            // 清空输入框，并在当前详情页立刻显示出来
             document.getElementById('detailRecipeInput').value = "";
             const pairingBlock = document.getElementById('detailPairing');
-            pairingBlock.innerText += `\n\n🧑‍🍳 网友神仙吃法：${recipeText}`;
+            pairingBlock.innerText += `\n\n${finalUgcText}`;
             document.getElementById('detailPairingBox').style.display = 'block';
         } catch(e) { 
             alert("网络开小差了..."); 
         }
-        btn.innerText = "分享"; btn.disabled = false;
+        btn.innerText = "发布"; btn.disabled = false;
     }
-
     // ==========================================
     // 5. 👣 极简足迹列表
     // ==========================================
