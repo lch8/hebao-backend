@@ -94,25 +94,31 @@
         .poster-result-img { max-width: 85%; max-height: 70vh; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .close-poster-btn { margin-top: 25px; background: #FFF; color: #111827; border: none; padding: 12px 35px; border-radius: 25px; font-weight: bold; font-size: 15px; cursor: pointer; }
         
-        /* 🖼️ 高级版海报模板 (隐藏区域) */
-        #poster-template { position: fixed; left: -9999px; top: 0; width: 375px; background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%); padding: 30px; box-sizing: border-box; font-family: -apple-system, sans-serif; }
-        .pt-wrapper { background: #FFF; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); overflow: hidden; border: 1px solid rgba(255,255,255,0.6); }
-        .pt-header { background: #111827; color: #10B981; text-align: center; padding: 18px; font-weight: 900; font-size: 16px; letter-spacing: 2px; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .pt-body { padding: 30px 25px; position: relative; }
-        .pt-quote-mark { position: absolute; top: 20px; right: 20px; font-size: 80px; color: #F3F4F6; font-family: Georgia, serif; line-height: 1; z-index: 0; }
-        .pt-content { position: relative; z-index: 1; }
-        .pt-title { font-size: 28px; font-weight: 900; color: #111827; margin-bottom: 6px; line-height: 1.3; }
-        .pt-dutch { font-size: 14px; color: #9CA3AF; font-style: italic; margin-bottom: 20px; }
-        .pt-tag { display: inline-block; background: #FEF3C7; color: #D97706; font-size: 13px; padding: 6px 14px; border-radius: 20px; font-weight: bold; margin-bottom: 20px; }
-        .pt-insight { font-size: 16px; color: #374151; line-height: 1.8; text-align: justify; }
-        .pt-review-box { margin-top: 25px; background: #F9FAFB; border-left: 4px solid #10B981; padding: 15px; border-radius: 0 12px 12px 0; }
-        .pt-review-label { font-size: 12px; color: #10B981; font-weight: 900; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
-        .pt-review-text { font-size: 15px; color: #111827; font-weight: bold; line-height: 1.5; }
-        .pt-divider { height: 0; border-top: 2px dashed #E5E7EB; margin: 0 25px; }
-        .pt-footer { padding: 20px 25px 25px; display: flex; justify-content: space-between; align-items: center; background: #FFF; }
-        .pt-brand { font-size: 18px; font-weight: 900; color: #111827; }
-        .pt-slogan { font-size: 12px; color: #6B7280; margin-top: 4px; }
-        .pt-qr-code { width: 75px; height: 75px; border-radius: 8px; border: 1px solid #E5E7EB; padding: 4px; }
+        /* 🖼️ 小红书风 极简海报模板 */
+        #poster-template { position: fixed; left: -9999px; top: 0; width: 340px; background: #F3F4F6; padding: 20px; box-sizing: border-box; font-family: -apple-system, sans-serif; }
+        .pt-wrapper { background: #FFF; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); overflow: hidden; }
+        
+        /* 图片与情绪印章区 */
+        .pt-img-box { position: relative; width: 100%; height: 260px; background: #F9FAFB; }
+        .pt-img { width: 100%; height: 100%; object-fit: cover; }
+        .pt-badge { position: absolute; bottom: 12px; right: 12px; padding: 6px 14px; border-radius: 20px; font-weight: 900; font-size: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); border: 2px solid #FFF; }
+        .pt-badge.like { background: #10B981; color: #FFF; }
+        .pt-badge.dislike { background: #EF4444; color: #FFF; }
+
+        /* 文字信息区 */
+        .pt-body { padding: 20px; }
+        .pt-dutch { font-size: 24px; font-weight: 900; color: #111827; line-height: 1.2; margin-bottom: 6px; word-wrap: break-word; }
+        .pt-chinese { font-size: 14px; color: #6B7280; margin-bottom: 15px; }
+        
+        /* 一句话短评区 */
+        .pt-review-box { background: #F9FAFB; border-radius: 10px; padding: 15px; position: relative; border-left: 4px solid #F59E0B; }
+        .pt-review-text { font-size: 15px; color: #374151; font-weight: bold; line-height: 1.5; }
+
+        /* 底部信息栏 */
+        .pt-footer { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px 20px; background: #FFF; border-top: 1px dashed #E5E7EB; }
+        .pt-brand { font-size: 16px; font-weight: 900; color: #111827; }
+        .pt-slogan { font-size: 13px; color: #10B981; margin-top: 4px; font-weight: bold; }
+        .pt-qr { width: 55px; height: 55px; border-radius: 6px; }
     </style>
 </head>
 
@@ -220,32 +226,30 @@
     <button class="close-poster-btn" onclick="document.getElementById('posterModal').classList.remove('show')">关闭</button>
 </div>
 
+
+    
 <div id="poster-template">
     <div class="pt-wrapper">
-        <div class="pt-header">
-            <span>🇳🇱</span> 荷包管家 · 超市排雷日记
+        <div class="pt-img-box">
+            <img id="ptImage" class="pt-img" src="" crossorigin="anonymous">
+            <div id="ptBadge" class="pt-badge" style="display:none;"></div>
         </div>
+        
         <div class="pt-body">
-            <div class="pt-quote-mark">“</div>
-            <div class="pt-content">
-                <div class="pt-title" id="ptName">商品名</div>
-                <div class="pt-dutch" id="ptDutch">dutch name</div>
-                <div class="pt-tag" id="ptTag" style="display:none;">✨ 核心卖点</div>
-                <div class="pt-insight" id="ptInsight">管家评价</div>
-                
-                <div class="pt-review-box" id="ptUserReviewBox" style="display:none;">
-                    <div class="pt-review-label">MY REVIEW / 我的避雷笔记</div>
-                    <div class="pt-review-text" id="ptUserReview"></div>
-                </div>
+            <div class="pt-dutch" id="ptDutch">Dutch Name</div>
+            <div class="pt-chinese" id="ptChinese">中文名</div>
+            
+            <div class="pt-review-box" id="ptUserReviewBox" style="display:none;">
+                <div class="pt-review-text" id="ptUserReview"></div>
             </div>
         </div>
-        <div class="pt-divider"></div>
+        
         <div class="pt-footer">
             <div>
-                <div class="pt-brand">扫码直达避雷神器</div>
-                <div class="pt-slogan">留学生专属的荷兰超市指南 👉</div>
+                <div class="pt-brand">荷包管家 🇳🇱</div>
+                <div class="pt-slogan">来和大家一起排雷！</div>
             </div>
-            <img class="pt-qr-code" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://hebao-backend.vercel.app/" crossorigin="anonymous">
+            <img class="pt-qr" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://hebao-backend.vercel.app/" crossorigin="anonymous">
         </div>
     </div>
 </div>
@@ -419,16 +423,50 @@
     }
 
     // ==========================================
-    // 3. 升级版：足迹系统 + 一句话评价 + 海报裂变
+    // 3. 终极版：足迹系统 + 缩略图保存 + 极简海报
     // ==========================================
+    
+    // 改造1：存入足迹时，把图片也存进去
     function saveToLocalFootprint(data) {
         let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
         const exists = history.find(item => item.dutch_name === data.dutch_name);
         if (!exists) {
-            // 给存入的数据加一个 my_review 字段，初始为空
             data.my_review = '';
+            data.my_vote = ''; // 记录你是 like 还是 dislike
+            // 拿到刚刚上传的图片 (压缩版以防撑爆缓存)
+            data.img_src = document.getElementById('previewImg').src; 
+            
             history.unshift(data);
-            localStorage.setItem('hebao_history', JSON.stringify(history));
+            try {
+                localStorage.setItem('hebao_history', JSON.stringify(history));
+            } catch(e) {
+                console.log("缓存满了，清理一下最老的记录");
+                history.pop();
+                localStorage.setItem('hebao_history', JSON.stringify(history));
+            }
+        }
+    }
+
+    // 改造2：点赞/排雷时，不仅发给服务器，还要存在本地，让海报能读取
+    async function voteProduct(dutchName, action) {
+        try {
+            const response = await fetch('/api/vote', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ dutch_name: dutchName, action: action })
+            });
+            if(response.ok) {
+                // 更新本地足迹状态
+                let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
+                let index = history.findIndex(item => item.dutch_name === dutchName);
+                if(index !== -1) {
+                    history[index].my_vote = action;
+                    localStorage.setItem('hebao_history', JSON.stringify(history));
+                }
+                alert(action === 'like' ? '👍 已推荐！快去生成海报看看！' : '💣 已排雷！快去生成海报提醒大家！');
+            }
+        } catch(err) {
+            alert('网络错误');
         }
     }
 
@@ -445,19 +483,23 @@
         history.forEach((item, index) => {
             html += `
                 <div class="history-card">
-                    <div class="history-header">${item.chinese_name || '未命名'}</div>
-                    <div class="history-dutch">${item.dutch_name || ''}</div>
-                    <div style="font-size: 13px; color: #4B5563; margin-bottom: 5px; line-height: 1.5;">${item.insight || '暂无评价'}</div>
+                    <div style="display:flex; gap:15px; margin-bottom:10px;">
+                        <img src="${item.img_src || ''}" style="width:60px; height:60px; object-fit:cover; border-radius:8px; background:#eee;">
+                        <div>
+                            <div class="history-header" style="margin:0;">${item.dutch_name || ''}</div>
+                            <div class="history-dutch" style="margin:2px 0 0 0;">${item.chinese_name || '未命名'}</div>
+                        </div>
+                    </div>
                     
                     <div class="review-box">
-                        <input type="text" id="reviewInput_${index}" class="review-input" placeholder="写一句你的神仙吃法或吐槽..." value="${item.my_review || ''}">
+                        <input type="text" id="reviewInput_${index}" class="review-input" placeholder="留下一句你的辣评..." value="${item.my_review || ''}">
                         <button class="review-save-btn" onclick="saveMyReview(${index})">保存</button>
                     </div>
 
                     <div class="history-actions">
                         <button class="action-btn" onclick="voteProduct('${item.dutch_name}', 'like')">👍 推荐</button>
                         <button class="action-btn" onclick="voteProduct('${item.dutch_name}', 'dislike')">💣 避雷</button>
-                        <button class="action-btn" style="background:#10B981; color:#FFF;" onclick="generatePoster(${index})">📤 生成海报</button>
+                        <button class="action-btn" style="background:#111827; color:#FFF;" onclick="generatePoster(${index})">📸 生成海报</button>
                     </div>
                 </div>
             `;
@@ -465,49 +507,60 @@
         listDiv.innerHTML = html;
     }
 
-    // 保存用户的私人评价到 LocalStorage
     function saveMyReview(index) {
         const inputVal = document.getElementById(`reviewInput_${index}`).value.trim();
         let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
         history[index].my_review = inputVal;
         localStorage.setItem('hebao_history', JSON.stringify(history));
-        alert("✅ 你的私人评价已保存！");
+        alert("✅ 短评已保存！点『生成海报』看看效果吧！");
     }
 
-    // 核心大招：生成朋友圈海报
+    // 改造3：极简大图版海报生成器
     async function generatePoster(index) {
         let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
         const item = history[index];
         
-        // 塞入新版模板
-        document.getElementById('ptName').innerText = item.chinese_name || '未知商品';
+        // 填装数据：荷兰语霸占 C 位，中文变小
         document.getElementById('ptDutch').innerText = item.dutch_name || 'Unknown';
-        document.getElementById('ptInsight').innerText = item.insight || '无';
+        document.getElementById('ptChinese').innerText = item.chinese_name || '未知商品';
         
-        // 处理标签
-        const tagBox = document.getElementById('ptTag');
-        if (item.features) {
-            tagBox.style.display = 'inline-block';
-            tagBox.innerText = `✨ ${item.features}`;
+        // 填装图片
+        const imgElement = document.getElementById('ptImage');
+        if(item.img_src) {
+            imgElement.src = item.img_src;
         } else {
-            tagBox.style.display = 'none';
+            imgElement.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23eee'/%3E%3Ctext x='50%25' y='50%25' font-size='14' fill='%23aaa' text-anchor='middle' dy='.3em'%3E暂无图片%3C/text%3E%3C/svg%3E";
+        }
+
+        // 显示印章 (判断用户点的是顶还是踩)
+        const badge = document.getElementById('ptBadge');
+        if(item.my_vote === 'like') {
+            badge.className = 'pt-badge like';
+            badge.innerText = '👍 闭眼入';
+            badge.style.display = 'block';
+        } else if (item.my_vote === 'dislike') {
+            badge.className = 'pt-badge dislike';
+            badge.innerText = '💣 快逃！';
+            badge.style.display = 'block';
+        } else {
+            badge.style.display = 'none'; // 没评价就不显示印章
         }
         
-        // 处理私人评价
+        // 显示一句话短评
         const userReviewBox = document.getElementById('ptUserReviewBox');
         if (item.my_review && item.my_review.trim() !== '') {
             userReviewBox.style.display = 'block';
-            document.getElementById('ptUserReview').innerText = item.my_review;
+            document.getElementById('ptUserReview').innerText = `“${item.my_review}”`;
         } else {
             userReviewBox.style.display = 'none';
         }
 
-        wxLoadingMock("正在进行高级排版...");
+        wxLoadingMock("正在生成美图...");
 
         const templateNode = document.getElementById('poster-template');
         try {
             const canvas = await html2canvas(templateNode, {
-                scale: 2.5, // 进一步提升清晰度
+                scale: 2, 
                 useCORS: true,
                 backgroundColor: null
             });
@@ -523,7 +576,6 @@
         }
     }
 
-    // 一个简单的前端加载框组件 (辅助体验)
     function wxLoadingMock(text) {
         const div = document.createElement('div');
         div.id = 'mockLoadingBox';
