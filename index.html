@@ -221,19 +221,32 @@
 </div>
 
 <div id="poster-template">
-    <div style="font-size: 20px; font-weight: 900; letter-spacing: 1px;">🇳🇱 荷包管家 · 超市排雷日记</div>
-    <div class="pt-card">
-        <h2 class="pt-title" id="ptName">商品名</h2>
-        <div class="pt-sub" id="ptDutch">dutch name</div>
-        <div class="pt-insight">💡 <span id="ptInsight">管家评价</span></div>
-        <div class="pt-user-review" id="ptUserReview" style="display:none;"></div>
-    </div>
-    <div class="pt-footer">
-        <div class="pt-slogan">
-            扫码直达避雷神器 👉<br>
-            <span style="font-size: 11px; font-weight: normal; opacity: 0.8;">留学生专属的荷兰超市指南</span>
+    <div class="pt-wrapper">
+        <div class="pt-header">
+            <span>🇳🇱</span> 荷包管家 · 超市排雷日记
         </div>
-        <img class="pt-qr" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://hebao-backend.vercel.app/" crossorigin="anonymous">
+        <div class="pt-body">
+            <div class="pt-quote-mark">“</div>
+            <div class="pt-content">
+                <div class="pt-title" id="ptName">商品名</div>
+                <div class="pt-dutch" id="ptDutch">dutch name</div>
+                <div class="pt-tag" id="ptTag" style="display:none;">✨ 核心卖点</div>
+                <div class="pt-insight" id="ptInsight">管家评价</div>
+                
+                <div class="pt-review-box" id="ptUserReviewBox" style="display:none;">
+                    <div class="pt-review-label">MY REVIEW / 我的避雷笔记</div>
+                    <div class="pt-review-text" id="ptUserReview"></div>
+                </div>
+            </div>
+        </div>
+        <div class="pt-divider"></div>
+        <div class="pt-footer">
+            <div>
+                <div class="pt-brand">扫码直达避雷神器</div>
+                <div class="pt-slogan">留学生专属的荷兰超市指南 👉</div>
+            </div>
+            <img class="pt-qr-code" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://hebao-backend.vercel.app/" crossorigin="anonymous">
+        </div>
     </div>
 </div>
 </div>
@@ -463,43 +476,47 @@
 
     // 核心大招：生成朋友圈海报
     async function generatePoster(index) {
-        // 1. 获取数据
         let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
         const item = history[index];
         
-        // 2. 塞入隐藏的模板中
+        // 塞入新版模板
         document.getElementById('ptName').innerText = item.chinese_name || '未知商品';
         document.getElementById('ptDutch').innerText = item.dutch_name || 'Unknown';
         document.getElementById('ptInsight').innerText = item.insight || '无';
         
-        const userReviewBox = document.getElementById('ptUserReview');
-        if (item.my_review) {
+        // 处理标签
+        const tagBox = document.getElementById('ptTag');
+        if (item.features) {
+            tagBox.style.display = 'inline-block';
+            tagBox.innerText = `✨ ${item.features}`;
+        } else {
+            tagBox.style.display = 'none';
+        }
+        
+        // 处理私人评价
+        const userReviewBox = document.getElementById('ptUserReviewBox');
+        if (item.my_review && item.my_review.trim() !== '') {
             userReviewBox.style.display = 'block';
-            userReviewBox.innerHTML = `✍️ 我的短评：${item.my_review}`;
+            document.getElementById('ptUserReview').innerText = item.my_review;
         } else {
             userReviewBox.style.display = 'none';
         }
 
-        // 显示加载提示
-        wxLoadingMock("正在排版海报...");
+        wxLoadingMock("正在进行高级排版...");
 
-        // 3. 呼叫 html2canvas 对模板进行“拍照截图”
         const templateNode = document.getElementById('poster-template');
         try {
             const canvas = await html2canvas(templateNode, {
-                scale: 2, // 提高清晰度，相当于 retina 屏幕
-                useCORS: true, // 允许加载跨域的二维码图片
+                scale: 2.5, // 进一步提升清晰度
+                useCORS: true,
                 backgroundColor: null
             });
 
-            // 4. 把截图转成图片地址，塞进弹窗里展示
             const imgUrl = canvas.toDataURL("image/png");
             document.getElementById('posterResultImg').src = imgUrl;
             
-            // 关掉加载提示，显示弹窗
             document.body.removeChild(document.getElementById('mockLoadingBox'));
             document.getElementById('posterModal').classList.add('show');
-            
         } catch (error) {
             alert("海报生成失败了，请重试！");
             document.body.removeChild(document.getElementById('mockLoadingBox'));
