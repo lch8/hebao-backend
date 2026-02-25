@@ -119,6 +119,26 @@
         .pt-brand { font-size: 16px; font-weight: 900; color: #111827; }
         .pt-slogan { font-size: 13px; color: #10B981; margin-top: 4px; font-weight: bold; }
         .pt-qr { width: 55px; height: 55px; border-radius: 6px; }
+            
+        /* 🏷️ 快捷短语标签 */
+        .quick-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+        .tag-pill { background: #E5E7EB; color: #4B5563; font-size: 12px; padding: 4px 10px; border-radius: 12px; cursor: pointer; transition: 0.2s; }
+        .tag-pill:active { background: #10B981; color: #FFF; }
+
+        /* ✨ 狂点连击的浮动 +1 动画 */
+        .floating-plus { position: fixed; font-size: 20px; font-weight: 900; pointer-events: none; animation: floatUp 0.8s ease-out forwards; z-index: 9999; }
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-50px) scale(1.5); }
+        }
+
+        /* 🧑‍🍳 扫雷主页的神仙吃法输入框 */
+        .ugc-box { background: #FFF7ED; border: 1px dashed #F59E0B; padding: 15px; border-radius: 12px; margin-top: 15px; }
+        .ugc-title { font-size: 14px; font-weight: 900; color: #D97706; margin-bottom: 8px; }
+        .ugc-input-group { display: flex; gap: 8px; }
+        .ugc-input { flex: 1; border: 1px solid #FCD34D; border-radius: 6px; padding: 8px; font-size: 13px; outline: none; background: #FFF; }
+        .ugc-btn { background: #F59E0B; color: #FFF; border: none; padding: 0 15px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        
     </style>
 </head>
 
@@ -175,6 +195,13 @@
             <div class="info-block" id="blockPairing" style="display: none;">
                 <div class="block-title">🍳 神仙吃法 / 爆改指南</div>
                 <p class="block-text" id="resPairing"></p>
+            </div>
+            <div class="ugc-box" id="ugcBox" style="display: none;">
+                <div class="ugc-title">🧑‍🍳 管家不知道怎么吃？你来教！</div>
+                <div class="ugc-input-group">
+                    <input type="text" id="recipeInput" class="ugc-input" placeholder="输入你的隐藏吃法，造福全体留学生...">
+                    <button class="ugc-btn" onclick="submitRecipe()">分享</button>
+                </div>
             </div>
             <div class="info-block warning" id="blockWarning" style="display: none;">
                 <div class="block-title warning-title">⚠️ 避雷预警</div>
@@ -338,6 +365,7 @@
         
         document.getElementById('chatHistory').innerHTML = '';
         document.getElementById('askInput').value = '';
+        document.getElementById('ugcBox').style.display = 'block';
     }
 
     function toggleBlock(blockId, condition, text, textId = null) {
@@ -353,6 +381,41 @@
 
     function handleEnter(e) { if (e.key === 'Enter') sendQuestion(); }
 
+// 提交神仙吃法的逻辑
+    async function submitRecipe() {
+        const recipeText = document.getElementById('recipeInput').value.trim();
+        if (!recipeText || !currentProductData) return;
+        
+        const btn = document.querySelector('.ugc-btn');
+        btn.innerText = "提交中...";
+        btn.disabled = true;
+
+        try {
+            // 调用我们即将写的新后端接口
+            const response = await fetch('/api/recipe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    dutch_name: currentProductData.dutch_name, 
+                    recipe: `🧑‍🍳 网友神仙吃法：${recipeText}` 
+                })
+            });
+            
+            if(response.ok) {
+                alert("🎉 提交成功！你的神仙吃法已被收录，下一个扫到它的人就能看到啦！");
+                document.getElementById('recipeInput').value = "";
+                // 顺便把本地当前显示的内容也更新一下
+                const pairingBlock = document.getElementById('resPairing');
+                pairingBlock.innerText += `\n\n🧑‍🍳 网友神仙吃法：${recipeText}`;
+                document.getElementById('blockPairing').style.display = 'block';
+            }
+        } catch(e) {
+            alert("网络开小差了...");
+        }
+        btn.innerText = "分享";
+        btn.disabled = false;
+    }
+    
     async function sendQuestion() {
         const input = document.getElementById('askInput');
         const question = input.value.trim();
@@ -475,8 +538,7 @@
         let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
         
         if (history.length === 0) {
-            listDiv.innerHTML = '<div style="text-align:center; color:#888; margin-top:40px;">快去首页扫几个超市盲盒吧~</div>';
-            return;
+            listDiv.innerHTML = '<div style="text-align:center; color:#888; margin-top:40px;">快去首页扫几个超市盲盒吧~</div>'; return;
         }
 
         let html = '';
@@ -495,16 +557,56 @@
                         <input type="text" id="reviewInput_${index}" class="review-input" placeholder="留下一句你的辣评..." value="${item.my_review || ''}">
                         <button class="review-save-btn" onclick="saveMyReview(${index})">保存</button>
                     </div>
+                    <div class="quick-tags">
+                        <span class="tag-pill" onclick="fillReview(${index}, '太好吃了！闭眼入！🤤')">闭眼入</span>
+                        <span class="tag-pill" onclick="fillReview(${index}, '巨雷！狗都不吃 🤢')">巨雷</span>
+                        <span class="tag-pill" onclick="fillReview(${index}, '无限回购的好物 🛒')">无限回购</span>
+                        <span class="tag-pill" onclick="fillReview(${index}, '勉强能吃，不推荐 😕')">勉强能吃</span>
+                    </div>
 
-                    <div class="history-actions">
-                        <button class="action-btn" onclick="voteProduct('${item.dutch_name}', 'like')">👍 推荐</button>
-                        <button class="action-btn" onclick="voteProduct('${item.dutch_name}', 'dislike')">💣 避雷</button>
-                        <button class="action-btn" style="background:#111827; color:#FFF;" onclick="generatePoster(${index})">📸 生成海报</button>
+                    <div class="history-actions" style="margin-top: 15px;">
+                        <button class="action-btn" onclick="voteProduct('${item.dutch_name}', 'like', event)">👍 狂赞</button>
+                        <button class="action-btn" onclick="voteProduct('${item.dutch_name}', 'dislike', event)">💣 狂踩</button>
+                        <button class="action-btn" style="background:#111827; color:#FFF;" onclick="generatePoster(${index})">📸 海报</button>
                     </div>
                 </div>
             `;
         });
         listDiv.innerHTML = html;
+    }
+
+    // 快捷填入短评
+    function fillReview(index, text) {
+        document.getElementById(`reviewInput_${index}`).value = text;
+        saveMyReview(index); // 自动保存
+    }
+
+    // 狂点连击与特效
+    async function voteProduct(dutchName, action, event) {
+        // 1. 触发屏幕飞出 +1 特效
+        const plus = document.createElement('div');
+        plus.className = 'floating-plus';
+        plus.innerText = action === 'like' ? '👍 +1' : '💣 +1';
+        plus.style.color = action === 'like' ? '#10B981' : '#EF4444';
+        plus.style.left = (event.clientX - 10) + 'px';
+        plus.style.top = (event.clientY - 20) + 'px';
+        document.body.appendChild(plus);
+        setTimeout(() => plus.remove(), 800);
+
+        // 2. 静默发送请求给服务器（去掉 await 和 alert，让用户可以疯狂连点）
+        fetch('/api/vote', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ dutch_name: dutchName, action: action })
+        }).catch(err => console.error("投票小错误", err));
+
+        // 3. 记录本地状态供海报使用
+        let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
+        let idx = history.findIndex(item => item.dutch_name === dutchName);
+        if(idx !== -1) {
+            history[idx].my_vote = action;
+            localStorage.setItem('hebao_history', JSON.stringify(history));
+        }
     }
 
     function saveMyReview(index) {
