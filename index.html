@@ -57,7 +57,7 @@
         .tab-icon { font-size: 22px; margin-bottom: 4px; }
         .tab-text { font-size: 11px; font-weight: bold; }
 
-        /* ================= 详情页专属 UI (重点爆改区) ================= */
+        /* ================= 详情页专属 UI ================= */
         #page-details { background: #F7F8FA; min-height: 100vh; padding-bottom: 100px; }
         .top-nav { position: sticky; top: 0; background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); padding: 15px 20px; display: flex; align-items: center; z-index: 50; border-bottom: 1px solid #E5E7EB;}
         .back-btn { font-size: 16px; font-weight: 900; color: #111827; cursor: pointer; display: flex; align-items: center; gap: 5px; }
@@ -65,6 +65,14 @@
         .detail-hero { background: #FFF; padding: 20px; border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 20px; text-align: center;}
         .detail-img { width: 100%; height: 200px; object-fit: contain; background: #F9FAFB; border-radius: 16px; margin-bottom: 15px; }
         
+        /* 💡 新增大招：三等分操作区 */
+        .action-buttons-grid { display: flex; gap: 10px; margin-top: 20px; width: 100%; }
+        .grid-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 12px 0; border-radius: 16px; font-size: 13px; font-weight: 900; cursor: pointer; transition: transform 0.1s; border: 1px solid transparent; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+        .grid-btn:active { transform: scale(0.92); }
+        .grid-btn.like-btn { background: #ECFDF5; color: #047857; border-color: #A7F3D0; }
+        .grid-btn.dislike-btn { background: #FEF2F2; color: #B91C1C; border-color: #FECACA; }
+        .grid-btn.poster-btn { background: #111827; color: #FFF; box-shadow: 0 4px 15px rgba(17, 24, 39, 0.2); }
+
         .info-block { background: #FFF; border-radius: 16px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);}
         .block-title { font-size: 16px; font-weight: 900; color: #111827; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;}
         .block-text { font-size: 14px; color: #4B5563; line-height: 1.6; margin: 0; }
@@ -88,33 +96,32 @@
         .ugc-upvote { background: rgba(255,255,255,0.8); padding: 4px 10px; border-radius: 20px; font-size: 12px; color: #6B7280; cursor: pointer; transition: 0.2s; border: 1px solid rgba(0,0,0,0.05);}
         .ugc-upvote:active { transform: scale(0.9); background: #111827; color: #FFF; }
 
-        /* 🧑‍🍳 发布点评区 (站队) */
-        .ugc-publish-box { background: #FFF; border: 1px solid #E5E7EB; padding: 20px; border-radius: 16px; margin-bottom: 15px; }
+        /* 🧑‍🍳 动态发布点评区 (随态度变色) */
+        .ugc-publish-box { background: #FFF; border: 2px solid #E5E7EB; padding: 20px; border-radius: 16px; margin-bottom: 15px; transition: all 0.3s ease;}
         .vote-toggle { display: flex; gap: 15px; margin-bottom: 15px; }
         .vote-label { font-size: 14px; font-weight: bold; color: #4B5563; display: flex; align-items: center; gap: 5px; cursor: pointer; padding: 8px 15px; background: #F3F4F6; border-radius: 20px; transition: 0.2s;}
         .vote-label input[type="radio"] { display: none; }
         .vote-label:has(input:checked) { background: #10B981; color: #FFF; }
         .vote-label.dislike:has(input:checked) { background: #EF4444; color: #FFF; }
         .ugc-input-group { display: flex; gap: 8px; flex-direction: column;}
-        .ugc-input { border: 1px solid #E5E7EB; border-radius: 10px; padding: 12px; font-size: 14px; outline: none; background: #F9FAFB; resize: none; font-family: inherit;}
-        .ugc-btn { background: #111827; color: #FFF; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 5px;}
+        .ugc-input { border: 2px solid #E5E7EB; border-radius: 10px; padding: 12px; font-size: 14px; outline: none; background: #F9FAFB; resize: none; font-family: inherit; transition: all 0.3s ease;}
+        .ugc-btn { background: #111827; color: #FFF; border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 5px; transition: all 0.3s ease;}
 
-        /* 💬 悬浮追问栏 (聊天窗体验) */
+        /* 💬 悬浮追问栏 (微信聊天窗体验) */
         .sticky-chat-bar { position: fixed; bottom: 0; left: 0; right: 0; max-width: 600px; margin: 0 auto; background: #FFF; padding: 12px 20px; box-shadow: 0 -4px 20px rgba(0,0,0,0.08); display: none; align-items: center; gap: 10px; z-index: 100; box-sizing: border-box; border-top-left-radius: 20px; border-top-right-radius: 20px;}
         .chat-input { flex: 1; height: 40px; background: #F3F4F6; border: none; border-radius: 20px; padding: 0 15px; font-size: 14px; outline: none; }
         .chat-send-btn { background: #10B981; color: #FFF; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 16px; display: flex; justify-content: center; align-items: center; cursor: pointer; }
         
-        /* 聊天记录区 (移到上面) */
         #chatHistory { margin-bottom: 20px; display: flex; flex-direction: column; gap: 12px; }
         .chat-bubble { max-width: 85%; padding: 12px 16px; border-radius: 16px; font-size: 14px; line-height: 1.5; word-wrap: break-word; }
         .bubble-user { background: #10B981; color: #FFF; border-bottom-right-radius: 4px; align-self: flex-end;}
         .bubble-ai { background: #F3F4F6; color: #1F2937; border-bottom-left-radius: 4px; align-self: flex-start;}
 
         /* ✨ 狂点连击动画 */
-        .floating-plus { position: fixed; font-size: 20px; font-weight: 900; pointer-events: none; animation: floatUp 0.8s ease-out forwards; z-index: 9999; }
+        .floating-plus { position: fixed; font-size: 20px; font-weight: 900; pointer-events: none; animation: floatUp 0.8s ease-out forwards; z-index: 9999; text-shadow: 0 2px 5px rgba(0,0,0,0.2);}
         @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-50px) scale(1.5); } }
 
-        /* 足迹与海报样式省略(使用原有简化版)... */
+        /* 足迹与海报样式 */
         .history-card { background: #FFF; padding: 15px; border-radius: 16px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); display: flex; gap:15px; align-items: center; cursor: pointer; border: 1px solid transparent;}
         .history-card:active { border-color: #10B981; background: #F9FAFB;}
         
@@ -199,8 +206,17 @@
                 <span class="item-name" id="detailChineseName"></span>
                 <span class="item-dutch" id="detailDutchName"></span>
             </div>
-            <div style="display:flex; justify-content:center; gap: 15px; margin-top: 15px;">
-                <div class="ugc-upvote" style="background:#111827; color:#FFF; font-weight:bold; font-size:14px; padding: 8px 20px;" onclick="generatePosterFromDetail()">📸 生成分享海报</div>
+            
+            <div class="action-buttons-grid">
+                <div class="grid-btn like-btn" onclick="voteProductDetail('like', event)">
+                    <span style="font-size:18px; margin-bottom:2px;">👍</span>狂赞
+                </div>
+                <div class="grid-btn dislike-btn" onclick="voteProductDetail('dislike', event)">
+                    <span style="font-size:18px; margin-bottom:2px;">💣</span>狂踩
+                </div>
+                <div class="grid-btn poster-btn" onclick="generatePosterFromDetail()">
+                    <span style="font-size:18px; margin-bottom:2px;">📸</span>生成海报
+                </div>
             </div>
         </div>
 
@@ -221,19 +237,19 @@
             </div>
 
             <div class="info-block" id="detailPairingBox" style="display:none; background: transparent; box-shadow: none; padding: 0;">
-                <div class="block-title" style="margin-left: 5px;">💬 网友点评 & 神仙吃法</div>
+                <div class="block-title" style="margin-left: 5px;">💬 网友真实点评</div>
                 <div id="ugcCardList"></div>
             </div>
 
             <div class="ugc-publish-box" id="detailUgcBox">
-                <div class="block-title" style="margin-bottom: 15px;">✍️ 轮到你点评了</div>
+                <div class="block-title" id="ugcTitleText" style="margin-bottom: 15px; transition: 0.3s;">✍️ 轮到你点评了</div>
                 <div class="vote-toggle">
-                    <label class="vote-label"><input type="radio" name="ugcAttitude" value="👍 推荐" checked> 👍 推荐</label>
-                    <label class="vote-label dislike"><input type="radio" name="ugcAttitude" value="💣 避雷"> 💣 避雷</label>
+                    <label class="vote-label"><input type="radio" name="ugcAttitude" value="👍 推荐" onchange="updateUgcStyle()" checked> 👍 推荐</label>
+                    <label class="vote-label dislike"><input type="radio" name="ugcAttitude" value="💣 避雷" onchange="updateUgcStyle()"> 💣 避雷</label>
                 </div>
                 <div class="ugc-input-group">
-                    <textarea id="detailRecipeInput" class="ugc-input" rows="2" placeholder="输入神仙吃法或拔草原因..."></textarea>
-                    <button class="ugc-btn" onclick="submitRecipeDetail()">马上发布</button>
+                    <textarea id="detailRecipeInput" class="ugc-input" rows="2" placeholder="输入你的神仙吃法，疯狂安利给大家..."></textarea>
+                    <button class="ugc-btn" id="submitUgcBtn" onclick="submitRecipeDetail()">马上发布</button>
                 </div>
             </div>
 
@@ -285,7 +301,7 @@
     let currentDetailData = null;  
 
     // ==========================================
-    // 1. 导航切换 & 悬浮栏控制
+    // 1. 导航与页面切换
     // ==========================================
     function switchTab(pageId, element) {
         document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
@@ -301,7 +317,7 @@
         
         if (pageId === 'details') {
             tabBar.style.display = 'none';
-            chatBar.style.display = 'flex'; // 详情页显示底部聊天框
+            chatBar.style.display = 'flex';
         } else {
             tabBar.style.display = 'flex';
             chatBar.style.display = 'none';
@@ -316,7 +332,7 @@
     }
 
     // ==========================================
-    // 2. 扫雷核心
+    // 2. 核心扫雷
     // ==========================================
     function handleFileSelect(event) {
         const file = event.target.files[0];
@@ -382,7 +398,6 @@
             document.getElementById('miniWarning').innerText = `⚠️ ${data.warning}`;
         } else { document.getElementById('miniWarning').style.display = 'none'; }
 
-        // 首页高赞提取
         if (data.pairing && String(data.pairing).includes('网友点评')) {
             document.getElementById('miniUgc').style.display = 'block';
             const firstUgc = data.pairing.split('\n\n').find(line => line.includes('网友点评'));
@@ -402,7 +417,7 @@
     }
 
     // ==========================================
-    // 3. 详情页填充 (UGC 华丽解析器)
+    // 3. 详情页渲染 & UGC 情绪 UI
     // ==========================================
     function openDetailsFromScan() {
         currentDetailData = { ...currentProductData, img_src: document.getElementById('previewImg').src };
@@ -424,7 +439,6 @@
         document.getElementById('detailChineseName').innerText = d.chinese_name || '未知商品';
         document.getElementById('detailDutchName').innerText = d.dutch_name || '';
         
-        // 填充洞察与警告
         const fillText = (boxId, textId, content) => {
             const box = document.getElementById(boxId);
             if (content && String(content).trim() !== '') {
@@ -434,16 +448,15 @@
         fillText('detailInsightBox', 'detailInsight', d.insight);
         fillText('detailWarningBox', 'detailWarning', d.warning);
         
-        // 【改造】平替与升级提取为标签
+        // 平替化为紧凑标签
         const altBox = document.getElementById('detailAltBox');
         if (d.alternatives && String(d.alternatives).trim() !== '') {
             altBox.style.display = 'block';
-            // 简单处理，换行变标签
             const parts = String(d.alternatives).split('|').map(p => p.trim());
             document.getElementById('detailAlternatives').innerHTML = parts.map(p => `<div class="alt-tag">${p}</div>`).join('');
         } else { altBox.style.display = 'none'; }
 
-        // 【大招】解析 pairing 字段，渲染精美点评卡片！
+        // 解析渲染网友点评卡片 (自动加模拟赞)
         const pairingBox = document.getElementById('detailPairingBox');
         const listContainer = document.getElementById('ugcCardList');
         listContainer.innerHTML = '';
@@ -452,10 +465,8 @@
             pairingBox.style.display = 'block';
             const lines = String(d.pairing).split('\n\n').filter(l => l.trim() !== '');
             
-            lines.forEach((line, idx) => {
-                // 利用文本长度模拟初始化假点赞数，让页面看起来很热闹
+            lines.forEach((line) => {
                 const fakeInitialVotes = (line.length * 7) % 45 + 5; 
-
                 if (line.includes('网友点评')) {
                     const isLike = line.includes('👍');
                     const textContent = line.replace(/🧑‍🍳 网友点评 \[.*?\]：/, '').trim();
@@ -472,7 +483,6 @@
                         </div>
                     `;
                 } else {
-                    // 原生 AI 吃法
                     listContainer.innerHTML += `
                         <div class="ugc-card ugc-card-ai">
                             <div class="ugc-card-header"><span style="color:#4B5563;">🤖 管家神仙吃法</span></div>
@@ -485,35 +495,55 @@
             pairingBox.style.display = 'none';
         }
         
+        // 重置发布框状态
+        document.querySelector('input[name="ugcAttitude"][value="👍 推荐"]').checked = true;
+        updateUgcStyle();
+
         switchTab('details', null);
     }
 
-    // 评论区的假 +1 动画效果
     function upvoteComment(btnElement, type) {
-        // 防止连点
         if(btnElement.dataset.voted) return; 
-        
         const currentVotes = parseInt(btnElement.innerText.replace('🔺 ', ''));
         btnElement.innerText = `🔺 ${currentVotes + 1}`;
-        btnElement.style.background = '#111827';
-        btnElement.style.color = '#FFF';
+        btnElement.style.background = '#111827'; btnElement.style.color = '#FFF';
         btnElement.dataset.voted = 'true';
 
-        // 浮动动画
         const rect = btnElement.getBoundingClientRect();
         const plus = document.createElement('div');
         plus.className = 'floating-plus';
         plus.innerText = '+1';
         plus.style.color = type === 'like' ? '#10B981' : '#EF4444';
-        plus.style.left = rect.left + 'px';
-        plus.style.top = (rect.top - 20) + 'px';
+        plus.style.left = rect.left + 'px'; plus.style.top = (rect.top - 20) + 'px';
         document.body.appendChild(plus);
         setTimeout(() => plus.remove(), 800);
     }
 
-    // ==========================================
-    // 4. 用户提交点评
-    // ==========================================
+    // 💡 核心大招：评论框根据态度动态变色
+    function updateUgcStyle() {
+        const attitude = document.querySelector('input[name="ugcAttitude"]:checked').value;
+        const publishBox = document.getElementById('detailUgcBox');
+        const titleText = document.getElementById('ugcTitleText');
+        const inputArea = document.getElementById('detailRecipeInput');
+        const submitBtn = document.getElementById('submitUgcBtn');
+
+        if (attitude.includes('推荐')) {
+            publishBox.style.backgroundColor = '#ECFDF5';
+            publishBox.style.borderColor = '#A7F3D0';
+            titleText.style.color = '#047857';
+            inputArea.style.borderColor = '#6EE7B7';
+            inputArea.placeholder = "输入你的神仙吃法，疯狂安利给大家...";
+            submitBtn.style.background = '#10B981';
+        } else {
+            publishBox.style.backgroundColor = '#FEF2F2';
+            publishBox.style.borderColor = '#FECACA';
+            titleText.style.color = '#B91C1C';
+            inputArea.style.borderColor = '#FCA5A5';
+            inputArea.placeholder = "输入这玩意儿有多难吃，帮大家避雷...";
+            submitBtn.style.background = '#EF4444';
+        }
+    }
+
     async function submitRecipeDetail() {
         const recipeText = document.getElementById('detailRecipeInput').value.trim();
         if (!recipeText || !currentDetailData) return;
@@ -521,7 +551,8 @@
         const attitude = document.querySelector('input[name="ugcAttitude"]:checked').value;
         const finalUgcText = `🧑‍🍳 网友点评 [${attitude}]：${recipeText}`;
 
-        const btn = document.querySelector('.ugc-btn');
+        const btn = document.getElementById('submitUgcBtn');
+        const oldText = btn.innerText;
         btn.innerText = "发布中..."; btn.disabled = true;
 
         try {
@@ -531,17 +562,50 @@
             });
             alert("🎉 发布成功！你的智慧已收录进数据库！");
             
-            // 将自己的发布追加到当前数据中，并重新渲染
             currentDetailData.pairing = (currentDetailData.pairing || '') + '\n\n' + finalUgcText;
             document.getElementById('detailRecipeInput').value = "";
-            populateAndOpenDetails(); // 重新走一遍渲染，变成精美的卡片！
+            populateAndOpenDetails(); 
 
         } catch(e) { alert("网络开小差了..."); }
-        btn.innerText = "马上发布"; btn.disabled = false;
+        btn.innerText = oldText; btn.disabled = false;
     }
 
     // ==========================================
-    // 5. 悬浮追问系统 (Ask AI)
+    // 4. 狂赞狂踩特效
+    // ==========================================
+    async function voteProduct(dutchName, action, event) {
+        if(event) {
+            const plus = document.createElement('div');
+            plus.className = 'floating-plus';
+            plus.innerText = action === 'like' ? '👍 +1' : '💣 +1';
+            plus.style.color = action === 'like' ? '#10B981' : '#EF4444';
+            plus.style.left = (event.clientX - 10) + 'px';
+            plus.style.top = (event.clientY - 30) + 'px';
+            document.body.appendChild(plus);
+            setTimeout(() => plus.remove(), 800);
+        }
+
+        fetch('/api/vote', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ dutch_name: dutchName, action: action })
+        }).catch(err => console.error("投票错误", err));
+
+        let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
+        let idx = history.findIndex(item => item.dutch_name === dutchName);
+        if(idx !== -1) {
+            history[idx].my_vote = action;
+            localStorage.setItem('hebao_history', JSON.stringify(history));
+        }
+    }
+
+    function voteProductDetail(action, event) {
+        event.stopPropagation(); 
+        if(!currentDetailData) return;
+        voteProduct(currentDetailData.dutch_name, action, event);
+    }
+
+    // ==========================================
+    // 5. 悬浮追问系统
     // ==========================================
     async function sendQuestion() {
         const input = document.getElementById('askInput');
@@ -551,7 +615,6 @@
         const chatBox = document.getElementById('chatHistory');
         const sendBtn = document.getElementById('sendBtn');
         
-        // 平滑滚动到底部
         chatBox.innerHTML += `<div class="chat-bubble bubble-user">${question}</div>`;
         window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
         
@@ -581,7 +644,7 @@
     }
 
     // ==========================================
-    // 6. 极简足迹与海报
+    // 6. 足迹与海报
     // ==========================================
     function saveToLocalFootprint(data) {
         let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
