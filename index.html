@@ -66,34 +66,31 @@
         .ugc-upvote { background: rgba(255,255,255,0.8); padding: 4px 10px; border-radius: 20px; font-size: 12px; color: #6B7280; cursor: pointer; transition: 0.2s; border: 1px solid rgba(0,0,0,0.05);}
         .ugc-upvote:active { transform: scale(0.9); background: #111827; color: #FFF; }
 
-        /* ================= 3. 足迹卡片 (殿堂级 UI 爆改) ================= */
+        /* ================= 3. 足迹卡片 (视觉流极致优化版) ================= */
         .history-card-wrap { background: #FFF; border-radius: 20px; margin-bottom: 20px; box-shadow: 0 6px 20px rgba(0,0,0,0.05); overflow: hidden; border: 1px solid #F3F4F6;}
         
-        /* 上半身阅读区 */
-        .hc-top-clickable { display: flex; gap: 15px; padding: 16px; cursor: pointer; background: transparent; transition: background 0.2s;}
+        /* 上半身：图左、文右、赞踩按钮也嵌在右边 */
+        .hc-top-clickable { display: flex; gap: 15px; padding: 16px 16px 10px 16px; cursor: pointer; background: transparent; transition: background 0.2s;}
         .hc-top-clickable:active { background: #F9FAFB; }
         
-        /* 下半身操作区：高级胶囊按钮排版 */
-        .card-actions-bar { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: #FAFAFA; border-top: 1px dashed #E5E7EB; }
-        .action-left-group { display: flex; gap: 10px; flex: 1;}
-        
-        /* 赞/踩胶囊按钮 */
-        .btn-chic { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 0; border-radius: 12px; font-size: 13px; font-weight: 900; flex: 1; cursor: pointer; background: #FFF; border: 1px solid #E5E7EB; color: #6B7280; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .btn-chic:active { transform: scale(0.92); }
-        .btn-chic .emoji { font-size: 16px; }
-        
-        /* 激活状态 */
-        .btn-chic.active-like { background: #ECFDF5; border-color: #34D399; color: #047857; }
-        .btn-chic.active-dislike { background: #FEF2F2; border-color: #F87171; color: #B91C1C; }
+        /* 迷你赞踩胶囊 (放在图片右侧) */
+        .mini-btn { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 900; background: #F3F4F6; color: #6B7280; border: 1px solid transparent; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: inline-flex; align-items: center; gap: 4px; user-select: none;}
+        .mini-btn:active { transform: scale(0.9); }
+        .mini-btn .emoji { display: inline-block; transition: transform 0.2s; }
+        .mini-btn:active .emoji { transform: scale(1.5) rotate(-10deg); }
+        .mini-btn.active-like { background: #ECFDF5; color: #047857; border-color: #A7F3D0; }
+        .mini-btn.active-dislike { background: #FEF2F2; color: #B91C1C; border-color: #FECACA; }
 
-        /* 海报专属 C 位按钮 */
-        .btn-chic-poster { background: #111827; color: #FFF; border: none; padding: 8px 16px; border-radius: 12px; font-size: 13px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.15); transition: 0.2s;}
-        .btn-chic-poster:active { transform: scale(0.95); }
-
-        /* 动态变色发布框 (无单选按钮) */
-        .ugc-compact-box { margin: 0 16px 16px; border: 2px solid #E5E7EB; border-radius: 12px; display: flex; align-items: center; overflow: hidden; background: #FFF; transition: all 0.3s ease; }
+        /* 动态变色发布框 */
+        .ugc-compact-box { margin: 0 16px 12px; border: 2px solid #E5E7EB; border-radius: 12px; display: flex; align-items: center; overflow: hidden; background: #FFF; transition: all 0.3s ease; }
         .ugc-compact-input { flex: 1; border: none; background: transparent; padding: 12px; font-size: 13px; outline: none; color: #111827; }
         .ugc-compact-submit { background: #111827; color: #FFF; border: none; padding: 0 16px; height: 100%; font-weight: bold; font-size: 13px; cursor: pointer; transition: 0.3s; }
+
+        /* 👑 底部无边框高级分享区 */
+        .share-footer-btn { padding: 10px 15px 15px; text-align: center; cursor: pointer; transition: 0.2s; user-select: none;}
+        .share-footer-btn:active { transform: scale(0.97); }
+        .share-text-chic { font-size: 13px; font-weight: 900; background: linear-gradient(90deg, #D97706 0%, #F59E0B 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: inline-flex; align-items: center; gap: 6px; letter-spacing: 0.5px;}
+        .share-text-chic .icon { font-size: 15px; -webkit-text-fill-color: initial; color: initial;}
 
         /* 爽感浮动 +1 */
         .float-plus { position: fixed; font-size: 24px; font-weight: 900; z-index: 9999; pointer-events: none; text-shadow: 0 2px 5px rgba(0,0,0,0.2); animation: popAndFloat 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
@@ -228,7 +225,7 @@
     <div id="page-footprint" class="page-section">
         <div class="header">
             <h1 class="title">我的足迹 👣</h1>
-            <div class="subtitle">打分吐槽全在这里操作</div>
+            <div class="subtitle">记录你的排雷日记</div>
         </div>
         <div id="footprintList"></div>
     </div>
@@ -421,7 +418,7 @@
                     listContainer.innerHTML += `
                         <div class="ugc-card ${styleClass}">
                             <div class="ugc-card-header">
-                                <span style="font-size:14px;">${isLike ? '👍' : '💣'}</span>
+                                <span style="font-size:14px;">${isLike ? '👍 推荐' : '💣 避雷'}</span>
                                 <div class="ugc-upvote" onclick="upvoteComment(this, '${isLike ? 'like' : 'dislike'}')">🔺 ${fakeInitialVotes}</div>
                             </div>
                             <div class="ugc-card-text">${textContent}</div>
@@ -468,16 +465,16 @@
             const data = await response.json();
             document.getElementById(loadingId).remove();
             if (response.ok) { chatBox.innerHTML += `<div class="chat-bubble bubble-ai">${data.reply}</div>`; } 
-            else { chatBox.innerHTML += `<div class="chat-bubble bubble-ai" style="color:red;">管家走神了：${data.error}</div>`; }
+            else { chatBox.innerHTML += `<div class="chat-bubble bubble-ai" style="color:red;">网络拥挤：${data.error}</div>`; }
         } catch (err) {
             document.getElementById(loadingId).remove();
-            chatBox.innerHTML += `<div class="chat-bubble bubble-ai" style="color:red;">网络似乎断了...</div>`;
+            chatBox.innerHTML += `<div class="chat-bubble bubble-ai" style="color:red;">网络断了...</div>`;
         }
         sendBtn.disabled = false; window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     }
 
     // ==========================================
-    // 足迹核心渲染 (全新胶囊互动条)
+    // 足迹核心渲染 (顺滑视觉流版)
     // ==========================================
     function saveToLocalFootprint(data) {
         let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
@@ -496,57 +493,53 @@
 
         let html = '';
         history.forEach((item, index) => {
-            // 根据缓存恢复按钮高亮状态
             const isLike = item.my_vote === 'like';
             const isDislike = item.my_vote === 'dislike';
             
             html += `
                 <div class="history-card-wrap">
                     <div class="hc-top-clickable" onclick="openDetailsFromHistory(${index})">
-                        <img src="${item.img_src || ''}" style="width:70px; height:70px; object-fit:cover; border-radius:12px; background:#f0f0f0;">
-                        <div style="flex:1;">
-                            <div style="font-weight:900; font-size:16px; color:#111827;">${item.chinese_name || '未命名'}</div>
-                            <div style="font-size:12px; color:#9CA3AF; margin:4px 0;">${item.dutch_name || ''}</div>
-                            <div style="font-size:13px; color:#6B7280; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden;">${item.insight || ''}</div>
-                        </div>
-                    </div>
-                    
-                    <div class="card-actions-bar">
-                        <div class="action-left-group">
-                            <div id="btnLike_${index}" class="btn-chic ${isLike ? 'active-like' : ''}" onclick="handleInteraction(${index}, 'like', event)">
-                                <span class="emoji">👍</span> 狂赞
+                        <img src="${item.img_src || ''}" style="width:75px; height:75px; object-fit:cover; border-radius:12px; background:#f0f0f0; flex-shrink: 0;">
+                        <div style="flex:1; display: flex; flex-direction: column; justify-content: space-between;">
+                            <div>
+                                <div style="font-weight:900; font-size:16px; color:#111827; line-height: 1.2;">${item.chinese_name || '未命名'}</div>
+                                <div style="font-size:12px; color:#9CA3AF; margin:4px 0;">${item.dutch_name || ''}</div>
                             </div>
-                            <div id="btnDislike_${index}" class="btn-chic ${isDislike ? 'active-dislike' : ''}" onclick="handleInteraction(${index}, 'dislike', event)">
-                                <span class="emoji">💣</span> 狂踩
+                            <div style="display:flex; gap:8px; margin-top:6px;" onclick="event.stopPropagation()">
+                                <div id="btnLike_${index}" class="mini-btn ${isLike ? 'active-like' : ''}" onclick="handleInteraction(${index}, 'like', event)">
+                                    <span class="emoji">👍</span> 狂赞
+                                </div>
+                                <div id="btnDislike_${index}" class="mini-btn ${isDislike ? 'active-dislike' : ''}" onclick="handleInteraction(${index}, 'dislike', event)">
+                                    <span class="emoji">💣</span> 狂踩
+                                </div>
                             </div>
                         </div>
-                        <button class="btn-chic-poster" onclick="generatePoster(${index})">✨ 生成海报</button>
                     </div>
 
                     <div class="ugc-compact-box" id="ugcBox_${index}">
                         <input type="text" id="recipeInput_${index}" class="ugc-compact-input" placeholder="请先点赞或踩再写点评哦！">
                         <button class="ugc-compact-submit" id="submitBtn_${index}" onclick="submitRecipeFromHistory(${index})">发布</button>
                     </div>
+                    
+                    <div class="share-footer-btn" onclick="generatePoster(${index})">
+                        <span class="share-text-chic"><span class="icon">✨</span> 专属海报 · 一键避雷 ↗</span>
+                    </div>
                 </div>
             `;
         });
         listDiv.innerHTML = html;
         
-        // 初始化已有态度的输入框颜色
         history.forEach((item, index) => {
             if(item.my_vote) updateUgcStyle(index, item.my_vote);
         });
     }
 
-    // 处理点赞和变色联动
     function handleInteraction(index, action, event) {
-        // 1. 物理级缩放动画
         const btn = event.currentTarget;
         const emoji = btn.querySelector('.emoji');
         emoji.style.transform = 'scale(1.8) rotate(' + (action==='like'?'-15deg':'15deg') + ')';
         setTimeout(() => emoji.style.transform = '', 250);
 
-        // 2. 爽感上浮飘字
         const rect = btn.getBoundingClientRect();
         const plus = document.createElement('div');
         plus.className = 'float-plus'; 
@@ -555,14 +548,11 @@
         plus.style.left = (event.clientX - 10) + 'px'; plus.style.top = (rect.top - 10) + 'px';
         document.body.appendChild(plus); setTimeout(() => plus.remove(), 800);
 
-        // 3. 按钮高亮互斥
-        document.getElementById(`btnLike_${index}`).className = `btn-chic ${action==='like' ? 'active-like' : ''}`;
-        document.getElementById(`btnDislike_${index}`).className = `btn-chic ${action==='dislike' ? 'active-dislike' : ''}`;
+        document.getElementById(`btnLike_${index}`).className = `mini-btn ${action==='like' ? 'active-like' : ''}`;
+        document.getElementById(`btnDislike_${index}`).className = `mini-btn ${action==='dislike' ? 'active-dislike' : ''}`;
 
-        // 4. 点评框魔法变色
         updateUgcStyle(index, action);
 
-        // 5. 静默保存
         let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
         history[index].my_vote = action;
         localStorage.setItem('hebao_history', JSON.stringify(history));
@@ -619,7 +609,7 @@
     }
 
     // ==========================================
-    // 终极修复版：情绪化海报生成
+    // 彻底修复：海报生成卡死 Bug
     // ==========================================
     async function generatePoster(index) {
         let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
@@ -627,7 +617,7 @@
         
         document.getElementById('ptDutch').innerText = item.dutch_name || 'Unknown';
         document.getElementById('ptChinese').innerText = item.chinese_name || '未知商品';
-        // 【关键修复】去除了 Base64 图片的 crossorigin="anonymous"，防止报错卡死
+        // 🚨 这里的 src 直接赋予本地 Base64 数据，绝不再使用 crossorigin="anonymous"
         document.getElementById('ptImage').src = item.img_src || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23eee'/%3E%3C/svg%3E"; 
 
         const wrapper = document.getElementById('ptWrapper');
@@ -645,23 +635,17 @@
             if (myLine) myLatestReview = myLine.replace(/🧑‍🍳 网友点评 \[.*?\]：/, '').trim();
         }
 
-        // 海报动态换肤
+        // 情绪动态换肤
         if (item.my_vote === 'like') {
             wrapper.style.background = 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)';
-            wrapper.style.borderColor = '#A7F3D0';
-            dutchText.style.color = '#064E3B';
-            slogan.innerText = '👍 这玩意绝了，疯狂安利！';
-            slogan.style.color = '#059669';
-            divider.style.borderTopColor = '#A7F3D0';
+            wrapper.style.borderColor = '#A7F3D0'; dutchText.style.color = '#064E3B';
+            slogan.innerText = '👍 这玩意绝了，疯狂安利！'; slogan.style.color = '#059669'; divider.style.borderTopColor = '#A7F3D0';
             badge.style.display = 'block'; badge.style.background = '#10B981'; badge.style.color = '#FFF'; badge.innerText = '👍 闭眼入';
             if(myLatestReview) { reviewBox.style.display = 'block'; reviewBox.style.borderLeftColor = '#10B981'; reviewText.innerText = `“${myLatestReview}”`; } else { reviewBox.style.display = 'none'; }
         } else if (item.my_vote === 'dislike') {
             wrapper.style.background = 'linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%)';
-            wrapper.style.borderColor = '#FECACA';
-            dutchText.style.color = '#7F1D1D';
-            slogan.innerText = '💣 纯纯大冤种，快跑！';
-            slogan.style.color = '#DC2626';
-            divider.style.borderTopColor = '#FECACA';
+            wrapper.style.borderColor = '#FECACA'; dutchText.style.color = '#7F1D1D';
+            slogan.innerText = '💣 纯纯大冤种，快跑！'; slogan.style.color = '#DC2626'; divider.style.borderTopColor = '#FECACA';
             badge.style.display = 'block'; badge.style.background = '#EF4444'; badge.style.color = '#FFF'; badge.innerText = '💣 巨雷';
             if(myLatestReview) { reviewBox.style.display = 'block'; reviewBox.style.borderLeftColor = '#EF4444'; reviewText.innerText = `“${myLatestReview}”`; } else { reviewBox.style.display = 'none'; }
         } else {
@@ -672,11 +656,12 @@
 
         wxLoadingMock("正在渲染专属神图...");
 
-        // 【关键修复】延迟 200 毫秒，让浏览器有时间把颜色和文字真正画到屏幕上，防止截图插件卡死！
+        // 🚨 关键修复：延迟 200 毫秒，等 DOM 渲染完颜色后再截图，防止卡死
         setTimeout(async () => {
             const templateNode = document.getElementById('poster-template');
             try {
-                const canvas = await html2canvas(templateNode, { scale: 2, useCORS: true, backgroundColor: null, logging: false });
+                // 去除 useCORS，因为我们已经处理了本地 Base64
+                const canvas = await html2canvas(templateNode, { scale: 2, backgroundColor: null, logging: false });
                 document.getElementById('posterResultImg').src = canvas.toDataURL("image/png");
                 document.body.removeChild(document.getElementById('mockLoadingBox'));
                 document.getElementById('posterModal').classList.add('show');
