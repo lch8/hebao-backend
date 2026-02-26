@@ -439,18 +439,35 @@
         currentProductData = null;
     }
 
+    // ==========================================
+    // 渐进式详情页加载逻辑
+    // ==========================================
+    
+    // 从首页扫雷结果进入
     function openDetailsFromScan() {
         currentDetailData = { ...currentProductData, img_src: document.getElementById('previewImg').src };
-        populateAndOpenDetails();
+        // 先打开骨架页面（显示基础信息）
+        renderBasicDetailsAndSwitch();
+        // 偷偷去后台拉取深度报告（平替+点评）
+        fetchDeepDetails();
     }
 
+    // 从我的足迹进入
     function openDetailsFromHistory(index) {
         let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
         currentDetailData = history[index];
-        populateAndOpenDetails();
+        renderBasicDetailsAndSwitch();
+        
+        // 如果历史记录里已经有深度信息了，就不请求了，直接渲染；如果没有，去请求
+        if (currentDetailData.alternatives || currentDetailData.pairing) {
+            renderDeepDetails(currentDetailData.alternatives, currentDetailData.pairing);
+        } else {
+            fetchDeepDetails(index); // 传 index 是为了拉取完顺便保存回本地足迹
+        }
     }
 
-    function populateAndOpenDetails() {
+    // 1. 瞬间渲染已经有的基础信息，并切换页面
+    function renderBasicDetailsAndSwitch() {
         const d = currentDetailData;
         if(!d) return;
 
@@ -468,20 +485,67 @@
         fillText('detailInsightBox', 'detailInsight', d.insight);
         fillText('detailWarningBox', 'detailWarning', d.warning);
         
+        // 先隐藏深度信息区，并显示一个优雅的加载动画
+        document.getElementById('detailAltBox').style.display = 'none';
+        const pairingBox = document.getElementById('detailPairingBox');
+        pairingBox.style.display = 'block';
+        document.getElementById('ugcCardList').innerHTML = '<div style="text-align:center; color:#9CA3AF; padding: 20px; font-size:13px;">🔄 管家正在调取全网真实点评...</div>';
+        
+        switchTab('details', null);
+    }
+
+    // 2. 异步请求详情 API
+    async function fetchDeepDetails(historyIndex = -1) {
+        try {
+            const res = await fetch('/api/detail', {
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ dutchName: currentDetailData.dutch_name, chineseName: currentDetailData.chinese_name })
+            });
+            const data = await res.json();
+            
+            if (res.ok) {
+                // 渲染拿到深度数据
+                renderDeepDetails(data.alternatives, data.pairing);
+                
+                // 将新数据合并到当前详情对象
+                currentDetailData.alternatives = data.alternatives;
+                currentDetailData.pairing = data.pairing;
+
+                // 如果是从历史记录点进来的，或者是新扫的，咱们把获取到的深度信息顺手更新到 localStorage，下次就不卡了！
+                let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
+                let indexToUpdate = historyIndex;
+                if (indexToUpdate === -1) {
+                    // 找到刚扫的那个商品
+                    indexToUpdate = history.findIndex(item => item.dutch_name === currentDetailData.dutch_name);
+                }
+                if (indexToUpdate !== -1) {
+                    history[indexToUpdate].alternatives = data.alternatives;
+                    history[indexToUpdate].pairing = data.pairing;
+                    localStorage.setItem('hebao_history', JSON.stringify(history));
+                }
+            } else {
+                document.getElementById('ugcCardList').innerHTML = '<div style="color:#EF4444; text-align:center; padding:10px;">获取评价失败，请重试</div>';
+            }
+        } catch (error) {
+            document.getElementById('ugcCardList').innerHTML = '<div style="color:#EF4444; text-align:center; padding:10px;">网络似乎开小差了</div>';
+        }
+    }
+
+    // 3. 把深度信息画到屏幕上
+    function renderDeepDetails(alternatives, pairing) {
         const altBox = document.getElementById('detailAltBox');
-        if (d.alternatives && String(d.alternatives).trim() !== '') {
+        if (alternatives && String(alternatives).trim() !== '') {
             altBox.style.display = 'block';
-            const parts = String(d.alternatives).split('|').map(p => p.trim());
+            const parts = String(alternatives).split('|').map(p => p.trim());
             document.getElementById('detailAlternatives').innerHTML = parts.map(p => `<div class="alt-tag">${p}</div>`).join('');
         } else { altBox.style.display = 'none'; }
 
-        const pairingBox = document.getElementById('detailPairingBox');
         const listContainer = document.getElementById('ugcCardList');
-        listContainer.innerHTML = '';
+        listContainer.innerHTML = ''; // 清空加载动画
 
-        if (d.pairing && String(d.pairing).trim() !== '') {
-            pairingBox.style.display = 'block';
-            const lines = String(d.pairing).split('\n\n').filter(l => l.trim() !== '');
+        if (pairing && String(pairing).trim() !== '') {
+            const lines = String(pairing).split('\n\n').filter(l => l.trim() !== '');
             lines.forEach((line) => {
                 const fakeInitialVotes = (line.length * 7) % 45 + 5; 
                 if (line.includes('网友点评')) {
@@ -498,9 +562,11 @@
                         </div>`;
                 }
             });
-        } else { pairingBox.style.display = 'none'; }
+        }
         
-        switchTab('details', null);
+        if (listContainer.innerHTML === '') {
+            listContainer.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding: 20px; font-size:13px;">暂无网友评价，快去足迹里抢沙发吧！</div>';
+        }
     }
 
     function upvoteComment(btnElement, type) {
