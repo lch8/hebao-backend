@@ -3,8 +3,16 @@ export const config = {
 };
 
 export default async function handler(req) {
+    // 允许跨域
+    if (req.method === 'OPTIONS') {
+        return new Response(null, {
+            status: 200,
+            headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type' }
+        });
+    }
+
     if (req.method !== 'POST') {
-        return new Response(JSON.stringify({ error: '只允许 POST 请求' }), { status: 405 });
+        return new Response(JSON.stringify({ error: '只允许 POST 请求' }), { status: 405, headers: { 'Access-Control-Allow-Origin': '*' } });
     }
 
     try {
@@ -22,23 +30,15 @@ export default async function handler(req) {
         dbUrl = dbUrl.replace('libsql://', 'https://');
 
         // ==========================================
-        // 🏃‍♂️ 第一棒：Gemini 提取纯净名字（全品类通用终极版）
+        // 🏃‍♂️ 第一棒：Gemini 提取纯净名字 (极速版)
         // ==========================================
         const geminiPrompt = `你是一个极其严谨的荷兰超市/药妆店全品类商品录入员。请提取图片中商品的【品牌名 + 核心品名 + 核心特性】（纯文本）。
         ⚠️ 必须严格遵守以下提取规则：
-        1. 【必须保留 核心特性】：
-           - 如果是食品/饮品：保留口味（如 Aardbei 草莓）、工艺（如 Gerookt 烟熏）或特殊形态（如 Zonder suiker 无糖）。
-           - 如果是洗护/美妆：保留功效（如 Anti-roos 去屑、Gevoelige huid 敏感肌）或香型（如 Lavendel 薰衣草）。
-           - 如果是家清/日用：保留专用场景（如 Color 护色洗衣液、Voor witte was 亮白）或核心材质。
-        2. 【坚决剔除 物理计量】：无论什么品类，统统去掉重量、容量、尺寸和件数（如 500g, 1L, 3 stuks, 19 wasbeurten, XXL）。
-        3. 【坚决剔除 营销废话】：去掉所有促销、广告词汇（如 Nieuw, Bonus, Gratis, 1+1, Korting, Op=Op）。
-        
-        【案例参考】：
-        - 食品："Zuivelhoeve yoghurt Aardbei 500g Bonus" -> "Zuivelhoeve yoghurt Aardbei"
-        - 洗护："Andrélon Shampoo Anti-Roos 300ml 1+1 Gratis" -> "Andrélon Shampoo Anti-Roos"
-        - 家清："Robijn Wasmiddel Color Pink 19 wasbeurten Nieuw" -> "Robijn Wasmiddel Color Pink"
-        
+        1. 【必须保留 核心特性】：如口味、功效、场景。
+        2. 【坚决剔除 物理计量】：去掉重量、容量、尺寸和件数（如 500g, 1L, XXL）。
+        3. 【坚决剔除 营销废话】：去掉如 Nieuw, Bonus, Gratis, 1+1 等词。
         只输出最终的纯文本名字，不要任何标点。看不清请回复'未识别'。`;
+        
         const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${geminiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -55,7 +55,7 @@ export default async function handler(req) {
         if (productInfo.includes('未识别')) throw new Error("图片太模糊，管家看不清包装上的字！");
 
         // ==========================================
-        // 🛡️ 记忆拦截系统（带 alternatives 字段）
+        // 🛡️ 记忆拦截系统
         // ==========================================
         const tursoRes = await fetch(`${dbUrl}/v2/pipeline`, {
             method: 'POST',
@@ -95,7 +95,7 @@ export default async function handler(req) {
                 pairing: getVal('pairing'),
                 warning: getVal('warning'),
                 alternatives: getVal('alternatives'),
-                features: getVal('features')// 确保从数据库读取平替
+                features: getVal('features')
             };
 
             return new Response(JSON.stringify(cachedResult), {
@@ -105,38 +105,27 @@ export default async function handler(req) {
         }
 
         // ==========================================
-        // 🏃‍♂️ 第二棒：唤醒 DeepSeek 大脑（华人留学生老油条版）
+        // 🏃‍♂️ 第二棒：唤醒 DeepSeek 大脑 (首页骨架极速减负版)
         // ==========================================
         const dsSystemPrompt = `你是极度幽默、毒舌且懂生活的“荷包管家”。你是一个在荷兰生活了10年的资深华人吃货。
-        请根据用户拍的商品，先判断类别，然后【必须严格遵守】以下分类点评规则，直击留学生和华人的痛点：
-
-        🎯 【分类点评规则】：
-        - 🍞 面包/主食：必须指出是直接吃还是需要放烤箱烤（遇到 Afbakbrood 必须给出生吃警告！），口感是软妹子还是硬汉，适不适合中国胃。
-        - 🥩 肉类/速食：必须给出“懒人救星”级别的做法（明确空气炸锅/微波炉/烤箱的具体温度和时间）。
-        - 🥬 蔬菜/生鲜：这玩意儿中餐怎么做才好吃？如果是荷兰奇葩菜（如洋蓟、球状甘蓝），请高亮避雷或给出“脱苦海”的爆改教程。
-        - 🍶 调料/酱汁：能不能用来做中餐？（比如某款酱油能不能代替老抽？某款辣酱像不像老干妈？）
-        - 🍫 零食/甜点：必须以“国内口味”为基准标注甜度（荷兰人的微甜=我们的齁甜），如果有国内某款零食的影子请直接点名（如：荷兰版旺旺雪饼）。
-        - 🍺 酒水/饮品：口感如何？是不是“科技与狠活”？适合微醺还是容易断片？
-        - 🥛 乳制品：全脂/脱脂？适不适合打奶泡做拿铁？会不会导致乳糖不耐受喷射？
-        - 其他：一针见血，保持幽默干货。
+        请根据商品名进行锐评。
 
         ⚠️ 【极其重要的输出铁律】：
-        1. 必须返回纯 JSON 格式（直接大括号起手，绝不要 \`\`\`json 标记）。
-        2. 所有的 value 必须直接输出纯内容！绝对不要在开头加“管家锐评：”、“神仙吃法：”等前缀废话！
+        1. 必须返回纯 JSON 格式（直接大括号起手）。
+        2. 为了保证极速响应，**绝不允许**生成平替、升级版、以及长篇大论的网友点评！只生成首页需要的骨架字段！
 
+        请严格输出以下 JSON 结构：
         {
           "dutch_name": "准确的荷兰语商品名",
           "chinese_name": "接地气、最好带点梗的中文名（如：致死量焦糖饼干）",
           "category": "具体的商品分类",
           "is_recommended": true或false,
-          "features": "🌟 核心卖点或槽点（如：中超平替、减脂本命、热量核弹，限15字内）",
-          "insight": "直击痛点的幽默测评。明确指出适不适合中国宝宝体质，好吃夸上天，难吃狠狠骂。",
-          "pairing": "神仙吃法 / 懒人烹饪时间 / 中餐爆改方案",
-          "warning": "奇葩口味、过敏源或'千万别生吃'预警（无则留空）",
-          "alternatives": "💰平替：(Lidl/Aldi更便宜的同款) | ✨升级：(更好吃的高级货)。实在没有就写'本赛道无敌，暂无平替'"
+          "features": "🌟 核心卖点或槽点（限15字内）",
+          "insight": "直击痛点的幽默测评。明确指出适不适合中国宝宝体质，限30字内。",
+          "warning": "奇葩口味、过敏源或'千万别生吃'预警（无则留空）"
         }`;
 
-        const dsUserPrompt = `Gemini识别到的商品名是：${productInfo}。请输出JSON点评。`;
+        const dsUserPrompt = `商品名是：${productInfo}。请输出JSON骨架点评。`;
 
         const dsRes = await fetch('https://api.deepseek.com/chat/completions', {
             method: 'POST',
@@ -163,6 +152,9 @@ export default async function handler(req) {
         });
 
     } catch (error) {
-        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Access-Control-Allow-Origin': '*' } });
+        return new Response(JSON.stringify({ error: error.message }), { 
+            status: 500, 
+            headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' } 
+        });
     }
 }
