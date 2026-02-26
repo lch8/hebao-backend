@@ -339,9 +339,13 @@
         switchTab(lastTab, targetTab);
     }
 
+    // ==========================================
+    // 2. 核心扫雷 & 腾讯云并行上传
+    // ==========================================
     function handleFileSelect(event) {
         const file = event.target.files[0];
         if (!file) return;
+
         const reader = new FileReader();
         reader.onload = function(e) {
             document.getElementById('uploadHint').style.display = 'none';
@@ -349,26 +353,57 @@
             document.getElementById('previewImg').style.display = 'block';
             document.getElementById('scanOverlay').style.display = 'flex';
             document.getElementById('miniResultCard').style.display = 'none'; 
+            
+            // 去掉 base64 前面的头部信息
             const base64String = e.target.result.split(',')[1];
-            scanProduct(base64String);
+            
+            // 🚀 大招：同时发起“AI扫雷”和“上传腾讯云”，节约一半等待时间！
+            document.querySelector('.scan-text').innerText = "管家正在云端识别与存档...";
+            processImageParallel(base64String);
         };
         reader.readAsDataURL(file);
     }
 
-    async function scanProduct(base64Str) {
+    async function processImageParallel(base64Str) {
         try {
-            const response = await fetch('/api/scan', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ imageBase64: base64Str })
-            });
-            const data = await response.json();
-            if (!response.ok) { alert("管家遇到问题了：" + (data.error || '未知错误')); resetApp(); return; }
+            // 同时并发两个请求，谁也不等谁
+            const [scanRes, uploadRes] = await Promise.all([
+                fetch('/api/scan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageBase64: base64Str }) }),
+                fetch('/api/upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageBase64: base64Str }) })
+            ]);
+
+            const scanData = await scanRes.json();
+            const uploadData = await uploadRes.json();
+
+            if (!scanRes.ok) { alert("管家遇到问题了：" + (scanData.error || '未知错误')); resetApp(); return; }
             
-            currentProductData = data;
-            renderResult(data);
-            saveToLocalFootprint(data); 
-            fetch('/api/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).catch(e => {});
-        } catch (error) { alert("网络断开了：" + error.message); resetApp(); }
+            currentProductData = scanData;
+            renderResult(scanData);
+
+            // 💡 关键：拿回腾讯云的永久链接，存进足迹！如果上传失败，降级用本地的。
+            const cloudImageUrl = uploadData.success ? uploadData.url : document.getElementById('previewImg').src;
+            saveToLocalFootprint(scanData, cloudImageUrl); 
+
+            // 顺便把云端图片链接存进大数据库
+            scanData.cloud_img = cloudImageUrl;
+            fetch('/api/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(scanData) }).catch(e => {});
+            
+        } catch (error) { 
+            alert("网络断开了：" + error.message); 
+            resetApp(); 
+        }
+    }
+
+    // 接收云端图片链接参数
+    function saveToLocalFootprint(data, cloudImageUrl) {
+        let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
+        const exists = history.find(item => item.dutch_name === data.dutch_name);
+        if (!exists) {
+            // 存入腾讯云链接，手机缓存彻底解放！
+            data.img_src = cloudImageUrl; 
+            history.unshift(data);
+            try { localStorage.setItem('hebao_history', JSON.stringify(history)); } catch(e) { }
+        }
     }
 
     function renderResult(data) {
