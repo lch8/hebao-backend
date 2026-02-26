@@ -1,0 +1,7 @@
+{
+  "name": "hebao-backend",
+  "version": "1.0.0",
+  "dependencies": {
+    "cos-nodejs-sdk-v5": "^2.14.3"
+  }
+}
