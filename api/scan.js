@@ -24,7 +24,7 @@ export default async function handler(req) {
         // ==========================================
         // 🏃‍♂️ 第一棒：Gemini 提取纯净名字（全品类通用终极版）
         // ==========================================
-        const Prompt = `你是一个极其严谨的荷兰超市/药妆店全品类商品录入员。请提取图片中商品的【品牌名 + 核心品名 + 核心特性】（纯文本）。
+        const geminiPrompt = `你是一个极其严谨的荷兰超市/药妆店全品类商品录入员。请提取图片中商品的【品牌名 + 核心品名 + 核心特性】（纯文本）。
         ⚠️ 必须严格遵守以下提取规则：
         1. 【必须保留 核心特性】：
            - 如果是食品/饮品：保留口味（如 Aardbei 草莓）、工艺（如 Gerookt 烟熏）或特殊形态（如 Zonder suiker 无糖）。
@@ -39,7 +39,7 @@ export default async function handler(req) {
         - 家清："Robijn Wasmiddel Color Pink 19 wasbeurten Nieuw" -> "Robijn Wasmiddel Color Pink"
         
         只输出最终的纯文本名字，不要任何标点。看不清请回复'未识别'。`;
-        const Res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/-2.5-flash-lite:generateContent?key=${geminiKey}`, {
+        const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${geminiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
