@@ -67,7 +67,6 @@
         .recipe-meta { display: flex; flex-wrap: wrap; gap: 8px; font-size: 12px; color: #6B7280; margin-bottom: 12px; }
         .recipe-meta span { background: #F3F4F6; padding: 4px 8px; border-radius: 6px; font-weight: bold; color: #374151;}
         .recipe-steps { font-size: 14px; color: #4B5563; line-height: 1.6; margin-bottom: 15px; white-space: pre-wrap; font-weight: 500;}
-        .recipe-img { width: 100%; height: 160px; object-fit: cover; border-radius: 12px; margin-bottom: 12px; display: none; background: #F9FAFB; }
         
         .recipe-actions { display: flex; gap: 10px; border-top: 1px dashed #E5E7EB; padding-top: 12px; }
         .action-btn { flex: 1; text-align: center; padding: 10px; border-radius: 12px; font-size: 13px; font-weight: 900; cursor: pointer; transition: 0.2s; border: 1px solid #E5E7EB; background: #FFF; display: flex; justify-content: center; align-items: center; gap: 6px; user-select: none;}
@@ -77,12 +76,17 @@
         .action-btn.down { color: #6B7280; }
         .action-btn.down.voted { background: #F3F4F6; border-color: #D1D5DB; }
 
-        /* 发布弹窗 */
+        /* 发布弹窗与独立的上传区 */
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; display: none; justify-content: center; align-items: center; animation: fadeIn 0.2s ease; }
         .modal-content { background: #FFF; width: 90%; max-width: 400px; border-radius: 20px; padding: 24px; box-sizing: border-box; }
         .modal-textarea { width: 100%; height: 100px; border-radius: 12px; border: 2px solid #E5E7EB; padding: 12px; font-size: 14px; box-sizing: border-box; outline: none; resize: none; margin-top: 10px; transition: border 0.2s;}
         .modal-textarea:focus { border-color: #10B981; }
         
+        .recipe-img-upload { height: 120px; background: #F9FAFB; border: 2px dashed #D1D5DB; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: 15px; cursor: pointer; color: #6B7280; font-size: 13px; font-weight: bold; overflow: hidden; position: relative; transition: 0.2s;}
+        .recipe-img-upload:active { background: #F3F4F6; border-color: #10B981; }
+        .recipe-img-preview { width: 100%; height: 100%; object-fit: cover; display: none; position: absolute; top: 0; left: 0; }
+        .recipe-img-remove { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.6); color: #FFF; width: 24px; height: 24px; border-radius: 50%; display: none; justify-content: center; align-items: center; font-size: 12px; z-index: 10; }
+
         /* ================= 4. 足迹与榜单优化版 ================= */
         .history-card-wrap { background: #FFF; border-radius: 20px; margin-bottom: 20px; box-shadow: 0 6px 20px rgba(0,0,0,0.05); overflow: hidden; border: 1px solid #F3F4F6;}
         .hc-top-clickable { display: flex; gap: 15px; padding: 16px 16px 10px 16px; cursor: pointer; background: transparent; transition: background 0.2s;}
@@ -290,10 +294,20 @@
         <h3 style="margin-top:0; margin-bottom: 5px; color: #111827;">贡献神仙吃法 🪄</h3>
         <p style="font-size: 12px; color: #6B7280; margin-top: 0;">不需要写步骤！只需写出关键厨具和做法（例：空气炸锅180度，刷老干妈烤10分钟）</p>
         
+        <div class="recipe-img-upload" id="recipeUploadBox" onclick="document.getElementById('recipeFileInput').click()">
+            <span id="recipeImgHint" style="display:flex; flex-direction:column; align-items:center; gap:5px;">
+                <span style="font-size: 24px;">📸</span>
+                晒出你的成品图 (选填)
+            </span>
+            <img id="recipeImgPreview" class="recipe-img-preview" src="">
+            <div id="recipeImgRemove" class="recipe-img-remove" onclick="removeRecipeImg(event)">✕</div>
+        </div>
+        <input type="file" id="recipeFileInput" accept="image/*" style="display:none;" onchange="handleRecipeFileSelect(event)">
+
         <textarea id="recipeRawInput" class="modal-textarea" placeholder="输入你的懒人黑话..."></textarea>
         
         <div style="margin-top: 20px; display: flex; gap: 10px;">
-            <button style="flex:1; padding: 14px; background: #F3F4F6; color: #4B5563; border: none; border-radius: 12px; font-weight: bold; cursor: pointer;" onclick="document.getElementById('recipeModal').style.display='none'">取消</button>
+            <button style="flex:1; padding: 14px; background: #F3F4F6; color: #4B5563; border: none; border-radius: 12px; font-weight: bold; cursor: pointer;" onclick="closeRecipeModal()">取消</button>
             <button id="btnSubmitRecipe" style="flex:2; padding: 14px; background: #111827; color: #FFF; border: none; border-radius: 12px; font-weight: bold; cursor: pointer;" onclick="submitMagicRecipe()">✨ 让 AI 帮我写</button>
         </div>
     </div>
@@ -330,6 +344,7 @@
     let currentProductData = null; 
     let lastTab = 'scan';          
     let currentDetailData = null;  
+    let currentRecipeBase64 = null; // 存储菜谱分享时的图片
 
     function switchTab(pageId, element) {
         document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
@@ -480,7 +495,7 @@
     }
 
     // ==========================================
-    // 渐进式详情页加载逻辑 (修复版)
+    // 渐进式详情页加载逻辑
     // ==========================================
     
     function openDetailsFromScan() {
@@ -512,7 +527,6 @@
         
         const fillText = (boxId, textId, content) => {
             const box = document.getElementById(boxId);
-            // 🚨 更加严谨的安全判定，防止报错
             if (box && content && content !== "undefined" && String(content).trim() !== '') {
                 box.style.display = 'block'; document.getElementById(textId).innerText = content;
             } else if (box) { box.style.display = 'none'; }
@@ -524,7 +538,6 @@
         const altBox = document.getElementById('detailAltBox');
         if (altBox) altBox.style.display = 'none';
         
-        // 🚨 这里的修复极其关键！代码现在使用最新的 detailRecipeBox 替代了原来的 PairingBox
         const recipeBox = document.getElementById('detailRecipeBox');
         if (recipeBox) {
             recipeBox.style.display = 'block';
@@ -571,7 +584,6 @@
             document.getElementById('detailAlternatives').innerHTML = parts.map(p => `<div class="alt-tag">${p}</div>`).join('');
         } else if (altBox) { altBox.style.display = 'none'; }
 
-        // 将原来生成的 AI 点评，临时转换为高颜值菜谱卡片展示
         const listContainer = document.getElementById('recipeCardList');
         if (listContainer) listContainer.innerHTML = ''; 
 
@@ -606,10 +618,9 @@
     }
 
     // ==========================================
-    // 新增：菜谱交互逻辑
+    // 神仙菜谱图片处理与提交逻辑
     // ==========================================
     function voteRecipe(recipeId, type) {
-        // 防止没有被正确绑定 id 导致的报错
         const btn = event.currentTarget;
         if(btn.classList.contains('voted')) return; 
         
@@ -625,20 +636,76 @@
         document.body.appendChild(plus); setTimeout(() => plus.remove(), 800);
     }
 
+    function handleRecipeFileSelect(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                const MAX_WIDTH = 800; const MAX_HEIGHT = 800;
+                let width = img.width; let height = img.height;
+
+                if (width > height) {
+                    if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                } else {
+                    if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+                }
+
+                canvas.width = width; canvas.height = height;
+                ctx.drawImage(img, 0, 0, width, height);
+                const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                
+                document.getElementById('recipeImgPreview').src = compressedBase64;
+                document.getElementById('recipeImgPreview').style.display = 'block';
+                document.getElementById('recipeImgHint').style.display = 'none';
+                document.getElementById('recipeImgRemove').style.display = 'flex';
+
+                currentRecipeBase64 = compressedBase64.split(',')[1];
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function removeRecipeImg(event) {
+        event.stopPropagation();
+        currentRecipeBase64 = null;
+        document.getElementById('recipeFileInput').value = '';
+        document.getElementById('recipeImgPreview').style.display = 'none';
+        document.getElementById('recipeImgPreview').src = '';
+        document.getElementById('recipeImgHint').style.display = 'flex';
+        document.getElementById('recipeImgRemove').style.display = 'none';
+    }
+
+    function closeRecipeModal() {
+        document.getElementById('recipeModal').style.display = 'none';
+        document.getElementById('recipeRawInput').value = '';
+        removeRecipeImg({ stopPropagation: ()=>{} });
+    }
+
     async function submitMagicRecipe() {
         const input = document.getElementById('recipeRawInput').value.trim();
         if(!input) { alert("请先输入几个关键步骤或吐槽哦！"); return; }
+        if(!currentDetailData) return;
         
         const btn = document.getElementById('btnSubmitRecipe');
         btn.innerText = "⏳ AI 疯狂敲字中..."; btn.disabled = true;
 
         setTimeout(() => {
-            alert("管家收到！我们将在下一步连通后端的 AI 扩写接口！");
-            document.getElementById('recipeModal').style.display = 'none';
+            alert("界面体验已完成！你的文字是：" + input + "，图片状态：" + (currentRecipeBase64 ? "已选择" : "未选择") + "。下一步咱们就写后台接口！");
+            closeRecipeModal();
             btn.innerText = "✨ 让 AI 帮我写"; btn.disabled = false;
         }, 1500);
     }
 
+    // ==========================================
+    // 问答机器人
+    // ==========================================
     async function sendQuestion() {
         const input = document.getElementById('askInput');
         const question = input.value.trim();
