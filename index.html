@@ -148,6 +148,33 @@
         .t-score-label { font-size: 11px; font-weight: bold; opacity: 0.7; }
         .score-like { color: #10B981; }
         .score-dislike { color: #EF4444; }
+
+        /* ================= 4. 神仙菜谱 UI ================= */
+        .recipe-submit-box { background: #FFFBEB; border: 2px dashed #FCD34D; border-radius: 16px; padding: 15px; margin-bottom: 20px; text-align: center; cursor: pointer; transition: 0.2s; }
+        .recipe-submit-box:active { transform: scale(0.98); background: #FEF3C7; }
+        .recipe-submit-title { font-size: 15px; font-weight: 900; color: #D97706; }
+        .recipe-submit-sub { font-size: 12px; color: #B45309; margin-top: 4px; }
+
+        .recipe-card { background: #FFF; border-radius: 16px; padding: 18px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #F3F4F6; }
+        .recipe-title { font-size: 16px; font-weight: 900; color: #111827; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;}
+        .recipe-meta { display: flex; flex-wrap: wrap; gap: 8px; font-size: 12px; color: #6B7280; margin-bottom: 12px; }
+        .recipe-meta span { background: #F3F4F6; padding: 4px 8px; border-radius: 6px; font-weight: bold; color: #374151;}
+        .recipe-steps { font-size: 14px; color: #4B5563; line-height: 1.6; margin-bottom: 15px; white-space: pre-wrap; font-weight: 500;}
+        .recipe-img { width: 100%; height: 160px; object-fit: cover; border-radius: 12px; margin-bottom: 12px; display: none; background: #F9FAFB; }
+        
+        .recipe-actions { display: flex; gap: 10px; border-top: 1px dashed #E5E7EB; padding-top: 12px; }
+        .action-btn { flex: 1; text-align: center; padding: 10px; border-radius: 12px; font-size: 13px; font-weight: 900; cursor: pointer; transition: 0.2s; border: 1px solid #E5E7EB; background: #FFF; display: flex; justify-content: center; align-items: center; gap: 6px; user-select: none;}
+        .action-btn:active { transform: scale(0.95); }
+        .action-btn.up { color: #D97706; }
+        .action-btn.up.voted { background: #FFFBEB; border-color: #FDE68A; }
+        .action-btn.down { color: #6B7280; }
+        .action-btn.down.voted { background: #F3F4F6; border-color: #D1D5DB; }
+
+        /* 发布弹窗 */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; display: none; justify-content: center; align-items: center; animation: fadeIn 0.2s ease; }
+        .modal-content { background: #FFF; width: 90%; max-width: 400px; border-radius: 20px; padding: 24px; box-sizing: border-box; }
+        .modal-textarea { width: 100%; height: 100px; border-radius: 12px; border: 2px solid #E5E7EB; padding: 12px; font-size: 14px; box-sizing: border-box; outline: none; resize: none; margin-top: 10px; transition: border 0.2s;}
+        .modal-textarea:focus { border-color: #10B981; }
     </style>
 </head>
 
@@ -168,6 +195,20 @@
 <div class="sticky-chat-bar" id="stickyChatBar">
     <input type="text" id="askInput" class="chat-input" placeholder="问管家：空气炸锅怎么热？" onkeypress="if(event.key==='Enter') sendQuestion()">
     <button class="chat-send-btn" id="sendBtn" onclick="sendQuestion()">↑</button>
+</div>
+
+<div class="modal-overlay" id="recipeModal">
+    <div class="modal-content">
+        <h3 style="margin-top:0; margin-bottom: 5px; color: #111827;">贡献神仙吃法 🪄</h3>
+        <p style="font-size: 12px; color: #6B7280; margin-top: 0;">不需要写步骤！只需写出关键厨具和做法（例：空气炸锅180度，刷老干妈烤10分钟）</p>
+        
+        <textarea id="recipeRawInput" class="modal-textarea" placeholder="输入你的懒人黑话..."></textarea>
+        
+        <div style="margin-top: 20px; display: flex; gap: 10px;">
+            <button style="flex:1; padding: 14px; background: #F3F4F6; color: #4B5563; border: none; border-radius: 12px; font-weight: bold; cursor: pointer;" onclick="document.getElementById('recipeModal').style.display='none'">取消</button>
+            <button id="btnSubmitRecipe" style="flex:2; padding: 14px; background: #111827; color: #FFF; border: none; border-radius: 12px; font-weight: bold; cursor: pointer;" onclick="submitMagicRecipe()">✨ 让 AI 帮我写</button>
+        </div>
+    </div>
 </div>
 
 <div class="container">
@@ -224,9 +265,17 @@
         </div>
 
         <div style="padding: 0 5px;">
-            <div class="info-block" id="detailInsightBox">
-                <div class="block-title">💡 管家锐评</div>
-                <p class="block-text" id="detailInsight"></p>
+            <div class="info-block" id="detailRecipeBox" style="background: transparent; box-shadow: none; padding: 0;">
+                <div class="block-title" style="margin-left: 5px; margin-bottom: 15px;">🍳 留学生糊弄学菜谱</div>
+                
+                <div class="recipe-submit-box" onclick="document.getElementById('recipeModal').style.display='flex'">
+                    <div class="recipe-submit-title">👨‍🍳 贡献我的神仙吃法</div>
+                    <div class="recipe-submit-sub">丢几个词，AI 瞬间替你写成大厨菜谱！</div>
+                </div>
+
+                <div id="recipeCardList">
+                    <div style="text-align:center; color:#9CA3AF; padding: 20px; font-size:13px;">🔄 管家正在厨房翻找菜谱...</div>
+                </div>
             </div>
             
             <div class="info-block warning" id="detailWarningBox" style="display:none;">
@@ -312,6 +361,89 @@
     let currentProductData = null; 
     let lastTab = 'scan';          
     let currentDetailData = null;  
+
+    // ==========================================
+    // 渲染数据库里的菜谱卡片瀑布流
+    // ==========================================
+    function renderRecipesUI(recipeArray) {
+        const listContainer = document.getElementById('recipeCardList');
+        if (!recipeArray || recipeArray.length === 0) {
+            listContainer.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding: 20px; font-size:13px;">暂无菜谱，快去抢首发大厨称号！</div>';
+            return;
+        }
+
+        let html = '';
+        recipeArray.forEach((item) => {
+            // item.ai_content 存的是我们让 AI 生成的 JSON 字符串
+            let aiData = {};
+            try { aiData = JSON.parse(item.ai_content); } catch(e) { aiData = { title: "网友做法", steps: item.ai_content }; }
+
+            html += `
+                <div class="recipe-card">
+                    <div class="recipe-title">
+                        <span>${aiData.title || '神仙吃法'}</span>
+                        ${item.upvotes > 50 ? '<span style="font-size:12px; background:#FEF2F2; color:#EF4444; padding:2px 6px; border-radius:6px;">👑 本周厨神</span>' : ''}
+                    </div>
+                    
+                    <div class="recipe-meta">
+                        ${aiData.tools ? `<span>${aiData.tools}</span>` : ''}
+                        ${aiData.difficulty ? `<span>${aiData.difficulty}</span>` : ''}
+                    </div>
+
+                    ${item.image_url ? `<img src="${item.image_url}" class="recipe-img" style="display:block;">` : ''}
+                    
+                    <div class="recipe-steps">${aiData.steps || '这道菜太神秘了，没有留下步骤。'}</div>
+                    
+                    <div class="recipe-actions">
+                        <div class="action-btn up" id="btnUp_${item.id}" onclick="voteRecipe(${item.id}, 'up')">
+                            🤤 馋哭了 <span id="countUp_${item.id}">${item.upvotes || 0}</span>
+                        </div>
+                        <div class="action-btn down" id="btnDown_${item.id}" onclick="voteRecipe(${item.id}, 'down')">
+                            🙅 黑暗料理 <span id="countDown_${item.id}">${item.downvotes || 0}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        listContainer.innerHTML = html;
+    }
+
+    // 处理点赞/踩雷动画
+    function voteRecipe(recipeId, type) {
+        const btn = document.getElementById(type === 'up' ? `btnUp_${recipeId}` : `btnDown_${recipeId}`);
+        if(btn.classList.contains('voted')) return; // 防重复点击
+        
+        btn.classList.add('voted');
+        const countSpan = document.getElementById(type === 'up' ? `countUp_${recipeId}` : `countDown_${recipeId}`);
+        countSpan.innerText = parseInt(countSpan.innerText) + 1;
+
+        // 飘字动画
+        const rect = btn.getBoundingClientRect();
+        const plus = document.createElement('div');
+        plus.className = 'float-plus'; plus.innerText = '+1';
+        plus.style.color = type === 'up' ? '#D97706' : '#6B7280';
+        plus.style.left = rect.left + (rect.width/2) + 'px'; plus.style.top = (rect.top - 20) + 'px';
+        document.body.appendChild(plus); setTimeout(() => plus.remove(), 800);
+
+        // TODO: 向后台发送打分接口请求 fetch(`/api/vote-recipe`...)
+    }
+
+    // 提交懒人菜谱给后端 AI 扩写
+    async function submitMagicRecipe() {
+        const input = document.getElementById('recipeRawInput').value.trim();
+        if(!input) { alert("请先输入几个关键步骤或吐槽哦！"); return; }
+        
+        const btn = document.getElementById('btnSubmitRecipe');
+        btn.innerText = "⏳ AI 疯狂敲字中..."; btn.disabled = true;
+
+        // TODO: 这里马上要对接咱们后端的 api/expand-recipe.js
+        // 假装请求了 2 秒钟
+        setTimeout(() => {
+            alert("管家收到！AI扩写接口马上就位！");
+            document.getElementById('recipeModal').style.display = 'none';
+            btn.innerText = "✨ 让 AI 帮我写"; btn.disabled = false;
+        }, 2000);
+    }
 
     function switchTab(pageId, element) {
         document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
