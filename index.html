@@ -10,7 +10,7 @@
         body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #F3F4F6; color: #111827; }
         .container { max-width: 600px; margin: 0 auto; padding: 20px; min-height: 100vh; box-sizing: border-box; position: relative;}
         
-        .header { text-align: center; margin-bottom: 30px; margin-top: 20px; }
+        .header { text-align: center; margin-bottom: 25px; margin-top: 15px; }
         .title { font-size: 28px; font-weight: 900; margin: 0; letter-spacing: 1px;}
         .subtitle { font-size: 13px; color: #6B7280; margin-top: 5px; }
 
@@ -18,19 +18,31 @@
         .page-section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* ================= 1. 扫雷页 UI ================= */
-        .upload-box { position: relative; width: 100%; height: 200px; background: #FFF; border-radius: 20px; border: 2px dashed #D1D5DB; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.03); transition: all 0.3s; }
-        .upload-box:active { background: #F9FAFB; border-color: #10B981; }
-        .icon-camera { font-size: 40px; margin-bottom: 10px; }
-        .upload-text { font-size: 15px; color: #6B7280; font-weight: bold; }
-        .preview-img { width: 100%; height: 100%; object-fit: contain; display: none; }
-        #fileInput { display: none; }
+        /* ================= 1. 首页双通道引擎 UI ================= */
+        .home-actions { display: flex; gap: 15px; margin-bottom: 20px; }
+        .action-card { flex: 1; background: #FFF; border-radius: 20px; padding: 25px 10px; text-align: center; border: 2px dashed #D1D5DB; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.02);}
+        .action-card:active { transform: scale(0.96); }
+        .action-card.scan-mode:active { border-color: #10B981; background: #ECFDF5; }
+        
+        /* 菜谱入口高亮专属色 */
+        .action-card.recipe-mode { border-color: #FCD34D; background: #FFFBEB; border-style: solid;}
+        .action-card.recipe-mode:active { background: #FEF3C7; border-color: #F59E0B; }
+        
+        .action-icon { font-size: 38px; margin-bottom: 10px; display: inline-block; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));}
+        .action-title { font-size: 15px; font-weight: 900; color: #111827; margin-bottom: 4px;}
+        .action-sub { font-size: 12px; color: #6B7280; font-weight: bold;}
+        .recipe-mode .action-title { color: #D97706; }
+        .recipe-mode .action-sub { color: #B45309; }
 
+        /* 独立的预览层 */
+        .preview-container { position: relative; width: 100%; height: 200px; border-radius: 20px; overflow: hidden; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .preview-img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .scan-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
         .scan-line { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: #10B981; box-shadow: 0 0 15px #10B981; animation: scanAnim 2s linear infinite; }
         @keyframes scanAnim { 0% { top: 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
         .scan-text { color: #FFF; font-size: 14px; font-weight: bold; margin-top: 15px; letter-spacing: 1px;}
 
+        /* 扫雷迷你结果卡 */
         #miniResultCard { display: none; margin-top: 25px; background: #FFF; border-radius: 20px; padding: 25px; box-shadow: 0 8px 30px rgba(0,0,0,0.06); text-align: center; animation: fadeIn 0.4s ease; }
         .name-box { margin-bottom: 10px; }
         .item-name { display: block; font-size: 22px; font-weight: 900; }
@@ -73,8 +85,6 @@
         .action-btn:active { transform: scale(0.95); }
         .action-btn.up { color: #D97706; }
         .action-btn.up.voted { background: #FFFBEB; border-color: #FDE68A; }
-        .action-btn.down { color: #6B7280; }
-        .action-btn.down.voted { background: #F3F4F6; border-color: #D1D5DB; }
 
         /* 发布弹窗与独立的上传区 */
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; display: none; justify-content: center; align-items: center; animation: fadeIn 0.2s ease; }
@@ -108,12 +118,9 @@
         .share-text-chic .icon { font-size: 15px; -webkit-text-fill-color: initial; color: initial;}
 
         .float-plus { position: fixed; font-size: 24px; font-weight: 900; z-index: 9999; pointer-events: none; text-shadow: 0 2px 5px rgba(0,0,0,0.2); animation: popAndFloat 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
-        @keyframes popAndFloat {
-            0% { transform: translateY(0) scale(0.5) rotate(-10deg); opacity: 1; }
-            40% { transform: translateY(-40px) scale(1.4) rotate(5deg); opacity: 1; }
-            100% { transform: translateY(-80px) scale(1) rotate(0); opacity: 0; }
-        }
+        @keyframes popAndFloat { 0% { transform: translateY(0) scale(0.5) rotate(-10deg); opacity: 1; } 40% { transform: translateY(-40px) scale(1.4) rotate(5deg); opacity: 1; } 100% { transform: translateY(-80px) scale(1) rotate(0); opacity: 0; } }
 
+        /* ================= 导航与悬浮聊天 ================= */
         .tab-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 65px; background: #FFF; box-shadow: 0 -4px 20px rgba(0,0,0,0.06); display: flex; justify-content: space-around; align-items: center; z-index: 100; max-width: 600px; margin: 0 auto;}
         .tab-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #9CA3AF; cursor: pointer; width: 33%; transition: 0.2s;}
         .tab-item.active { color: #10B981; transform: translateY(-2px);}
@@ -128,15 +135,19 @@
         .bubble-user { background: #10B981; color: #FFF; border-bottom-right-radius: 4px; align-self: flex-end;}
         .bubble-ai { background: #F3F4F6; color: #1F2937; border-bottom-left-radius: 4px; align-self: flex-start;}
 
+        /* ================= 神图海报模板 ================= */
         .poster-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 999; justify-content: center; align-items: center; flex-direction: column; animation: fadeIn 0.3s ease; }
         .poster-modal.show { display: flex; }
         .poster-result-img { max-width: 85%; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
         .close-poster-btn { margin-top: 30px; background: #FFF; color: #111827; border: none; padding: 12px 40px; border-radius: 25px; font-weight: bold; font-size: 15px; cursor: pointer; }
+        
         #poster-template { position: fixed; left: -9999px; top: 0; width: 350px; background: #F3F4F6; padding: 25px; box-sizing: border-box; font-family: -apple-system, sans-serif; }
     
+        /* ================= 🏆 榜单专属 UI ================= */
         .trending-tabs { display: flex; gap: 15px; padding: 0 20px; margin-bottom: 20px; }
         .t-tab { flex: 1; text-align: center; padding: 12px 0; background: #FFF; border-radius: 12px; font-weight: 900; color: #6B7280; font-size: 14px; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
         .t-tab.active { background: #111827; color: #FFF; box-shadow: 0 4px 15px rgba(17,24,39,0.2); transform: translateY(-2px); }
+        
         .trending-card { background: #FFF; margin: 0 20px 15px; border-radius: 16px; padding: 15px 20px; display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); position: relative; overflow: hidden; }
         .rank-badge { position: absolute; top: 0; left: 0; padding: 4px 12px; border-bottom-right-radius: 12px; font-size: 12px; font-weight: 900; color: #FFF; z-index: 1; box-shadow: 2px 2px 8px rgba(0,0,0,0.1); }
         .rank-1 { background: linear-gradient(135deg, #F59E0B, #FBBF24); }
@@ -144,6 +155,7 @@
         .rank-3 { background: linear-gradient(135deg, #B45309, #D97706); }
         .rank-other { background: #E5E7EB; color: #6B7280; box-shadow: none; }
         .rank-bad { background: #EF4444; color: #FFF; }
+        
         .t-info { flex: 1; margin-top: 10px; }
         .t-name { font-size: 16px; font-weight: 900; color: #111827; margin-bottom: 2px; }
         .t-dutch { font-size: 12px; color: #9CA3AF; margin-bottom: 6px; }
@@ -159,7 +171,7 @@
 
 <div class="tab-bar">
     <div class="tab-item active" onclick="switchTab('scan', this)">
-        <span class="tab-icon">📸</span><span class="tab-text">扫雷</span>
+        <span class="tab-icon">📸</span><span class="tab-text">首页</span>
     </div>
     <div class="tab-item" onclick="switchTab('footprint', this)">
         <span class="tab-icon">👣</span><span class="tab-text">足迹</span>
@@ -170,7 +182,7 @@
 </div>
 
 <div class="sticky-chat-bar" id="stickyChatBar">
-    <input type="text" id="askInput" class="chat-input" placeholder="问管家：空气炸锅怎么热？" onkeypress="if(event.key==='Enter') sendQuestion()">
+    <input type="text" id="askInput" class="chat-input" placeholder="问管家：这玩意怎么吃？" onkeypress="if(event.key==='Enter') sendQuestion()">
     <button class="chat-send-btn" id="sendBtn" onclick="sendQuestion()">↑</button>
 </div>
 
@@ -181,17 +193,29 @@
             <div class="subtitle">留学生专属的荷兰超市避雷神器</div>
         </div>
 
-        <div class="upload-box" id="uploadBox" onclick="document.getElementById('fileInput').click()">
-            <div id="uploadHint">
-                <div class="icon-camera">📸</div>
-                <div class="upload-text">点击拍个照，管家帮你排雷</div>
+        <div class="home-actions" id="homeActionBox">
+            <div class="action-card scan-mode" onclick="document.getElementById('fileInput').click()">
+                <div class="action-icon">📸</div>
+                <div class="action-title">扫包装排雷</div>
+                <div class="action-sub">看评价 · 找平替</div>
             </div>
+            
+            <div class="action-card recipe-mode" onclick="document.getElementById('ingredientInput').click()">
+                <div class="action-icon">🍳</div>
+                <div class="action-title">拍食材求做法</div>
+                <div class="action-sub">AI秒出糊弄学菜谱</div>
+            </div>
+        </div>
+
+        <input type="file" id="fileInput" accept="image/*" capture="environment" onchange="handleFileSelect(event)">
+        <input type="file" id="ingredientInput" accept="image/*" capture="environment" onchange="handleIngredientSelect(event)">
+
+        <div class="preview-container" id="previewContainer">
             <img id="previewImg" class="preview-img" src="" alt="预览">
-            <div class="scan-overlay" id="scanOverlay">
+            <div class="scan-overlay" id="scanOverlay" style="display:flex;">
                 <div class="scan-line"></div>
-                <div class="scan-text">管家大脑飞速运转中...</div>
+                <div class="scan-text" id="scanText">管家大脑飞速运转中...</div>
             </div>
-            <input type="file" id="fileInput" accept="image/*" capture="environment" onchange="handleFileSelect(event)">
         </div>
 
         <div id="miniResultCard">
@@ -246,7 +270,7 @@
             <div class="info-block" id="detailRecipeBox" style="display:none; background: transparent; box-shadow: none; padding: 0;">
                 <div class="block-title" style="margin-left: 5px; margin-bottom: 15px;">🍳 留学生糊弄学菜谱</div>
                 
-                <div class="recipe-submit-box" onclick="document.getElementById('recipeModal').style.display='flex'">
+                <div class="recipe-submit-box" id="recipeSubmitBoxBtn" onclick="document.getElementById('recipeModal').style.display='flex'">
                     <div class="recipe-submit-title">👨‍🍳 贡献我的神仙吃法</div>
                     <div class="recipe-submit-sub">丢几个词，AI 瞬间替你写成大厨菜谱！</div>
                 </div>
@@ -344,7 +368,7 @@
     let currentProductData = null; 
     let lastTab = 'scan';          
     let currentDetailData = null;  
-    let currentRecipeBase64 = null; // 存储菜谱分享时的图片
+    let currentRecipeBase64 = null; 
 
     function switchTab(pageId, element) {
         document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
@@ -373,51 +397,27 @@
     }
 
     // ==========================================
-    // 2. 核心扫雷 & 腾讯云并行上传
+    // 2. 核心：左侧【商品扫雷】按钮逻辑
     // ==========================================
     function handleFileSelect(event) {
         const file = event.target.files[0];
         if (!file) return;
 
-        document.getElementById('uploadHint').style.display = 'none';
-        document.getElementById('scanOverlay').style.display = 'flex';
-        document.getElementById('miniResultCard').style.display = 'none';
+        // 隐藏主页按钮，显示图片和扫描框
+        document.getElementById('homeActionBox').style.display = 'none';
+        document.getElementById('previewContainer').style.display = 'block';
+        document.getElementById('miniResultCard').style.display = 'none'; 
         
-        const scanText = document.querySelector('.scan-text');
-        const msgs = ["📸 正在极速压缩图片...", "🇳🇱 正在破译荷兰语标签...", "🧠 管家大脑飞速运转中..."];
-        let msgIndex = 0;
-        scanText.innerText = msgs[0];
-        const loadInterval = setInterval(() => {
-            msgIndex = (msgIndex + 1) % msgs.length;
-            scanText.innerText = msgs[msgIndex];
-        }, 1500); 
+        const scanText = document.getElementById('scanText');
+        const msgs = ["📸 正在上传云端...", "🇳🇱 正在破译荷兰语...", "🧠 管家大脑飞速运转中..."];
+        let msgIndex = 0; scanText.innerText = msgs[0];
+        const loadInterval = setInterval(() => { msgIndex = (msgIndex + 1) % msgs.length; scanText.innerText = msgs[msgIndex]; }, 1500); 
 
         const reader = new FileReader();
         reader.onload = function(e) {
-            const img = new Image();
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                const MAX_WIDTH = 600; const MAX_HEIGHT = 600;
-                let width = img.width; let height = img.height;
-
-                if (width > height) {
-                    if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
-                } else {
-                    if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
-                }
-
-                canvas.width = width; canvas.height = height;
-                ctx.drawImage(img, 0, 0, width, height);
-                const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
-                
-                document.getElementById('previewImg').src = compressedBase64;
-                document.getElementById('previewImg').style.display = 'block';
-
-                const finalBase64Str = compressedBase64.split(',')[1];
-                processImageParallel(finalBase64Str, loadInterval);
-            };
-            img.src = e.target.result;
+            document.getElementById('previewImg').src = e.target.result;
+            const base64String = e.target.result.split(',')[1];
+            processImageParallel(base64String, loadInterval);
         };
         reader.readAsDataURL(file);
     }
@@ -430,7 +430,6 @@
             ]);
 
             clearInterval(loadInterval);
-
             const scanData = await scanRes.json();
             const uploadData = await uploadRes.json();
 
@@ -441,16 +440,62 @@
 
             const cloudImageUrl = uploadData.success ? uploadData.url : document.getElementById('previewImg').src;
             saveToLocalFootprint(scanData, cloudImageUrl); 
-
             scanData.cloud_img = cloudImageUrl;
             fetch('/api/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(scanData) }).catch(e => {});
-        } catch (error) { 
-            clearInterval(loadInterval);
-            alert("网络断开了：" + error.message); 
-            resetApp(); 
-        }
+        } catch (error) { clearInterval(loadInterval); alert("网络断开了：" + error.message); resetApp(); }
     }
 
+    // ==========================================
+    // 3. 核心：右侧【拍食材写菜谱】按钮逻辑 (全新)
+    // ==========================================
+    function handleIngredientSelect(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // 隐藏主页按钮，显示图片和专门的食材扫描框
+        document.getElementById('homeActionBox').style.display = 'none';
+        document.getElementById('previewContainer').style.display = 'block';
+        document.getElementById('miniResultCard').style.display = 'none'; 
+        
+        const scanText = document.getElementById('scanText');
+        const msgs = ["📸 正在压缩食材图片...", "🥬 正在识别食材...", "👨‍🍳 厨神大脑疯狂构思菜谱中..."];
+        let msgIndex = 0; scanText.innerText = msgs[0];
+        const loadInterval = setInterval(() => { msgIndex = (msgIndex + 1) % msgs.length; scanText.innerText = msgs[msgIndex]; }, 1500); 
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const MAX_WIDTH = 600; const MAX_HEIGHT = 600;
+                let width = img.width; let height = img.height;
+                if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
+                else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
+                canvas.width = width; canvas.height = height; ctx.drawImage(img, 0, 0, width, height);
+                
+                const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+                document.getElementById('previewImg').src = compressedBase64;
+                const finalBase64Str = compressedBase64.split(',')[1];
+                
+                // 发送给处理食材的逻辑
+                processIngredient(finalBase64Str, loadInterval);
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    async function processIngredient(base64Str, loadInterval) {
+        // 【伏笔】这里我们马上要写后端的 /api/scan-ingredient.js 接口
+        setTimeout(() => {
+            clearInterval(loadInterval);
+            alert("管家收到！前端界面已全部打通！接下来咱们去后台写一个 【/api/scan-ingredient.js】 接口，让 AI 把这张食材图直接变成菜谱！");
+            resetApp();
+        }, 2000);
+    }
+
+    // 接收云端图片链接参数
     function saveToLocalFootprint(data, cloudImageUrl) {
         let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
         const exists = history.find(item => item.dutch_name === data.dutch_name);
@@ -487,17 +532,17 @@
 
     function resetApp() {
         document.getElementById('fileInput').value = '';
-        document.getElementById('previewImg').style.display = 'none';
+        document.getElementById('ingredientInput').value = '';
+        document.getElementById('previewContainer').style.display = 'none';
         document.getElementById('scanOverlay').style.display = 'none';
-        document.getElementById('uploadHint').style.display = 'block';
         document.getElementById('miniResultCard').style.display = 'none';
+        document.getElementById('homeActionBox').style.display = 'flex'; // 恢复显示两个大按钮
         currentProductData = null;
     }
 
     // ==========================================
     // 渐进式详情页加载逻辑
     // ==========================================
-    
     function openDetailsFromScan() {
         currentDetailData = { ...currentProductData, img_src: document.getElementById('previewImg').src };
         renderBasicDetailsAndSwitch();
@@ -508,12 +553,8 @@
         let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
         currentDetailData = history[index];
         renderBasicDetailsAndSwitch();
-        
-        if (currentDetailData.alternatives || currentDetailData.pairing) {
-            renderDeepDetails(currentDetailData.alternatives, currentDetailData.pairing);
-        } else {
-            fetchDeepDetails(index); 
-        }
+        if (currentDetailData.alternatives || currentDetailData.pairing) { renderDeepDetails(currentDetailData.alternatives, currentDetailData.pairing); } 
+        else { fetchDeepDetails(index); }
     }
 
     function renderBasicDetailsAndSwitch() {
@@ -541,17 +582,16 @@
         const recipeBox = document.getElementById('detailRecipeBox');
         if (recipeBox) {
             recipeBox.style.display = 'block';
+            document.getElementById('recipeSubmitBoxBtn').style.display = 'block';
             document.getElementById('recipeCardList').innerHTML = '<div style="text-align:center; color:#9CA3AF; padding: 20px; font-size:13px;">🔄 管家正在厨房翻找菜谱...</div>';
         }
-        
         switchTab('details', null);
     }
 
     async function fetchDeepDetails(historyIndex = -1) {
         try {
             const res = await fetch('/api/detail', {
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' },
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ dutchName: currentDetailData.dutch_name, chineseName: currentDetailData.chinese_name })
             });
             const data = await res.json();
@@ -568,12 +608,8 @@
                     history[indexToUpdate].pairing = data.pairing;
                     localStorage.setItem('hebao_history', JSON.stringify(history));
                 }
-            } else {
-                document.getElementById('recipeCardList').innerHTML = '<div style="color:#EF4444; text-align:center; padding:10px;">获取数据失败，请重试</div>';
-            }
-        } catch (error) {
-            document.getElementById('recipeCardList').innerHTML = '<div style="color:#EF4444; text-align:center; padding:10px;">网络似乎开小差了</div>';
-        }
+            } else { document.getElementById('recipeCardList').innerHTML = '<div style="color:#EF4444; text-align:center; padding:10px;">获取数据失败，请重试</div>'; }
+        } catch (error) { document.getElementById('recipeCardList').innerHTML = '<div style="color:#EF4444; text-align:center; padding:10px;">网络似乎开小差了</div>'; }
     }
 
     function renderDeepDetails(alternatives, pairing) {
@@ -594,44 +630,34 @@
                 if (line.includes('网友点评')) {
                     const isLike = line.includes('👍');
                     const textContent = line.replace(/🧑‍🍳 网友点评 \[.*?\]：/, '').trim();
-                    const styleClass = isLike ? 'recipe-card' : 'recipe-card';
-                    
                     if(listContainer) {
                         listContainer.innerHTML += `
-                            <div class="${styleClass}">
-                                <div class="recipe-title">
-                                    <span>${isLike ? '🍳 网友懒人做法' : '💣 避雷吐槽'}</span>
-                                </div>
+                            <div class="recipe-card">
+                                <div class="recipe-title"><span>${isLike ? '🍳 网友懒人做法' : '💣 避雷吐槽'}</span></div>
                                 <div class="recipe-steps" style="${isLike ? '' : 'color:#DC2626;'}">${textContent}</div>
                                 <div class="recipe-actions">
-                                    <div class="action-btn up" onclick="voteRecipe(Date.now(), 'up')">🤤 赞同 <span>${fakeInitialVotes}</span></div>
+                                    <div class="action-btn up" onclick="voteRecipe(Date.now(), 'up', event)">🤤 赞同 <span>${fakeInitialVotes}</span></div>
                                 </div>
                             </div>`;
                     }
                 }
             });
         }
-        
-        if (listContainer && listContainer.innerHTML === '') {
-            listContainer.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding: 20px; font-size:13px;">暂无菜谱，快点击上方贡献首发做法！</div>';
-        }
+        if (listContainer && listContainer.innerHTML === '') { listContainer.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding: 20px; font-size:13px;">暂无菜谱，快点击上方贡献首发做法！</div>'; }
     }
 
     // ==========================================
     // 神仙菜谱图片处理与提交逻辑
     // ==========================================
-    function voteRecipe(recipeId, type) {
+    function voteRecipe(recipeId, type, event) {
         const btn = event.currentTarget;
         if(btn.classList.contains('voted')) return; 
-        
         btn.classList.add('voted');
         const span = btn.querySelector('span');
         if(span) span.innerText = parseInt(span.innerText) + 1;
-
         const rect = btn.getBoundingClientRect();
         const plus = document.createElement('div');
-        plus.className = 'float-plus'; plus.innerText = '+1';
-        plus.style.color = type === 'up' ? '#D97706' : '#6B7280';
+        plus.className = 'float-plus'; plus.innerText = '+1'; plus.style.color = '#D97706';
         plus.style.left = rect.left + (rect.width/2) + 'px'; plus.style.top = (rect.top - 20) + 'px';
         document.body.appendChild(plus); setTimeout(() => plus.remove(), 800);
     }
@@ -639,32 +665,20 @@
     function handleRecipeFileSelect(event) {
         const file = event.target.files[0];
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = function(e) {
             const img = new Image();
             img.onload = function() {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                const MAX_WIDTH = 800; const MAX_HEIGHT = 800;
-                let width = img.width; let height = img.height;
-
-                if (width > height) {
-                    if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
-                } else {
-                    if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
-                }
-
-                canvas.width = width; canvas.height = height;
-                ctx.drawImage(img, 0, 0, width, height);
+                const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+                const MAX_WIDTH = 800; const MAX_HEIGHT = 800; let width = img.width; let height = img.height;
+                if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
+                else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
+                canvas.width = width; canvas.height = height; ctx.drawImage(img, 0, 0, width, height);
                 const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
-                
                 document.getElementById('recipeImgPreview').src = compressedBase64;
                 document.getElementById('recipeImgPreview').style.display = 'block';
                 document.getElementById('recipeImgHint').style.display = 'none';
                 document.getElementById('recipeImgRemove').style.display = 'flex';
-
                 currentRecipeBase64 = compressedBase64.split(',')[1];
             };
             img.src = e.target.result;
@@ -673,18 +687,13 @@
     }
 
     function removeRecipeImg(event) {
-        event.stopPropagation();
-        currentRecipeBase64 = null;
-        document.getElementById('recipeFileInput').value = '';
-        document.getElementById('recipeImgPreview').style.display = 'none';
-        document.getElementById('recipeImgPreview').src = '';
-        document.getElementById('recipeImgHint').style.display = 'flex';
-        document.getElementById('recipeImgRemove').style.display = 'none';
+        event.stopPropagation(); currentRecipeBase64 = null; document.getElementById('recipeFileInput').value = '';
+        document.getElementById('recipeImgPreview').style.display = 'none'; document.getElementById('recipeImgPreview').src = '';
+        document.getElementById('recipeImgHint').style.display = 'flex'; document.getElementById('recipeImgRemove').style.display = 'none';
     }
 
     function closeRecipeModal() {
-        document.getElementById('recipeModal').style.display = 'none';
-        document.getElementById('recipeRawInput').value = '';
+        document.getElementById('recipeModal').style.display = 'none'; document.getElementById('recipeRawInput').value = '';
         removeRecipeImg({ stopPropagation: ()=>{} });
     }
 
@@ -692,14 +701,10 @@
         const input = document.getElementById('recipeRawInput').value.trim();
         if(!input) { alert("请先输入几个关键步骤或吐槽哦！"); return; }
         if(!currentDetailData) return;
-        
-        const btn = document.getElementById('btnSubmitRecipe');
-        btn.innerText = "⏳ AI 疯狂敲字中..."; btn.disabled = true;
-
+        const btn = document.getElementById('btnSubmitRecipe'); btn.innerText = "⏳ AI 疯狂敲字中..."; btn.disabled = true;
         setTimeout(() => {
-            alert("界面体验已完成！你的文字是：" + input + "，图片状态：" + (currentRecipeBase64 ? "已选择" : "未选择") + "。下一步咱们就写后台接口！");
-            closeRecipeModal();
-            btn.innerText = "✨ 让 AI 帮我写"; btn.disabled = false;
+            alert("管家收到！界面体验已打通。下一步连接后台！");
+            closeRecipeModal(); btn.innerText = "✨ 让 AI 帮我写"; btn.disabled = false;
         }, 1500);
     }
 
@@ -730,10 +735,7 @@
             document.getElementById(loadingId).remove();
             if (response.ok) { chatBox.innerHTML += `<div class="chat-bubble bubble-ai">${data.reply}</div>`; } 
             else { chatBox.innerHTML += `<div class="chat-bubble bubble-ai" style="color:red;">网络拥挤：${data.error}</div>`; }
-        } catch (err) {
-            document.getElementById(loadingId).remove();
-            chatBox.innerHTML += `<div class="chat-bubble bubble-ai" style="color:red;">网络断了...</div>`;
-        }
+        } catch (err) { document.getElementById(loadingId).remove(); chatBox.innerHTML += `<div class="chat-bubble bubble-ai" style="color:red;">网络断了...</div>`; }
         sendBtn.disabled = false; window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     }
 
@@ -796,8 +798,7 @@
 
         const rect = btn.getBoundingClientRect();
         const plus = document.createElement('div');
-        plus.className = 'float-plus'; 
-        plus.innerText = action === 'like' ? '👍 +1' : '💣 +1';
+        plus.className = 'float-plus'; plus.innerText = action === 'like' ? '👍 +1' : '💣 +1';
         plus.style.color = action === 'like' ? '#10B981' : '#EF4444';
         plus.style.left = (event.clientX - 10) + 'px'; plus.style.top = (rect.top - 10) + 'px';
         document.body.appendChild(plus); setTimeout(() => plus.remove(), 800);
@@ -811,54 +812,29 @@
         history[index].my_vote = action;
         localStorage.setItem('hebao_history', JSON.stringify(history));
 
-        fetch('/api/vote', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dutch_name: history[index].dutch_name, action: action })
-        }).catch(err => {});
+        fetch('/api/vote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dutch_name: history[index].dutch_name, action: action }) }).catch(err => {});
     }
 
     function updateUgcStyle(index, action) {
-        const box = document.getElementById(`ugcBox_${index}`);
-        const input = document.getElementById(`recipeInput_${index}`);
-        const submitBtn = document.getElementById(`submitBtn_${index}`);
-        
-        if(action === 'like') {
-            box.style.borderColor = '#A7F3D0'; box.style.background = '#ECFDF5';
-            input.placeholder = '太好吃了！疯狂安利给大家...';
-            input.dataset.attitude = '👍 推荐'; 
-            submitBtn.style.background = '#10B981';
-        } else {
-            box.style.borderColor = '#FECACA'; box.style.background = '#FEF2F2';
-            input.placeholder = '巨雷！帮大家避坑...';
-            input.dataset.attitude = '💣 避雷';
-            submitBtn.style.background = '#EF4444';
-        }
+        const box = document.getElementById(`ugcBox_${index}`); const input = document.getElementById(`recipeInput_${index}`); const submitBtn = document.getElementById(`submitBtn_${index}`);
+        if(action === 'like') { box.style.borderColor = '#A7F3D0'; box.style.background = '#ECFDF5'; input.placeholder = '太好吃了！疯狂安利给大家...'; input.dataset.attitude = '👍 推荐'; submitBtn.style.background = '#10B981'; } 
+        else { box.style.borderColor = '#FECACA'; box.style.background = '#FEF2F2'; input.placeholder = '巨雷！帮大家避坑...'; input.dataset.attitude = '💣 避雷'; submitBtn.style.background = '#EF4444'; }
     }
 
     async function submitRecipeFromHistory(index) {
-        let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
-        const item = history[index];
-        const inputElement = document.getElementById(`recipeInput_${index}`);
-        const recipeText = inputElement.value.trim();
-        
-        if (!recipeText) return;
-        const attitude = inputElement.dataset.attitude;
+        let history = JSON.parse(localStorage.getItem('hebao_history') || '[]'); const item = history[index];
+        const inputElement = document.getElementById(`recipeInput_${index}`); const recipeText = inputElement.value.trim();
+        if (!recipeText) return; const attitude = inputElement.dataset.attitude;
         if (!attitude) { alert("请先点击『狂赞』或『狂踩』表明你的态度！"); return; }
         
         const finalUgcText = `🧑‍🍳 网友点评 [${attitude}]：${recipeText}`;
-        const btn = document.getElementById(`submitBtn_${index}`);
-        btn.innerText = "中..."; btn.disabled = true;
+        const btn = document.getElementById(`submitBtn_${index}`); btn.innerText = "中..."; btn.disabled = true;
 
         try {
-            await fetch('/api/recipe', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ dutch_name: item.dutch_name, recipe: finalUgcText })
-            });
+            await fetch('/api/recipe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dutch_name: item.dutch_name, recipe: finalUgcText }) });
             alert("🎉 发布成功！你的评价已收录！");
-            
             item.pairing = (item.pairing || '') + '\n\n' + finalUgcText;
-            localStorage.setItem('hebao_history', JSON.stringify(history));
-            inputElement.value = "";
-            btn.innerText = "发布"; btn.disabled = false;
+            localStorage.setItem('hebao_history', JSON.stringify(history)); inputElement.value = ""; btn.innerText = "发布"; btn.disabled = false;
         } catch(e) { alert("网络开小差了..."); btn.innerText = "发布"; btn.disabled = false; }
     }
 
@@ -873,135 +849,67 @@
         document.getElementById('ptChinese').innerText = item.chinese_name || '未知商品';
         document.getElementById('ptImage').src = item.img_src || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23eee'/%3E%3C/svg%3E"; 
 
-        const wrapper = document.getElementById('ptWrapper');
-        const badge = document.getElementById('ptBadge');
-        const dutchText = document.getElementById('ptDutch');
-        const slogan = document.getElementById('ptSlogan');
-        const divider = document.getElementById('ptDivider');
-        const reviewBox = document.getElementById('ptUserReviewBox');
-        const reviewText = document.getElementById('ptUserReview');
+        const wrapper = document.getElementById('ptWrapper'); const badge = document.getElementById('ptBadge'); const dutchText = document.getElementById('ptDutch'); const slogan = document.getElementById('ptSlogan'); const divider = document.getElementById('ptDivider'); const reviewBox = document.getElementById('ptUserReviewBox'); const reviewText = document.getElementById('ptUserReview');
         
         let myLatestReview = "";
         if (item.pairing) {
-            const lines = item.pairing.split('\n\n');
-            const myLine = lines.reverse().find(l => l.includes('网友点评')); 
+            const lines = item.pairing.split('\n\n'); const myLine = lines.reverse().find(l => l.includes('网友点评')); 
             if (myLine) myLatestReview = myLine.replace(/🧑‍🍳 网友点评 \[.*?\]：/, '').trim();
         }
 
         if (item.my_vote === 'like') {
-            wrapper.style.background = 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)';
-            wrapper.style.borderColor = '#A7F3D0'; dutchText.style.color = '#064E3B';
-            slogan.innerText = '👍 这玩意绝了，疯狂安利！'; slogan.style.color = '#059669'; divider.style.borderTopColor = '#A7F3D0';
-            badge.style.display = 'block'; badge.style.background = '#10B981'; badge.style.color = '#FFF'; badge.innerText = '👍 闭眼入';
+            wrapper.style.background = 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)'; wrapper.style.borderColor = '#A7F3D0'; dutchText.style.color = '#064E3B'; slogan.innerText = '👍 这玩意绝了，疯狂安利！'; slogan.style.color = '#059669'; divider.style.borderTopColor = '#A7F3D0'; badge.style.display = 'block'; badge.style.background = '#10B981'; badge.style.color = '#FFF'; badge.innerText = '👍 闭眼入';
             if(myLatestReview) { reviewBox.style.display = 'block'; reviewBox.style.borderLeftColor = '#10B981'; reviewText.innerText = `“${myLatestReview}”`; } else { reviewBox.style.display = 'none'; }
         } else if (item.my_vote === 'dislike') {
-            wrapper.style.background = 'linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%)';
-            wrapper.style.borderColor = '#FECACA'; dutchText.style.color = '#7F1D1D';
-            slogan.innerText = '💣 纯纯大冤种，快跑！'; slogan.style.color = '#DC2626'; divider.style.borderTopColor = '#FECACA';
-            badge.style.display = 'block'; badge.style.background = '#EF4444'; badge.style.color = '#FFF'; badge.innerText = '💣 巨雷';
+            wrapper.style.background = 'linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%)'; wrapper.style.borderColor = '#FECACA'; dutchText.style.color = '#7F1D1D'; slogan.innerText = '💣 纯纯大冤种，快跑！'; slogan.style.color = '#DC2626'; divider.style.borderTopColor = '#FECACA'; badge.style.display = 'block'; badge.style.background = '#EF4444'; badge.style.color = '#FFF'; badge.innerText = '💣 巨雷';
             if(myLatestReview) { reviewBox.style.display = 'block'; reviewBox.style.borderLeftColor = '#EF4444'; reviewText.innerText = `“${myLatestReview}”`; } else { reviewBox.style.display = 'none'; }
         } else {
-            wrapper.style.background = '#FFF'; wrapper.style.borderColor = 'transparent'; dutchText.style.color = '#111827';
-            slogan.innerText = '来和大家一起排雷！'; slogan.style.color = '#10B981'; divider.style.borderTopColor = '#E5E7EB';
-            badge.style.display = 'none'; reviewBox.style.display = 'none';
+            wrapper.style.background = '#FFF'; wrapper.style.borderColor = 'transparent'; dutchText.style.color = '#111827'; slogan.innerText = '来和大家一起排雷！'; slogan.style.color = '#10B981'; divider.style.borderTopColor = '#E5E7EB'; badge.style.display = 'none'; reviewBox.style.display = 'none';
         }
 
         wxLoadingMock("正在渲染专属神图...");
-
         setTimeout(async () => {
             const templateNode = document.getElementById('poster-template');
             try {
                 const canvas = await html2canvas(templateNode, { scale: 2, backgroundColor: null, logging: false });
-                document.getElementById('posterResultImg').src = canvas.toDataURL("image/png");
-                document.body.removeChild(document.getElementById('mockLoadingBox'));
-                document.getElementById('posterModal').classList.add('show');
-            } catch (error) {
-                alert("海报生成失败: " + error.message);
-                if (document.getElementById('mockLoadingBox')) document.body.removeChild(document.getElementById('mockLoadingBox'));
-            }
+                document.getElementById('posterResultImg').src = canvas.toDataURL("image/png"); document.body.removeChild(document.getElementById('mockLoadingBox')); document.getElementById('posterModal').classList.add('show');
+            } catch (error) { alert("海报生成失败: " + error.message); if (document.getElementById('mockLoadingBox')) document.body.removeChild(document.getElementById('mockLoadingBox')); }
         }, 200);
     }
 
     function wxLoadingMock(text) {
-        const div = document.createElement('div');
-        div.id = 'mockLoadingBox'; div.style.cssText = 'position:fixed; top:45%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.8); color:#fff; padding:15px 25px; border-radius:10px; z-index:9999; font-size:14px;';
-        div.innerText = text; document.body.appendChild(div);
+        const div = document.createElement('div'); div.id = 'mockLoadingBox'; div.style.cssText = 'position:fixed; top:45%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.8); color:#fff; padding:15px 25px; border-radius:10px; z-index:9999; font-size:14px;'; div.innerText = text; document.body.appendChild(div);
     }
 
     // ==========================================
     // 榜单数据引擎
     // ==========================================
     let trendingLoaded = false;
-
     const originalSwitchTab = switchTab;
-    switchTab = function(pageId, element) {
-        originalSwitchTab(pageId, element);
-        if (pageId === 'trending' && !trendingLoaded) {
-            loadTrendingData();
-        }
-    };
+    switchTab = function(pageId, element) { originalSwitchTab(pageId, element); if (pageId === 'trending' && !trendingLoaded) { loadTrendingData(); } };
 
     function switchTrendingTab(type, event) {
-        document.querySelectorAll('.t-tab').forEach(el => el.classList.remove('active'));
-        event.currentTarget.classList.add('active');
-        document.getElementById('trendingListLikes').style.display = type === 'likes' ? 'block' : 'none';
-        document.getElementById('trendingListDislikes').style.display = type === 'dislikes' ? 'block' : 'none';
+        document.querySelectorAll('.t-tab').forEach(el => el.classList.remove('active')); event.currentTarget.classList.add('active');
+        document.getElementById('trendingListLikes').style.display = type === 'likes' ? 'block' : 'none'; document.getElementById('trendingListDislikes').style.display = type === 'dislikes' ? 'block' : 'none';
     }
 
     async function loadTrendingData() {
         try {
-            const res = await fetch('/api/trending');
-            const data = await res.json();
-            if (data.success) {
-                renderTrendingList('trendingListLikes', data.topLikes, 'like');
-                renderTrendingList('trendingListDislikes', data.topDislikes, 'dislike');
-                trendingLoaded = true;
-            } else {
-                throw new Error(data.error);
-            }
-        } catch (e) {
-            console.error(e);
-            document.getElementById('trendingListLikes').innerHTML = '<div style="text-align:center; margin-top: 40px; color:#EF4444;">榜单拉取失败，请稍后重试</div>';
-        }
+            const res = await fetch('/api/trending'); const data = await res.json();
+            if (data.success) { renderTrendingList('trendingListLikes', data.topLikes, 'like'); renderTrendingList('trendingListDislikes', data.topDislikes, 'dislike'); trendingLoaded = true; } 
+            else { throw new Error(data.error); }
+        } catch (e) { document.getElementById('trendingListLikes').innerHTML = '<div style="text-align:center; margin-top: 40px; color:#EF4444;">榜单拉取失败，请稍后重试</div>'; }
     }
 
     function renderTrendingList(containerId, list, type) {
         const container = document.getElementById(containerId);
-        if (!list || list.length === 0) {
-            container.innerHTML = '<div style="text-align:center; color:#888; margin-top:40px;">暂无数据，快去扫码贡献第一票吧！</div>';
-            return;
-        }
-
+        if (!list || list.length === 0) { container.innerHTML = '<div style="text-align:center; color:#888; margin-top:40px;">暂无数据，快去扫码贡献第一票吧！</div>'; return; }
         let html = '';
         list.forEach((item, index) => {
             let badgeClass = 'rank-other';
-            if (type === 'like') {
-                if (index === 0) badgeClass = 'rank-1';
-                else if (index === 1) badgeClass = 'rank-2';
-                else if (index === 2) badgeClass = 'rank-3';
-            } else {
-                badgeClass = 'rank-bad';
-            }
-
-            const score = type === 'like' ? item.likes : item.dislikes;
-            const icon = type === 'like' ? '👍' : '💣';
-            const colorClass = type === 'like' ? 'score-like' : 'score-dislike';
-            const label = type === 'like' ? '狂赞' : '狂踩';
-
-            html += `
-                <div class="trending-card">
-                    <div class="rank-badge ${badgeClass}">TOP ${index + 1}</div>
-                    <div class="t-info">
-                        <div class="t-name">${item.chinese_name || '未命名商品'}</div>
-                        <div class="t-dutch">${item.dutch_name || ''}</div>
-                        <div class="t-insight">${item.insight || '暂无管家评价'}</div>
-                    </div>
-                    <div class="t-score ${colorClass}">
-                        <span>${icon} ${score}</span>
-                        <span class="t-score-label">${label}</span>
-                    </div>
-                </div>
-            `;
+            if (type === 'like') { if (index === 0) badgeClass = 'rank-1'; else if (index === 1) badgeClass = 'rank-2'; else if (index === 2) badgeClass = 'rank-3'; } else { badgeClass = 'rank-bad'; }
+            const score = type === 'like' ? item.likes : item.dislikes; const icon = type === 'like' ? '👍' : '💣'; const colorClass = type === 'like' ? 'score-like' : 'score-dislike'; const label = type === 'like' ? '狂赞' : '狂踩';
+            html += `<div class="trending-card"><div class="rank-badge ${badgeClass}">TOP ${index + 1}</div><div class="t-info"><div class="t-name">${item.chinese_name || '未命名商品'}</div><div class="t-dutch">${item.dutch_name || ''}</div><div class="t-insight">${item.insight || '暂无管家评价'}</div></div><div class="t-score ${colorClass}"><span>${icon} ${score}</span><span class="t-score-label">${label}</span></div></div>`;
         });
         container.innerHTML = html;
     }
