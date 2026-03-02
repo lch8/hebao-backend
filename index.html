@@ -25,17 +25,14 @@
         
         .action-card.scan-mode { grid-column: span 2; padding: 25px 15px; border-color: #10B981; background: #ECFDF5; border-style: solid; }
         .action-card.scan-mode:active { background: #D1FAE5; border-color: #059669; }
-        
         .action-card.ingredient-mode { border-color: #93C5FD; background: #EFF6FF; border-style: solid; }
         .action-card.ingredient-mode:active { background: #DBEAFE; border-color: #3B82F6; }
-        
         .action-card.dish-mode { border-color: #FCD34D; background: #FFFBEB; border-style: solid; }
         .action-card.dish-mode:active { background: #FEF3C7; border-color: #F59E0B; }
         
         .action-icon { font-size: 38px; margin-bottom: 10px; display: inline-block; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));}
         .action-title { font-size: 15px; font-weight: 900; color: #111827; margin-bottom: 4px;}
         .action-sub { font-size: 12px; color: #6B7280; font-weight: bold;}
-        
         .scan-mode .action-title { color: #065F46; } .scan-mode .action-sub { color: #047857; }
         .ingredient-mode .action-title { color: #1E3A8A; } .ingredient-mode .action-sub { color: #1D4ED8; }
         .dish-mode .action-title { color: #D97706; } .dish-mode .action-sub { color: #B45309; }
@@ -58,6 +55,7 @@
         .ugc-badge { display: inline-block; background: #10B981; color: #FFF; font-size: 11px; padding: 3px 8px; border-radius: 6px; font-weight: bold; margin-bottom: 8px; }
         
         .btn-view-detail { background: #111827; color: #FFF; border: none; padding: 14px; width: 100%; border-radius: 25px; font-size: 15px; font-weight: bold; margin-top: 10px; cursor: pointer; box-shadow: 0 4px 15px rgba(17, 24, 39, 0.2); }
+        .btn-share-community { background: linear-gradient(135deg, #F59E0B, #D97706); color: #FFF; border: none; padding: 14px; width: 100%; border-radius: 25px; font-size: 15px; font-weight: bold; margin-top: 15px; cursor: pointer; box-shadow: 0 4px 15px rgba(217, 119, 6, 0.3); display: none;}
         .btn-secondary { background: transparent; color: #EF4444; border: 2px solid #EF4444; width: 100%; height: 48px; border-radius: 25px; font-size: 15px; font-weight: bold; margin-top: 15px; cursor: pointer;}
 
         /* ================= 2. 详情页纯净阅读版 ================= */
@@ -72,28 +70,36 @@
         .alt-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px;}
         .alt-tag { background: #F3F4F6; border: 1px solid #E5E7EB; font-size: 12px; padding: 6px 12px; border-radius: 8px; color: #4B5563;}
 
-        /* ================= 3. 神仙菜谱 UI ================= */
+        /* ================= 3. 新增：深夜食堂社区 UI ================= */
+        .c-card { background: #FFF; border-radius: 20px; overflow: hidden; margin-bottom: 20px; box-shadow: 0 6px 20px rgba(0,0,0,0.04); border: 1px solid #F3F4F6; animation: fadeIn 0.4s ease;}
+        .c-img { width: 100%; height: 220px; object-fit: cover; background: #F9FAFB;}
+        .c-body { padding: 18px 20px; }
+        .c-title { font-size: 18px; font-weight: 900; color: #111827; margin-bottom: 8px;}
+        .c-text { font-size: 14px; color: #4B5563; line-height: 1.6; white-space: pre-wrap; margin-bottom: 15px; font-weight: 500;}
+        .c-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #E5E7EB; padding-top: 15px;}
+        .c-user { font-size: 13px; color: #9CA3AF; font-weight: bold;}
+        .c-like-btn { background: #FFFBEB; color: #D97706; border: 1px solid #FDE68A; padding: 8px 18px; border-radius: 20px; font-size: 13px; font-weight: 900; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: 0.2s; user-select: none;}
+        .c-like-btn:active { transform: scale(0.95); background: #FEF3C7;}
+        .c-like-btn.voted { background: #D97706; color: #FFF; border-color: #D97706; }
+
+        /* 商品菜谱区 */
         .recipe-submit-box { background: #FFFBEB; border: 2px dashed #FCD34D; border-radius: 16px; padding: 15px; margin-bottom: 20px; text-align: center; cursor: pointer; transition: 0.2s; }
         .recipe-submit-box:active { transform: scale(0.98); background: #FEF3C7; }
         .recipe-submit-title { font-size: 15px; font-weight: 900; color: #D97706; }
         .recipe-submit-sub { font-size: 12px; color: #B45309; margin-top: 4px; }
-
         .recipe-card { background: #FFF; border-radius: 16px; padding: 18px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #F3F4F6; }
         .recipe-title { font-size: 16px; font-weight: 900; color: #111827; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;}
-        .recipe-meta { display: flex; flex-wrap: wrap; gap: 8px; font-size: 12px; color: #6B7280; margin-bottom: 12px; }
-        .recipe-meta span { background: #F3F4F6; padding: 4px 8px; border-radius: 6px; font-weight: bold; color: #374151;}
         .recipe-steps { font-size: 14px; color: #4B5563; line-height: 1.6; margin-bottom: 15px; white-space: pre-wrap; font-weight: 500;}
-        
         .recipe-actions { display: flex; gap: 10px; border-top: 1px dashed #E5E7EB; padding-top: 12px; }
         .action-btn { flex: 1; text-align: center; padding: 10px; border-radius: 12px; font-size: 13px; font-weight: 900; cursor: pointer; transition: 0.2s; border: 1px solid #E5E7EB; background: #FFF; display: flex; justify-content: center; align-items: center; gap: 6px; user-select: none;}
         .action-btn:active { transform: scale(0.95); }
-        .action-btn.up { color: #D97706; }
-        .action-btn.up.voted { background: #FFFBEB; border-color: #FDE68A; }
 
+        /* 发布弹窗 */
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; display: none; justify-content: center; align-items: center; animation: fadeIn 0.2s ease; }
-        .modal-content { background: #FFF; width: 90%; max-width: 400px; border-radius: 20px; padding: 24px; box-sizing: border-box; }
-        .modal-textarea { width: 100%; height: 100px; border-radius: 12px; border: 2px solid #E5E7EB; padding: 12px; font-size: 14px; box-sizing: border-box; outline: none; resize: none; margin-top: 10px; transition: border 0.2s;}
-        .modal-textarea:focus { border-color: #10B981; }
+        .modal-content { background: #FFF; width: 90%; max-width: 400px; border-radius: 20px; padding: 24px; box-sizing: border-box; max-height: 90vh; overflow-y: auto;}
+        .modal-input { width: 100%; border-radius: 12px; border: 2px solid #E5E7EB; padding: 12px; font-size: 15px; box-sizing: border-box; margin-top: 10px; font-weight: bold; outline: none;}
+        .modal-textarea { width: 100%; height: 180px; border-radius: 12px; border: 2px solid #E5E7EB; padding: 12px; font-size: 14px; box-sizing: border-box; outline: none; resize: none; margin-top: 10px; transition: border 0.2s;}
+        .modal-textarea:focus, .modal-input:focus { border-color: #10B981; }
         
         .recipe-img-upload { height: 120px; background: #F9FAFB; border: 2px dashed #D1D5DB; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: 15px; cursor: pointer; color: #6B7280; font-size: 13px; font-weight: bold; overflow: hidden; position: relative; transition: 0.2s;}
         .recipe-img-upload:active { background: #F3F4F6; border-color: #10B981; }
@@ -125,7 +131,7 @@
 
         /* ================= 导航与悬浮聊天 ================= */
         .tab-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 65px; background: #FFF; box-shadow: 0 -4px 20px rgba(0,0,0,0.06); display: flex; justify-content: space-around; align-items: center; z-index: 100; max-width: 600px; margin: 0 auto;}
-        .tab-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #9CA3AF; cursor: pointer; width: 33%; transition: 0.2s;}
+        .tab-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #9CA3AF; cursor: pointer; width: 25%; transition: 0.2s;}
         .tab-item.active { color: #10B981; transform: translateY(-2px);}
         .tab-icon { font-size: 22px; margin-bottom: 4px; }
         .tab-text { font-size: 11px; font-weight: bold; }
@@ -171,7 +177,10 @@
 
 <div class="tab-bar">
     <div class="tab-item active" onclick="switchTab('scan', this)">
-        <span class="tab-icon">首页</span><span class="tab-text">首页</span>
+        <span class="tab-icon">🏠</span><span class="tab-text">首页</span>
+    </div>
+    <div class="tab-item" onclick="switchTab('community', this)">
+        <span class="tab-icon">🍳</span><span class="tab-text">食堂</span>
     </div>
     <div class="tab-item" onclick="switchTab('footprint', this)">
         <span class="tab-icon">👣</span><span class="tab-text">足迹</span>
@@ -283,11 +292,26 @@
                 </div>
 
                 <div id="recipeCardList">
-                    <div style="text-align:center; color:#9CA3AF; padding: 20px; font-size:13px;">🔄 管家正在厨房翻找菜谱...</div>
+                    <div style="text-align:center; color:#9CA3AF; padding: 20px; font-size:13px;">🔄 正在厨房翻找菜谱...</div>
                 </div>
             </div>
 
+            <button class="btn-share-community" id="shareToCommunityBtn" onclick="openShareCommunityModal()">✍️ 修改并分享到【深夜食堂】社区</button>
+
             <div id="chatHistory" style="margin-top: 20px;"></div>
+        </div>
+    </div>
+
+    <div id="page-community" class="page-section">
+        <div class="header">
+            <h1 class="title">深夜食堂 🍳</h1>
+            <div class="subtitle">留学生专属的糊弄学菜谱社区</div>
+        </div>
+        <div id="communityFeedList">
+            <div style="text-align: center; color: #888; margin-top: 50px;">
+                <div class="spinner" style="margin: 0 auto 10px;"></div>
+                正在加载各路大厨的作品...
+            </div>
         </div>
     </div>
 
@@ -326,20 +350,31 @@
         <p style="font-size: 12px; color: #6B7280; margin-top: 0;">不需要写步骤！只需写出关键厨具和做法（例：空气炸锅180度，刷老干妈烤10分钟）</p>
         
         <div class="recipe-img-upload" id="recipeUploadBox" onclick="document.getElementById('recipeFileInput').click()">
-            <span id="recipeImgHint" style="display:flex; flex-direction:column; align-items:center; gap:5px;">
-                <span style="font-size: 24px;">📸</span>
-                晒出你的成品图 (选填)
-            </span>
+            <span id="recipeImgHint" style="display:flex; flex-direction:column; align-items:center; gap:5px;"><span style="font-size: 24px;">📸</span>晒出你的成品图 (选填)</span>
             <img id="recipeImgPreview" class="recipe-img-preview" src="">
             <div id="recipeImgRemove" class="recipe-img-remove" onclick="removeRecipeImg(event)">✕</div>
         </div>
         <input type="file" id="recipeFileInput" accept="image/*" style="display:none;" onchange="handleRecipeFileSelect(event)">
-
         <textarea id="recipeRawInput" class="modal-textarea" placeholder="输入你的懒人黑话..."></textarea>
         
         <div style="margin-top: 20px; display: flex; gap: 10px;">
             <button style="flex:1; padding: 14px; background: #F3F4F6; color: #4B5563; border: none; border-radius: 12px; font-weight: bold; cursor: pointer;" onclick="closeRecipeModal()">取消</button>
             <button id="btnSubmitRecipe" style="flex:2; padding: 14px; background: #111827; color: #FFF; border: none; border-radius: 12px; font-weight: bold; cursor: pointer;" onclick="submitMagicRecipe()">✨ 让 AI 帮我写</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="shareCommunityModal">
+    <div class="modal-content">
+        <h3 style="margin-top:0; margin-bottom: 5px; color: #111827;">发布到深夜食堂 🍳</h3>
+        <p style="font-size: 12px; color: #6B7280; margin-top: 0;">AI写的如果不准，你可以在这里修改后加上自己的经验再发布哦！</p>
+        
+        <input type="text" id="communityRecipeTitle" class="modal-input" placeholder="给菜谱起个响亮的名字...">
+        <textarea id="communityRecipeText" class="modal-textarea" style="height: 160px;" placeholder="写下你的神仙做法..."></textarea>
+        
+        <div style="margin-top: 20px; display: flex; gap: 10px;">
+            <button style="flex:1; padding: 14px; background: #F3F4F6; color: #4B5563; border: none; border-radius: 12px; font-weight: bold; cursor: pointer;" onclick="document.getElementById('shareCommunityModal').style.display='none'">取消</button>
+            <button id="btnConfirmShare" style="flex:2; padding: 14px; background: #D97706; color: #FFF; border: none; border-radius: 12px; font-weight: bold; cursor: pointer;" onclick="submitToCommunity()">🚀 确认发布</button>
         </div>
     </div>
 </div>
@@ -391,213 +426,122 @@
         
         if (pageId === 'details') { tabBar.style.display = 'none'; chatBar.style.display = 'flex'; } 
         else { tabBar.style.display = 'flex'; chatBar.style.display = 'none'; }
+        
         if (pageId === 'footprint') renderFootprints();
+        if (pageId === 'community' && !communityLoaded) loadCommunityFeed(); // 加载社区
     }
 
     function goBack() { switchTab(lastTab, document.querySelector(`.tab-item[onclick*="${lastTab}"]`)); }
 
     // ==========================================
-    // 2. 核心：顶部【商品扫雷】按钮逻辑
+    // 2/3/4. 上传与识别逻辑 (省略大部分不变的代码)
     // ==========================================
     function handleFileSelect(event) {
         const file = event.target.files[0]; if (!file) return;
-        document.getElementById('homeActionBox').style.display = 'none'; 
-        document.getElementById('previewContainer').style.display = 'block'; 
-        document.getElementById('scanOverlay').style.display = 'flex'; // 🚨 强补：显示遮罩
-        document.getElementById('miniResultCard').style.display = 'none'; 
-        
+        document.getElementById('homeActionBox').style.display = 'none'; document.getElementById('previewContainer').style.display = 'block'; document.getElementById('scanOverlay').style.display = 'flex'; document.getElementById('miniResultCard').style.display = 'none'; 
         const scanText = document.getElementById('scanText'); const msgs = ["📸 正在上传云端...", "🇳🇱 正在破译荷兰语...", "🧠 管家大脑飞速运转中..."];
         let msgIndex = 0; scanText.innerText = msgs[0];
         const loadInterval = setInterval(() => { msgIndex = (msgIndex + 1) % msgs.length; scanText.innerText = msgs[msgIndex]; }, 1500); 
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            document.getElementById('previewImg').src = e.target.result;
-            const base64String = e.target.result.split(',')[1];
-            processImageParallel(base64String, loadInterval);
-        };
-        reader.readAsDataURL(file);
+        const reader = new FileReader(); reader.onload = function(e) { document.getElementById('previewImg').src = e.target.result; const base64String = e.target.result.split(',')[1]; processImageParallel(base64String, loadInterval); }; reader.readAsDataURL(file);
     }
-
     async function processImageParallel(base64Str, loadInterval) {
         try {
-            const [scanRes, uploadRes] = await Promise.all([
-                fetch('/api/scan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageBase64: base64Str }) }),
-                fetch('/api/upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageBase64: base64Str }) })
-            ]);
-
-            clearInterval(loadInterval);
-            const scanData = await scanRes.json();
-            const uploadData = await uploadRes.json();
-
+            const [scanRes, uploadRes] = await Promise.all([ fetch('/api/scan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageBase64: base64Str }) }), fetch('/api/upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageBase64: base64Str }) }) ]);
+            clearInterval(loadInterval); const scanData = await scanRes.json(); const uploadData = await uploadRes.json();
             if (!scanRes.ok) { alert("管家遇到问题了：" + (scanData.error || '未知错误')); resetApp(); return; }
-            
-            scanData.item_type = 'product';
-            currentProductData = scanData;
-            renderResult(scanData);
-
+            scanData.item_type = 'product'; currentProductData = scanData; renderResult(scanData);
             const cloudImageUrl = uploadData.success ? uploadData.url : document.getElementById('previewImg').src;
-            saveToLocalFootprint(scanData, cloudImageUrl); 
-            scanData.cloud_img = cloudImageUrl;
+            saveToLocalFootprint(scanData, cloudImageUrl); scanData.cloud_img = cloudImageUrl;
             fetch('/api/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(scanData) }).catch(e => {});
         } catch (error) { clearInterval(loadInterval); alert("网络断开了：" + error.message); resetApp(); }
     }
 
-    // ==========================================
-    // 3/4. 核心：生食材 / 熟菜品 拍照逻辑 (彻底修复卡死)
-    // ==========================================
     function handleIngredientSelect(event) { processRecipeImage(event, 'ingredient'); }
     function handleDishSelect(event) { processRecipeImage(event, 'dish'); }
-
     function processRecipeImage(event, type) {
         const file = event.target.files[0]; if (!file) return;
-        
-        // 🚨 强补：彻底重置 UI 状态，确保每一次点击都显示动画！
-        document.getElementById('homeActionBox').style.display = 'none'; 
-        document.getElementById('previewContainer').style.display = 'block'; 
-        document.getElementById('scanOverlay').style.display = 'flex'; // 关键修复！
-        document.getElementById('miniResultCard').style.display = 'none'; 
-        
-        const scanText = document.getElementById('scanText'); 
-        // 增加安抚提示语（AI 耗时较长）
-        const msgs = ["📸 正在上传图片...", "👨‍🍳 厨神大脑疯狂构思中...", "🤤 正在逆向破解做法...", "⏳ 细节较多，请耐心等待几秒..."];
-        let msgIndex = 0; scanText.innerText = msgs[0];
-        const loadInterval = setInterval(() => { msgIndex = (msgIndex + 1) % msgs.length; scanText.innerText = msgs[msgIndex]; }, 1500); 
-
+        document.getElementById('homeActionBox').style.display = 'none'; document.getElementById('previewContainer').style.display = 'block'; document.getElementById('scanOverlay').style.display = 'flex'; document.getElementById('miniResultCard').style.display = 'none'; 
+        const scanText = document.getElementById('scanText'); const msgs = ["📸 正在上传图片...", "👨‍🍳 厨神大脑疯狂构思中...", "🤤 正在逆向破解做法...", "⏳ 细节较多，请耐心等待几秒..."];
+        let msgIndex = 0; scanText.innerText = msgs[0]; const loadInterval = setInterval(() => { msgIndex = (msgIndex + 1) % msgs.length; scanText.innerText = msgs[msgIndex]; }, 1500); 
         const reader = new FileReader();
         reader.onload = function(e) {
             const img = new Image();
             img.onload = function() {
                 try {
-                    // 🚨 防崩装甲：确保内存不足时不会静默卡死
                     const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
                     const MAX_WIDTH = 600; const MAX_HEIGHT = 600; let width = img.width; let height = img.height;
                     if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
                     canvas.width = width; canvas.height = height; ctx.drawImage(img, 0, 0, width, height);
-                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
-                    document.getElementById('previewImg').src = compressedBase64;
-                    const finalBase64Str = compressedBase64.split(',')[1];
-                    
-                    callMagicRecipeApi(finalBase64Str, loadInterval, type);
-                } catch (canvasError) {
-                    clearInterval(loadInterval); alert("图片处理失败，请换张小一点的图试试！"); resetApp();
-                }
-            };
-            img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6); document.getElementById('previewImg').src = compressedBase64;
+                    const finalBase64Str = compressedBase64.split(',')[1]; callMagicRecipeApi(finalBase64Str, loadInterval, type);
+                } catch (canvasError) { clearInterval(loadInterval); alert("图片处理失败，请换张小一点的图试试！"); resetApp(); }
+            }; img.src = e.target.result;
+        }; reader.readAsDataURL(file);
     }
 
     async function callMagicRecipeApi(base64Str, loadInterval, foodType) {
         try {
-            const [recipeRes, uploadRes] = await Promise.all([
-                fetch('/api/magic-recipe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageBase64: base64Str, type: foodType }) }),
-                fetch('/api/upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageBase64: base64Str }) })
-            ]);
-
-            clearInterval(loadInterval);
-            const recipeData = await recipeRes.json();
-            const uploadData = await uploadRes.json();
-
+            const [recipeRes, uploadRes] = await Promise.all([ fetch('/api/magic-recipe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageBase64: base64Str, type: foodType }) }), fetch('/api/upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageBase64: base64Str }) }) ]);
+            clearInterval(loadInterval); const recipeData = await recipeRes.json(); const uploadData = await uploadRes.json();
             if (!recipeRes.ok) { alert("厨神遇到问题了：" + (recipeData.error || '未知错误')); resetApp(); return; }
-            
-            recipeData.item_type = 'recipe';
-            currentProductData = recipeData;
-            renderResult(recipeData);
-
+            recipeData.item_type = 'recipe'; currentProductData = recipeData; renderResult(recipeData);
             const cloudImageUrl = uploadData.success ? uploadData.url : document.getElementById('previewImg').src;
-            saveToLocalFootprint(recipeData, cloudImageUrl); 
-            recipeData.cloud_img = cloudImageUrl;
+            saveToLocalFootprint(recipeData, cloudImageUrl); recipeData.cloud_img = cloudImageUrl;
             fetch('/api/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(recipeData) }).catch(e => {});
-
-        } catch (error) { 
-            clearInterval(loadInterval); 
-            alert("网络不稳定或等待超时，请再试一次！"); 
-            resetApp(); 
-        }
+        } catch (error) { clearInterval(loadInterval); alert("网络不稳定或等待超时，请再试一次！"); resetApp(); }
     }
 
     function saveToLocalFootprint(data, cloudImageUrl) {
-        let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
-        const exists = history.find(item => item.dutch_name === data.dutch_name);
+        let history = JSON.parse(localStorage.getItem('hebao_history') || '[]'); const exists = history.find(item => item.dutch_name === data.dutch_name);
         if (!exists) { data.img_src = cloudImageUrl; history.unshift(data); try { localStorage.setItem('hebao_history', JSON.stringify(history)); } catch(e) { } }
     }
 
     function renderResult(data) {
-        document.getElementById('scanOverlay').style.display = 'none';
-        document.getElementById('miniResultCard').style.display = 'block';
-        document.getElementById('miniChineseName').innerText = data.chinese_name || '未知商品';
-        document.getElementById('miniDutchName').innerText = data.dutch_name || 'Unknown';
-        document.getElementById('miniInsight').innerText = data.insight || '管家还在思考...';
-
+        document.getElementById('scanOverlay').style.display = 'none'; document.getElementById('miniResultCard').style.display = 'block'; document.getElementById('miniChineseName').innerText = data.chinese_name || '未知商品'; document.getElementById('miniDutchName').innerText = data.dutch_name || 'Unknown'; document.getElementById('miniInsight').innerText = data.insight || '管家还在思考...';
         if (data.features && String(data.features).trim() !== '') { document.getElementById('miniTag').style.display = 'inline-block'; document.getElementById('miniTag').innerText = `✨ ${data.features}`; } else { document.getElementById('miniTag').style.display = 'none'; }
         if (data.warning && String(data.warning).trim() !== '') { document.getElementById('miniWarning').style.display = 'block'; document.getElementById('miniWarning').innerText = `⚠️ ${data.warning}`; } else { document.getElementById('miniWarning').style.display = 'none'; }
         if (data.pairing && String(data.pairing).includes('网友点评')) { document.getElementById('miniUgc').style.display = 'block'; const firstUgc = data.pairing.split('\n\n').find(line => line.includes('网友点评')); document.getElementById('miniUgcText').innerText = firstUgc ? firstUgc.replace(/🧑‍🍳 网友点评 \[.*?\]：/, '') : '好评如潮！'; } else { document.getElementById('miniUgc').style.display = 'none'; }
-
-        const btnView = document.getElementById('btnViewDetail');
-        if (data.item_type === 'recipe') { btnView.innerText = '👉 查看详细菜谱'; } else { btnView.innerText = '👉 查看完整报告'; }
+        const btnView = document.getElementById('btnViewDetail'); if (data.item_type === 'recipe') { btnView.innerText = '👉 查看详细菜谱'; } else { btnView.innerText = '👉 查看完整报告'; }
     }
 
     function resetApp() {
         document.getElementById('fileInput').value = ''; document.getElementById('ingredientInput').value = ''; document.getElementById('dishInput').value = '';
-        document.getElementById('previewContainer').style.display = 'none'; document.getElementById('scanOverlay').style.display = 'none'; document.getElementById('miniResultCard').style.display = 'none';
-        document.getElementById('homeActionBox').style.display = 'grid'; currentProductData = null;
+        document.getElementById('previewContainer').style.display = 'none'; document.getElementById('scanOverlay').style.display = 'none'; document.getElementById('miniResultCard').style.display = 'none'; document.getElementById('homeActionBox').style.display = 'grid'; currentProductData = null;
     }
 
     // ==========================================
-    // 🚨 详情页“千人千面”极速变装逻辑
+    // 🚨 详情页“千人千面”与分享逻辑
     // ==========================================
     function openDetailsFromScan() {
-        currentDetailData = { ...currentProductData, img_src: document.getElementById('previewImg').src };
-        renderBasicDetailsAndSwitch();
+        currentDetailData = { ...currentProductData, img_src: document.getElementById('previewImg').src }; renderBasicDetailsAndSwitch();
         if (currentDetailData.item_type === 'recipe') { renderDeepDetails('', currentDetailData.pairing); } else { fetchDeepDetails(); }
     }
 
     function openDetailsFromHistory(index) {
-        let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
-        currentDetailData = history[index];
-        renderBasicDetailsAndSwitch();
-        
-        if (currentDetailData.item_type === 'recipe') { renderDeepDetails('', currentDetailData.pairing); } 
-        else if (currentDetailData.alternatives || currentDetailData.pairing) { renderDeepDetails(currentDetailData.alternatives, currentDetailData.pairing); } 
-        else { fetchDeepDetails(index); }
+        let history = JSON.parse(localStorage.getItem('hebao_history') || '[]'); currentDetailData = history[index]; renderBasicDetailsAndSwitch();
+        if (currentDetailData.item_type === 'recipe') { renderDeepDetails('', currentDetailData.pairing); } else if (currentDetailData.alternatives || currentDetailData.pairing) { renderDeepDetails(currentDetailData.alternatives, currentDetailData.pairing); } else { fetchDeepDetails(index); }
     }
 
     function renderBasicDetailsAndSwitch() {
         const d = currentDetailData; if(!d) return;
-
-        document.getElementById('chatHistory').innerHTML = '';
-        document.getElementById('detailImg').src = d.img_src || "";
-        document.getElementById('detailChineseName').innerText = d.chinese_name || '未知商品';
-        document.getElementById('detailDutchName').innerText = d.dutch_name || '';
+        document.getElementById('chatHistory').innerHTML = ''; document.getElementById('detailImg').src = d.img_src || "";
+        document.getElementById('detailChineseName').innerText = d.chinese_name || '未知商品'; document.getElementById('detailDutchName').innerText = d.dutch_name || '';
         
+        // 核心变装
         if (d.item_type === 'recipe') {
-            document.getElementById('insightTitle').innerText = '👨‍🍳 厨神点拨';
-            document.getElementById('recipeBoxTitle').innerText = '📜 详细做法';
-            document.getElementById('recipeSubmitBoxBtn').style.display = 'none'; 
-            document.getElementById('detailAltBox').style.display = 'none'; 
+            document.getElementById('insightTitle').innerText = '👨‍🍳 厨神点拨'; document.getElementById('recipeBoxTitle').innerText = '📜 详细做法';
+            document.getElementById('recipeSubmitBoxBtn').style.display = 'none'; document.getElementById('detailAltBox').style.display = 'none'; 
+            document.getElementById('shareToCommunityBtn').style.display = 'block'; // 显示分享大按钮
         } else {
-            document.getElementById('insightTitle').innerText = '💡 管家锐评';
-            document.getElementById('recipeBoxTitle').innerText = '🍳 留学生糊弄学菜谱';
-            document.getElementById('recipeSubmitBoxBtn').style.display = 'block'; 
+            document.getElementById('insightTitle').innerText = '💡 管家锐评'; document.getElementById('recipeBoxTitle').innerText = '🍳 留学生糊弄学菜谱';
+            document.getElementById('recipeSubmitBoxBtn').style.display = 'block'; document.getElementById('shareToCommunityBtn').style.display = 'none'; // 隐藏分享大按钮
         }
 
-        const fillText = (boxId, textId, content) => {
-            const box = document.getElementById(boxId);
-            if (box && content && content !== "undefined" && String(content).trim() !== '') { box.style.display = 'block'; document.getElementById(textId).innerText = content; } 
-            else if (box) { box.style.display = 'none'; }
-        };
-        
-        fillText('detailInsightBox', 'detailInsight', d.insight);
-        fillText('detailWarningBox', 'detailWarning', d.warning);
-        
+        const fillText = (boxId, textId, content) => { const box = document.getElementById(boxId); if (box && content && content !== "undefined" && String(content).trim() !== '') { box.style.display = 'block'; document.getElementById(textId).innerText = content; } else if (box) { box.style.display = 'none'; } };
+        fillText('detailInsightBox', 'detailInsight', d.insight); fillText('detailWarningBox', 'detailWarning', d.warning);
         if (d.item_type !== 'recipe') { const altBox = document.getElementById('detailAltBox'); if (altBox) altBox.style.display = 'none'; }
-        
         const recipeBox = document.getElementById('detailRecipeBox');
-        if (recipeBox) {
-            recipeBox.style.display = 'block';
-            document.getElementById('recipeCardList').innerHTML = '<div style="text-align:center; color:#9CA3AF; padding: 20px; font-size:13px;">🔄 正在厨房翻找菜谱...</div>';
-        }
+        if (recipeBox) { recipeBox.style.display = 'block'; document.getElementById('recipeCardList').innerHTML = '<div style="text-align:center; color:#9CA3AF; padding: 20px; font-size:13px;">🔄 正在提取详细步骤...</div>'; }
         switchTab('details', null);
     }
 
@@ -605,27 +549,14 @@
         try {
             const res = await fetch('/api/detail', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dutchName: currentDetailData.dutch_name, chineseName: currentDetailData.chinese_name }) });
             const data = await res.json();
-            if (res.ok) {
-                renderDeepDetails(data.alternatives, data.pairing);
-                currentDetailData.alternatives = data.alternatives; currentDetailData.pairing = data.pairing;
-                let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
-                let indexToUpdate = historyIndex === -1 ? history.findIndex(item => item.dutch_name === currentDetailData.dutch_name) : historyIndex;
-                if (indexToUpdate !== -1) { history[indexToUpdate].alternatives = data.alternatives; history[indexToUpdate].pairing = data.pairing; localStorage.setItem('hebao_history', JSON.stringify(history)); }
-            } else { document.getElementById('recipeCardList').innerHTML = '<div style="color:#EF4444; text-align:center; padding:10px;">获取数据失败，请重试</div>'; }
+            if (res.ok) { renderDeepDetails(data.alternatives, data.pairing); currentDetailData.alternatives = data.alternatives; currentDetailData.pairing = data.pairing; let history = JSON.parse(localStorage.getItem('hebao_history') || '[]'); let indexToUpdate = historyIndex === -1 ? history.findIndex(item => item.dutch_name === currentDetailData.dutch_name) : historyIndex; if (indexToUpdate !== -1) { history[indexToUpdate].alternatives = data.alternatives; history[indexToUpdate].pairing = data.pairing; localStorage.setItem('hebao_history', JSON.stringify(history)); } } else { document.getElementById('recipeCardList').innerHTML = '<div style="color:#EF4444; text-align:center; padding:10px;">获取数据失败，请重试</div>'; }
         } catch (error) { document.getElementById('recipeCardList').innerHTML = '<div style="color:#EF4444; text-align:center; padding:10px;">网络似乎开小差了</div>'; }
     }
 
     function renderDeepDetails(alternatives, pairing) {
         const altBox = document.getElementById('detailAltBox');
-        if (currentDetailData && currentDetailData.item_type !== 'recipe' && altBox && alternatives && String(alternatives).trim() !== '') {
-            altBox.style.display = 'block';
-            const parts = String(alternatives).split('|').map(p => p.trim());
-            document.getElementById('detailAlternatives').innerHTML = parts.map(p => `<div class="alt-tag">${p}</div>`).join('');
-        } else if (altBox) { altBox.style.display = 'none'; }
-
-        const listContainer = document.getElementById('recipeCardList');
-        if (listContainer) listContainer.innerHTML = ''; 
-
+        if (currentDetailData && currentDetailData.item_type !== 'recipe' && altBox && alternatives && String(alternatives).trim() !== '') { altBox.style.display = 'block'; const parts = String(alternatives).split('|').map(p => p.trim()); document.getElementById('detailAlternatives').innerHTML = parts.map(p => `<div class="alt-tag">${p}</div>`).join(''); } else if (altBox) { altBox.style.display = 'none'; }
+        const listContainer = document.getElementById('recipeCardList'); if (listContainer) listContainer.innerHTML = ''; 
         if (pairing && String(pairing).trim() !== '') {
             const lines = String(pairing).split('\n\n').filter(l => l.trim() !== '');
             lines.forEach((line) => {
@@ -638,9 +569,7 @@
                             <div class="recipe-card">
                                 <div class="recipe-title"><span>${currentDetailData.item_type === 'recipe' ? '✨ AI 破解做法' : (isLike ? '🍳 网友懒人做法' : '💣 避雷吐槽')}</span></div>
                                 <div class="recipe-steps" style="${isLike ? '' : 'color:#DC2626;'}">${textContent}</div>
-                                <div class="recipe-actions">
-                                    <div class="action-btn up" onclick="voteRecipe(Date.now(), 'up', event)">🤤 赞同 <span>${fakeInitialVotes}</span></div>
-                                </div>
+                                <div class="recipe-actions"><div class="action-btn up" onclick="voteRecipe(Date.now(), 'up', event)">🤤 赞同 <span>${fakeInitialVotes}</span></div></div>
                             </div>`;
                     }
                 }
@@ -650,152 +579,97 @@
     }
 
     // ==========================================
-    // 神仙菜谱图片处理与提交逻辑
+    // 🚨 社区分享与列表渲染逻辑
     // ==========================================
-    function voteRecipe(recipeId, type, event) {
-        const btn = event.currentTarget; if(btn.classList.contains('voted')) return;  btn.classList.add('voted');
-        const span = btn.querySelector('span'); if(span) span.innerText = parseInt(span.innerText) + 1;
-        const rect = btn.getBoundingClientRect(); const plus = document.createElement('div');
-        plus.className = 'float-plus'; plus.innerText = '+1'; plus.style.color = '#D97706';
-        plus.style.left = rect.left + (rect.width/2) + 'px'; plus.style.top = (rect.top - 20) + 'px';
-        document.body.appendChild(plus); setTimeout(() => plus.remove(), 800);
+    let communityLoaded = false;
+
+    function openShareCommunityModal() {
+        const d = currentDetailData;
+        document.getElementById('communityRecipeTitle').value = d.chinese_name || '';
+        let text = d.pairing || ''; text = text.replace(/🧑‍🍳 网友点评 \[.*?\]：/, '').trim();
+        document.getElementById('communityRecipeText').value = text;
+        document.getElementById('shareCommunityModal').style.display = 'flex';
     }
 
-    function handleRecipeFileSelect(event) {
-        const file = event.target.files[0]; if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = new Image();
-            img.onload = function() {
-                const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
-                const MAX_WIDTH = 800; const MAX_HEIGHT = 800; let width = img.width; let height = img.height;
-                if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
-                canvas.width = width; canvas.height = height; ctx.drawImage(img, 0, 0, width, height);
-                const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
-                document.getElementById('recipeImgPreview').src = compressedBase64; document.getElementById('recipeImgPreview').style.display = 'block';
-                document.getElementById('recipeImgHint').style.display = 'none'; document.getElementById('recipeImgRemove').style.display = 'flex';
-                currentRecipeBase64 = compressedBase64.split(',')[1];
-            };
-            img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
+    async function submitToCommunity() {
+        const title = document.getElementById('communityRecipeTitle').value.trim();
+        const text = document.getElementById('communityRecipeText').value.trim();
+        if(!title || !text) { alert('标题和做法都不能空哦！'); return; }
+        
+        const btn = document.getElementById('btnConfirmShare');
+        btn.innerText = '发布中...'; btn.disabled = true;
+        
+        // 假装调用了分享接口，实际下一步写后台
+        setTimeout(() => {
+            alert('🎉 成功发布到深夜食堂！');
+            document.getElementById('shareCommunityModal').style.display = 'none';
+            btn.innerText = '🚀 确认发布'; btn.disabled = false;
+            
+            // 自动跳转到社区页面并刷新
+            communityLoaded = false; 
+            switchTab('community', document.querySelectorAll('.tab-item')[1]);
+        }, 1000);
     }
 
+    async function loadCommunityFeed() {
+        const feed = document.getElementById('communityFeedList');
+        // 下一步我们写了后台后，这里就用 fetch('/api/community') 替换。
+        // 现在先用超高颜值的假数据占位！
+        feed.innerHTML = `
+            <div class="c-card">
+                <img class="c-img" src="https://images.unsplash.com/photo-1544025162-8315ea07659b?q=80&w=600&auto=format&fit=crop" alt="烤肉">
+                <div class="c-body">
+                    <div class="c-title">宿舍销魂爆烤五花肉</div>
+                    <div class="c-text">超级简单！直接把超市的猪五花切片，不用腌，空气炸锅180度烤15分钟，中间翻个面刷点老干妈和生抽。油脂都被烤出去了，外焦里嫩，卷着生菜吃绝了！</div>
+                    <div class="c-footer">
+                        <div class="c-user">👨‍🍳 鹿特丹匿名厨神</div>
+                        <div class="c-like-btn" onclick="likeCommunity(this)"><span class="emoji">🤤</span> 馋了 <span>128</span></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="c-card">
+                <img class="c-img" src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=600&auto=format&fit=crop" alt="意面">
+                <div class="c-body">
+                    <div class="c-title">穷鬼版奶香培根意面</div>
+                    <div class="c-text">用 AH 那个最便宜的培根碎炒出油，倒点淡奶油，再把煮好的便宜意面放进去收汁，撒点黑胡椒，成本不到2欧，吃出米其林的感觉！</div>
+                    <div class="c-footer">
+                        <div class="c-user">👨‍🍳 阿姆省钱之王</div>
+                        <div class="c-like-btn" onclick="likeCommunity(this)"><span class="emoji">🤤</span> 馋了 <span>85</span></div>
+                    </div>
+                </div>
+            </div>
+        `;
+        communityLoaded = true;
+    }
+
+    function likeCommunity(btn) {
+        if(btn.dataset.voted) return;
+        btn.dataset.voted = 'true'; btn.classList.add('voted');
+        const span = btn.querySelector('span:last-child'); span.innerText = parseInt(span.innerText) + 1;
+        const rect = btn.getBoundingClientRect(); const plus = document.createElement('div'); plus.className = 'float-plus'; plus.innerText = '+1'; plus.style.color = '#D97706';
+        plus.style.left = rect.left + 20 + 'px'; plus.style.top = rect.top - 20 + 'px'; document.body.appendChild(plus); setTimeout(() => plus.remove(), 800);
+    }
+
+    // ==========================================
+    // 其余逻辑 (保持不变，省略展开)
+    // ==========================================
+    function voteRecipe(recipeId, type, event) { const btn = event.currentTarget; if(btn.classList.contains('voted')) return;  btn.classList.add('voted'); const span = btn.querySelector('span'); if(span) span.innerText = parseInt(span.innerText) + 1; const rect = btn.getBoundingClientRect(); const plus = document.createElement('div'); plus.className = 'float-plus'; plus.innerText = '+1'; plus.style.color = '#D97706'; plus.style.left = rect.left + (rect.width/2) + 'px'; plus.style.top = (rect.top - 20) + 'px'; document.body.appendChild(plus); setTimeout(() => plus.remove(), 800); }
+    function handleRecipeFileSelect(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { const img = new Image(); img.onload = function() { const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d'); const MAX_WIDTH = 800; const MAX_HEIGHT = 800; let width = img.width; let height = img.height; if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } } canvas.width = width; canvas.height = height; ctx.drawImage(img, 0, 0, width, height); const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7); document.getElementById('recipeImgPreview').src = compressedBase64; document.getElementById('recipeImgPreview').style.display = 'block'; document.getElementById('recipeImgHint').style.display = 'none'; document.getElementById('recipeImgRemove').style.display = 'flex'; currentRecipeBase64 = compressedBase64.split(',')[1]; }; img.src = e.target.result; }; reader.readAsDataURL(file); }
     function removeRecipeImg(event) { event.stopPropagation(); currentRecipeBase64 = null; document.getElementById('recipeFileInput').value = ''; document.getElementById('recipeImgPreview').style.display = 'none'; document.getElementById('recipeImgPreview').src = ''; document.getElementById('recipeImgHint').style.display = 'flex'; document.getElementById('recipeImgRemove').style.display = 'none'; }
     function closeRecipeModal() { document.getElementById('recipeModal').style.display = 'none'; document.getElementById('recipeRawInput').value = ''; removeRecipeImg({ stopPropagation: ()=>{} }); }
-
-    async function submitMagicRecipe() {
-        const input = document.getElementById('recipeRawInput').value.trim();
-        if(!input) { alert("请先输入几个关键步骤或吐槽哦！"); return; }
-        if(!currentDetailData) return;
-        const btn = document.getElementById('btnSubmitRecipe'); btn.innerText = "⏳ AI 疯狂敲字中..."; btn.disabled = true;
-        setTimeout(() => { alert("管家收到！界面体验已打通。下一步连接后台！"); closeRecipeModal(); btn.innerText = "✨ 让 AI 帮我写"; btn.disabled = false; }, 1500);
-    }
-
-    // ==========================================
-    // 问答机器人
-    // ==========================================
-    async function sendQuestion() {
-        const input = document.getElementById('askInput'); const question = input.value.trim(); if (!question || !currentDetailData) return;
-        const chatBox = document.getElementById('chatHistory'); const sendBtn = document.getElementById('sendBtn');
-        chatBox.innerHTML += `<div class="chat-bubble bubble-user">${question}</div>`; window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-        input.value = ''; sendBtn.disabled = true; const loadingId = 'loading-' + Date.now();
-        chatBox.innerHTML += `<div class="chat-bubble bubble-ai" id="${loadingId}">敲字中...</div>`;
-
-        try {
-            const response = await fetch('/api/ask', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productName: currentDetailData.dutch_name, insight: currentDetailData.insight, question: question }) });
-            const data = await response.json(); document.getElementById(loadingId).remove();
-            if (response.ok) { chatBox.innerHTML += `<div class="chat-bubble bubble-ai">${data.reply}</div>`; } else { chatBox.innerHTML += `<div class="chat-bubble bubble-ai" style="color:red;">网络拥挤：${data.error}</div>`; }
-        } catch (err) { document.getElementById(loadingId).remove(); chatBox.innerHTML += `<div class="chat-bubble bubble-ai" style="color:red;">网络断了...</div>`; }
-        sendBtn.disabled = false; window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-    }
-
-    // ==========================================
-    // 足迹核心渲染
-    // ==========================================
-    function renderFootprints() {
-        const listDiv = document.getElementById('footprintList'); let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
-        if (history.length === 0) { listDiv.innerHTML = '<div style="text-align:center; color:#888; margin-top:40px;">空空如也，快去扫码吧</div>'; return; }
-        let html = '';
-        history.forEach((item, index) => {
-            const isLike = item.my_vote === 'like'; const isDislike = item.my_vote === 'dislike';
-            html += `
-                <div class="history-card-wrap">
-                    <div class="hc-top-clickable" onclick="openDetailsFromHistory(${index})">
-                        <img src="${item.img_src || ''}" style="width:75px; height:75px; object-fit:cover; border-radius:12px; background:#f0f0f0; flex-shrink: 0;">
-                        <div style="flex:1; display: flex; flex-direction: column; justify-content: space-between;">
-                            <div><div style="font-weight:900; font-size:16px; color:#111827; line-height: 1.2;">${item.chinese_name || '未命名'}</div><div style="font-size:12px; color:#9CA3AF; margin:4px 0;">${item.dutch_name || ''}</div></div>
-                            <div style="display:flex; gap:8px; margin-top:6px;" onclick="event.stopPropagation()">
-                                <div id="btnLike_${index}" class="mini-btn ${isLike ? 'active-like' : ''}" onclick="handleInteraction(${index}, 'like', event)"><span class="emoji">👍</span> 狂赞</div>
-                                <div id="btnDislike_${index}" class="mini-btn ${isDislike ? 'active-dislike' : ''}" onclick="handleInteraction(${index}, 'dislike', event)"><span class="emoji">💣</span> 狂踩</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="ugc-compact-box" id="ugcBox_${index}">
-                        <input type="text" id="recipeInput_${index}" class="ugc-compact-input" placeholder="请先点赞或踩再写点评哦！">
-                        <button class="ugc-compact-submit" id="submitBtn_${index}" onclick="submitRecipeFromHistory(${index})">发布</button>
-                    </div>
-                    <div class="share-footer-btn" onclick="generatePoster(${index})"><span class="share-text-chic"><span class="icon">✨</span> 专属海报 · 一键避雷 ↗</span></div>
-                </div>`;
-        });
-        listDiv.innerHTML = html; history.forEach((item, index) => { if(item.my_vote) updateUgcStyle(index, item.my_vote); });
-    }
-
-    function handleInteraction(index, action, event) {
-        const btn = event.currentTarget; const emoji = btn.querySelector('.emoji'); emoji.style.transform = 'scale(1.8) rotate(' + (action==='like'?'-15deg':'15deg') + ')'; setTimeout(() => emoji.style.transform = '', 250);
-        const rect = btn.getBoundingClientRect(); const plus = document.createElement('div'); plus.className = 'float-plus'; plus.innerText = action === 'like' ? '👍 +1' : '💣 +1'; plus.style.color = action === 'like' ? '#10B981' : '#EF4444';
-        plus.style.left = (event.clientX - 10) + 'px'; plus.style.top = (rect.top - 10) + 'px'; document.body.appendChild(plus); setTimeout(() => plus.remove(), 800);
-        document.getElementById(`btnLike_${index}`).className = `mini-btn ${action==='like' ? 'active-like' : ''}`; document.getElementById(`btnDislike_${index}`).className = `mini-btn ${action==='dislike' ? 'active-dislike' : ''}`;
-        updateUgcStyle(index, action); let history = JSON.parse(localStorage.getItem('hebao_history') || '[]'); history[index].my_vote = action; localStorage.setItem('hebao_history', JSON.stringify(history));
-        fetch('/api/vote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dutch_name: history[index].dutch_name, action: action }) }).catch(err => {});
-    }
-
-    function updateUgcStyle(index, action) {
-        const box = document.getElementById(`ugcBox_${index}`); const input = document.getElementById(`recipeInput_${index}`); const submitBtn = document.getElementById(`submitBtn_${index}`);
-        if(action === 'like') { box.style.borderColor = '#A7F3D0'; box.style.background = '#ECFDF5'; input.placeholder = '太好吃了！疯狂安利给大家...'; input.dataset.attitude = '👍 推荐'; submitBtn.style.background = '#10B981'; } 
-        else { box.style.borderColor = '#FECACA'; box.style.background = '#FEF2F2'; input.placeholder = '巨雷！帮大家避坑...'; input.dataset.attitude = '💣 避雷'; submitBtn.style.background = '#EF4444'; }
-    }
-
-    async function submitRecipeFromHistory(index) {
-        let history = JSON.parse(localStorage.getItem('hebao_history') || '[]'); const item = history[index];
-        const inputElement = document.getElementById(`recipeInput_${index}`); const recipeText = inputElement.value.trim();
-        if (!recipeText) return; const attitude = inputElement.dataset.attitude;
-        if (!attitude) { alert("请先点击『狂赞』或『狂踩』表明你的态度！"); return; }
-        const finalUgcText = `🧑‍🍳 网友点评 [${attitude}]：${recipeText}`;
-        const btn = document.getElementById(`submitBtn_${index}`); btn.innerText = "中..."; btn.disabled = true;
-        try {
-            await fetch('/api/recipe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dutch_name: item.dutch_name, recipe: finalUgcText }) }); alert("🎉 发布成功！你的评价已收录！");
-            item.pairing = (item.pairing || '') + '\n\n' + finalUgcText; localStorage.setItem('hebao_history', JSON.stringify(history)); inputElement.value = ""; btn.innerText = "发布"; btn.disabled = false;
-        } catch(e) { alert("网络开小差了..."); btn.innerText = "发布"; btn.disabled = false; }
-    }
-
-    // ==========================================
-    // 海报生成
-    // ==========================================
-    async function generatePoster(index) {
-        let history = JSON.parse(localStorage.getItem('hebao_history') || '[]'); const item = history[index];
-        document.getElementById('ptDutch').innerText = item.dutch_name || 'Unknown'; document.getElementById('ptChinese').innerText = item.chinese_name || '未知商品';
-        document.getElementById('ptImage').src = item.img_src || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23eee'/%3E%3C/svg%3E"; 
-        const wrapper = document.getElementById('ptWrapper'); const badge = document.getElementById('ptBadge'); const dutchText = document.getElementById('ptDutch'); const slogan = document.getElementById('ptSlogan'); const divider = document.getElementById('ptDivider'); const reviewBox = document.getElementById('ptUserReviewBox'); const reviewText = document.getElementById('ptUserReview');
-        let myLatestReview = "";
-        if (item.pairing) { const lines = item.pairing.split('\n\n'); const myLine = lines.reverse().find(l => l.includes('网友点评')); if (myLine) myLatestReview = myLine.replace(/🧑‍🍳 网友点评 \[.*?\]：/, '').trim(); }
-        if (item.my_vote === 'like') { wrapper.style.background = 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)'; wrapper.style.borderColor = '#A7F3D0'; dutchText.style.color = '#064E3B'; slogan.innerText = '👍 这玩意绝了，疯狂安利！'; slogan.style.color = '#059669'; divider.style.borderTopColor = '#A7F3D0'; badge.style.display = 'block'; badge.style.background = '#10B981'; badge.style.color = '#FFF'; badge.innerText = '👍 闭眼入'; if(myLatestReview) { reviewBox.style.display = 'block'; reviewBox.style.borderLeftColor = '#10B981'; reviewText.innerText = `“${myLatestReview}”`; } else { reviewBox.style.display = 'none'; } } else if (item.my_vote === 'dislike') { wrapper.style.background = 'linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%)'; wrapper.style.borderColor = '#FECACA'; dutchText.style.color = '#7F1D1D'; slogan.innerText = '💣 纯纯大冤种，快跑！'; slogan.style.color = '#DC2626'; divider.style.borderTopColor = '#FECACA'; badge.style.display = 'block'; badge.style.background = '#EF4444'; badge.style.color = '#FFF'; badge.innerText = '💣 巨雷'; if(myLatestReview) { reviewBox.style.display = 'block'; reviewBox.style.borderLeftColor = '#EF4444'; reviewText.innerText = `“${myLatestReview}”`; } else { reviewBox.style.display = 'none'; } } else { wrapper.style.background = '#FFF'; wrapper.style.borderColor = 'transparent'; dutchText.style.color = '#111827'; slogan.innerText = '来和大家一起排雷！'; slogan.style.color = '#10B981'; divider.style.borderTopColor = '#E5E7EB'; badge.style.display = 'none'; reviewBox.style.display = 'none'; }
-        wxLoadingMock("正在渲染专属神图...");
-        setTimeout(async () => {
-            const templateNode = document.getElementById('poster-template');
-            try { const canvas = await html2canvas(templateNode, { scale: 2, backgroundColor: null, logging: false }); document.getElementById('posterResultImg').src = canvas.toDataURL("image/png"); document.body.removeChild(document.getElementById('mockLoadingBox')); document.getElementById('posterModal').classList.add('show'); } catch (error) { alert("海报生成失败: " + error.message); if (document.getElementById('mockLoadingBox')) document.body.removeChild(document.getElementById('mockLoadingBox')); }
-        }, 200);
-    }
+    async function submitMagicRecipe() { const input = document.getElementById('recipeRawInput').value.trim(); if(!input) { alert("请先输入几个关键步骤或吐槽哦！"); return; } if(!currentDetailData) return; const btn = document.getElementById('btnSubmitRecipe'); btn.innerText = "⏳ AI 疯狂敲字中..."; btn.disabled = true; setTimeout(() => { alert("管家收到！"); closeRecipeModal(); btn.innerText = "✨ 让 AI 帮我写"; btn.disabled = false; }, 1500); }
+    async function sendQuestion() { const input = document.getElementById('askInput'); const question = input.value.trim(); if (!question || !currentDetailData) return; const chatBox = document.getElementById('chatHistory'); const sendBtn = document.getElementById('sendBtn'); chatBox.innerHTML += `<div class="chat-bubble bubble-user">${question}</div>`; window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); input.value = ''; sendBtn.disabled = true; const loadingId = 'loading-' + Date.now(); chatBox.innerHTML += `<div class="chat-bubble bubble-ai" id="${loadingId}">敲字中...</div>`; try { const response = await fetch('/api/ask', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productName: currentDetailData.dutch_name, insight: currentDetailData.insight, question: question }) }); const data = await response.json(); document.getElementById(loadingId).remove(); if (response.ok) { chatBox.innerHTML += `<div class="chat-bubble bubble-ai">${data.reply}</div>`; } else { chatBox.innerHTML += `<div class="chat-bubble bubble-ai" style="color:red;">网络拥挤：${data.error}</div>`; } } catch (err) { document.getElementById(loadingId).remove(); chatBox.innerHTML += `<div class="chat-bubble bubble-ai" style="color:red;">网络断了...</div>`; } sendBtn.disabled = false; window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); }
+    function renderFootprints() { const listDiv = document.getElementById('footprintList'); let history = JSON.parse(localStorage.getItem('hebao_history') || '[]'); if (history.length === 0) { listDiv.innerHTML = '<div style="text-align:center; color:#888; margin-top:40px;">空空如也，快去扫码吧</div>'; return; } let html = ''; history.forEach((item, index) => { const isLike = item.my_vote === 'like'; const isDislike = item.my_vote === 'dislike'; html += ` <div class="history-card-wrap"> <div class="hc-top-clickable" onclick="openDetailsFromHistory(${index})"> <img src="${item.img_src || ''}" style="width:75px; height:75px; object-fit:cover; border-radius:12px; background:#f0f0f0; flex-shrink: 0;"> <div style="flex:1; display: flex; flex-direction: column; justify-content: space-between;"> <div><div style="font-weight:900; font-size:16px; color:#111827; line-height: 1.2;">${item.chinese_name || '未命名'}</div><div style="font-size:12px; color:#9CA3AF; margin:4px 0;">${item.dutch_name || ''}</div></div> <div style="display:flex; gap:8px; margin-top:6px;" onclick="event.stopPropagation()"> <div id="btnLike_${index}" class="mini-btn ${isLike ? 'active-like' : ''}" onclick="handleInteraction(${index}, 'like', event)"><span class="emoji">👍</span> 狂赞</div> <div id="btnDislike_${index}" class="mini-btn ${isDislike ? 'active-dislike' : ''}" onclick="handleInteraction(${index}, 'dislike', event)"><span class="emoji">💣</span> 狂踩</div> </div> </div> </div> <div class="ugc-compact-box" id="ugcBox_${index}"> <input type="text" id="recipeInput_${index}" class="ugc-compact-input" placeholder="请先点赞或踩再写点评哦！"> <button class="ugc-compact-submit" id="submitBtn_${index}" onclick="submitRecipeFromHistory(${index})">发布</button> </div> <div class="share-footer-btn" onclick="generatePoster(${index})"><span class="share-text-chic"><span class="icon">✨</span> 专属海报 · 一键避雷 ↗</span></div> </div>`; }); listDiv.innerHTML = html; history.forEach((item, index) => { if(item.my_vote) updateUgcStyle(index, item.my_vote); }); }
+    function handleInteraction(index, action, event) { const btn = event.currentTarget; const emoji = btn.querySelector('.emoji'); emoji.style.transform = 'scale(1.8) rotate(' + (action==='like'?'-15deg':'15deg') + ')'; setTimeout(() => emoji.style.transform = '', 250); const rect = btn.getBoundingClientRect(); const plus = document.createElement('div'); plus.className = 'float-plus'; plus.innerText = action === 'like' ? '👍 +1' : '💣 +1'; plus.style.color = action === 'like' ? '#10B981' : '#EF4444'; plus.style.left = (event.clientX - 10) + 'px'; plus.style.top = (rect.top - 10) + 'px'; document.body.appendChild(plus); setTimeout(() => plus.remove(), 800); document.getElementById(`btnLike_${index}`).className = `mini-btn ${action==='like' ? 'active-like' : ''}`; document.getElementById(`btnDislike_${index}`).className = `mini-btn ${action==='dislike' ? 'active-dislike' : ''}`; updateUgcStyle(index, action); let history = JSON.parse(localStorage.getItem('hebao_history') || '[]'); history[index].my_vote = action; localStorage.setItem('hebao_history', JSON.stringify(history)); fetch('/api/vote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dutch_name: history[index].dutch_name, action: action }) }).catch(err => {}); }
+    function updateUgcStyle(index, action) { const box = document.getElementById(`ugcBox_${index}`); const input = document.getElementById(`recipeInput_${index}`); const submitBtn = document.getElementById(`submitBtn_${index}`); if(action === 'like') { box.style.borderColor = '#A7F3D0'; box.style.background = '#ECFDF5'; input.placeholder = '太好吃了！疯狂安利给大家...'; input.dataset.attitude = '👍 推荐'; submitBtn.style.background = '#10B981'; } else { box.style.borderColor = '#FECACA'; box.style.background = '#FEF2F2'; input.placeholder = '巨雷！帮大家避坑...'; input.dataset.attitude = '💣 避雷'; submitBtn.style.background = '#EF4444'; } }
+    async function submitRecipeFromHistory(index) { let history = JSON.parse(localStorage.getItem('hebao_history') || '[]'); const item = history[index]; const inputElement = document.getElementById(`recipeInput_${index}`); const recipeText = inputElement.value.trim(); if (!recipeText) return; const attitude = inputElement.dataset.attitude; if (!attitude) { alert("请先点击『狂赞』或『狂踩』表明你的态度！"); return; } const finalUgcText = `🧑‍🍳 网友点评 [${attitude}]：${recipeText}`; const btn = document.getElementById(`submitBtn_${index}`); btn.innerText = "中..."; btn.disabled = true; try { await fetch('/api/recipe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dutch_name: item.dutch_name, recipe: finalUgcText }) }); alert("🎉 发布成功！你的评价已收录！"); item.pairing = (item.pairing || '') + '\n\n' + finalUgcText; localStorage.setItem('hebao_history', JSON.stringify(history)); inputElement.value = ""; btn.innerText = "发布"; btn.disabled = false; } catch(e) { alert("网络开小差了..."); btn.innerText = "发布"; btn.disabled = false; } }
+    async function generatePoster(index) { let history = JSON.parse(localStorage.getItem('hebao_history') || '[]'); const item = history[index]; document.getElementById('ptDutch').innerText = item.dutch_name || 'Unknown'; document.getElementById('ptChinese').innerText = item.chinese_name || '未知商品'; document.getElementById('ptImage').src = item.img_src || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23eee'/%3E%3C/svg%3E"; const wrapper = document.getElementById('ptWrapper'); const badge = document.getElementById('ptBadge'); const dutchText = document.getElementById('ptDutch'); const slogan = document.getElementById('ptSlogan'); const divider = document.getElementById('ptDivider'); const reviewBox = document.getElementById('ptUserReviewBox'); const reviewText = document.getElementById('ptUserReview'); let myLatestReview = ""; if (item.pairing) { const lines = item.pairing.split('\n\n'); const myLine = lines.reverse().find(l => l.includes('网友点评')); if (myLine) myLatestReview = myLine.replace(/🧑‍🍳 网友点评 \[.*?\]：/, '').trim(); } if (item.my_vote === 'like') { wrapper.style.background = 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)'; wrapper.style.borderColor = '#A7F3D0'; dutchText.style.color = '#064E3B'; slogan.innerText = '👍 这玩意绝了，疯狂安利！'; slogan.style.color = '#059669'; divider.style.borderTopColor = '#A7F3D0'; badge.style.display = 'block'; badge.style.background = '#10B981'; badge.style.color = '#FFF'; badge.innerText = '👍 闭眼入'; if(myLatestReview) { reviewBox.style.display = 'block'; reviewBox.style.borderLeftColor = '#10B981'; reviewText.innerText = `“${myLatestReview}”`; } else { reviewBox.style.display = 'none'; } } else if (item.my_vote === 'dislike') { wrapper.style.background = 'linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%)'; wrapper.style.borderColor = '#FECACA'; dutchText.style.color = '#7F1D1D'; slogan.innerText = '💣 纯纯大冤种，快跑！'; slogan.style.color = '#DC2626'; divider.style.borderTopColor = '#FECACA'; badge.style.display = 'block'; badge.style.background = '#EF4444'; badge.style.color = '#FFF'; badge.innerText = '💣 巨雷'; if(myLatestReview) { reviewBox.style.display = 'block'; reviewBox.style.borderLeftColor = '#EF4444'; reviewText.innerText = `“${myLatestReview}”`; } else { reviewBox.style.display = 'none'; } } else { wrapper.style.background = '#FFF'; wrapper.style.borderColor = 'transparent'; dutchText.style.color = '#111827'; slogan.innerText = '来和大家一起排雷！'; slogan.style.color = '#10B981'; divider.style.borderTopColor = '#E5E7EB'; badge.style.display = 'none'; reviewBox.style.display = 'none'; } wxLoadingMock("正在渲染专属神图..."); setTimeout(async () => { const templateNode = document.getElementById('poster-template'); try { const canvas = await html2canvas(templateNode, { scale: 2, backgroundColor: null, logging: false }); document.getElementById('posterResultImg').src = canvas.toDataURL("image/png"); document.body.removeChild(document.getElementById('mockLoadingBox')); document.getElementById('posterModal').classList.add('show'); } catch (error) { alert("海报生成失败: " + error.message); if (document.getElementById('mockLoadingBox')) document.body.removeChild(document.getElementById('mockLoadingBox')); } }, 200); }
     function wxLoadingMock(text) { const div = document.createElement('div'); div.id = 'mockLoadingBox'; div.style.cssText = 'position:fixed; top:45%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.8); color:#fff; padding:15px 25px; border-radius:10px; z-index:9999; font-size:14px;'; div.innerText = text; document.body.appendChild(div); }
-
-    // ==========================================
-    // 榜单数据引擎
-    // ==========================================
     let trendingLoaded = false; const originalSwitchTab = switchTab; switchTab = function(pageId, element) { originalSwitchTab(pageId, element); if (pageId === 'trending' && !trendingLoaded) { loadTrendingData(); } };
     function switchTrendingTab(type, event) { document.querySelectorAll('.t-tab').forEach(el => el.classList.remove('active')); event.currentTarget.classList.add('active'); document.getElementById('trendingListLikes').style.display = type === 'likes' ? 'block' : 'none'; document.getElementById('trendingListDislikes').style.display = type === 'dislikes' ? 'block' : 'none'; }
     async function loadTrendingData() { try { const res = await fetch('/api/trending'); const data = await res.json(); if (data.success) { renderTrendingList('trendingListLikes', data.topLikes, 'like'); renderTrendingList('trendingListDislikes', data.topDislikes, 'dislike'); trendingLoaded = true; } else { throw new Error(data.error); } } catch (e) { document.getElementById('trendingListLikes').innerHTML = '<div style="text-align:center; margin-top: 40px; color:#EF4444;">榜单拉取失败，请稍后重试</div>'; } }
     function renderTrendingList(containerId, list, type) { const container = document.getElementById(containerId); if (!list || list.length === 0) { container.innerHTML = '<div style="text-align:center; color:#888; margin-top:40px;">暂无数据，快去扫码贡献第一票吧！</div>'; return; } let html = ''; list.forEach((item, index) => { let badgeClass = 'rank-other'; if (type === 'like') { if (index === 0) badgeClass = 'rank-1'; else if (index === 1) badgeClass = 'rank-2'; else if (index === 2) badgeClass = 'rank-3'; } else { badgeClass = 'rank-bad'; } const score = type === 'like' ? item.likes : item.dislikes; const icon = type === 'like' ? '👍' : '💣'; const colorClass = type === 'like' ? 'score-like' : 'score-dislike'; const label = type === 'like' ? '狂赞' : '狂踩'; html += `<div class="trending-card"><div class="rank-badge ${badgeClass}">TOP ${index + 1}</div><div class="t-info"><div class="t-name">${item.chinese_name || '未命名商品'}</div><div class="t-dutch">${item.dutch_name || ''}</div><div class="t-insight">${item.insight || '暂无管家评价'}</div></div><div class="t-score ${colorClass}"><span>${icon} ${score}</span><span class="t-score-label">${label}</span></div></div>`; }); container.innerHTML = html; }
 </script>
-
 </body>
 </html>
