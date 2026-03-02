@@ -18,21 +18,31 @@
         .page-section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* ================= 1. 首页双通道引擎 UI ================= */
-        .home-actions { display: flex; gap: 15px; margin-bottom: 20px; }
-        .action-card { flex: 1; background: #FFF; border-radius: 20px; padding: 25px 10px; text-align: center; border: 2px dashed #D1D5DB; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.02);}
+        /* ================= 1. 首页三擎仪表盘 UI ================= */
+        .home-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .action-card { background: #FFF; border-radius: 20px; padding: 20px 10px; text-align: center; border: 2px dashed #D1D5DB; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.02); display: flex; flex-direction: column; align-items: center; justify-content: center;}
         .action-card:active { transform: scale(0.96); }
-        .action-card.scan-mode:active { border-color: #10B981; background: #ECFDF5; }
         
-        /* 菜谱入口高亮专属色 */
-        .action-card.recipe-mode { border-color: #FCD34D; background: #FFFBEB; border-style: solid;}
-        .action-card.recipe-mode:active { background: #FEF3C7; border-color: #F59E0B; }
+        /* 顶部大卡片：扫雷跨两列 */
+        .action-card.scan-mode { grid-column: span 2; padding: 25px 15px; border-color: #10B981; background: #ECFDF5; border-style: solid; }
+        .action-card.scan-mode:active { background: #D1FAE5; border-color: #059669; }
+        
+        /* 左下卡片：生食材专属蓝色 */
+        .action-card.ingredient-mode { border-color: #93C5FD; background: #EFF6FF; border-style: solid; }
+        .action-card.ingredient-mode:active { background: #DBEAFE; border-color: #3B82F6; }
+        
+        /* 右下卡片：熟菜品专属黄色 */
+        .action-card.dish-mode { border-color: #FCD34D; background: #FFFBEB; border-style: solid; }
+        .action-card.dish-mode:active { background: #FEF3C7; border-color: #F59E0B; }
         
         .action-icon { font-size: 38px; margin-bottom: 10px; display: inline-block; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));}
         .action-title { font-size: 15px; font-weight: 900; color: #111827; margin-bottom: 4px;}
         .action-sub { font-size: 12px; color: #6B7280; font-weight: bold;}
-        .recipe-mode .action-title { color: #D97706; }
-        .recipe-mode .action-sub { color: #B45309; }
+        
+        /* 调整各卡片字体颜色 */
+        .scan-mode .action-title { color: #065F46; } .scan-mode .action-sub { color: #047857; }
+        .ingredient-mode .action-title { color: #1E3A8A; } .ingredient-mode .action-sub { color: #1D4ED8; }
+        .dish-mode .action-title { color: #D97706; } .dish-mode .action-sub { color: #B45309; }
 
         /* 独立的预览层 */
         .preview-container { position: relative; width: 100%; height: 200px; border-radius: 20px; overflow: hidden; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
@@ -171,7 +181,7 @@
 
 <div class="tab-bar">
     <div class="tab-item active" onclick="switchTab('scan', this)">
-        <span class="tab-icon">📸</span><span class="tab-text">首页</span>
+        <span class="tab-icon">首页</span><span class="tab-text">首页</span>
     </div>
     <div class="tab-item" onclick="switchTab('footprint', this)">
         <span class="tab-icon">👣</span><span class="tab-text">足迹</span>
@@ -193,22 +203,29 @@
             <div class="subtitle">留学生专属的荷兰超市避雷神器</div>
         </div>
 
-        <div class="home-actions" id="homeActionBox">
+        <div class="home-grid" id="homeActionBox">
             <div class="action-card scan-mode" onclick="document.getElementById('fileInput').click()">
                 <div class="action-icon">📸</div>
                 <div class="action-title">扫包装排雷</div>
-                <div class="action-sub">看评价 · 找平替</div>
+                <div class="action-sub">看全网评价 · 找超市平替</div>
             </div>
             
-            <div class="action-card recipe-mode" onclick="document.getElementById('ingredientInput').click()">
+            <div class="action-card ingredient-mode" onclick="document.getElementById('ingredientInput').click()">
+                <div class="action-icon">🥬</div>
+                <div class="action-title">拍生食材</div>
+                <div class="action-sub">清冰箱求做法</div>
+            </div>
+
+            <div class="action-card dish-mode" onclick="document.getElementById('dishInput').click()">
                 <div class="action-icon">🍳</div>
-                <div class="action-title">拍食材求做法</div>
-                <div class="action-sub">AI秒出糊弄学菜谱</div>
+                <div class="action-title">拍熟菜品</div>
+                <div class="action-sub">AI一键求复刻</div>
             </div>
         </div>
 
         <input type="file" id="fileInput" accept="image/*" capture="environment" onchange="handleFileSelect(event)">
         <input type="file" id="ingredientInput" accept="image/*" capture="environment" onchange="handleIngredientSelect(event)">
+        <input type="file" id="dishInput" accept="image/*" onchange="handleDishSelect(event)">
 
         <div class="preview-container" id="previewContainer">
             <img id="previewImg" class="preview-img" src="" alt="预览">
@@ -397,7 +414,7 @@
     }
 
     // ==========================================
-    // 2. 核心：左侧【商品扫雷】按钮逻辑
+    // 2. 核心：顶部【商品扫雷】按钮逻辑
     // ==========================================
     function handleFileSelect(event) {
         const file = event.target.files[0];
@@ -446,13 +463,12 @@
     }
 
     // ==========================================
-    // 3. 核心：右侧【拍食材写菜谱】按钮逻辑 (全新)
+    // 3. 核心：左下角【拍生食材】按钮逻辑
     // ==========================================
     function handleIngredientSelect(event) {
         const file = event.target.files[0];
         if (!file) return;
 
-        // 隐藏主页按钮，显示图片和专门的食材扫描框
         document.getElementById('homeActionBox').style.display = 'none';
         document.getElementById('previewContainer').style.display = 'block';
         document.getElementById('miniResultCard').style.display = 'none'; 
@@ -478,7 +494,6 @@
                 document.getElementById('previewImg').src = compressedBase64;
                 const finalBase64Str = compressedBase64.split(',')[1];
                 
-                // 发送给处理食材的逻辑
                 processIngredient(finalBase64Str, loadInterval);
             };
             img.src = e.target.result;
@@ -487,11 +502,57 @@
     }
 
     async function processIngredient(base64Str, loadInterval) {
-        // 【伏笔】这里我们马上要写后端的 /api/scan-ingredient.js 接口
+        // 【伏笔】这里我们马上要写后端的接口
         setTimeout(() => {
             clearInterval(loadInterval);
-            alert("管家收到！前端界面已全部打通！接下来咱们去后台写一个 【/api/scan-ingredient.js】 接口，让 AI 把这张食材图直接变成菜谱！");
+            alert("管家收到！这是一道【生食材】！接下来咱们去后台写一个极其聪明的 AI 接口，让它看懂生熟并返回菜谱！");
             resetApp();
+        }, 2000);
+    }
+
+    // ==========================================
+    // 4. 核心：右下角【拍熟菜品复刻】逻辑
+    // ==========================================
+    function handleDishSelect(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        document.getElementById('homeActionBox').style.display = 'none';
+        document.getElementById('previewContainer').style.display = 'block';
+        document.getElementById('miniResultCard').style.display = 'none'; 
+        
+        const scanText = document.getElementById('scanText');
+        const msgs = ["📸 正在上传美食图...", "🤤 正在分析食材结构...", "👨‍🍳 正在逆向破解大厨菜谱..."];
+        let msgIndex = 0; scanText.innerText = msgs[0];
+        const loadInterval = setInterval(() => { msgIndex = (msgIndex + 1) % msgs.length; scanText.innerText = msgs[msgIndex]; }, 1500); 
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+                const MAX_WIDTH = 600; const MAX_HEIGHT = 600; let width = img.width; let height = img.height;
+                if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
+                else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
+                canvas.width = width; canvas.height = height; ctx.drawImage(img, 0, 0, width, height);
+                
+                const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+                document.getElementById('previewImg').src = compressedBase64;
+                const finalBase64Str = compressedBase64.split(',')[1];
+                
+                processDish(finalBase64Str, loadInterval);
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    async function processDish(base64Str, loadInterval) {
+        // 【伏笔】统一调用后端的全能菜谱大脑
+        setTimeout(() => {
+            clearInterval(loadInterval);
+            alert("管家收到！这是一道【熟菜品】！接下来咱们要在后端写一个极其聪明的 AI 接口，让它看懂生熟并返回菜谱！");
+            resetApp(); 
         }, 2000);
     }
 
@@ -533,10 +594,11 @@
     function resetApp() {
         document.getElementById('fileInput').value = '';
         document.getElementById('ingredientInput').value = '';
+        document.getElementById('dishInput').value = '';
         document.getElementById('previewContainer').style.display = 'none';
         document.getElementById('scanOverlay').style.display = 'none';
         document.getElementById('miniResultCard').style.display = 'none';
-        document.getElementById('homeActionBox').style.display = 'flex'; // 恢复显示两个大按钮
+        document.getElementById('homeActionBox').style.display = 'grid'; // 恢复显示三擎仪表盘
         currentProductData = null;
     }
 
