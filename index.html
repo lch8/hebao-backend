@@ -420,7 +420,6 @@
         const file = event.target.files[0];
         if (!file) return;
 
-        // 隐藏主页按钮，显示图片和扫描框
         document.getElementById('homeActionBox').style.display = 'none';
         document.getElementById('previewContainer').style.display = 'block';
         document.getElementById('miniResultCard').style.display = 'none'; 
@@ -502,6 +501,43 @@
     }
 
     // ==========================================
+    // 4. 核心：右下角【拍熟菜品】按钮逻辑 (补上的救命代码！)
+    // ==========================================
+    function handleDishSelect(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        document.getElementById('homeActionBox').style.display = 'none';
+        document.getElementById('previewContainer').style.display = 'block';
+        document.getElementById('miniResultCard').style.display = 'none'; 
+        
+        const scanText = document.getElementById('scanText');
+        const msgs = ["📸 正在上传美食图...", "🤤 正在分析食材结构...", "👨‍🍳 正在逆向破解大厨菜谱..."];
+        let msgIndex = 0; scanText.innerText = msgs[0];
+        const loadInterval = setInterval(() => { msgIndex = (msgIndex + 1) % msgs.length; scanText.innerText = msgs[msgIndex]; }, 1500); 
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+                const MAX_WIDTH = 600; const MAX_HEIGHT = 600; let width = img.width; let height = img.height;
+                if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
+                else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
+                canvas.width = width; canvas.height = height; ctx.drawImage(img, 0, 0, width, height);
+                
+                const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+                document.getElementById('previewImg').src = compressedBase64;
+                const finalBase64Str = compressedBase64.split(',')[1];
+                
+                processDish(finalBase64Str, loadInterval);
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // ==========================================
     // 统一处理“生食材”与“熟菜品”的请求枢纽
     // ==========================================
     async function processIngredient(base64Str, loadInterval) {
@@ -514,7 +550,6 @@
 
     async function callMagicRecipeApi(base64Str, loadInterval, foodType) {
         try {
-            // 🚀 并发请求：让 AI 大脑和腾讯云图床同时开始工作！
             const [recipeRes, uploadRes] = await Promise.all([
                 fetch('/api/magic-recipe', { 
                     method: 'POST', 
@@ -534,11 +569,9 @@
 
             if (!recipeRes.ok) { alert("厨神遇到问题了：" + (recipeData.error || '未知错误')); resetApp(); return; }
             
-            // 完美复用我们极其漂亮的扫雷结果卡片！
             currentProductData = recipeData;
             renderResult(recipeData);
 
-            // 存储照片并同步到云端
             const cloudImageUrl = uploadData.success ? uploadData.url : document.getElementById('previewImg').src;
             saveToLocalFootprint(recipeData, cloudImageUrl); 
             
@@ -594,7 +627,7 @@
         document.getElementById('previewContainer').style.display = 'none';
         document.getElementById('scanOverlay').style.display = 'none';
         document.getElementById('miniResultCard').style.display = 'none';
-        document.getElementById('homeActionBox').style.display = 'grid'; // 恢复显示三擎仪表盘
+        document.getElementById('homeActionBox').style.display = 'grid'; 
         currentProductData = null;
     }
 
