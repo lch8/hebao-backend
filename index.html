@@ -45,7 +45,7 @@
         .scan-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
         .scan-line { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: #10B981; box-shadow: 0 0 15px #10B981; animation: scanAnim 2s linear infinite; }
         @keyframes scanAnim { 0% { top: 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
-        .scan-text { color: #FFF; font-size: 14px; font-weight: bold; margin-top: 15px; letter-spacing: 1px;}
+        .scan-text { color: #FFF; font-size: 14px; font-weight: bold; margin-top: 15px; letter-spacing: 1px; text-align: center; padding: 0 20px;}
 
         #miniResultCard { display: none; margin-top: 25px; background: #FFF; border-radius: 20px; padding: 25px; box-shadow: 0 8px 30px rgba(0,0,0,0.06); text-align: center; animation: fadeIn 0.4s ease; }
         .name-box { margin-bottom: 10px; }
@@ -401,7 +401,11 @@
     // ==========================================
     function handleFileSelect(event) {
         const file = event.target.files[0]; if (!file) return;
-        document.getElementById('homeActionBox').style.display = 'none'; document.getElementById('previewContainer').style.display = 'block'; document.getElementById('miniResultCard').style.display = 'none'; 
+        document.getElementById('homeActionBox').style.display = 'none'; 
+        document.getElementById('previewContainer').style.display = 'block'; 
+        document.getElementById('scanOverlay').style.display = 'flex'; // 🚨 强补：显示遮罩
+        document.getElementById('miniResultCard').style.display = 'none'; 
+        
         const scanText = document.getElementById('scanText'); const msgs = ["📸 正在上传云端...", "🇳🇱 正在破译荷兰语...", "🧠 管家大脑飞速运转中..."];
         let msgIndex = 0; scanText.innerText = msgs[0];
         const loadInterval = setInterval(() => { msgIndex = (msgIndex + 1) % msgs.length; scanText.innerText = msgs[msgIndex]; }, 1500); 
@@ -428,7 +432,6 @@
 
             if (!scanRes.ok) { alert("管家遇到问题了：" + (scanData.error || '未知错误')); resetApp(); return; }
             
-            // 🚨 核心注入：给数据打上“商品”标签
             scanData.item_type = 'product';
             currentProductData = scanData;
             renderResult(scanData);
@@ -441,15 +444,23 @@
     }
 
     // ==========================================
-    // 3/4. 核心：生食材 / 熟菜品 拍照逻辑
+    // 3/4. 核心：生食材 / 熟菜品 拍照逻辑 (彻底修复卡死)
     // ==========================================
     function handleIngredientSelect(event) { processRecipeImage(event, 'ingredient'); }
     function handleDishSelect(event) { processRecipeImage(event, 'dish'); }
 
     function processRecipeImage(event, type) {
         const file = event.target.files[0]; if (!file) return;
-        document.getElementById('homeActionBox').style.display = 'none'; document.getElementById('previewContainer').style.display = 'block'; document.getElementById('miniResultCard').style.display = 'none'; 
-        const scanText = document.getElementById('scanText'); const msgs = ["📸 正在上传图片...", "👨‍🍳 厨神大脑疯狂构思中...", "🤤 正在逆向破解神仙做法..."];
+        
+        // 🚨 强补：彻底重置 UI 状态，确保每一次点击都显示动画！
+        document.getElementById('homeActionBox').style.display = 'none'; 
+        document.getElementById('previewContainer').style.display = 'block'; 
+        document.getElementById('scanOverlay').style.display = 'flex'; // 关键修复！
+        document.getElementById('miniResultCard').style.display = 'none'; 
+        
+        const scanText = document.getElementById('scanText'); 
+        // 增加安抚提示语（AI 耗时较长）
+        const msgs = ["📸 正在上传图片...", "👨‍🍳 厨神大脑疯狂构思中...", "🤤 正在逆向破解做法...", "⏳ 细节较多，请耐心等待几秒..."];
         let msgIndex = 0; scanText.innerText = msgs[0];
         const loadInterval = setInterval(() => { msgIndex = (msgIndex + 1) % msgs.length; scanText.innerText = msgs[msgIndex]; }, 1500); 
 
@@ -457,14 +468,20 @@
         reader.onload = function(e) {
             const img = new Image();
             img.onload = function() {
-                const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
-                const MAX_WIDTH = 600; const MAX_HEIGHT = 600; let width = img.width; let height = img.height;
-                if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
-                canvas.width = width; canvas.height = height; ctx.drawImage(img, 0, 0, width, height);
-                const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
-                document.getElementById('previewImg').src = compressedBase64;
-                const finalBase64Str = compressedBase64.split(',')[1];
-                callMagicRecipeApi(finalBase64Str, loadInterval, type);
+                try {
+                    // 🚨 防崩装甲：确保内存不足时不会静默卡死
+                    const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+                    const MAX_WIDTH = 600; const MAX_HEIGHT = 600; let width = img.width; let height = img.height;
+                    if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
+                    canvas.width = width; canvas.height = height; ctx.drawImage(img, 0, 0, width, height);
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+                    document.getElementById('previewImg').src = compressedBase64;
+                    const finalBase64Str = compressedBase64.split(',')[1];
+                    
+                    callMagicRecipeApi(finalBase64Str, loadInterval, type);
+                } catch (canvasError) {
+                    clearInterval(loadInterval); alert("图片处理失败，请换张小一点的图试试！"); resetApp();
+                }
             };
             img.src = e.target.result;
         };
@@ -484,7 +501,6 @@
 
             if (!recipeRes.ok) { alert("厨神遇到问题了：" + (recipeData.error || '未知错误')); resetApp(); return; }
             
-            // 🚨 核心注入：给数据打上“菜谱”标签
             recipeData.item_type = 'recipe';
             currentProductData = recipeData;
             renderResult(recipeData);
@@ -494,7 +510,11 @@
             recipeData.cloud_img = cloudImageUrl;
             fetch('/api/save', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(recipeData) }).catch(e => {});
 
-        } catch (error) { clearInterval(loadInterval); alert("网络断开了：" + error.message); resetApp(); }
+        } catch (error) { 
+            clearInterval(loadInterval); 
+            alert("网络不稳定或等待超时，请再试一次！"); 
+            resetApp(); 
+        }
     }
 
     function saveToLocalFootprint(data, cloudImageUrl) {
@@ -514,7 +534,6 @@
         if (data.warning && String(data.warning).trim() !== '') { document.getElementById('miniWarning').style.display = 'block'; document.getElementById('miniWarning').innerText = `⚠️ ${data.warning}`; } else { document.getElementById('miniWarning').style.display = 'none'; }
         if (data.pairing && String(data.pairing).includes('网友点评')) { document.getElementById('miniUgc').style.display = 'block'; const firstUgc = data.pairing.split('\n\n').find(line => line.includes('网友点评')); document.getElementById('miniUgcText').innerText = firstUgc ? firstUgc.replace(/🧑‍🍳 网友点评 \[.*?\]：/, '') : '好评如潮！'; } else { document.getElementById('miniUgc').style.display = 'none'; }
 
-        // 🚨 动态修改按钮文字
         const btnView = document.getElementById('btnViewDetail');
         if (data.item_type === 'recipe') { btnView.innerText = '👉 查看详细菜谱'; } else { btnView.innerText = '👉 查看完整报告'; }
     }
@@ -531,7 +550,6 @@
     function openDetailsFromScan() {
         currentDetailData = { ...currentProductData, img_src: document.getElementById('previewImg').src };
         renderBasicDetailsAndSwitch();
-        // 如果是菜谱，不需要再去后台调详情接口（直接渲染自带的步骤）；如果是商品，去后台拉取平替
         if (currentDetailData.item_type === 'recipe') { renderDeepDetails('', currentDetailData.pairing); } else { fetchDeepDetails(); }
     }
 
@@ -553,16 +571,15 @@
         document.getElementById('detailChineseName').innerText = d.chinese_name || '未知商品';
         document.getElementById('detailDutchName').innerText = d.dutch_name || '';
         
-        // 🚨 核心变装逻辑：动态修改标题和隐藏模块
         if (d.item_type === 'recipe') {
             document.getElementById('insightTitle').innerText = '👨‍🍳 厨神点拨';
             document.getElementById('recipeBoxTitle').innerText = '📜 详细做法';
-            document.getElementById('recipeSubmitBoxBtn').style.display = 'none'; // 菜谱页不需要再让人发菜谱
-            document.getElementById('detailAltBox').style.display = 'none'; // 菜谱页不需要购物指南平替
+            document.getElementById('recipeSubmitBoxBtn').style.display = 'none'; 
+            document.getElementById('detailAltBox').style.display = 'none'; 
         } else {
             document.getElementById('insightTitle').innerText = '💡 管家锐评';
             document.getElementById('recipeBoxTitle').innerText = '🍳 留学生糊弄学菜谱';
-            document.getElementById('recipeSubmitBoxBtn').style.display = 'block'; // 商品页需要让人贡献菜谱
+            document.getElementById('recipeSubmitBoxBtn').style.display = 'block'; 
         }
 
         const fillText = (boxId, textId, content) => {
@@ -574,7 +591,6 @@
         fillText('detailInsightBox', 'detailInsight', d.insight);
         fillText('detailWarningBox', 'detailWarning', d.warning);
         
-        // 只有当是商品模式，且我们刚点进来还没加载完时，才隐藏平替框
         if (d.item_type !== 'recipe') { const altBox = document.getElementById('detailAltBox'); if (altBox) altBox.style.display = 'none'; }
         
         const recipeBox = document.getElementById('detailRecipeBox');
@@ -615,7 +631,6 @@
             lines.forEach((line) => {
                 const fakeInitialVotes = (line.length * 7) % 45 + 5; 
                 if (line.includes('网友点评') || currentDetailData.item_type === 'recipe') {
-                    // 如果是菜谱模式，直接显示，不要把“网友点评”当做强制条件
                     const isLike = line.includes('👍') || currentDetailData.item_type === 'recipe';
                     const textContent = line.replace(/🧑‍🍳 网友点评 \[.*?\]：/, '').trim();
                     if(listContainer) {
