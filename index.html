@@ -605,24 +605,41 @@
     function renderDeepDetails(alternatives, pairing) {
         const altBox = document.getElementById('detailAltBox');
         if (currentDetailData && currentDetailData.item_type !== 'recipe' && altBox && alternatives && String(alternatives).trim() !== '') { altBox.style.display = 'block'; const parts = String(alternatives).split('|').map(p => p.trim()); document.getElementById('detailAlternatives').innerHTML = parts.map(p => `<div class="alt-tag">${p}</div>`).join(''); } else if (altBox) { altBox.style.display = 'none'; }
-        const listContainer = document.getElementById('recipeCardList'); if (listContainer) listContainer.innerHTML = ''; 
+        
+        const listContainer = document.getElementById('recipeCardList'); 
+        if (listContainer) listContainer.innerHTML = ''; 
+
         if (pairing && String(pairing).trim() !== '') {
-            const lines = String(pairing).split('\n\n').filter(l => l.trim() !== '');
-            lines.forEach((line) => {
-                const fakeInitialVotes = (line.length * 7) % 45 + 5; 
-                if (line.includes('网友点评') || currentDetailData.item_type === 'recipe') {
-                    const isLike = line.includes('👍') || currentDetailData.item_type === 'recipe';
-                    const textContent = line.replace(/🧑‍🍳 网友点评 \[.*?\]：/, '').trim();
-                    if(listContainer) {
-                        listContainer.innerHTML += `
-                            <div class="recipe-card">
-                                <div class="recipe-title"><span>${currentDetailData.item_type === 'recipe' ? '✨ AI 破解做法' : (isLike ? '🍳 网友懒人做法' : '💣 避雷吐槽')}</span></div>
-                                <div class="recipe-steps" style="${isLike ? '' : 'color:#DC2626;'}">${textContent}</div>
-                                <div class="recipe-actions"><div class="action-btn up" onclick="voteRecipe(Date.now(), 'up', event)">🤤 赞同 <span>${fakeInitialVotes}</span></div></div>
-                            </div>`;
-                    }
+            // 🚨 修复Bug：如果是菜谱模式，绝对不要去切割它，把整段文字塞进一张绝美的卡片里！
+            if (currentDetailData.item_type === 'recipe') {
+                const textContent = String(pairing).replace(/🧑‍🍳 网友点评 \[.*?\]：/, '').trim();
+                if(listContainer) {
+                    listContainer.innerHTML = `
+                        <div class="recipe-card">
+                            <div class="recipe-title"><span>✨ AI 破解神仙做法</span></div>
+                            <div class="recipe-steps">${textContent}</div>
+                            <div class="recipe-actions"><div class="action-btn up" onclick="voteRecipe(Date.now(), 'up', event)">🤤 赞同 <span>${Math.floor(Math.random() * 40) + 10}</span></div></div>
+                        </div>`;
                 }
-            });
+            } else {
+                // 如果是商品模式，依然按换行切割多条网友吐槽
+                const lines = String(pairing).split('\n\n').filter(l => l.trim() !== '');
+                lines.forEach((line) => {
+                    const fakeInitialVotes = (line.length * 7) % 45 + 5; 
+                    if (line.includes('网友点评')) {
+                        const isLike = line.includes('👍');
+                        const textContent = line.replace(/🧑‍🍳 网友点评 \[.*?\]：/, '').trim();
+                        if(listContainer) {
+                            listContainer.innerHTML += `
+                                <div class="recipe-card">
+                                    <div class="recipe-title"><span>${isLike ? '🍳 网友懒人做法' : '💣 避雷吐槽'}</span></div>
+                                    <div class="recipe-steps" style="${isLike ? '' : 'color:#DC2626;'}">${textContent}</div>
+                                    <div class="recipe-actions"><div class="action-btn up" onclick="voteRecipe(Date.now(), 'up', event)">🤤 赞同 <span>${fakeInitialVotes}</span></div></div>
+                                </div>`;
+                        }
+                    }
+                });
+            }
         }
         if (listContainer && listContainer.innerHTML === '') { listContainer.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding: 20px; font-size:13px;">暂无做法，快点击上方贡献首发！</div>'; }
     }
