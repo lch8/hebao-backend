@@ -1,25 +1,31 @@
 import { createClient } from '@libsql/client/web';
 
+export default async function handler(req, res) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-
-export default async function handler(req) {
-    if (req.method === 'OPTIONS') return new Response(null, { status: 200, headers: { 'Access-Control-Allow-Origin': '*' }});
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
     
     try {
-        const { postId } = await req.json();
+        // 🚨 核心修复
+        const { postId } = req.body;
+        
         const client = createClient({
             url: process.env.TURSO_DATABASE_URL,
             authToken: process.env.TURSO_AUTH_TOKEN,
         });
 
-        // 极其简单的 SQL，让对应帖子的点赞数 +1
         await client.execute({
             sql: `UPDATE community_posts SET likes = likes + 1 WHERE id = ?`,
             args: [postId]
         });
 
-        return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Access-Control-Allow-Origin': '*' }});
+        // 🚨 核心修复
+        return res.status(200).json({ success: true });
     } catch (error) {
-        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Access-Control-Allow-Origin': '*' }});
+        return res.status(500).json({ error: error.message });
     }
 }
