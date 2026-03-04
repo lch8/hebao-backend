@@ -1,8 +1,6 @@
 import { createClient } from '@libsql/client/web';
 
-export const config = {
-    runtime: 'edge', // 开启边缘计算，发帖极速响应
-};
+
 
 export default async function handler(req) {
     // 1. 处理跨域
