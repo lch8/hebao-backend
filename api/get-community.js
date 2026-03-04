@@ -1,6 +1,5 @@
 import { createClient } from '@libsql/client/web';
 
-export const config = { runtime: 'edge' };
 
 export default async function handler(req) {
     if (req.method === 'OPTIONS') return new Response(null, { status: 200, headers: { 'Access-Control-Allow-Origin': '*' }});
