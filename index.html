@@ -700,11 +700,10 @@
         feed.innerHTML = '<div style="text-align: center; color: #888; margin-top: 50px;"><div class="spinner" style="margin: 0 auto 10px;"></div>正在拉取各路大厨的神仙做法...</div>';
         
         try {
-            // 拉取我们刚刚写的 get-community 接口
             const res = await fetch('/api/get-community');
             const data = await res.json();
             
-            if (!res.ok || !data.success) throw new Error('拉取失败');
+            if (!res.ok || !data.success) throw new Error(data.error || '未知错误');
             
             if (data.posts.length === 0) {
                 feed.innerHTML = '<div style="text-align:center; color:#888; margin-top:40px;">社区空空如也，快去抢首发大厨称号！</div>';
@@ -713,9 +712,7 @@
 
             let html = '';
             data.posts.forEach(post => {
-                // 如果用户没传图，给一张极其治愈的备用美食图
                 const displayImg = post.image_url && post.image_url.trim() !== '' ? post.image_url : 'https://images.unsplash.com/photo-1544025162-8315ea07659b?q=80&w=600&auto=format&fit=crop';
-                
                 html += `
                     <div class="c-card">
                         <img class="c-img" src="${displayImg}" alt="美食图">
@@ -734,7 +731,8 @@
             communityLoaded = true;
 
         } catch (err) {
-            feed.innerHTML = '<div style="text-align:center; margin-top: 40px; color:#EF4444;">拉取失败，请稍后重试</div>';
+            // 🚨 终极改动：把真凶打印在屏幕上！
+            feed.innerHTML = `<div style="text-align:center; margin-top: 40px; color:#EF4444; font-weight: bold; line-height: 1.6;">拉取失败，真凶是：<br><br>${err.message}</div>`;
         }
     }
 
