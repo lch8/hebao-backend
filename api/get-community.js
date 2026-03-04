@@ -1,8 +1,12 @@
 import { createClient } from '@libsql/client/web';
 
+export default async function handler(req, res) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
 
-export default async function handler(req) {
-    if (req.method === 'OPTIONS') return new Response(null, { status: 200, headers: { 'Access-Control-Allow-Origin': '*' }});
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
 
     try {
         const client = createClient({
@@ -10,7 +14,6 @@ export default async function handler(req) {
             authToken: process.env.TURSO_AUTH_TOKEN,
         });
 
-        // 按时间倒序，拉取最新的 50 条食堂帖子
         const result = await client.execute(`
             SELECT id, author_name, image_url, title, content, likes, created_at 
             FROM community_posts 
@@ -18,7 +21,6 @@ export default async function handler(req) {
             LIMIT 50
         `);
 
-        // 格式化数据
         const posts = result.rows.map(row => ({
             id: row.id,
             author_name: row.author_name,
@@ -29,15 +31,11 @@ export default async function handler(req) {
             created_at: row.created_at
         }));
 
-        return new Response(JSON.stringify({ success: true, posts }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
-        });
+        // 🚨 核心修复
+        return res.status(200).json({ success: true, posts });
 
     } catch (error) {
         console.error('Fetch Community Error:', error);
-        return new Response(JSON.stringify({ error: '拉取社区数据失败' }), { 
-            status: 500, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
-        });
+        return res.status(500).json({ error: '拉取社区数据失败' });
     }
 }
