@@ -1,41 +1,44 @@
-import { createClient } from '@libsql/client/web';
+export const config = { runtime: 'edge' };
 
-export default async function handler(req, res) {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
-    }
+export default async function handler(req) {
+    if (req.method === 'OPTIONS') return new Response(null, { status: 200, headers: { 'Access-Control-Allow-Origin': '*' }});
 
     try {
-        const client = createClient({
-            url: process.env.TURSO_DATABASE_URL,
-            authToken: process.env.TURSO_AUTH_TOKEN,
+        let dbUrl = process.env.TURSO_DATABASE_URL;
+        const authToken = process.env.TURSO_AUTH_TOKEN;
+        if (!dbUrl || !authToken) return new Response(JSON.stringify({ error: '配置缺失' }), { status: 500 });
+        dbUrl = dbUrl.replace('libsql://', 'https://');
+
+        const response = await fetch(`${dbUrl}/v2/pipeline`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                requests: [
+                    { type: "execute", stmt: { sql: "SELECT id, author_name, image_url, title, content, likes, created_at FROM community_posts ORDER BY created_at DESC LIMIT 50" } },
+                    { type: "close" }
+                ]
+            })
         });
 
-        const result = await client.execute(`
-            SELECT id, author_name, image_url, title, content, likes, created_at 
-            FROM community_posts 
-            ORDER BY created_at DESC 
-            LIMIT 50
-        `);
+        if (!response.ok) throw new Error("获取数据失败");
+        const result = await response.json();
+        
+        // 手动解析 Turso 底层的 JSON 格式
+        const resData = result.results[0].response.result;
+        const cols = resData.cols.map(c => c.name);
+        const posts = resData.rows.map(row => {
+            let obj = {};
+            row.forEach((val, i) => {
+                let v = val.value;
+                if (val.type === "integer") v = parseInt(v, 10);
+                if (val.type === "null") v = null;
+                obj[cols[i]] = v;
+            });
+            return obj;
+        });
 
-        const posts = result.rows.map(row => ({
-            id: row.id,
-            author_name: row.author_name,
-            image_url: row.image_url,
-            title: row.title,
-            content: row.content,
-            likes: row.likes,
-            created_at: row.created_at
-        }));
-
-        // 🚨 核心修复
-        return res.status(200).json({ success: true, posts });
-
+        return new Response(JSON.stringify({ success: true, posts }), { status: 200, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }});
     } catch (error) {
-        console.error('Fetch Community Error:', error);
-        return res.status(500).json({ error: '拉取社区数据失败' });
+        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Access-Control-Allow-Origin': '*' } });
     }
 }
