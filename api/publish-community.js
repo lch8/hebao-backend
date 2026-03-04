@@ -1,50 +1,45 @@
-import { createClient } from '@libsql/client/web';
+export const config = { runtime: 'edge' };
 
-export default async function handler(req, res) {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-    if (req.method === 'OPTIONS') return res.status(200).end();
-    if (req.method !== 'POST') return res.status(405).json({ error: '只允许 POST' });
+export default async function handler(req) {
+    if (req.method === 'OPTIONS') return new Response(null, { status: 200, headers: { 'Access-Control-Allow-Origin': '*' }});
+    if (req.method !== 'POST') return new Response(JSON.stringify({ error: '只允许 POST' }), { status: 405 });
 
     try {
-        const { userId, title, text, imageUrl } = req.body || {};
+        const { userId, title, text, imageUrl } = await req.json();
+        if (!title || !text) return new Response(JSON.stringify({ error: '标题和做法不能为空哦！' }), { status: 400 });
 
-        if (!title || !text) {
-            return res.status(400).json({ error: '标题和做法不能为空哦！' });
-        }
+        let dbUrl = process.env.TURSO_DATABASE_URL;
+        const authToken = process.env.TURSO_AUTH_TOKEN;
 
-        const dbUrl = process.env.TURSO_DATABASE_URL;
-        const dbToken = process.env.TURSO_AUTH_TOKEN;
-
-        // 🚨 终极防坑拦截器：直接把错的 URL 弹到你手机屏幕上！
-        if (!dbUrl) {
-            return res.status(500).json({ error: '🚨 找不到 TURSO_DATABASE_URL，它在 Vercel 里是空的！' });
-        }
-        if (dbUrl.includes('"') || dbUrl.includes("'")) {
-            return res.status(500).json({ error: '🚨 URL里多写了双引号或单引号！请去 Vercel 删掉两边的引号！' });
-        }
-        if (!dbUrl.startsWith('libsql://') && !dbUrl.startsWith('https://')) {
-            return res.status(500).json({ error: `🚨 URL格式不对！必须以 libsql:// 开头，现在读到的是: [${dbUrl}]` });
-        }
-
-        // 只有格式完全正确，才会执行连接
-        const client = createClient({
-            url: dbUrl,
-            authToken: dbToken,
-        });
+        if (!dbUrl || !authToken) return new Response(JSON.stringify({ error: '环境变量未配置！' }), { status: 500 });
+        // 将 libsql 协议替换为 https 协议以便 fetch 调用
+        dbUrl = dbUrl.replace('libsql://', 'https://');
 
         const randomName = '野生大厨' + Math.floor(Math.random() * 9999);
-
-        await client.execute({
-            sql: `INSERT INTO community_posts (user_id, author_name, title, content, image_url) VALUES (?, ?, ?, ?, ?)`,
-            args: [userId || 'unknown-user', randomName, title, text, imageUrl || '']
+        const sql = `INSERT INTO community_posts (user_id, author_name, title, content, image_url) VALUES (?, ?, ?, ?, ?)`;
+        
+        // 使用纯净的原生 fetch 直接打给 Turso 数据库底层 API
+        const response = await fetch(`${dbUrl}/v2/pipeline`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                requests: [
+                    { type: "execute", stmt: { sql: sql, args: [
+                        { type: "text", value: String(userId || 'unknown') },
+                        { type: "text", value: String(randomName) },
+                        { type: "text", value: String(title) },
+                        { type: "text", value: String(text) },
+                        { type: "text", value: String(imageUrl || '') }
+                    ]}},
+                    { type: "close" }
+                ]
+            })
         });
 
-        return res.status(200).json({ success: true, message: '发布成功！' });
+        if (!response.ok) throw new Error("数据库写入拒绝");
 
+        return new Response(JSON.stringify({ success: true, message: '发布成功！' }), { status: 200, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
     } catch (error) {
-        return res.status(500).json({ error: '底层报错: ' + error.message });
+        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Access-Control-Allow-Origin': '*' } });
     }
 }
