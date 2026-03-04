@@ -20,10 +20,13 @@ export default async function handler(req) {
             })
         });
 
-        if (!response.ok) throw new Error("获取数据失败");
         const result = await response.json();
         
-        // 手动解析 Turso 底层的 JSON 格式
+        // 🚨 照妖镜：拦截 Turso 内部的 SQL 报错！
+        if (result.results[0].type === 'error') {
+            throw new Error("Turso数据库报错: " + result.results[0].error.message);
+        }
+
         const resData = result.results[0].response.result;
         const cols = resData.cols.map(c => c.name);
         const posts = resData.rows.map(row => {
@@ -39,6 +42,6 @@ export default async function handler(req) {
 
         return new Response(JSON.stringify({ success: true, posts }), { status: 200, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }});
     } catch (error) {
-        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Access-Control-Allow-Origin': '*' } });
+        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
     }
 }
