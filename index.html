@@ -630,6 +630,9 @@
     // ==========================================
     // 🚨 社区分享与列表渲染逻辑
     // ==========================================
+    // ==========================================
+    // 🚨 社区分享与列表渲染逻辑 (满血直连后台版)
+    // ==========================================
     let communityLoaded = false;
 
     function openShareCommunityModal() {
@@ -648,50 +651,89 @@
         const btn = document.getElementById('btnConfirmShare');
         btn.innerText = '发布中...'; btn.disabled = true;
         
-        setTimeout(() => {
+        try {
+            // 提取图片链接，如果没有就给个空字符串
+            const imgUrl = currentDetailData.cloud_img || currentDetailData.img_src || '';
+            
+            // 1. 发送请求给刚才写的 publish-community 接口
+            const res = await fetch('/api/publish-community', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: userUUID, title: title, text: text, imageUrl: imgUrl })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+
             alert('🎉 成功发布到深夜食堂！');
             document.getElementById('shareCommunityModal').style.display = 'none';
-            btn.innerText = '🚀 确认发布'; btn.disabled = false;
+            
+            // 2. 状态重置，自动跳转到食堂并强行刷新页面拉取新数据
             communityLoaded = false; 
             switchTab('community', document.querySelectorAll('.tab-item')[1]);
-        }, 1000);
+
+        } catch(err) {
+            alert('发布失败：' + err.message);
+        } finally {
+            btn.innerText = '🚀 确认发布'; btn.disabled = false;
+        }
     }
 
     async function loadCommunityFeed() {
         const feed = document.getElementById('communityFeedList');
-        feed.innerHTML = `
-            <div class="c-card">
-                <img class="c-img" src="https://images.unsplash.com/photo-1544025162-8315ea07659b?q=80&w=600&auto=format&fit=crop" alt="烤肉">
-                <div class="c-body">
-                    <div class="c-title">宿舍销魂爆烤五花肉</div>
-                    <div class="c-text">超级简单！直接把超市的猪五花切片，不用腌，空气炸锅180度烤15分钟，中间翻个面刷点老干妈和生抽。油脂都被烤出去了，外焦里嫩，卷着生菜吃绝了！</div>
-                    <div class="c-footer">
-                        <div class="c-user">👨‍🍳 鹿特丹匿名厨神</div>
-                        <div class="c-like-btn" onclick="likeCommunity(this)"><span class="emoji">🤤</span> 馋了 <span>128</span></div>
+        feed.innerHTML = '<div style="text-align: center; color: #888; margin-top: 50px;"><div class="spinner" style="margin: 0 auto 10px;"></div>正在拉取各路大厨的神仙做法...</div>';
+        
+        try {
+            // 拉取我们刚刚写的 get-community 接口
+            const res = await fetch('/api/get-community');
+            const data = await res.json();
+            
+            if (!res.ok || !data.success) throw new Error('拉取失败');
+            
+            if (data.posts.length === 0) {
+                feed.innerHTML = '<div style="text-align:center; color:#888; margin-top:40px;">社区空空如也，快去抢首发大厨称号！</div>';
+                return;
+            }
+
+            let html = '';
+            data.posts.forEach(post => {
+                // 如果用户没传图，给一张极其治愈的备用美食图
+                const displayImg = post.image_url && post.image_url.trim() !== '' ? post.image_url : 'https://images.unsplash.com/photo-1544025162-8315ea07659b?q=80&w=600&auto=format&fit=crop';
+                
+                html += `
+                    <div class="c-card">
+                        <img class="c-img" src="${displayImg}" alt="美食图">
+                        <div class="c-body">
+                            <div class="c-title">${post.title}</div>
+                            <div class="c-text">${post.content}</div>
+                            <div class="c-footer">
+                                <div class="c-user">👨‍🍳 ${post.author_name}</div>
+                                <div class="c-like-btn" onclick="likeCommunity(this, ${post.id})"><span class="emoji">🤤</span> 馋了 <span>${post.likes || 0}</span></div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
-            <div class="c-card">
-                <img class="c-img" src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?q=80&w=600&auto=format&fit=crop" alt="意面">
-                <div class="c-body">
-                    <div class="c-title">穷鬼版奶香培根意面</div>
-                    <div class="c-text">用 AH 那个最便宜的培根碎炒出油，倒点淡奶油，再把煮好的便宜意面放进去收汁，撒点黑胡椒，成本不到2欧，吃出米其林的感觉！</div>
-                    <div class="c-footer">
-                        <div class="c-user">👨‍🍳 阿姆省钱之王</div>
-                        <div class="c-like-btn" onclick="likeCommunity(this)"><span class="emoji">🤤</span> 馋了 <span>85</span></div>
-                    </div>
-                </div>
-            </div>
-        `;
-        communityLoaded = true;
+                `;
+            });
+            feed.innerHTML = html;
+            communityLoaded = true;
+
+        } catch (err) {
+            feed.innerHTML = '<div style="text-align:center; margin-top: 40px; color:#EF4444;">拉取失败，请稍后重试</div>';
+        }
     }
 
-    function likeCommunity(btn) {
+    function likeCommunity(btn, postId) {
         if(btn.dataset.voted) return;
         btn.dataset.voted = 'true'; btn.classList.add('voted');
         const span = btn.querySelector('span:last-child'); span.innerText = parseInt(span.innerText) + 1;
         const rect = btn.getBoundingClientRect(); const plus = document.createElement('div'); plus.className = 'float-plus'; plus.innerText = '+1'; plus.style.color = '#D97706';
         plus.style.left = rect.left + 20 + 'px'; plus.style.top = rect.top - 20 + 'px'; document.body.appendChild(plus); setTimeout(() => plus.remove(), 800);
+        
+        // 悄悄通知后台增加点赞数
+        fetch('/api/like-community', { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify({ postId: postId }) 
+        }).catch(e => console.log('点赞同步失败', e));
     }
 
     // ==========================================
