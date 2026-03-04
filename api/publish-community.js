@@ -1,50 +1,47 @@
 import { createClient } from '@libsql/client/web';
 
 export default async function handler(req, res) {
-    // 1. 设置跨域头
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-    // 2. 处理预检请求
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
-    }
-
-    if (req.method !== 'POST') {
-        return res.status(405).json({ error: '只允许 POST 请求' });
-    }
+    if (req.method === 'OPTIONS') return res.status(200).end();
+    if (req.method !== 'POST') return res.status(405).json({ error: '只允许 POST' });
 
     try {
-        // 🚨 核心修复：Nodejs 下直接读 req.body，千万不能用 await req.json()
+        // 🚨 探针 1：打印接收到的前端数据
+        console.log("1. 接收到前端数据:", req.body);
         const { userId, title, text, imageUrl } = req.body;
 
         if (!title || !text) {
             return res.status(400).json({ error: '标题和做法不能为空哦！' });
         }
 
-        // 连接数据库
-        const client = createClient({
-            url: process.env.TURSO_DATABASE_URL,
-            authToken: process.env.TURSO_AUTH_TOKEN,
-        });
+        // 🚨 探针 2：打印服务器实际读到的环境变量（脱敏处理密码）
+        const dbUrl = process.env.TURSO_DATABASE_URL;
+        const dbToken = process.env.TURSO_AUTH_TOKEN;
+        console.log("2. 读取到的 URL 是:", dbUrl);
+        console.log("3. 读取到的 Token 前五位是:", dbToken ? dbToken.substring(0, 5) : '找不到Token!');
 
-        // 随机生成名字
-        const adjectives = ['阿姆', '鹿特丹', '代尔夫特', '乌村', '海牙', '省钱', '深夜', '狂暴'];
-        const nouns = ['厨神', '干饭人', '食神', '饿狼', '大明白', '评测员'];
-        const randomName = adjectives[Math.floor(Math.random() * adjectives.length)] + nouns[Math.floor(Math.random() * nouns.length)];
+        // 如果 URL 不存在或者不是 libsql/https 开头，直接拦截并报错
+        if (!dbUrl || (!dbUrl.startsWith('libsql://') && !dbUrl.startsWith('https://'))) {
+            return res.status(500).json({ error: `环境变量配置错误，当前URL为: ${dbUrl}` });
+        }
 
-        // 存入数据库
+        const client = createClient({ url: dbUrl, authToken: dbToken });
+
+        const randomName = '野生大厨' + Math.floor(Math.random() * 9999);
+
         await client.execute({
             sql: `INSERT INTO community_posts (user_id, author_name, title, content, image_url) VALUES (?, ?, ?, ?, ?)`,
-            args: [userId || 'unknown-user', randomName, title, text, imageUrl || '']
+            args: [userId || 'unknown', randomName, title, text, imageUrl || '']
         });
 
-        // 🚨 核心修复：Nodejs 下的返回语法 res.status().json()
         return res.status(200).json({ success: true, message: '发布成功！' });
 
     } catch (error) {
-        console.error('Publish Error:', error);
-        return res.status(500).json({ error: '数据库开小差了，发布失败' });
+        // 🚨 探针 3：打印真实崩溃日志
+        console.error('致命崩溃:', error);
+        return res.status(500).json({ error: error.message });
     }
 }
