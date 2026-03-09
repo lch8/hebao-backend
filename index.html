@@ -983,22 +983,59 @@ function startBarcodeScan() {
 }
 
 function onScanSuccess(decodedText, decodedResult) {
-    // 扫码成功！振动一下给予反馈 (仅支持部分安卓设备)
-    if (navigator.vibrate) navigator.vibrate(100);
-    
-    // 关闭扫码界面
-    closeScanner();
-    
-    // 把扫出来的数字塞进搜索框，并自动触发搜索！
-    const searchInput = document.getElementById('mainSearchInput');
-    searchInput.value = decodedText;
-    
-    // 稍微延迟一下，增加体验感
-    setTimeout(() => {
-        executeSearch();
-    }, 300);
-}
+        // 1. 扫码成功，震动反馈并关掉摄像头
+        if (navigator.vibrate) navigator.vibrate(100);
+        closeScanner();
+        
+        const barcode = decodedText;
+        document.getElementById('mainSearchInput').value = barcode;
 
+        // 2. 展现“正在检索”的酷炫 UI
+        uiScanState("📡 正在全网检索条形码...");
+
+        // 3. 先看看本地数据库有没有缓存过这个条形码或者商品
+        const localDB = JSON.parse(localStorage.getItem('hebao_offline_db') || '[]');
+        const historyDB = JSON.parse(localStorage.getItem('hebao_history') || '[]');
+        const combinedDB = [...historyDB, ...localDB];
+
+        const found = combinedDB.find(item => item.barcode === barcode);
+
+        if (found) {
+            // 本地有，直接秒出
+            setTimeout(() => {
+                currentProductData = found;
+                renderResult(found);
+            }, 300);
+        } else {
+            // 4. 本地没有，呼叫我们刚写的云端条码 API
+            fetch('/api/scan-barcode', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ barcode: barcode, userId: userUUID })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) throw new Error(data.error);
+                
+                // 成功啦！拿到了名字和点评
+                currentProductData = data;
+                renderResult(data);
+                
+                // 默默保存到足迹，并且传回云端存入 Turso 数据库
+                saveToLocalFootprint(data, data.image_url);
+                fetch('/api/save', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ ...data, userId: userUUID }) 
+                }).catch(()=>{});
+            })
+            .catch(err => {
+                alert(err.message);
+                resetApp();
+            });
+        }
+    }
+    
 function closeScanner() {
     document.getElementById('scannerModal').style.display = 'none';
     if (html5QrcodeScanner) {
