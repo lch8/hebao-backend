@@ -344,8 +344,13 @@
         <h3 style="margin-top:0; margin-bottom: 5px; color: #111827;">发布到深夜食堂 🍳</h3>
         <p style="font-size: 12px; color: #6B7280; margin-top: 0;">独家秘方就是要大声炫耀出来！</p>
         
+        <div style="display: flex; gap: 10px; margin-top: 10px; align-items: center;">
+            <span style="font-size: 20px;">👨‍🍳</span>
+            <input type="text" id="communityAuthorName" class="modal-input" style="margin-top: 0; flex: 1;" placeholder="你的名号 (留空则随机)">
+        </div>
+
         <input type="text" id="communityRecipeTitle" class="modal-input" placeholder="给菜谱起个响亮的名字...">
-        <textarea id="communityRecipeText" class="modal-textarea" style="height: 160px;" placeholder="写下你的神仙做法/所需调料..."></textarea>
+        <textarea id="communityRecipeText" class="modal-textarea" style="height: 120px;" placeholder="写下你的神仙做法/所需调料..."></textarea>
         
         <div style="margin-top: 20px; display: flex; gap: 10px;">
             <button style="flex:1; padding: 14px; background: #F3F4F6; color: #4B5563; border: none; border-radius: 12px; font-weight: bold; cursor: pointer;" onclick="document.getElementById('shareCommunityModal').style.display='none'">取消</button>
@@ -450,26 +455,43 @@
         if(!list.innerHTML) list.innerHTML = '<div style="text-align:center;color:#888;">暂无做法，快去抢首发！</div>';
     }
 
-    // ==========================================
-    // 🚨 终极：双列瀑布流社区与沉浸式互动
-    // ==========================================
-    function openShareCommunityModal() {
-        const d = currentDetailData; document.getElementById('communityRecipeTitle').value = d.chinese_name||'';
+    /function openShareCommunityModal() {
+        const d = currentDetailData; 
+        // 自动读取上次存的名字
+        document.getElementById('communityAuthorName').value = localStorage.getItem('hebao_author_name') || '';
+        document.getElementById('communityRecipeTitle').value = d.chinese_name || '';
         document.getElementById('communityRecipeText').value = (d.pairing||'').replace(/🧑‍🍳 网友点评 \[.*?\]：/,'').trim();
         document.getElementById('shareCommunityModal').style.display = 'flex';
     }
 
     async function submitToCommunity() {
-        const title = document.getElementById('communityRecipeTitle').value.trim(); const text = document.getElementById('communityRecipeText').value.trim();
+        const authorName = document.getElementById('communityAuthorName').value.trim();
+        const title = document.getElementById('communityRecipeTitle').value.trim(); 
+        const text = document.getElementById('communityRecipeText').value.trim();
+        
         if(!title || !text) return alert('标题和做法不能为空哦！');
+        
+        // 保存博主名字到本地，下次自动填
+        if(authorName) localStorage.setItem('hebao_author_name', authorName);
+
         const btn = document.getElementById('btnConfirmShare'); btn.innerText = '发布中...'; btn.disabled = true;
         try {
             const imgUrl = currentDetailData.cloud_img || currentDetailData.img_src || '';
-            const res = await fetch('/api/publish-community', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({userId:userUUID, title, text, imageUrl:imgUrl})});
+            // 🚨 新增传参：authorName
+            const res = await fetch('/api/publish-community', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({userId:userUUID, authorName: authorName, title: title, text: text, imageUrl:imgUrl})});
             const data = await res.json(); if(!res.ok) throw new Error(data.error);
             document.getElementById('shareCommunityModal').style.display = 'none';
             switchTab('community', document.querySelectorAll('.tab-item')[1]);
         } catch(e) { alert('发布失败: ' + e.message); } finally { btn.innerText = '🚀 确认发布'; btn.disabled = false; }
+    }
+
+    // 🚨 核心：渲染大V专属金V认证！
+    function getAuthorHtml(name) {
+        // 如果博主名字叫山争，或者包含官方，直接给皇冠特权！
+        if (name && (name.includes('山争') || name.includes('官方') || name.includes('荷包'))) {
+            return `👑 <span style="color:#D97706; font-weight:900;">${name} (特邀品鉴官)</span>`;
+        }
+        return `👨‍🍳 ${name || '匿名大厨'}`;
     }
 
     // 瀑布流拉取数据
@@ -481,20 +503,17 @@
             if (!res.ok) throw new Error(data.error);
             if (data.posts.length === 0) return feed.innerHTML = '<div style="text-align:center; color:#888; margin-top:40px; grid-column: span 2;">社区还在准备食材，快去首发！</div>';
             
-            // 存入全局缓存，给详情页调用
             communityPostsData = data.posts;
-            
             let html = '';
             communityPostsData.forEach((post, index) => {
                 const img = post.image_url || 'https://images.unsplash.com/photo-1544025162-8315ea07659b?q=80&w=600&auto=format&fit=crop';
-                // 绑定 onClick 弹出详情页
                 html += `
                     <div class="c-card" onclick="openCommunityDetail(${index})">
                         <img class="c-img" src="${img}" alt="美食图">
                         <div class="c-body">
                             <div class="c-title">${post.title}</div>
                             <div class="c-footer">
-                                <div class="c-user">👨‍🍳 ${post.author_name}</div>
+                                <div class="c-user">${getAuthorHtml(post.author_name)}</div>
                                 <div class="c-like-btn" id="feedLikeBtn_${index}"><span style="font-size:12px;">🤤</span> <span class="like-num">${post.likes||0}</span></div>
                             </div>
                         </div>
@@ -502,7 +521,7 @@
                 `;
             });
             feed.innerHTML = html;
-        } catch (e) { feed.innerHTML = `<div style="text-align:center; margin-top:40px; color:#EF4444; grid-column: span 2;">${e.message}</div>`; }
+        } catch (e) { feed.innerHTML = `<div style="text-align:center; margin-top:40px; color:#EF4444; font-weight:bold; line-height:1.6; grid-column: span 2;">拉取失败，真凶是：<br><br>${e.message}</div>`; }
     }
 
     // 打开沉浸式详情页 Modal
@@ -511,23 +530,25 @@
         const post = communityPostsData[index];
         const img = post.image_url || 'https://images.unsplash.com/photo-1544025162-8315ea07659b?q=80&w=600&auto=format&fit=crop';
         
-        document.getElementById('cdAuthorName').innerText = post.author_name;
+        // 🚨 详情页顶部也渲染尊贵名字
+        document.getElementById('cdAuthorName').innerHTML = getAuthorHtml(post.author_name).replace('👨‍🍳 ', '');
+        
         document.getElementById('cdMainImg').src = img;
         document.getElementById('cdTitle').innerText = post.title;
         document.getElementById('cdContent').innerText = post.content;
         
-        // 同步点赞状态
         const btn = document.getElementById('cdLikeBigBtn');
         document.getElementById('cdLikeCountText').innerText = post.likes || 0;
         if(post.i_voted) { btn.classList.add('voted'); btn.dataset.voted = 'true'; } 
         else { btn.classList.remove('voted'); btn.dataset.voted = ''; }
 
-        // 清空之前的 AI 聊天记录
         document.getElementById('cdChatHistory').innerHTML = '';
         document.getElementById('cdAskInput').value = '';
 
         document.getElementById('communityDetailModal').style.display = 'flex';
     }
+
+    
 
     function closeCommunityDetail() {
         document.getElementById('communityDetailModal').style.display = 'none';
