@@ -19,7 +19,7 @@ export default async function handler(req) {
 
         dbUrl = dbUrl.replace('libsql://', 'https://');
 
-        // 发送原生 HTTP 请求，并严格遵守 Turso 的数据类型标签格式 (Tagged Enum)
+        // 发送原生 HTTP 请求，增加 barcode 字段！
         const response = await fetch(`${dbUrl}/v2/pipeline`, {
             method: 'POST',
             headers: {
@@ -31,8 +31,9 @@ export default async function handler(req) {
                     { 
                         type: "execute", 
                         stmt: { 
-                            sql: "INSERT OR REPLACE INTO products (dutch_name, chinese_name, category, is_recommended, insight, pairing, warning, alternatives, features, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                            args: [ // 👈 就是这里！刚才你不小心把这行删了！
+                            // ⚠️ 重点：这里加了 barcode
+                            sql: "INSERT OR REPLACE INTO products (dutch_name, chinese_name, category, is_recommended, insight, pairing, warning, alternatives, features, image_url, barcode) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                            args: [ 
                                 { type: "text", value: String(data.dutch_name || "") },
                                 { type: "text", value: String(data.chinese_name || "") },
                                 { type: "text", value: String(data.category || "") },
@@ -42,7 +43,8 @@ export default async function handler(req) {
                                 { type: "text", value: String(data.warning || "") },
                                 { type: "text", value: String(data.alternatives || "") },
                                 { type: "text", value: String(data.features || "") },
-                                { type: "text", value: String(data.image_url || "") } // 👈 完美的第10个参数
+                                { type: "text", value: String(data.image_url || "") },
+                                { type: "text", value: String(data.barcode || "") } // 👈 新增的第11个参数
                             ] 
                         } 
                     },
