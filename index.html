@@ -20,7 +20,7 @@
         .pwa-banner-text { font-size: 13px; font-weight: 900; color: #1E3A8A; display: flex; align-items: center; gap: 8px;}
         .pwa-close-btn { color: #93C5FD; font-size: 16px; padding: 0 5px; cursor: pointer; }
 
-        /* ================= 新增：搜索与条码框 ================= */
+        /* ================= 搜索与条码框 ================= */
         .search-container { display: flex; gap: 10px; margin-bottom: 20px; background: #FFF; border-radius: 20px; padding: 8px 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #E5E7EB; align-items: center; }
         .search-input { flex: 1; border: none; outline: none; font-size: 15px; padding: 8px; background: transparent; color: #111827; }
         .barcode-btn { background: #F3F4F6; border: none; width: 40px; height: 40px; border-radius: 12px; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 18px; transition: 0.2s; }
@@ -84,7 +84,7 @@
         .recipe-title { font-size: 14px; font-weight: 900; color: #111827; margin-bottom: 10px; display: flex; justify-content: space-between;}
         .recipe-steps { font-size: 14px; color: #4B5563; line-height: 1.6; margin-bottom: 15px; white-space: pre-wrap; font-weight: 500;}
 
-        /* ================= 3. 极其惊艳的双列瀑布流 UI ================= */
+        /* ================= 3. 双列瀑布流 UI ================= */
         .waterfall-container { column-count: 2; column-gap: 12px; padding: 0 16px; }
         .c-card { break-inside: avoid; margin-bottom: 12px; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.04); display: inline-block; width: 100%; cursor: pointer; transition: transform 0.2s; animation: fadeIn 0.4s ease; }
         .c-card:active { transform: scale(0.97); }
@@ -96,7 +96,7 @@
         .c-like-btn { font-size: 12px; color: #6b7280; display: flex; align-items: center; gap: 3px; font-weight: bold; background: #F3F4F6; padding: 4px 8px; border-radius: 12px;}
         .c-like-btn.voted { color: #D97706; background: #FEF3C7;}
 
-        /* ================= 沉浸式社区详情页 Modal ================= */
+        /* ================= 社区详情页 Modal ================= */
         .community-detail-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 2000; display: none; align-items: flex-end; justify-content: center; animation: fadeIn 0.2s ease; }
         .cd-content-wrap { background: #fff; width: 100%; max-width: 600px; height: 88vh; border-top-left-radius: 24px; border-top-right-radius: 24px; display: flex; flex-direction: column; overflow: hidden; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
@@ -143,7 +143,6 @@
         /* ================= 导航与悬浮聊天 ================= */
         .tab-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 65px; background: #FFF; box-shadow: 0 -4px 20px rgba(0,0,0,0.06); display: flex; justify-content: space-around; align-items: center; z-index: 100; max-width: 600px; margin: 0 auto;}
         
-        /* 修改：把 width 变成 20% 以容纳 5 个按钮 */
         .tab-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #9CA3AF; cursor: pointer; width: 20%; transition: 0.2s;}
         .tab-item.active { color: #10B981; transform: translateY(-2px);}
         .tab-icon { font-size: 22px; margin-bottom: 4px; }
@@ -191,6 +190,14 @@
         .score-dislike { color: #EF4444; }
 
         /* ================= 5. 省钱秘籍专属 UI ================= */
+        .quick-links-wrap { display: flex; overflow-x: auto; gap: 12px; padding: 0 20px 15px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
+        .quick-links-wrap::-webkit-scrollbar { display: none; }
+        .ql-card { flex: 0 0 auto; width: 140px; background: #FFF; border-radius: 16px; padding: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); border: 1px solid #E5E7EB; text-decoration: none; display: flex; flex-direction: column; align-items: center; justify-content: center; scroll-snap-align: start; transition: transform 0.2s; }
+        .ql-card:active { transform: scale(0.95); }
+        .ql-icon { font-size: 28px; margin-bottom: 6px; }
+        .ql-title { font-size: 13px; font-weight: 900; color: #111827; }
+        .ql-sub { font-size: 11px; color: #6B7280; margin-top: 2px; }
+
         .tips-accordion { margin: 0 16px 15px; background: #FFF; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); overflow: hidden; border: 1px solid #E5E7EB; }
         .tips-header { padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; font-weight: 900; font-size: 16px; color: #111827; cursor: pointer; background: #F9FAFB; user-select: none; transition: background 0.2s;}
         .tips-header:active { background: #F3F4F6; }
@@ -206,6 +213,9 @@
         .tips-inner li::marker { color: #10B981; }
         .tips-inner strong { color: #111827; background: linear-gradient(120deg, #D1FAE5 0%, #ECFDF5 100%); padding: 0 4px; border-radius: 4px;}
         .tips-highlight { display: inline-block; background: #FEF2F2; color: #EF4444; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; margin-left: 5px; border: 1px solid #FECACA;}
+
+        .btn-report-tip { background: #111827; color: #FFF; border: none; padding: 16px; border-radius: 20px; font-size: 15px; font-weight: 900; width: calc(100% - 32px); margin: 10px 16px 30px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 8px 20px rgba(17,24,39,0.2); cursor: pointer; transition: 0.2s; }
+        .btn-report-tip:active { transform: scale(0.96); }
     </style>
 </head>
 
@@ -357,6 +367,18 @@
             <div class="subtitle">留学生必看的超市薅羊毛终极指南</div>
         </div>
 
+        <div class="quick-links-wrap">
+            <a href="https://www.ah.nl/bonus" target="_blank" class="ql-card">
+                <div class="ql-icon">🛒</div><div class="ql-title">AH Bonus</div><div class="ql-sub">本周特价全在这里</div>
+            </a>
+            <a href="https://www.jumbo.com/aanbiedingen" target="_blank" class="ql-card">
+                <div class="ql-icon">🐘</div><div class="ql-title">Jumbo 特价</div><div class="ql-sub">打折专区官方直达</div>
+            </a>
+            <a href="https://www.dirk.nl/aanbiedingen" target="_blank" class="ql-card">
+                <div class="ql-icon">💙</div><div class="ql-title">Dirk 电子报</div><div class="ql-sub">平价战神每周上新</div>
+            </a>
+        </div>
+
         <div class="tips-accordion">
             <div class="tips-header" onclick="toggleAccordion(this)">
                 <div class="tips-title-wrap"><span class="tips-icon">🛒</span> <span>Albert Heijn (AH) 攻略</span> <span class="tips-highlight">必看</span></div>
@@ -419,6 +441,8 @@
                 </div>
             </div>
         </div>
+
+        <button class="btn-report-tip" onclick="openReportModal()">📢 我要爆料薅羊毛线索</button>
     </div>
 </div> 
 
@@ -430,6 +454,19 @@
     <div id="reader" style="width:100%; flex:1; background:#000;"></div>
 </div>
 
+<div class="modal-overlay" id="reportTipModal">
+    <div class="modal-content">
+        <h3 style="margin-top:0; color: #111827;">📢 爆料新羊毛</h3>
+        <p style="font-size: 12px; color: #6B7280; margin-top: 0;">发现新的省钱神技？告诉管家，人工审核后收录上墙展示！</p>
+        <input type="text" id="reportTipTitle" class="modal-input" placeholder="一句话概括 (例: Jumbo新盲盒)">
+        <textarea id="reportTipText" class="modal-textarea" style="height: 100px;" placeholder="具体怎么操作？怎么最省钱..."></textarea>
+        <div style="margin-top: 20px; display: flex; gap: 10px;">
+            <button style="flex:1; padding: 14px; background: #F3F4F6; color: #4B5563; border: none; border-radius: 12px; font-weight: bold; cursor: pointer;" onclick="document.getElementById('reportTipModal').style.display='none'">取消</button>
+            <button id="btnSubmitReport" style="flex:2; padding: 14px; background: #10B981; color: #FFF; border: none; border-radius: 12px; font-weight: bold; cursor: pointer;" onclick="submitReportTip()">🚀 提交线索</button>
+        </div>
+    </div>
+</div>
+
 <div class="community-detail-modal" id="communityDetailModal">
     <div class="cd-content-wrap" onclick="event.stopPropagation()">
         <div class="cd-header">
@@ -439,20 +476,17 @@
             </div>
             <div class="cd-close" onclick="closeCommunityDetail()">✕</div>
         </div>
-        
         <div class="cd-scroll-area" id="cdScrollArea">
             <img id="cdMainImg" class="cd-main-img" src="" alt="美食图片">
             <div class="cd-text-body">
                 <h1 class="cd-title" id="cdTitle"></h1>
                 <div class="cd-desc" id="cdContent"></div>
             </div>
-            
             <div class="cd-chat-area">
                 <div class="cd-chat-title">—— 步骤有疑问？直接问 AI 替作者回答 ——</div>
                 <div id="cdChatHistory" style="display: flex; flex-direction: column;"></div>
             </div>
         </div>
-        
         <div class="cd-bottom-bar">
             <input type="text" id="cdAskInput" class="cd-input" placeholder="问管家：没老干妈咋办？" onkeypress="if(event.key==='Enter') askInCommunity()">
             <button class="cd-send-btn" onclick="askInCommunity()">✨ 提问</button>
@@ -467,15 +501,12 @@
     <div class="modal-content">
         <h3 style="margin-top:0; margin-bottom: 5px; color: #111827;">发布到深夜食堂 🍳</h3>
         <p style="font-size: 12px; color: #6B7280; margin-top: 0;">独家秘方就是要大声炫耀出来！</p>
-        
         <div style="display: flex; gap: 10px; margin-top: 10px; align-items: center;">
             <span style="font-size: 20px;">👨‍🍳</span>
             <input type="text" id="communityAuthorName" class="modal-input" style="margin-top: 0; flex: 1;" placeholder="你的名号 (留空则随机)">
         </div>
-
         <input type="text" id="communityRecipeTitle" class="modal-input" placeholder="给菜谱起个响亮的名字...">
         <textarea id="communityRecipeText" class="modal-textarea" style="height: 120px;" placeholder="写下你的神仙做法/所需调料..."></textarea>
-        
         <div style="margin-top: 20px; display: flex; gap: 10px;">
             <button style="flex:1; padding: 14px; background: #F3F4F6; color: #4B5563; border: none; border-radius: 12px; font-weight: bold; cursor: pointer;" onclick="document.getElementById('shareCommunityModal').style.display='none'">取消</button>
             <button id="btnConfirmShare" style="flex:2; padding: 14px; background: #D97706; color: #FFF; border: none; border-radius: 12px; font-weight: bold; cursor: pointer;" onclick="submitToCommunity()">🚀 确认发布</button>
@@ -603,7 +634,6 @@
         document.getElementById('miniInsight').innerText=data.insight||''; 
         document.getElementById('btnViewDetail').innerText = data.item_type==='recipe'?'👉 查看详细菜谱':'👉 查看完整报告'; 
 
-        // 💡 预加载：在用户查看小卡片时，悄悄拉取深度的平替数据
         if (data.item_type === 'product' && (!data.pairing || !data.alternatives)) {
             backgroundPrefetchTask[data.dutch_name] = fetch('/api/detail', {
                 method:'POST', headers:{'Content-Type':'application/json'},
@@ -615,7 +645,7 @@
     function resetApp() { ['fileInput','ingredientInput','dishInput'].forEach(id=>document.getElementById(id).value=''); document.getElementById('previewContainer').style.display='none';document.getElementById('miniResultCard').style.display='none';document.getElementById('homeActionBox').style.display='grid'; }
 
     // ==========================================
-    // 详情页逻辑（带有秒开优化）
+    // 详情页逻辑（秒开优化）
     // ==========================================
     function openDetailsFromScan() { currentDetailData = {...currentProductData, img_src:document.getElementById('previewImg').src}; setupDetailPage(); }
     function openDetailsFromHistory(index) { let h = JSON.parse(localStorage.getItem('hebao_history')||'[]'); currentDetailData = h[index]; setupDetailPage(); }
@@ -639,7 +669,6 @@
         if(d.item_type === 'recipe') { 
             renderRecipes('', d.pairing); 
         } else { 
-            // 💡 判断如果本地已经有了 pairing/alternatives 数据，直接秒回渲染！
             if ((d.pairing && String(d.pairing).trim() !== '') || d.alternatives) {
                 renderRecipes(d.alternatives || '', d.pairing);
             } else {
@@ -655,7 +684,6 @@
             const dName = currentDetailData.dutch_name;
             let data;
 
-            // 💡 1. 如果刚才偷偷预加载好了，直接拿来用，0秒延迟！
             if (backgroundPrefetchTask[dName]) {
                 data = await backgroundPrefetchTask[dName];
                 delete backgroundPrefetchTask[dName]; 
@@ -667,11 +695,9 @@
             if(data && (data.alternatives || data.pairing)) {
                 renderRecipes(data.alternatives, data.pairing);
                 
-                // 💡 2. 存入当前会话对象
                 currentDetailData.alternatives = data.alternatives;
                 currentDetailData.pairing = data.pairing;
 
-                // 💡 3. 永久更新到足迹里！
                 let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
                 let index = history.findIndex(i => i.dutch_name === dName);
                 if(index !== -1) {
@@ -680,7 +706,6 @@
                     localStorage.setItem('hebao_history', JSON.stringify(history));
                 }
 
-                // 💡 4. 深度的报告存进数据库造福他人
                 fetch('/api/save', { 
                     method:'POST', 
                     headers:{'Content-Type':'application/json'}, 
@@ -729,7 +754,7 @@
     }
 
     // ==========================================
-    // 社区逻辑 + 大V认证
+    // 社区逻辑
     // ==========================================
     function openShareCommunityModal() {
         const d = currentDetailData; 
@@ -905,15 +930,12 @@
         h.forEach((item, index) => { if(item.my_vote) updateUgcStyle(index, item.my_vote); }); 
     }
 
-    // 足迹删除与清空功能
     function deleteFootprintItem(index, event) {
-        event.stopPropagation(); // 阻止意外跳进详情页
+        event.stopPropagation(); 
         if(!confirm("确定要把这条记录从足迹里抹除吗？")) return;
-        
         let h = JSON.parse(localStorage.getItem('hebao_history') || '[]');
         h.splice(index, 1);
         localStorage.setItem('hebao_history', JSON.stringify(h));
-        
         renderFootprints(); 
     }
 
@@ -1006,7 +1028,6 @@
                 trendingLikesData = data.topLikes || [];
                 trendingDislikesData = data.topDislikes || [];
                 
-                // 💡 强制覆盖本地离线搜索库，解决扫不到最新添加商品的问题！
                 const allTrending = [...trendingLikesData, ...trendingDislikesData];
                 localStorage.setItem('hebao_offline_db', JSON.stringify(allTrending));
                 
@@ -1026,7 +1047,6 @@
             if (type === 'like') { if (index === 0) badgeClass = 'rank-1'; else if (index === 1) badgeClass = 'rank-2'; else if (index === 2) badgeClass = 'rank-3'; } else { badgeClass = 'rank-bad'; } 
             const score = type === 'like' ? item.likes : item.dislikes; const icon = type === 'like' ? '👍' : '💣'; const colorClass = type === 'like' ? 'score-like' : 'score-dislike'; const label = type === 'like' ? '狂赞' : '狂踩'; 
             
-            // 点击卡片进入详情
             html += `<div class="trending-card" style="cursor:pointer;" onclick="openDetailsFromTrending('${type}', ${index})">
                 <div class="rank-badge ${badgeClass}">TOP ${index + 1}</div>
                 <div class="t-info">
@@ -1046,18 +1066,15 @@
     function openDetailsFromTrending(type, index) {
         const targetList = type === 'like' ? trendingLikesData : trendingDislikesData;
         const item = targetList[index];
-        
-        // 组装数据欺骗详情页的渲染逻辑
         currentDetailData = {
             ...item,
             img_src: item.image_url || "https://images.unsplash.com/photo-1544025162-8315ea07659b?q=80&w=600&auto=format&fit=crop", 
             item_type: 'product'
         };
-        
         setupDetailPage();
     }
 
-    // ================= 省钱秘籍手风琴交互 =================
+    // ================= 省钱秘籍专属交互 =================
     function toggleAccordion(element) {
         const isActive = element.classList.contains('active');
         document.querySelectorAll('.tips-header').forEach(el => {
@@ -1071,7 +1088,31 @@
         }
     }
 
-    // ================= 新增：HTML5 实景扫码引擎 =================
+    function openReportModal() {
+        document.getElementById('reportTipTitle').value = '';
+        document.getElementById('reportTipText').value = '';
+        document.getElementById('reportTipModal').style.display = 'flex';
+    }
+
+    function submitReportTip() {
+        const title = document.getElementById('reportTipTitle').value.trim();
+        const text = document.getElementById('reportTipText').value.trim();
+        if(!title || !text) return alert("标题和内容都得写点干货哦！");
+        
+        const btn = document.getElementById('btnSubmitReport');
+        btn.innerText = "提交中...";
+        btn.disabled = true;
+
+        // 模拟提交成功
+        setTimeout(() => {
+            alert("🎉 爆料成功！管家已收到，审核验证后就会上墙展示！感谢大厨分享！");
+            document.getElementById('reportTipModal').style.display = 'none';
+            btn.innerText = "🚀 提交线索";
+            btn.disabled = false;
+        }, 800);
+    }
+
+    // ================= HTML5 实景扫码引擎 =================
     let html5QrcodeScanner = null;
 
     function startBarcodeScan() {
