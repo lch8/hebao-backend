@@ -142,7 +142,9 @@
 
         /* ================= 导航与悬浮聊天 ================= */
         .tab-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 65px; background: #FFF; box-shadow: 0 -4px 20px rgba(0,0,0,0.06); display: flex; justify-content: space-around; align-items: center; z-index: 100; max-width: 600px; margin: 0 auto;}
-        .tab-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #9CA3AF; cursor: pointer; width: 25%; transition: 0.2s;}
+        
+        /* 修改：把 width 变成 20% 以容纳 5 个按钮 */
+        .tab-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #9CA3AF; cursor: pointer; width: 20%; transition: 0.2s;}
         .tab-item.active { color: #10B981; transform: translateY(-2px);}
         .tab-icon { font-size: 22px; margin-bottom: 4px; }
         .tab-text { font-size: 11px; font-weight: bold; }
@@ -187,6 +189,23 @@
         .t-score-label { font-size: 11px; font-weight: bold; opacity: 0.7; }
         .score-like { color: #10B981; }
         .score-dislike { color: #EF4444; }
+
+        /* ================= 5. 省钱秘籍专属 UI ================= */
+        .tips-accordion { margin: 0 16px 15px; background: #FFF; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); overflow: hidden; border: 1px solid #E5E7EB; }
+        .tips-header { padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; font-weight: 900; font-size: 16px; color: #111827; cursor: pointer; background: #F9FAFB; user-select: none; transition: background 0.2s;}
+        .tips-header:active { background: #F3F4F6; }
+        .tips-header.active { background: #FFF; border-bottom: 1px dashed #E5E7EB; color: #10B981; }
+        .tips-title-wrap { display: flex; align-items: center; gap: 10px; }
+        .tips-icon { font-size: 22px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); }
+        .tips-arrow { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); color: #9CA3AF; font-size: 12px;}
+        .tips-header.active .tips-arrow { transform: rotate(180deg); color: #10B981; }
+        .tips-content { max-height: 0; overflow: hidden; transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1); background: #FFF; }
+        .tips-inner { padding: 15px 20px; font-size: 14px; color: #4B5563; line-height: 1.7; }
+        .tips-inner ul { padding-left: 20px; margin: 0; }
+        .tips-inner li { margin-bottom: 12px; }
+        .tips-inner li::marker { color: #10B981; }
+        .tips-inner strong { color: #111827; background: linear-gradient(120deg, #D1FAE5 0%, #ECFDF5 100%); padding: 0 4px; border-radius: 4px;}
+        .tips-highlight { display: inline-block; background: #FEF2F2; color: #EF4444; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; margin-left: 5px; border: 1px solid #FECACA;}
     </style>
 </head>
 
@@ -205,19 +224,14 @@
     <div class="tab-item" onclick="switchTab('trending', this)">
         <span class="tab-icon">🔥</span><span class="tab-text">榜单</span>
     </div>
+    <div class="tab-item" onclick="switchTab('tips', this)">
+        <span class="tab-icon">💰</span><span class="tab-text">省钱</span>
+    </div>
 </div>
 
 <div class="sticky-chat-bar" id="stickyChatBar">
     <input type="text" id="askInput" class="chat-input" placeholder="问管家：这玩意怎么吃？" onkeypress="if(event.key==='Enter') sendQuestion()">
     <button class="chat-send-btn" id="sendBtn" onclick="sendQuestion()">↑</button>
-</div>
-
-<div id="scannerModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:#000; z-index:9999; flex-direction:column;">
-    <div style="padding: 15px 20px; display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.8); color:#FFF; z-index: 10;">
-        <span style="font-weight:900; font-size:16px;">对准商品条形码</span>
-        <button onclick="closeScanner()" style="background:none; border:none; color:#FFF; font-size:24px; cursor:pointer;">✕</button>
-    </div>
-    <div id="reader" style="width:100%; flex:1; background:#000;"></div>
 </div>
 
 <div class="container">
@@ -235,8 +249,7 @@
         <div class="search-container">
             <span style="font-size: 18px; padding-left: 5px;">🔍</span>
             <input type="text" id="mainSearchInput" class="search-input" placeholder="搜商品名(中/荷)或扫条码..." onkeypress="if(event.key==='Enter') executeSearch()">
-        <button class="barcode-btn" onclick="alert('即将接入 HTML5-QRCode 库进行实景扫码！')">|||</button>
-        <button class="barcode-btn" onclick="startBarcodeScan()">|||</button>
+            <button class="barcode-btn" onclick="startBarcodeScan()">|||</button>
         </div>
 
         <div class="home-grid" id="homeActionBox">
@@ -337,7 +350,85 @@
         <div id="trendingListLikes" style="display:block;"></div>
         <div id="trendingListDislikes" style="display:none;"></div>
     </div>
+
+    <div id="page-tips" class="page-section">
+        <div class="header">
+            <h1 class="title">省钱秘籍 💰</h1>
+            <div class="subtitle">留学生必看的超市薅羊毛终极指南</div>
+        </div>
+
+        <div class="tips-accordion">
+            <div class="tips-header" onclick="toggleAccordion(this)">
+                <div class="tips-title-wrap"><span class="tips-icon">🛒</span> <span>Albert Heijn (AH) 攻略</span> <span class="tips-highlight">必看</span></div>
+                <div class="tips-arrow">▼</div>
+            </div>
+            <div class="tips-content">
+                <div class="tips-inner">
+                    <ul>
+                        <li><strong>Bonus 卡是生命线：</strong> 没卡买AH纯纯大冤种。直接下载 AH App 注册电子卡。</li>
+                        <li><strong>Mijn Bonus Box (自选盲盒)：</strong> 每周五在 App 里可自选 5 个专属打折商品，经常能刷出你常买的肉和奶！</li>
+                        <li><strong>Koopzegels (神仙理财)：</strong> 在 App 里开启，每消费1欧买0.1欧的邮票，集满49欧换52欧。<b>年化收益率高达 6%</b>，比荷兰银行利息高多了！</li>
+                        <li><strong>35% 动态打折贴纸：</strong> 晚上7点后去冷鲜区，认准黄底黑字的 35% 贴纸（临期肉），买回去直接放冷冻室，完美捡漏。</li>
+                        <li><strong>Overblijvers (剩菜盲盒)：</strong> 每天下午在 App 里抢，5欧能买到原价15欧的面包或肉类盲盒，第二天吃毫无压力。</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="tips-accordion">
+            <div class="tips-header" onclick="toggleAccordion(this)">
+                <div class="tips-title-wrap"><span class="tips-icon">🐘</span> <span>Jumbo 攻略</span></div>
+                <div class="tips-arrow">▼</div>
+            </div>
+            <div class="tips-content">
+                <div class="tips-inner">
+                    <ul>
+                        <li><strong>Jumbo Extra's App：</strong> 结账扫码攒积分。积分不要乱用，攒着可以直接在 App 里换免费的洗衣液、卫生纸、甚至一大块三文鱼！</li>
+                        <li><strong>新鲜度承诺 (隐藏条款)：</strong> 如果你在货架上发现了今天到期的商品，拿给店员，他们会<b>免费把同款新鲜的送给你</b>！</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="tips-accordion">
+            <div class="tips-header" onclick="toggleAccordion(this)">
+                <div class="tips-title-wrap"><span class="tips-icon">💙</span> <span>Dirk & Lidl 平价战神</span></div>
+                <div class="tips-arrow">▼</div>
+            </div>
+            <div class="tips-content">
+                <div class="tips-inner">
+                    <ul>
+                        <li>不需要打折卡，日常标价就比 AH 打折还要便宜。极其适合买基础果蔬和卫生纸。</li>
+                        <li><strong>Lidl Plus App：</strong> 每周有免费送的小零食（比如买满10欧送一盒蓝莓），记得提前去 App 里点激活！</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="tips-accordion">
+            <div class="tips-header" onclick="toggleAccordion(this)">
+                <div class="tips-title-wrap"><span class="tips-icon">🥡</span> <span>Too Good To Go 盲盒</span></div>
+                <div class="tips-arrow">▼</div>
+            </div>
+            <div class="tips-content">
+                <div class="tips-inner">
+                    <ul>
+                        <li>留学生手机里必装的 App (TGTG)。专门拯救打烊超市和餐厅的剩菜。</li>
+                        <li><strong>强推：</strong> Dirk/AH 的面包盲盒（2.99欧能买够吃一个星期的面包）、周边的寿司店和中餐馆盲盒。抢到就是赚到！</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
 </div> 
+
+<div id="scannerModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:#000; z-index:9999; flex-direction:column;">
+    <div style="padding: 15px 20px; display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.8); color:#FFF; z-index: 10;">
+        <span style="font-weight:900; font-size:16px;">对准商品条形码</span>
+        <button onclick="closeScanner()" style="background:none; border:none; color:#FFF; font-size:24px; cursor:pointer;">✕</button>
+    </div>
+    <div id="reader" style="width:100%; flex:1; background:#000;"></div>
+</div>
 
 <div class="community-detail-modal" id="communityDetailModal">
     <div class="cd-content-wrap" onclick="event.stopPropagation()">
@@ -440,7 +531,7 @@
     function showPwaGuide() { document.getElementById('pwaGuideModal').style.display = 'flex'; }
     function closePwaBanner(event) { event.stopPropagation(); document.getElementById('pwaBanner').style.display = 'none'; localStorage.setItem('pwa_closed', 'true'); }
 
-    // 👇 新增榜单用的变量存储区
+    // 全局变量区
     let currentProductData = null; 
     let lastTab = 'scan'; 
     let currentDetailData = null; 
@@ -449,9 +540,9 @@
     let trendingLoaded = false;
     let trendingLikesData = [];      
     let trendingDislikesData = [];   
-    let backgroundPrefetchTask = {}; // 用来存偷偷在后台拉取的数据
+    let backgroundPrefetchTask = {}; 
 
-    // 🚨 修复好的 Tab 切换逻辑，包含了所有页面的入口！
+    // Tab 切换逻辑
     function switchTab(pageId, element) {
         document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
         if (element) { 
@@ -472,7 +563,6 @@
             if(chatBar) chatBar.style.display = 'none'; 
         }
         
-        // 确保对应的页面能自动拉取数据
         if (pageId === 'footprint') renderFootprints();
         if (pageId === 'community') loadCommunityFeed(); 
         if (pageId === 'trending' && !trendingLoaded) loadTrendingData();
@@ -502,7 +592,9 @@
             fetch('/api/save', { method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...data,userId:userUUID}) }).catch(()=>{});
         } catch (error) { alert("管家断网了：" + error.message); resetApp(); }
     }
+    
     function saveToLocalFootprint(data, img) { let h = JSON.parse(localStorage.getItem('hebao_history')||'[]'); if(!h.find(i=>i.dutch_name===data.dutch_name)){data.img_src=img;h.unshift(data);localStorage.setItem('hebao_history',JSON.stringify(h));} }
+    
     function renderResult(data) { 
         document.getElementById('scanOverlay').style.display='none';
         document.getElementById('miniResultCard').style.display='block';
@@ -511,7 +603,7 @@
         document.getElementById('miniInsight').innerText=data.insight||''; 
         document.getElementById('btnViewDetail').innerText = data.item_type==='recipe'?'👉 查看详细菜谱':'👉 查看完整报告'; 
 
-        // 👇 核心科技：用户在看上面这些字的时候，我们在后台偷偷呼叫 DeepSeek！
+        // 💡 预加载：在用户查看小卡片时，悄悄拉取深度的平替数据
         if (data.item_type === 'product' && (!data.pairing || !data.alternatives)) {
             backgroundPrefetchTask[data.dutch_name] = fetch('/api/detail', {
                 method:'POST', headers:{'Content-Type':'application/json'},
@@ -523,10 +615,11 @@
     function resetApp() { ['fileInput','ingredientInput','dishInput'].forEach(id=>document.getElementById(id).value=''); document.getElementById('previewContainer').style.display='none';document.getElementById('miniResultCard').style.display='none';document.getElementById('homeActionBox').style.display='grid'; }
 
     // ==========================================
-    // 详情页变装 & UGC 高亮优化版渲染逻辑
+    // 详情页逻辑（带有秒开优化）
     // ==========================================
     function openDetailsFromScan() { currentDetailData = {...currentProductData, img_src:document.getElementById('previewImg').src}; setupDetailPage(); }
     function openDetailsFromHistory(index) { let h = JSON.parse(localStorage.getItem('hebao_history')||'[]'); currentDetailData = h[index]; setupDetailPage(); }
+    
     function setupDetailPage() {
         const d = currentDetailData;
         document.getElementById('detailImg').src = d.img_src; 
@@ -546,18 +639,58 @@
         if(d.item_type === 'recipe') { 
             renderRecipes('', d.pairing); 
         } else { 
-            // 👇 重点改造这里：判断如果本地已经有了 pairing 数据，直接秒回渲染！
-            if (d.pairing && String(d.pairing).trim() !== '') {
+            // 💡 判断如果本地已经有了 pairing/alternatives 数据，直接秒回渲染！
+            if ((d.pairing && String(d.pairing).trim() !== '') || d.alternatives) {
                 renderRecipes(d.alternatives || '', d.pairing);
             } else {
-                // 只有在数据为空（比如刚扫出一个冷门新商品）时，才去呼叫 AI
                 document.getElementById('recipeCardList').innerHTML='<div style="text-align:center;color:#888;">正在提取全网反馈...</div>'; 
                 fetchDeepDetails(); 
             }
         }
         switchTab('details', null);
     }
-    async function fetchDeepDetails() { try { const res=await fetch('/api/detail',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({dutchName:currentDetailData.dutch_name})}); const data=await res.json(); if(res.ok){renderRecipes(data.alternatives, data.pairing);} } catch(e){} }
+
+    async function fetchDeepDetails() { 
+        try { 
+            const dName = currentDetailData.dutch_name;
+            let data;
+
+            // 💡 1. 如果刚才偷偷预加载好了，直接拿来用，0秒延迟！
+            if (backgroundPrefetchTask[dName]) {
+                data = await backgroundPrefetchTask[dName];
+                delete backgroundPrefetchTask[dName]; 
+            } else {
+                const res = await fetch('/api/detail',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({dutchName: dName})}); 
+                data = await res.json(); 
+            }
+
+            if(data && (data.alternatives || data.pairing)) {
+                renderRecipes(data.alternatives, data.pairing);
+                
+                // 💡 2. 存入当前会话对象
+                currentDetailData.alternatives = data.alternatives;
+                currentDetailData.pairing = data.pairing;
+
+                // 💡 3. 永久更新到足迹里！
+                let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
+                let index = history.findIndex(i => i.dutch_name === dName);
+                if(index !== -1) {
+                    history[index].alternatives = data.alternatives;
+                    history[index].pairing = data.pairing;
+                    localStorage.setItem('hebao_history', JSON.stringify(history));
+                }
+
+                // 💡 4. 深度的报告存进数据库造福他人
+                fetch('/api/save', { 
+                    method:'POST', 
+                    headers:{'Content-Type':'application/json'}, 
+                    body:JSON.stringify({...currentDetailData, userId: userUUID}) 
+                }).catch(()=>{});
+            } 
+        } catch(e){
+            document.getElementById('recipeCardList').innerHTML = '<div style="text-align:center;color:#EF4444;">网速开小差了，请返回重试</div>';
+        } 
+    }
     
     function renderRecipes(alts, pairing) {
         if(currentDetailData.item_type !== 'recipe' && alts) { 
@@ -733,7 +866,7 @@
     }
 
     // ==========================================
-    // 足迹、海报、打分、与榜单功能
+    // 足迹、海报、打分
     // ==========================================
     function renderFootprints() { 
         const listDiv = document.getElementById('footprintList'); 
@@ -772,26 +905,24 @@
         h.forEach((item, index) => { if(item.my_vote) updateUgcStyle(index, item.my_vote); }); 
     }
 
-    // ================= 新增：足迹删除功能 =================
+    // 足迹删除与清空功能
     function deleteFootprintItem(index, event) {
-        event.stopPropagation(); // 阻止点击垃圾桶时意外跳进详情页
+        event.stopPropagation(); // 阻止意外跳进详情页
         if(!confirm("确定要把这条记录从足迹里抹除吗？")) return;
         
         let h = JSON.parse(localStorage.getItem('hebao_history') || '[]');
-        h.splice(index, 1); // 删掉这一条
+        h.splice(index, 1);
         localStorage.setItem('hebao_history', JSON.stringify(h));
         
-        renderFootprints(); // 重新渲染列表，丝滑消失
+        renderFootprints(); 
     }
 
     function clearAllFootprints() {
         if(!confirm("⚠️ 确定要清空所有足迹吗？清空后无法恢复哦！")) return;
-        
-        localStorage.removeItem('hebao_history'); // 毁尸灭迹
-        renderFootprints(); // 页面变空
+        localStorage.removeItem('hebao_history'); 
+        renderFootprints(); 
     }
 
-    
     function handleInteraction(index, action, event) { 
         const btn = event.currentTarget; const emoji = btn.querySelector('.emoji'); 
         emoji.style.transform = 'scale(1.8) rotate(' + (action==='like'?'-15deg':'15deg') + ')'; 
@@ -859,7 +990,7 @@
     function wxLoadingMock(text) { const div = document.createElement('div'); div.id = 'mockLoadingBox'; div.style.cssText = 'position:fixed; top:45%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.8); color:#fff; padding:15px 25px; border-radius:10px; z-index:9999; font-size:14px;'; div.innerText = text; document.body.appendChild(div); }
     
     // ==========================================
-    // 修复并增强的榜单渲染与跳转逻辑
+    // 榜单渲染与跳转逻辑
     // ==========================================
     function switchTrendingTab(type, event) { 
         document.querySelectorAll('.t-tab').forEach(el => el.classList.remove('active')); 
@@ -875,7 +1006,7 @@
                 trendingLikesData = data.topLikes || [];
                 trendingDislikesData = data.topDislikes || [];
                 
-                // 👇 核心修复：每次拉取最新榜单，强制覆盖本地离线搜索库！
+                // 💡 强制覆盖本地离线搜索库，解决扫不到最新添加商品的问题！
                 const allTrending = [...trendingLikesData, ...trendingDislikesData];
                 localStorage.setItem('hebao_offline_db', JSON.stringify(allTrending));
                 
@@ -885,6 +1016,7 @@
             } else { throw new Error(data.error); } 
         } catch (e) { document.getElementById('trendingListLikes').innerHTML = '<div style="text-align:center; margin-top: 40px; color:#EF4444;">榜单拉取失败，请稍后重试</div>'; } 
     }
+
     function renderTrendingList(containerId, list, type) { 
         const container = document.getElementById(containerId); 
         if (!list || list.length === 0) { container.innerHTML = '<div style="text-align:center; color:#888; margin-top:40px;">暂无数据，快去扫码贡献第一票吧！</div>'; return; } 
@@ -894,7 +1026,7 @@
             if (type === 'like') { if (index === 0) badgeClass = 'rank-1'; else if (index === 1) badgeClass = 'rank-2'; else if (index === 2) badgeClass = 'rank-3'; } else { badgeClass = 'rank-bad'; } 
             const score = type === 'like' ? item.likes : item.dislikes; const icon = type === 'like' ? '👍' : '💣'; const colorClass = type === 'like' ? 'score-like' : 'score-dislike'; const label = type === 'like' ? '狂赞' : '狂踩'; 
             
-            // 点击卡片进入详情！
+            // 点击卡片进入详情
             html += `<div class="trending-card" style="cursor:pointer;" onclick="openDetailsFromTrending('${type}', ${index})">
                 <div class="rank-badge ${badgeClass}">TOP ${index + 1}</div>
                 <div class="t-info">
@@ -911,7 +1043,6 @@
         container.innerHTML = html; 
     }
 
-    // 从榜单直接跳转进入详情页
     function openDetailsFromTrending(type, index) {
         const targetList = type === 'like' ? trendingLikesData : trendingDislikesData;
         const item = targetList[index];
@@ -926,8 +1057,105 @@
         setupDetailPage();
     }
 
-    // ================= 新增：离线缓存与搜索引擎 =================
-    // 静默拉取榜单，建立本地商品库 (拯救弱网)
+    // ================= 省钱秘籍手风琴交互 =================
+    function toggleAccordion(element) {
+        const isActive = element.classList.contains('active');
+        document.querySelectorAll('.tips-header').forEach(el => {
+            el.classList.remove('active');
+            el.nextElementSibling.style.maxHeight = null;
+        });
+        if (!isActive) {
+            element.classList.add('active');
+            const content = element.nextElementSibling;
+            content.style.maxHeight = content.scrollHeight + "px"; 
+        }
+    }
+
+    // ================= 新增：HTML5 实景扫码引擎 =================
+    let html5QrcodeScanner = null;
+
+    function startBarcodeScan() {
+        document.getElementById('scannerModal').style.display = 'flex';
+        if (html5QrcodeScanner) {
+            html5QrcodeScanner.clear();
+        }
+        html5QrcodeScanner = new Html5Qrcode("reader");
+        const config = { 
+            fps: 10, 
+            qrbox: { width: 250, height: 150 },
+            aspectRatio: 1.0,
+            formatsToSupport: [
+                Html5QrcodeSupportedFormats.EAN_13, 
+                Html5QrcodeSupportedFormats.EAN_8,
+                Html5QrcodeSupportedFormats.UPC_A,
+                Html5QrcodeSupportedFormats.QR_CODE
+            ]
+        };
+
+        html5QrcodeScanner.start(
+            { facingMode: "environment" }, 
+            config, 
+            onScanSuccess
+        ).catch(err => {
+            alert("调用摄像头失败，请确保给了网页相机权限哦！");
+            closeScanner();
+        });
+    }
+
+    function onScanSuccess(decodedText, decodedResult) {
+        if (navigator.vibrate) navigator.vibrate(100);
+        closeScanner();
+        
+        const barcode = decodedText;
+        document.getElementById('mainSearchInput').value = barcode;
+
+        uiScanState("📡 正在全网检索条形码...");
+
+        const localDB = JSON.parse(localStorage.getItem('hebao_offline_db') || '[]');
+        const historyDB = JSON.parse(localStorage.getItem('hebao_history') || '[]');
+        const combinedDB = [...historyDB, ...localDB];
+
+        const found = combinedDB.find(item => item.barcode === barcode);
+
+        if (found) {
+            setTimeout(() => {
+                currentProductData = found;
+                renderResult(found);
+            }, 300);
+        } else {
+            fetch('/api/scan-barcode', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ barcode: barcode, userId: userUUID })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) throw new Error(data.error);
+                currentProductData = data;
+                renderResult(data);
+                
+                saveToLocalFootprint(data, data.image_url);
+                fetch('/api/save', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ ...data, userId: userUUID }) 
+                }).catch(()=>{});
+            })
+            .catch(err => {
+                alert(err.message);
+                resetApp();
+            });
+        }
+    }
+
+    function closeScanner() {
+        document.getElementById('scannerModal').style.display = 'none';
+        if (html5QrcodeScanner) {
+            html5QrcodeScanner.stop().catch(err => console.error("Failed to stop scanner", err));
+        }
+    }
+
+    // ================= 闪电搜索逻辑 =================
     async function prefetchLocalDB() {
         if (sessionStorage.getItem('hebao_synced')) return; 
         try {
@@ -944,22 +1172,20 @@
     }
     prefetchLocalDB();
 
-    // 闪电搜索逻辑
     function executeSearch() {
         const query = document.getElementById('mainSearchInput').value.trim().toLowerCase();
         if (!query) return;
 
         uiScanState("🔍 正在本地记忆中光速检索...");
         
-        // 优先查本地足迹和离线榜单库
         const localDB = JSON.parse(localStorage.getItem('hebao_offline_db') || '[]');
         const historyDB = JSON.parse(localStorage.getItem('hebao_history') || '[]');
         const combinedDB = [...historyDB, ...localDB];
 
-        // 去重并匹配
         const found = combinedDB.find(item => 
             (item.dutch_name && item.dutch_name.toLowerCase().includes(query)) || 
-            (item.chinese_name && item.chinese_name.toLowerCase().includes(query))
+            (item.chinese_name && item.chinese_name.toLowerCase().includes(query)) ||
+            (item.barcode && item.barcode === query)
         );
 
         if (found) {
@@ -975,103 +1201,6 @@
             }, 1500);
         }
     }
-
-    // ================= 新增：HTML5 实景扫码引擎 =================
-let html5QrcodeScanner = null;
-
-function startBarcodeScan() {
-    document.getElementById('scannerModal').style.display = 'flex';
-    
-    // 如果已经初始化过，就先清除
-    if (html5QrcodeScanner) {
-        html5QrcodeScanner.clear();
-    }
-
-    // 配置扫码器：专门为了扫超市条形码 (一维码) 优化
-    html5QrcodeScanner = new Html5Qrcode("reader");
-    const config = { 
-        fps: 10, 
-        qrbox: { width: 250, height: 150 }, // 矩形框，更适合条形码
-        aspectRatio: 1.0,
-        formatsToSupport: [
-            Html5QrcodeSupportedFormats.EAN_13, // 绝大多数欧洲超市条形码
-            Html5QrcodeSupportedFormats.EAN_8,
-            Html5QrcodeSupportedFormats.UPC_A,
-            Html5QrcodeSupportedFormats.QR_CODE
-        ]
-    };
-
-    // 优先调用后置摄像头
-    html5QrcodeScanner.start(
-        { facingMode: "environment" }, 
-        config, 
-        onScanSuccess
-    ).catch(err => {
-        alert("调用摄像头失败，请确保给了网页相机权限哦！");
-        closeScanner();
-    });
-}
-
-function onScanSuccess(decodedText, decodedResult) {
-        // 1. 扫码成功，震动反馈并关掉摄像头
-        if (navigator.vibrate) navigator.vibrate(100);
-        closeScanner();
-        
-        const barcode = decodedText;
-        document.getElementById('mainSearchInput').value = barcode;
-
-        // 2. 展现“正在检索”的酷炫 UI
-        uiScanState("📡 正在全网检索条形码...");
-
-        // 3. 先看看本地数据库有没有缓存过这个条形码或者商品
-        const localDB = JSON.parse(localStorage.getItem('hebao_offline_db') || '[]');
-        const historyDB = JSON.parse(localStorage.getItem('hebao_history') || '[]');
-        const combinedDB = [...historyDB, ...localDB];
-
-        const found = combinedDB.find(item => item.barcode === barcode);
-
-        if (found) {
-            // 本地有，直接秒出
-            setTimeout(() => {
-                currentProductData = found;
-                renderResult(found);
-            }, 300);
-        } else {
-            // 4. 本地没有，呼叫我们刚写的云端条码 API
-            fetch('/api/scan-barcode', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ barcode: barcode, userId: userUUID })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.error) throw new Error(data.error);
-                
-                // 成功啦！拿到了名字和点评
-                currentProductData = data;
-                renderResult(data);
-                
-                // 默默保存到足迹，并且传回云端存入 Turso 数据库
-                saveToLocalFootprint(data, data.image_url);
-                fetch('/api/save', { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify({ ...data, userId: userUUID }) 
-                }).catch(()=>{});
-            })
-            .catch(err => {
-                alert(err.message);
-                resetApp();
-            });
-        }
-    }
-    
-function closeScanner() {
-    document.getElementById('scannerModal').style.display = 'none';
-    if (html5QrcodeScanner) {
-        html5QrcodeScanner.stop().catch(err => console.error("Failed to stop scanner", err));
-    }
-}
 </script>
 </body>
 </html>
