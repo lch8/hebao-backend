@@ -2,8 +2,8 @@
 // ⚠️ 运行前请确保你的 Node.js 版本在 18 以上（原生支持 fetch）
 
 // 1. 替换成你真实的 Turso 凭证
-const DB_URL = 'https://你的数据库名字.turso.io'; // 注意：把 libsql:// 换成 https://
-const AUTH_TOKEN = '你的_TURSO_AUTH_TOKEN';
+const DB_URL = 'https://hebao-db-lch8.aws-eu-west-1.turso.io'; // 注意：把 libsql:// 换成 https://
+const AUTH_TOKEN = 'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzI2NjAyNzgsImlkIjoiN2JlNjA1NzctOGIxZC00MDRiLWI4NGItZTVjNDdhOTI4MzNjIiwicmlkIjoiZDQ0YThjMWEtODU5Ny00ZTMzLTljNGMtNWFiYjNmNjg0OWI1In0.7DuXzQrxWJFO3fmuyTsi1KKrNjCbLg2lw2N2J2ST_Dx9w6NDlJXJYy9fSOVxkidbqosMkt126dPBXeQ-bRTrCA';
 
 // 2. 准备种子数据 (这里我先帮你写好了 6 个最经典的“神级/魔鬼”单品)
 const seedData = [
