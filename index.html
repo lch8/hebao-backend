@@ -233,6 +233,12 @@
         
         .btn-report-tip { background: #111827; color: #FFF; border: none; padding: 16px; border-radius: 20px; font-size: 15px; font-weight: 900; width: calc(100% - 32px); margin: 10px 16px 30px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 8px 20px rgba(17,24,39,0.2); cursor: pointer; transition: 0.2s; }
         .btn-report-tip:active { transform: scale(0.96); }
+
+        /* ================= 免责声明专属样式 ================= */
+        .tips-disclaimer { margin: 0 16px 20px; padding: 15px; background: #FFFBEB; border: 1px dashed #FCD34D; border-radius: 12px; font-size: 11px; color: #B45309; line-height: 1.6; }
+        .tips-disclaimer .update-time { font-weight: bold; margin-bottom: 6px; color: #D97706; display: flex; align-items: center; gap: 4px;}
+        .tips-disclaimer b { color: #92400E; }
+        
     </style>
 </head>
 
@@ -388,7 +394,13 @@
 
         <div id="tipsAccordionContainer"></div>
 
-        <button class="btn-report-tip" onclick="openReportModal()">📢 我要爆料薅羊毛线索</button>
+        <div class="tips-disclaimer">
+            <div class="update-time"><span>⏳</span> 最后由管家更新于：2024年5月</div>
+            ⚠️ <b>防杠声明：</b> 本页秘籍均来自民间留学生口口相传，仅供参考。荷兰商家的规则（如 Jumbo 退换货条款、NS 打折政策等）随时可能发生变动。<br><br>
+            请务必以官方最新条款及实体店最终解释权为准。若遇条款变更导致未能薅到羊毛或产生尴尬，本管家概不负责哦！发现错误？请立刻点击下方按钮打脸管家！
+        </div>
+
+        <button class="btn-report-tip" onclick="openReportModal()">📢 我要爆料新羊毛 / 疯狂纠错</button>
     </div>
 </div> 
 
@@ -402,13 +414,19 @@
 
 <div class="modal-overlay" id="reportTipModal">
     <div class="modal-content">
-        <h3 style="margin-top:0; color: #111827;">📢 爆料新羊毛</h3>
-        <p style="font-size: 12px; color: #6B7280; margin-top: 0;">发现新的省钱神技？告诉管家，人工审核后收录上墙展示！</p>
-        <input type="text" id="reportTipTitle" class="modal-input" placeholder="一句话概括 (例: Jumbo新盲盒)">
-        <textarea id="reportTipText" class="modal-textarea" style="height: 100px;" placeholder="具体怎么操作？怎么最省钱..."></textarea>
+        <h3 style="margin-top:0; color: #111827;">📢 爆料 / 纠错</h3>
+        <p style="font-size: 12px; color: #6B7280; margin-top: 0;">发现新羊毛？或者管家写的信息过期/错误了？快告诉我们，审核后立刻上墙/修改！</p>
+        
+        <select id="reportTipType" class="modal-input" style="background:#F9FAFB; margin-bottom:10px;">
+            <option value="爆料">✨ 爆料新羊毛</option>
+            <option value="纠错">🔨 怒锤错误信息</option>
+        </select>
+
+        <input type="text" id="reportTipTitle" class="modal-input" placeholder="一句话概括 (例: Jumbo免单取消了!)" style="margin-top:0;">
+        <textarea id="reportTipText" class="modal-textarea" style="height: 100px;" placeholder="具体是怎么回事..."></textarea>
         <div style="margin-top: 20px; display: flex; gap: 10px;">
             <button style="flex:1; padding: 14px; background: #F3F4F6; color: #4B5563; border: none; border-radius: 12px; font-weight: bold; cursor: pointer;" onclick="document.getElementById('reportTipModal').style.display='none'">取消</button>
-            <button id="btnSubmitReport" style="flex:2; padding: 14px; background: #10B981; color: #FFF; border: none; border-radius: 12px; font-weight: bold; cursor: pointer;" onclick="submitReportTip()">🚀 提交线索</button>
+            <button id="btnSubmitReport" style="flex:2; padding: 14px; background: #10B981; color: #FFF; border: none; border-radius: 12px; font-weight: bold; cursor: pointer;" onclick="submitReportTip()">🚀 提交给管家</button>
         </div>
     </div>
 </div>
@@ -1134,6 +1152,7 @@
     }
 
     function submitReportTip() {
+        const type = document.getElementById('reportTipType').value;
         const title = document.getElementById('reportTipTitle').value.trim();
         const text = document.getElementById('reportTipText').value.trim();
         if(!title || !text) return alert("标题和内容都得写点干货哦！");
@@ -1143,9 +1162,12 @@
         btn.disabled = true;
 
         setTimeout(() => {
-            alert("🎉 爆料成功！管家已收到，审核验证后就会上墙展示！感谢大厨分享！");
+            const msg = type === '纠错' 
+                ? "🙏 感谢纠错！管家马上核实修改，避免更多人踩坑！" 
+                : "🎉 爆料成功！管家已收到，审核验证后就会上墙展示！";
+            alert(msg);
             document.getElementById('reportTipModal').style.display = 'none';
-            btn.innerText = "🚀 提交线索";
+            btn.innerText = "🚀 提交给管家";
             btn.disabled = false;
         }, 800);
     }
