@@ -436,6 +436,7 @@
     let trendingLoaded = false;
     let trendingLikesData = [];      
     let trendingDislikesData = [];   
+    let backgroundPrefetchTask = {}; // 用来存偷偷在后台拉取的数据
 
     // 🚨 修复好的 Tab 切换逻辑，包含了所有页面的入口！
     function switchTab(pageId, element) {
@@ -489,7 +490,23 @@
         } catch (error) { alert("管家断网了：" + error.message); resetApp(); }
     }
     function saveToLocalFootprint(data, img) { let h = JSON.parse(localStorage.getItem('hebao_history')||'[]'); if(!h.find(i=>i.dutch_name===data.dutch_name)){data.img_src=img;h.unshift(data);localStorage.setItem('hebao_history',JSON.stringify(h));} }
-    function renderResult(data) { document.getElementById('scanOverlay').style.display='none';document.getElementById('miniResultCard').style.display='block';document.getElementById('miniChineseName').innerText=data.chinese_name||'未知';document.getElementById('miniDutchName').innerText=data.dutch_name||'';document.getElementById('miniInsight').innerText=data.insight||''; document.getElementById('btnViewDetail').innerText = data.item_type==='recipe'?'👉 查看详细菜谱':'👉 查看完整报告'; }
+    function renderResult(data) { 
+        document.getElementById('scanOverlay').style.display='none';
+        document.getElementById('miniResultCard').style.display='block';
+        document.getElementById('miniChineseName').innerText=data.chinese_name||'未知';
+        document.getElementById('miniDutchName').innerText=data.dutch_name||'';
+        document.getElementById('miniInsight').innerText=data.insight||''; 
+        document.getElementById('btnViewDetail').innerText = data.item_type==='recipe'?'👉 查看详细菜谱':'👉 查看完整报告'; 
+
+        // 👇 核心科技：用户在看上面这些字的时候，我们在后台偷偷呼叫 DeepSeek！
+        if (data.item_type === 'product' && (!data.pairing || !data.alternatives)) {
+            backgroundPrefetchTask[data.dutch_name] = fetch('/api/detail', {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({dutchName: data.dutch_name})
+            }).then(r => r.json());
+        }
+    }
+    
     function resetApp() { ['fileInput','ingredientInput','dishInput'].forEach(id=>document.getElementById(id).value=''); document.getElementById('previewContainer').style.display='none';document.getElementById('miniResultCard').style.display='none';document.getElementById('homeActionBox').style.display='grid'; }
 
     // ==========================================
