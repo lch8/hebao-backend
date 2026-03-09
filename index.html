@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>荷包管家 🇳🇱 - 荷兰超市避雷神器</title>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     <style>
         /* 🎨 全局极简背景 */
         body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #F3F4F6; color: #111827; }
@@ -211,6 +212,14 @@
     <button class="chat-send-btn" id="sendBtn" onclick="sendQuestion()">↑</button>
 </div>
 
+<div id="scannerModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:#000; z-index:9999; flex-direction:column;">
+    <div style="padding: 15px 20px; display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.8); color:#FFF; z-index: 10;">
+        <span style="font-weight:900; font-size:16px;">对准商品条形码</span>
+        <button onclick="closeScanner()" style="background:none; border:none; color:#FFF; font-size:24px; cursor:pointer;">✕</button>
+    </div>
+    <div id="reader" style="width:100%; flex:1; background:#000;"></div>
+</div>
+
 <div class="container">
     <div id="page-scan" class="page-section active">
         <div class="header">
@@ -226,7 +235,8 @@
         <div class="search-container">
             <span style="font-size: 18px; padding-left: 5px;">🔍</span>
             <input type="text" id="mainSearchInput" class="search-input" placeholder="搜商品名(中/荷)或扫条码..." onkeypress="if(event.key==='Enter') executeSearch()">
-            <button class="barcode-btn" onclick="alert('即将接入 HTML5-QRCode 库进行实景扫码！')">|||</button>
+        <button class="barcode-btn" onclick="alert('即将接入 HTML5-QRCode 库进行实景扫码！')">|||</button>
+        <button class="barcode-btn" onclick="startBarcodeScan()">|||</button>
         </div>
 
         <div class="home-grid" id="homeActionBox">
@@ -935,6 +945,66 @@
             }, 1500);
         }
     }
+
+    // ================= 新增：HTML5 实景扫码引擎 =================
+let html5QrcodeScanner = null;
+
+function startBarcodeScan() {
+    document.getElementById('scannerModal').style.display = 'flex';
+    
+    // 如果已经初始化过，就先清除
+    if (html5QrcodeScanner) {
+        html5QrcodeScanner.clear();
+    }
+
+    // 配置扫码器：专门为了扫超市条形码 (一维码) 优化
+    html5QrcodeScanner = new Html5Qrcode("reader");
+    const config = { 
+        fps: 10, 
+        qrbox: { width: 250, height: 150 }, // 矩形框，更适合条形码
+        aspectRatio: 1.0,
+        formatsToSupport: [
+            Html5QrcodeSupportedFormats.EAN_13, // 绝大多数欧洲超市条形码
+            Html5QrcodeSupportedFormats.EAN_8,
+            Html5QrcodeSupportedFormats.UPC_A,
+            Html5QrcodeSupportedFormats.QR_CODE
+        ]
+    };
+
+    // 优先调用后置摄像头
+    html5QrcodeScanner.start(
+        { facingMode: "environment" }, 
+        config, 
+        onScanSuccess
+    ).catch(err => {
+        alert("调用摄像头失败，请确保给了网页相机权限哦！");
+        closeScanner();
+    });
+}
+
+function onScanSuccess(decodedText, decodedResult) {
+    // 扫码成功！振动一下给予反馈 (仅支持部分安卓设备)
+    if (navigator.vibrate) navigator.vibrate(100);
+    
+    // 关闭扫码界面
+    closeScanner();
+    
+    // 把扫出来的数字塞进搜索框，并自动触发搜索！
+    const searchInput = document.getElementById('mainSearchInput');
+    searchInput.value = decodedText;
+    
+    // 稍微延迟一下，增加体验感
+    setTimeout(() => {
+        executeSearch();
+    }, 300);
+}
+
+function closeScanner() {
+    document.getElementById('scannerModal').style.display = 'none';
+    if (html5QrcodeScanner) {
+        html5QrcodeScanner.stop().catch(err => console.error("Failed to stop scanner", err));
+    }
+}
 </script>
 </body>
 </html>
