@@ -189,7 +189,7 @@
         .score-like { color: #10B981; }
         .score-dislike { color: #EF4444; }
 
-        /* ================= 5. 省钱秘籍专属 UI ================= */
+        /* ================= 5. 终极版：嵌套卡片式省钱秘籍 ================= */
         .quick-links-wrap { display: flex; overflow-x: auto; gap: 12px; padding: 0 20px 15px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
         .quick-links-wrap::-webkit-scrollbar { display: none; }
         .ql-card { flex: 0 0 auto; width: 140px; background: #FFF; border-radius: 16px; padding: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); border: 1px solid #E5E7EB; text-decoration: none; display: flex; flex-direction: column; align-items: center; justify-content: center; scroll-snap-align: start; transition: transform 0.2s; }
@@ -198,30 +198,39 @@
         .ql-title { font-size: 13px; font-weight: 900; color: #111827; }
         .ql-sub { font-size: 11px; color: #6B7280; margin-top: 2px; }
 
-        .tips-accordion { margin: 0 16px 15px; background: #FFF; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); overflow: hidden; border: 1px solid #E5E7EB; }
-        .tips-header { padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; font-weight: 900; font-size: 16px; color: #111827; cursor: pointer; background: #F9FAFB; user-select: none; transition: background 0.2s;}
+        /* 一级分类 (大类) */
+        .tips-accordion { margin: 0 16px 15px; background: #FFF; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #E5E7EB; overflow: hidden; }
+        .tips-header { padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; font-weight: 900; font-size: 16px; color: #111827; cursor: pointer; background: #F9FAFB; user-select: none; transition: background 0.2s;}
         .tips-header:active { background: #F3F4F6; }
-        .tips-header.active { background: #FFF; border-bottom: 1px dashed #E5E7EB; color: #10B981; }
+        .tips-header.active { background: #FFF; border-bottom: 1px solid #F3F4F6; color: #10B981; }
         .tips-title-wrap { display: flex; align-items: center; gap: 10px; }
-        .tips-icon { font-size: 22px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); }
+        .tips-icon { font-size: 22px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));}
         .tips-arrow { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); color: #9CA3AF; font-size: 12px;}
         .tips-header.active .tips-arrow { transform: rotate(180deg); color: #10B981; }
         .tips-content { max-height: 0; overflow: hidden; transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1); background: #FFF; }
-        /* ================= 升级版：微卡片式秘籍排版 ================= */
-        .tips-inner { padding: 15px; background: #FFF; }
-        .tip-group-title { font-size: 12px; font-weight: 900; color: #9CA3AF; letter-spacing: 1px; margin: 15px 0 8px 5px; text-transform: uppercase; display: flex; align-items: center; gap: 6px;}
-        .tip-group-title::after { content: ''; flex: 1; height: 1px; background: #F3F4F6; }
-        .tip-group-title:first-child { margin-top: 0; }
-        
-        .tip-item { background: #F9FAFB; border-radius: 12px; padding: 12px 15px; margin-bottom: 10px; border: 1px solid #F3F4F6; position: relative; overflow: hidden; transition: 0.2s;}
-        .tip-item:active { background: #F3F4F6; transform: scale(0.98); }
-        .tip-item::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: #10B981; }
-        
-        .tip-title { font-size: 14px; font-weight: 900; color: #111827; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+        .tips-inner { padding: 15px; }
+
+        /* 二级分类 (商店品牌卡片) */
+        .store-card { background: #F9FAFB; border-radius: 14px; border: 1px solid #E5E7EB; margin-bottom: 12px; overflow: hidden; transition: 0.2s; }
+        .store-card:last-child { margin-bottom: 0; }
+        .store-header { padding: 14px 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: #FFF; font-weight: 900; font-size: 15px; color: #374151; }
+        .store-header:active { background: #F9FAFB; }
+        .store-header.active { border-bottom: 1px dashed #E5E7EB; color: #111827; background: #F9FAFB;}
+        .s-icon-name { display: flex; align-items: center; gap: 10px; }
+        .s-logo { font-size: 16px; background: #F3F4F6; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
+        .store-arrow { font-size: 10px; color: #9CA3AF; transition: transform 0.3s; }
+        .store-header.active .store-arrow { transform: rotate(180deg); color: #D97706; }
+        .store-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+        .store-inner { padding: 12px; background: #F9FAFB; }
+
+        /* 三级内容 (具体干货微卡片) */
+        .tip-item { background: #FFF; border-radius: 10px; padding: 12px; margin-bottom: 10px; border: 1px solid #E5E7EB; border-left: 4px solid #10B981; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .tip-item:last-child { margin-bottom: 0; }
+        .tip-title { font-size: 14px; font-weight: 900; color: #111827; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
         .tip-desc { font-size: 13px; color: #4B5563; line-height: 1.6; }
         .tip-kw { color: #D97706; font-weight: bold; background: #FFFBEB; padding: 1px 5px; border-radius: 6px; margin: 0 2px;}
-        
         .tips-highlight { display: inline-block; background: #FEF2F2; color: #EF4444; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; margin-left: 5px; border: 1px solid #FECACA;}
+        
         .btn-report-tip { background: #111827; color: #FFF; border: none; padding: 16px; border-radius: 20px; font-size: 15px; font-weight: 900; width: calc(100% - 32px); margin: 10px 16px 30px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 8px 20px rgba(17,24,39,0.2); cursor: pointer; transition: 0.2s; }
         .btn-report-tip:active { transform: scale(0.96); }
     </style>
@@ -394,28 +403,43 @@
             </div>
             <div class="tips-content">
                 <div class="tips-inner">
-                    <div class="tip-group-title">Albert Heijn (AH)</div>
-                    <div class="tip-item">
-                        <div class="tip-title">📈 Koopzegels 神仙理财</div>
-                        <div class="tip-desc">去App里开启，买满49欧换52欧，<span class="tip-kw">年化收益率6%</span>，完爆荷兰银行存款利息！</div>
+                    <div class="store-card">
+                        <div class="store-header" onclick="toggleStoreCard(this)">
+                            <div class="s-icon-name"><div class="s-logo">🟦</div> Albert Heijn (AH)</div><div class="store-arrow">▼</div>
+                        </div>
+                        <div class="store-content">
+                            <div class="store-inner">
+                                <div class="tip-item">
+                                    <div class="tip-title">📈 Koopzegels 神仙理财</div>
+                                    <div class="tip-desc">去App里开启，买满49欧换52欧，<span class="tip-kw">年化收益率6%</span>，完爆荷兰银行利息！</div>
+                                </div>
+                                <div class="tip-item">
+                                    <div class="tip-title">🏷️ 35% 动态打折贴纸</div>
+                                    <div class="tip-desc">每天<span class="tip-kw">晚上7点后</span>去冷鲜区，认准黄底黑字的临期贴纸，买回去直接冻冰箱。</div>
+                                </div>
+                                <div class="tip-item">
+                                    <div class="tip-title">📦 Overblijvers 剩菜盲盒</div>
+                                    <div class="tip-desc">每天下午在App里蹲守，<span class="tip-kw">5欧买15欧</span>的面包或肉类盲盒，极其丰盛。</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="tip-item">
-                        <div class="tip-title">🏷️ 35% 动态打折贴纸</div>
-                        <div class="tip-desc">每天<span class="tip-kw">晚上7点后</span>去冷鲜区，认准黄底黑字的临期贴纸，买回去直接冻冰箱。</div>
-                    </div>
-                    <div class="tip-item">
-                        <div class="tip-title">📦 Overblijvers 剩菜盲盒</div>
-                        <div class="tip-desc">每天下午在App里蹲守，<span class="tip-kw">5欧买15欧</span>的面包或肉类盲盒，极其丰盛。</div>
-                    </div>
-
-                    <div class="tip-group-title">Jumbo & 平价战神</div>
-                    <div class="tip-item">
-                        <div class="tip-title">✨ Jumbo 新鲜度霸王条款</div>
-                        <div class="tip-desc">发现货架上有<span class="tip-kw">今天到期</span>的商品，直接拿给店员，免费换同款新鲜的！</div>
-                    </div>
-                    <div class="tip-item" style="margin-bottom: 0;">
-                        <div class="tip-title">🍩 Lidl Plus 每周白嫖</div>
-                        <div class="tip-desc">App里每周都有免费送的小零食或水果，结账前<span class="tip-kw">务必点击激活</span>。</div>
+                    <div class="store-card">
+                        <div class="store-header" onclick="toggleStoreCard(this)">
+                            <div class="s-icon-name"><div class="s-logo">🟨</div> Jumbo & 平价战神</div><div class="store-arrow">▼</div>
+                        </div>
+                        <div class="store-content">
+                            <div class="store-inner">
+                                <div class="tip-item">
+                                    <div class="tip-title">✨ Jumbo 新鲜度霸王条款</div>
+                                    <div class="tip-desc">发现货架上有<span class="tip-kw">今天到期</span>的商品，直接拿给店员，免费换同款新鲜的！</div>
+                                </div>
+                                <div class="tip-item">
+                                    <div class="tip-title">🍩 Lidl Plus 每周白嫖</div>
+                                    <div class="tip-desc">App里每周都有免费送的小零食或水果，结账前<span class="tip-kw">务必点击激活</span>。</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -428,21 +452,39 @@
             </div>
             <div class="tips-content">
                 <div class="tips-inner">
-                    <div class="tip-item">
-                        <div class="tip-title">⚡ Zalando Lounge 截胡法</div>
-                        <div class="tip-desc">每天早7点抢名牌2折起。它有<span class="tip-kw">20分钟保护期</span>，没货别走，20分钟后狂刷截胡别人的弃单！</div>
+                    <div class="store-card">
+                        <div class="store-header" onclick="toggleStoreCard(this)">
+                            <div class="s-icon-name"><div class="s-logo">👠</div> Zalando & Vinted</div><div class="store-arrow">▼</div>
+                        </div>
+                        <div class="store-content">
+                            <div class="store-inner">
+                                <div class="tip-item">
+                                    <div class="tip-title">⚡ Zalando Lounge 截胡法</div>
+                                    <div class="tip-desc">早7点抢名牌2折起。购物车有<span class="tip-kw">20分钟保护期</span>，没货别走，20分钟后狂刷截胡别人的弃单！</div>
+                                </div>
+                                <div class="tip-item">
+                                    <div class="tip-title">♻️ Vinted 屠龙刀杀价</div>
+                                    <div class="tip-desc">搜“全新带吊牌”，用出价功能<span class="tip-kw">按标价7-8折砍</span>。邮费选送到驿站只要2.99欧。</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="tip-item">
-                        <div class="tip-title">♻️ Vinted 屠龙刀杀价</div>
-                        <div class="tip-desc">欧洲闲鱼。搜“全新带吊牌”，用出价功能<span class="tip-kw">按标价7-8折砍</span>。邮费选送到驿站只要2.99欧。</div>
-                    </div>
-                    <div class="tip-item">
-                        <div class="tip-title">🏬 TK Maxx 认准金标</div>
-                        <div class="tip-desc">别在一楼看杂牌，直奔二楼找 <span class="tip-kw">Gold Label</span> (金标区)，全是大牌轻奢的骨折价。</div>
-                    </div>
-                    <div class="tip-item" style="margin-bottom: 0;">
-                        <div class="tip-title">🎓 学生外挂双雄</div>
-                        <div class="tip-desc">下载 <span class="tip-kw">UNiDAYS</span> 或 <span class="tip-kw">StudentBeans</span>，用大学邮箱注册，买Nike/衣服前无中生有额外八折码。</div>
+                    <div class="store-card">
+                        <div class="store-header" onclick="toggleStoreCard(this)">
+                            <div class="s-icon-name"><div class="s-logo">🏬</div> 线下捡漏 & 学生福利</div><div class="store-arrow">▼</div>
+                        </div>
+                        <div class="store-content">
+                            <div class="store-inner">
+                                <div class="tip-item">
+                                    <div class="tip-title">🛍️ TK Maxx 认准金标</div>
+                                    <div class="tip-desc">别在一楼看杂牌，直奔二楼找 <span class="tip-kw">Gold Label</span> (金标区)，全是大牌轻奢的骨折价。</div>
+                                </div>
+                                <div class="tip-item">
+                                    <div class="tip-title">🎓 学生外挂双雄</div>
+                                    <div class="tip-desc">用大学邮箱注册 <span class="tip-kw">UNiDAYS</span> 或 <span class="tip-kw">StudentBeans</span>，网购前无中生有额外八折码。</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -455,17 +497,22 @@
             </div>
             <div class="tips-content">
                 <div class="tips-inner">
-                    <div class="tip-item">
-                        <div class="tip-title">🎫 NS Flex 火车打折卡</div>
-                        <div class="tip-desc">每月约5欧月费，周末全天和非高峰期火车票<span class="tip-kw">全部 6 折</span>！不办在荷兰坐火车会破产。</div>
-                    </div>
-                    <div class="tip-item">
-                        <div class="tip-title">☕ Spoordeelwinkel 特价套票</div>
-                        <div class="tip-desc">NS官方特价商城。出远门必看，经常有<span class="tip-kw">火车往返+咖啡=19欧</span>的神仙套餐。</div>
-                    </div>
-                    <div class="tip-item" style="margin-bottom: 0;">
-                        <div class="tip-title">🎟️ Social Deal 羊毛神券</div>
-                        <div class="tip-desc">荷兰版美团。吃饭、卡丁车、理发全都有<span class="tip-kw">3-5 折券</span>，轰趴聚餐前必刷。</div>
+                    <div class="store-card">
+                        <div class="store-header" onclick="toggleStoreCard(this)">
+                            <div class="s-icon-name"><div class="s-logo">🚆</div> NS 火车 & 游玩</div><div class="store-arrow">▼</div>
+                        </div>
+                        <div class="store-content">
+                            <div class="store-inner">
+                                <div class="tip-item">
+                                    <div class="tip-title">🎫 NS Flex 火车打折卡</div>
+                                    <div class="tip-desc">每月约5欧月费，周末全天和非高峰期火车票<span class="tip-kw">全部 6 折</span>！不办在荷兰坐火车会破产。</div>
+                                </div>
+                                <div class="tip-item">
+                                    <div class="tip-title">🎟️ Social Deal 羊毛神券</div>
+                                    <div class="tip-desc">荷兰版美团。吃饭、卡丁车、理发全都有<span class="tip-kw">3-5 折券</span>，轰趴聚餐前必刷。</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -478,17 +525,22 @@
             </div>
             <div class="tips-content">
                 <div class="tips-inner">
-                    <div class="tip-item">
-                        <div class="tip-title">🧴 药妆店 1+1 铁律</div>
-                        <div class="tip-desc">永远别在超市买洗发水和牙膏！去 Kruidvat 或 Trekpleister，死等<span class="tip-kw">买一送一时</span>再疯狂囤货。</div>
-                    </div>
-                    <div class="tip-item">
-                        <div class="tip-title">🛠️ Action 穷人快乐屋</div>
-                        <div class="tip-desc">买本子、衣架、收纳盒等生活杂物，无脑去 Action，价格通常是其他地方的<span class="tip-kw">三分之一</span>。</div>
-                    </div>
-                    <div class="tip-item" style="margin-bottom: 0;">
-                        <div class="tip-title">🛋️ 二手店寻宝</div>
-                        <div class="tip-desc">谷歌搜附近的 <span class="tip-kw">Kringloopwinkel</span>。刚租房的新生必去，2欧的高级餐具、10欧的书桌全靠淘。</div>
+                    <div class="store-card">
+                        <div class="store-header" onclick="toggleStoreCard(this)">
+                            <div class="s-icon-name"><div class="s-logo">🧼</div> 药妆店与杂货</div><div class="store-arrow">▼</div>
+                        </div>
+                        <div class="store-content">
+                            <div class="store-inner">
+                                <div class="tip-item">
+                                    <div class="tip-title">🧴 药妆店 1+1 铁律</div>
+                                    <div class="tip-desc">永远别在超市买洗护！去 Kruidvat 或 Trekpleister，死等<span class="tip-kw">买一送一时</span>再囤货。</div>
+                                </div>
+                                <div class="tip-item">
+                                    <div class="tip-title">🛠️ Action 穷人快乐屋</div>
+                                    <div class="tip-desc">买本子、衣架、收纳盒等，无脑去 Action，价格通常是其他地方的<span class="tip-kw">三分之一</span>。</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1127,16 +1179,47 @@
     }
 
     // ================= 省钱秘籍专属交互 =================
+    // ================= 省钱秘籍高级嵌套交互 =================
+    
+    // 控制一级分类（大分类）
     function toggleAccordion(element) {
+        const content = element.nextElementSibling;
+        
+        if (!element.classList.contains('active')) {
+            // 收起其他大类
+            document.querySelectorAll('.tips-header.active').forEach(el => {
+                el.classList.remove('active');
+                el.nextElementSibling.style.maxHeight = null;
+            });
+            // 展开当前大类
+            element.classList.add('active');
+            content.style.maxHeight = content.scrollHeight + "px";
+            
+            // 💡 神仙魔法：等外层动画做完，把高度限制解除，这样里面的卡片才能撑开！
+            setTimeout(() => { 
+                if(element.classList.contains('active')) content.style.maxHeight = 'none'; 
+            }, 300);
+        } else {
+            // 收起当前大类
+            content.style.maxHeight = content.scrollHeight + "px"; // 先把它锁死为一个固定数值
+            requestAnimationFrame(() => {
+                element.classList.remove('active');
+                content.style.maxHeight = null; // 然后平滑收起
+            });
+        }
+    }
+
+    // 控制二级分类（商店品牌卡片）
+    function toggleStoreCard(element) {
         const isActive = element.classList.contains('active');
-        document.querySelectorAll('.tips-header').forEach(el => {
-            el.classList.remove('active');
-            el.nextElementSibling.style.maxHeight = null;
-        });
+        const content = element.nextElementSibling;
+        
         if (!isActive) {
             element.classList.add('active');
-            const content = element.nextElementSibling;
-            content.style.maxHeight = content.scrollHeight + "px"; 
+            content.style.maxHeight = content.scrollHeight + "px";
+        } else {
+            element.classList.remove('active');
+            content.style.maxHeight = null;
         }
     }
 
