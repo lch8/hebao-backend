@@ -499,16 +499,32 @@
     function openDetailsFromHistory(index) { let h = JSON.parse(localStorage.getItem('hebao_history')||'[]'); currentDetailData = h[index]; setupDetailPage(); }
     function setupDetailPage() {
         const d = currentDetailData;
-        document.getElementById('detailImg').src = d.img_src; document.getElementById('detailChineseName').innerText = d.chinese_name; document.getElementById('detailDutchName').innerText = d.dutch_name;
+        document.getElementById('detailImg').src = d.img_src; 
+        document.getElementById('detailChineseName').innerText = d.chinese_name; 
+        document.getElementById('detailDutchName').innerText = d.dutch_name;
         document.getElementById('insightTitle').innerText = d.item_type==='recipe'?'👨‍🍳 厨神点拨':'💡 管家锐评';
         document.getElementById('recipeBoxTitle').innerText = d.item_type==='recipe'?'📜 详细做法':'🍳 网友避雷/神仙做法';
         document.getElementById('shareToCommunityBtn').style.display = d.item_type==='recipe'?'block':'none';
         document.getElementById('recipeSubmitBoxBtn').style.display = d.item_type==='recipe'?'none':'block';
-        document.getElementById('detailInsightBox').style.display = d.insight?'block':'none'; document.getElementById('detailInsight').innerText = d.insight;
-        document.getElementById('detailWarningBox').style.display = d.warning?'block':'none'; document.getElementById('detailWarning').innerText = d.warning;
+        document.getElementById('detailInsightBox').style.display = d.insight?'block':'none'; 
+        document.getElementById('detailInsight').innerText = d.insight;
+        document.getElementById('detailWarningBox').style.display = d.warning?'block':'none'; 
+        document.getElementById('detailWarning').innerText = d.warning;
         document.getElementById('detailAltBox').style.display = 'none';
         document.getElementById('recipeCardList').innerHTML = '';
-        if(d.item_type === 'recipe') { renderRecipes('', d.pairing); } else { document.getElementById('recipeCardList').innerHTML='<div style="text-align:center;color:#888;">正在提取全网反馈...</div>'; fetchDeepDetails(); }
+        
+        if(d.item_type === 'recipe') { 
+            renderRecipes('', d.pairing); 
+        } else { 
+            // 👇 重点改造这里：判断如果本地已经有了 pairing 数据，直接秒回渲染！
+            if (d.pairing && String(d.pairing).trim() !== '') {
+                renderRecipes(d.alternatives || '', d.pairing);
+            } else {
+                // 只有在数据为空（比如刚扫出一个冷门新商品）时，才去呼叫 AI
+                document.getElementById('recipeCardList').innerHTML='<div style="text-align:center;color:#888;">正在提取全网反馈...</div>'; 
+                fetchDeepDetails(); 
+            }
+        }
         switchTab('details', null);
     }
     async function fetchDeepDetails() { try { const res=await fetch('/api/detail',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({dutchName:currentDetailData.dutch_name})}); const data=await res.json(); if(res.ok){renderRecipes(data.alternatives, data.pairing);} } catch(e){} }
