@@ -321,7 +321,10 @@
     </div>
 
     <div id="page-footprint" class="page-section">
-        <div class="header"><h1 class="title">我的足迹 👣</h1></div>
+        <div class="header" style="position: relative;">
+            <h1 class="title">我的足迹 👣</h1>
+            <button onclick="clearAllFootprints()" style="position: absolute; right: 20px; top: 10px; background: none; border: none; color: #EF4444; font-size: 13px; font-weight: bold; cursor: pointer; padding: 5px;">🧹 清空全部</button>
+        </div>
         <div id="footprintList"></div>
     </div>
 
@@ -745,9 +748,12 @@
                 <div class="hc-top-clickable" onclick="openDetailsFromHistory(${index})"> 
                     <img src="${item.img_src || ''}" style="width:75px; height:75px; object-fit:cover; border-radius:12px; flex-shrink: 0;"> 
                     <div style="flex:1; display: flex; flex-direction: column; justify-content: space-between;"> 
-                        <div>
-                            <div style="font-weight:900; font-size:16px; color:#111827; line-height: 1.2;">${item.chinese_name || '未命名'}</div>
-                            <div style="font-size:12px; color:#9CA3AF; margin:4px 0;">${item.dutch_name || ''}</div>
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                            <div>
+                                <div style="font-weight:900; font-size:16px; color:#111827; line-height: 1.2;">${item.chinese_name || '未命名'}</div>
+                                <div style="font-size:12px; color:#9CA3AF; margin:4px 0;">${item.dutch_name || ''}</div>
+                            </div>
+                            <button onclick="deleteFootprintItem(${index}, event)" style="background:none; border:none; color:#9CA3AF; font-size:16px; cursor:pointer; padding:0 5px;">🗑️</button>
                         </div> 
                         <div style="display:flex; gap:8px; margin-top:6px;" onclick="event.stopPropagation()"> 
                             <div id="btnLike_${index}" class="mini-btn ${isLike ? 'active-like' : ''}" onclick="handleInteraction(${index}, 'like', event)"><span class="emoji">👍</span> 狂赞</div> 
@@ -766,6 +772,26 @@
         h.forEach((item, index) => { if(item.my_vote) updateUgcStyle(index, item.my_vote); }); 
     }
 
+    // ================= 新增：足迹删除功能 =================
+    function deleteFootprintItem(index, event) {
+        event.stopPropagation(); // 阻止点击垃圾桶时意外跳进详情页
+        if(!confirm("确定要把这条记录从足迹里抹除吗？")) return;
+        
+        let h = JSON.parse(localStorage.getItem('hebao_history') || '[]');
+        h.splice(index, 1); // 删掉这一条
+        localStorage.setItem('hebao_history', JSON.stringify(h));
+        
+        renderFootprints(); // 重新渲染列表，丝滑消失
+    }
+
+    function clearAllFootprints() {
+        if(!confirm("⚠️ 确定要清空所有足迹吗？清空后无法恢复哦！")) return;
+        
+        localStorage.removeItem('hebao_history'); // 毁尸灭迹
+        renderFootprints(); // 页面变空
+    }
+
+    
     function handleInteraction(index, action, event) { 
         const btn = event.currentTarget; const emoji = btn.querySelector('.emoji'); 
         emoji.style.transform = 'scale(1.8) rotate(' + (action==='like'?'-15deg':'15deg') + ')'; 
@@ -848,13 +874,17 @@
             if (data.success) { 
                 trendingLikesData = data.topLikes || [];
                 trendingDislikesData = data.topDislikes || [];
+                
+                // 👇 核心修复：每次拉取最新榜单，强制覆盖本地离线搜索库！
+                const allTrending = [...trendingLikesData, ...trendingDislikesData];
+                localStorage.setItem('hebao_offline_db', JSON.stringify(allTrending));
+                
                 renderTrendingList('trendingListLikes', trendingLikesData, 'like'); 
                 renderTrendingList('trendingListDislikes', trendingDislikesData, 'dislike'); 
                 trendingLoaded = true; 
             } else { throw new Error(data.error); } 
         } catch (e) { document.getElementById('trendingListLikes').innerHTML = '<div style="text-align:center; margin-top: 40px; color:#EF4444;">榜单拉取失败，请稍后重试</div>'; } 
     }
-
     function renderTrendingList(containerId, list, type) { 
         const container = document.getElementById(containerId); 
         if (!list || list.length === 0) { container.innerHTML = '<div style="text-align:center; color:#888; margin-top:40px;">暂无数据，快去扫码贡献第一票吧！</div>'; return; } 
