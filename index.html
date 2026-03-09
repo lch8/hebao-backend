@@ -394,11 +394,7 @@
 
         <div id="tipsAccordionContainer"></div>
 
-        <div class="tips-disclaimer">
-            <div class="update-time"><span>⏳</span> 最后由管家更新于：2026年3月</div>
-            ⚠️ <b>防杠声明：</b> 本页秘籍均来自民间留学生口口相传，仅供参考。荷兰商家的规则（如 Jumbo 退换货条款、NS 打折政策等）随时可能发生变动。<br><br>
-            请务必以官方最新条款及实体店最终解释权为准。若遇条款变更导致未能薅到羊毛或产生尴尬，本管家概不负责哦！发现错误？请立刻点击下方按钮打脸管家！
-        </div>
+        <div id="tipsDisclaimerContainer"></div>
 
         <button class="btn-report-tip" onclick="openReportModal()">📢 我要爆料新羊毛 / 疯狂纠错</button>
     </div>
@@ -1055,7 +1051,15 @@
                 </a>`;
             });
             document.getElementById('quickLinksContainer').innerHTML = qlHtml;
+        if (typeof tipsMetaData !== 'undefined') {
+            const disclaimerHtml = `
+            <div class="tips-disclaimer">
+                <div class="update-time"><span>⏳</span> 最后由管家更新于：${tipsMetaData.lastUpdated}</div>
+                ⚠️ <b>防杠声明：</b> ${tipsMetaData.disclaimer}
+            </div>`;
+            document.getElementById('tipsDisclaimerContainer').innerHTML = disclaimerHtml;
         }
+    }
 
         let accHtml = '';
         if (typeof tipsData !== 'undefined') {
