@@ -19,6 +19,12 @@
         .pwa-banner-text { font-size: 13px; font-weight: 900; color: #1E3A8A; display: flex; align-items: center; gap: 8px;}
         .pwa-close-btn { color: #93C5FD; font-size: 16px; padding: 0 5px; cursor: pointer; }
 
+        /* ================= 新增：搜索与条码框 ================= */
+        .search-container { display: flex; gap: 10px; margin-bottom: 20px; background: #FFF; border-radius: 20px; padding: 8px 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #E5E7EB; align-items: center; }
+        .search-input { flex: 1; border: none; outline: none; font-size: 15px; padding: 8px; background: transparent; color: #111827; }
+        .barcode-btn { background: #F3F4F6; border: none; width: 40px; height: 40px; border-radius: 12px; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 18px; transition: 0.2s; }
+        .barcode-btn:active { background: #E5E7EB; transform: scale(0.95); }
+
         .legal-disclaimer { font-size: 11px; color: #9CA3AF; text-align: center; padding: 20px 10px 40px; line-height: 1.6; margin-top: 20px; }
 
         .page-section { display: none; padding-bottom: 90px; animation: fadeIn 0.3s ease; }
@@ -74,7 +80,7 @@
         .recipe-submit-title { font-size: 15px; font-weight: 900; color: #D97706; }
         .recipe-submit-sub { font-size: 12px; color: #B45309; margin-top: 4px; }
         .recipe-card { background: #FFF; border-radius: 16px; padding: 18px; margin-bottom: 15px; border: 1px solid #F3F4F6; }
-        .recipe-title { font-size: 16px; font-weight: 900; color: #111827; margin-bottom: 10px; display: flex; justify-content: space-between;}
+        .recipe-title { font-size: 14px; font-weight: 900; color: #111827; margin-bottom: 10px; display: flex; justify-content: space-between;}
         .recipe-steps { font-size: 14px; color: #4B5563; line-height: 1.6; margin-bottom: 15px; white-space: pre-wrap; font-weight: 500;}
 
         /* ================= 3. 极其惊艳的双列瀑布流 UI ================= */
@@ -215,6 +221,12 @@
         <div class="pwa-banner" id="pwaBanner" onclick="showPwaGuide()">
             <div class="pwa-banner-text"><span style="font-size:18px;">📱</span> 想要秒开管家？添加到主屏幕 ↗</div>
             <div class="pwa-close-btn" onclick="closePwaBanner(event)">✕</div>
+        </div>
+
+        <div class="search-container">
+            <span style="font-size: 18px; padding-left: 5px;">🔍</span>
+            <input type="text" id="mainSearchInput" class="search-input" placeholder="搜商品名(中/荷)或扫条码..." onkeypress="if(event.key==='Enter') executeSearch()">
+            <button class="barcode-btn" onclick="alert('即将接入 HTML5-QRCode 库进行实景扫码！')">|||</button>
         </div>
 
         <div class="home-grid" id="homeActionBox">
@@ -478,7 +490,7 @@
     function resetApp() { ['fileInput','ingredientInput','dishInput'].forEach(id=>document.getElementById(id).value=''); document.getElementById('previewContainer').style.display='none';document.getElementById('miniResultCard').style.display='none';document.getElementById('homeActionBox').style.display='grid'; }
 
     // ==========================================
-    // 详情页变装
+    // 详情页变装 & UGC 高亮优化版渲染逻辑
     // ==========================================
     function openDetailsFromScan() { currentDetailData = {...currentProductData, img_src:document.getElementById('previewImg').src}; setupDetailPage(); }
     function openDetailsFromHistory(index) { let h = JSON.parse(localStorage.getItem('hebao_history')||'[]'); currentDetailData = h[index]; setupDetailPage(); }
@@ -497,20 +509,41 @@
         switchTab('details', null);
     }
     async function fetchDeepDetails() { try { const res=await fetch('/api/detail',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({dutchName:currentDetailData.dutch_name})}); const data=await res.json(); if(res.ok){renderRecipes(data.alternatives, data.pairing);} } catch(e){} }
+    
     function renderRecipes(alts, pairing) {
-        if(currentDetailData.item_type !== 'recipe' && alts) { document.getElementById('detailAltBox').style.display='block'; document.getElementById('detailAlternatives').innerHTML = alts.split('|').map(p=>`<div class="alt-tag">${p}</div>`).join(''); }
+        if(currentDetailData.item_type !== 'recipe' && alts) { 
+            document.getElementById('detailAltBox').style.display='block'; 
+            document.getElementById('detailAlternatives').innerHTML = alts.split('|').map(p=>`<div class="alt-tag">${p}</div>`).join(''); 
+        }
         const list = document.getElementById('recipeCardList'); list.innerHTML = '';
+        
         if(pairing) {
             if(currentDetailData.item_type === 'recipe') {
-                list.innerHTML = `<div class="recipe-card"><div class="recipe-title"><span>✨ AI 破解神仙做法</span></div><div class="recipe-steps">${pairing.replace(/🧑‍🍳 网友点评 \[.*?\]：/,'').trim()}</div></div>`;
+                list.innerHTML = `<div class="recipe-card"><div class="recipe-title"><span>✨ AI 破解神仙做法</span></div><div class="recipe-steps">${pairing.replace(/🧑‍🍳 网友点评 \[.*?\]：|🤖 AI预测口味 \[.*?\]：/,'').trim()}</div></div>`;
             } else {
                 pairing.split('\n\n').filter(l=>l.trim()).forEach(line => {
                     const isLike = line.includes('👍');
-                    list.innerHTML += `<div class="recipe-card"><div class="recipe-title"><span>${isLike?'🍳 网友神仙做法':'💣 避雷吐槽'}</span></div><div class="recipe-steps" style="${isLike?'':'color:#DC2626'}">${line.replace(/🧑‍🍳 网友点评 \[.*?\]：/,'').trim()}</div></div>`;
+                    const isRealUser = line.includes('🧑‍🍳 网友点评');
+                    
+                    const cleanText = line.replace(/🧑‍🍳 网友点评 \[.*?\]：|🤖 AI预测口味 \[.*?\]：/, '').trim();
+                    
+                    const cardStyle = isRealUser 
+                        ? `border-left: 4px solid ${isLike ? '#10B981' : '#EF4444'}; background: #FFF; box-shadow: 0 2px 8px rgba(0,0,0,0.04);` 
+                        : `border: 1px dashed #D1D5DB; background: #F9FAFB; opacity: 0.85;`;
+                        
+                    const titleHtml = isRealUser 
+                        ? `<span style="color: ${isLike ? '#047857' : '#B91C1C'}">🔥 真实留学生评价</span>`
+                        : `<span>🤖 AI 预测口味 (仅供参考)</span>`;
+
+                    list.innerHTML += `
+                        <div class="recipe-card" style="${cardStyle}">
+                            <div class="recipe-title">${titleHtml}</div>
+                            <div class="recipe-steps" style="${isLike ? '' : 'color:#DC2626'}">${cleanText}</div>
+                        </div>`;
                 });
             }
         }
-        if(!list.innerHTML) list.innerHTML = '<div style="text-align:center;color:#888;">暂无做法，快去抢首发！</div>';
+        if(!list.innerHTML) list.innerHTML = '<div style="text-align:center;color:#888;">暂无评价，快去抢首发！</div>';
     }
 
     // ==========================================
@@ -520,7 +553,7 @@
         const d = currentDetailData; 
         document.getElementById('communityAuthorName').value = localStorage.getItem('hebao_author_name') || '';
         document.getElementById('communityRecipeTitle').value = d.chinese_name || '';
-        document.getElementById('communityRecipeText').value = (d.pairing||'').replace(/🧑‍🍳 网友点评 \[.*?\]：/,'').trim();
+        document.getElementById('communityRecipeText').value = (d.pairing||'').replace(/🧑‍🍳 网友点评 \[.*?\]：|🤖 AI预测口味 \[.*?\]：/,'').trim();
         document.getElementById('shareCommunityModal').style.display = 'flex';
     }
 
@@ -651,10 +684,8 @@
     }
 
     // ==========================================
-    // 丢失的足迹、海报、打分、与榜单功能找回！
+    // 足迹、海报、打分、与榜单功能
     // ==========================================
-    
-    // 足迹列表渲染
     function renderFootprints() { 
         const listDiv = document.getElementById('footprintList'); 
         let h = JSON.parse(localStorage.getItem('hebao_history') || '[]'); 
@@ -775,6 +806,60 @@
             html += `<div class="trending-card"><div class="rank-badge ${badgeClass}">TOP ${index + 1}</div><div class="t-info"><div class="t-name">${item.chinese_name || '未命名商品'}</div><div class="t-dutch">${item.dutch_name || ''}</div><div class="t-insight">${item.insight || '暂无管家评价'}</div></div><div class="t-score ${colorClass}"><span>${icon} ${score}</span><span class="t-score-label">${label}</span></div></div>`; 
         }); 
         container.innerHTML = html; 
+    }
+
+    // ================= 新增：离线缓存与搜索引擎 =================
+
+    // 1. 静默拉取榜单，建立本地商品库 (拯救弱网)
+    async function prefetchLocalDB() {
+        if (sessionStorage.getItem('hebao_synced')) return; // 每次会话只同步一次
+        try {
+            const res = await fetch('/api/trending');
+            const data = await res.json();
+            if (data.success) {
+                const allTrending = [...(data.topLikes || []), ...(data.topDislikes || [])];
+                localStorage.setItem('hebao_offline_db', JSON.stringify(allTrending));
+                sessionStorage.setItem('hebao_synced', 'true');
+            }
+        } catch(e) {
+            console.log("后台静默缓存失败，不影响主流程");
+        }
+    }
+    // 网页启动时触发
+    prefetchLocalDB();
+
+    // 2. 闪电搜索逻辑
+    function executeSearch() {
+        const query = document.getElementById('mainSearchInput').value.trim().toLowerCase();
+        if (!query) return;
+
+        uiScanState("🔍 正在本地记忆中光速检索...");
+        
+        // 优先查本地足迹和离线榜单库
+        const localDB = JSON.parse(localStorage.getItem('hebao_offline_db') || '[]');
+        const historyDB = JSON.parse(localStorage.getItem('hebao_history') || '[]');
+        const combinedDB = [...historyDB, ...localDB];
+
+        // 去重并匹配
+        const found = combinedDB.find(item => 
+            (item.dutch_name && item.dutch_name.toLowerCase().includes(query)) || 
+            (item.chinese_name && item.chinese_name.toLowerCase().includes(query))
+        );
+
+        if (found) {
+            // 秒出结果！无需等待 AI
+            setTimeout(() => {
+                currentProductData = found;
+                renderResult(found);
+            }, 300); // 假装思考 0.3 秒，增加科技感
+        } else {
+            // 本地没有，提示用户拍照
+            document.getElementById('scanText').innerText = "本地没搜到，即将上云端求助管家...";
+            setTimeout(() => {
+                alert("本地暂无此商品数据。建议使用拍照排雷！");
+                resetApp();
+            }, 1500);
+        }
     }
 </script>
 </body>
