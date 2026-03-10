@@ -198,7 +198,7 @@ function loadAvatar() {
     }
 }
 
-// ================= 4. 首页扫码与真实 API (整合了你的 trending 接口) =================
+// ================= 4. 首页扫码与真实 API (商品与榜单) =================
 let currentProductData = null; 
 let currentDetailData = null; 
 let globalTrendingLikes = []; 
@@ -339,7 +339,6 @@ async function submitDetailReview() {
         let index = history.findIndex(i => i.dutch_name === currentDetailData.dutch_name);
         if(index !== -1) { history[index].pairing = currentDetailData.pairing; localStorage.setItem('hebao_history', JSON.stringify(history)); }
         
-        // 此处你可以调用 /api/vote 接口，将点赞/踩同步到数据库
         const actionType = attitude.includes('推荐') ? 'like' : 'dislike';
         await fetch('/api/vote', {
             method: 'POST',
@@ -429,14 +428,45 @@ function toggleTipsContent(element) {
     element.classList.toggle('active');
 }
 
-// ================= 7. 发布功能逻辑 =================
+// ================= 7. 集市社区发帖、图片上传真实API =================
+let currentUploadBase64 = null;
+
+function handleImageSelect(event, previewId, placeholderId) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        currentUploadBase64 = e.target.result.split(',')[1]; 
+        document.getElementById(previewId).src = e.target.result;
+        document.getElementById(previewId).style.display = 'block';
+        if(document.getElementById(placeholderId)) document.getElementById(placeholderId).style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+}
+
+async function uploadImageToCOS() {
+    if (!currentUploadBase64) return ''; 
+    try {
+        const res = await fetch('/api/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ imageBase64: currentUploadBase64 })
+        });
+        const data = await res.json();
+        if(data.success) return data.url; 
+        throw new Error(data.error || '上传失败');
+    } catch(e) {
+        alert("图片上传失败：" + e.message);
+        return '';
+    }
+}
+
 function openPublishSheet() {
     const overlay = document.querySelector('.publish-overlay');
     const sheet = document.querySelector('.publish-sheet');
     if(overlay) { overlay.style.display = 'block'; setTimeout(()=>overlay.classList.add('show'),10); }
     if(sheet) { setTimeout(()=>sheet.classList.add('show'),10); }
 }
-
 function closePublishSheet() {
     const overlay = document.querySelector('.publish-overlay');
     const sheet = document.querySelector('.publish-sheet');
@@ -449,10 +479,9 @@ function openIdlePublish() {
     setTimeout(() => {
         document.getElementById('publishIdleModal').style.display = 'flex';
         const d = new Date(); d.setDate(d.getDate() + 7);
-        document.getElementById('idleDeadline').value = d.toISOString().split('T')[0];
+        if(document.getElementById('idleDeadline')) document.getElementById('idleDeadline').value = d.toISOString().split('T')[0];
     }, 300);
 }
-
 function closeIdlePublish() { document.getElementById('publishIdleModal').style.display = 'none'; }
 
 function selectPill(element, groupName) {
@@ -463,10 +492,8 @@ function selectPill(element, groupName) {
 function generateAICopy() {
     const keyword = document.getElementById('aiKeywords').value.trim();
     if (!keyword) return alert("请先输入一些闲置关键词哦，比如：大书桌30欧，明天搬家...");
-    
     const btn = document.getElementById('btnAiMagic');
-    btn.innerText = "⏳ 魔法施展中，管家正在码字...";
-    btn.disabled = true;
+    btn.innerText = "⏳ 魔法施展中，管家正在码字..."; btn.disabled = true;
 
     const loc = document.getElementById('idleLocation').value;
     const deadline = document.getElementById('idleDeadline').value;
@@ -475,23 +502,48 @@ function generateAICopy() {
 
     setTimeout(() => {
         const aiText = `🌟 【${loc}出】留学生搬家狂甩，骨折价带走！\n哈喽家人们！因为临近搬家/回国，实在带不走啦，忍痛割爱出一批超实用的闲置😭！\n\n🛒 【出物清单与价格】\n根据您的输入：“${keyword}”\n(请在此处补充或修改具体物品状态哦～)\n\n✅ 状态：自用非常爱惜，功能全部完好！\n💰 价格：详见清单，多件打包可骨折！\n📍 坐标：${loc} (可上门自提)\n⏰ 截止日期：务必在 ${deadline} 之前拿走！\n💶 交易方式：支持 ${payment}\n⚠️ 注意：目前是 ${bargain} 的状态，先到先得，手慢无！\n\n带图私信我，看到了就会秒回！\n#荷兰二手 #${loc}闲置 #留学生搬家 #闲置转让 #好物低价出`;
-
         document.getElementById('idleDesc').value = aiText;
         document.getElementById('aiKeywords').value = '';
         btn.innerText = "✅ 生成成功！快去下方修改细节吧";
-        
-        setTimeout(() => {
-            btn.innerText = "🪄 重新生成";
-            btn.disabled = false;
-        }, 3000);
+        setTimeout(() => { btn.innerText = "🪄 重新生成"; btn.disabled = false; }, 3000);
     }, 1500);
 }
 
-function submitIdlePost() {
+async function submitIdlePost() {
     const desc = document.getElementById('idleDesc').value.trim();
+    const price = document.getElementById('idlePrice').value.trim();
+    const loc = document.getElementById('idleLocation').value;
     if(!desc) return alert("文案还没写呢！快试试 AI 一键生成吧！");
-    alert("🎉 发布成功！你的闲置已经进入集市，等待有缘人。");
-    closeIdlePublish();
+    
+    const btn = document.querySelector('#publishIdleModal .fm-submit');
+    btn.innerText = "上传中..."; btn.style.pointerEvents = 'none';
+
+    try {
+        let finalImageUrl = await uploadImageToCOS();
+        const finalTitle = `[闲置] €${price || '面议'} · ${loc}`;
+        const authorName = localStorage.getItem('hp_name') || '管家新人';
+        
+        const res = await fetch('/api/publish-community', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: userUUID, authorName: authorName, title: finalTitle, text: desc, imageUrl: finalImageUrl })
+        });
+        
+        const data = await res.json();
+        if(!data.success) throw new Error(data.error);
+
+        alert("🎉 发布成功！你的闲置已经永久存入社区数据库！");
+        closeIdlePublish();
+        
+        currentUploadBase64 = null;
+        if(document.getElementById('idleImgPreview')) document.getElementById('idleImgPreview').style.display = 'none';
+        if(document.getElementById('idleImgPlaceholder')) document.getElementById('idleImgPlaceholder').style.display = 'flex';
+        document.getElementById('idleDesc').value = '';
+    } catch(e) {
+        alert("发布失败：" + e.message);
+    } finally {
+        btn.innerText = "发布"; btn.style.pointerEvents = 'auto';
+    }
 }
 
 function openHelpPublish() {
@@ -499,11 +551,34 @@ function openHelpPublish() {
     setTimeout(() => { document.getElementById('publishHelpModal').style.display = 'flex'; }, 300);
 }
 function closeHelpPublish() { document.getElementById('publishHelpModal').style.display = 'none'; }
-function submitHelpPost() {
+
+async function submitHelpPost() {
     const desc = document.getElementById('helpDesc').value.trim();
+    const reward = document.getElementById('helpReward').value.trim();
+    const urgentGroup = document.querySelector('#helpUrgentGroup .active');
+    const urgent = urgentGroup && urgentGroup.innerText.includes('十万火急') ? '🔥急' : '普通';
+    
     if(!desc) return alert("请简单描述一下你需要什么帮助哦！");
-    alert("🎉 悬赏发布成功！已进入互助大厅，祝你早日找到帮手。");
-    closeHelpPublish();
+    
+    const btn = document.querySelector('#publishHelpModal .fm-submit');
+    btn.innerText = "发送中..."; btn.style.pointerEvents = 'none';
+
+    try {
+        const finalTitle = `[互助-${urgent}] 赏金 €${reward || '0'}`;
+        const authorName = localStorage.getItem('hp_name') || '管家新人';
+        
+        const res = await fetch('/api/publish-community', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: userUUID, authorName: authorName, title: finalTitle, text: desc, imageUrl: '' })
+        });
+        if(!res.ok) throw new Error("保存到数据库失败");
+
+        alert("🎉 悬赏发布成功！已永久写入数据库！");
+        closeHelpPublish();
+        document.getElementById('helpDesc').value = '';
+    } catch(e) { alert("发布失败：" + e.message); } 
+    finally { btn.innerText = "发布"; btn.style.pointerEvents = 'auto'; }
 }
 
 function openPartnerPublish() {
@@ -511,12 +586,34 @@ function openPartnerPublish() {
     setTimeout(() => { document.getElementById('publishPartnerModal').style.display = 'flex'; }, 300);
 }
 function closePartnerPublish() { document.getElementById('publishPartnerModal').style.display = 'none'; }
-function submitPartnerPost() {
+
+async function submitPartnerPost() {
     const title = document.getElementById('partnerTitle').value.trim();
+    const desc = document.getElementById('partnerDesc').value.trim();
     if(!title) return alert("写个吸引人的标题吧！");
-    alert("🎉 找搭子发布成功！缘分正在赶来的路上...");
-    closePartnerPublish();
+    
+    const btn = document.querySelector('#publishPartnerModal .fm-submit');
+    btn.innerText = "发送中..."; btn.style.pointerEvents = 'none';
+
+    try {
+        const finalTitle = `[找搭子] ${title}`;
+        const authorName = localStorage.getItem('hp_name') || '管家新人';
+        
+        const res = await fetch('/api/publish-community', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: userUUID, authorName: authorName, title: finalTitle, text: desc, imageUrl: '' })
+        });
+        if(!res.ok) throw new Error("保存到数据库失败");
+
+        alert("🎉 找搭子发布成功！缘分正在赶来的路上...");
+        closePartnerPublish();
+        document.getElementById('partnerTitle').value = '';
+        document.getElementById('partnerDesc').value = '';
+    } catch(e) { alert("发布失败：" + e.message); } 
+    finally { btn.innerText = "发布"; btn.style.pointerEvents = 'auto'; }
 }
+
 
 // ================= 8. 集市模块：聊天、数据与过滤渲染 =================
 function openChat(sellerName, sellerAvatar, itemTitle, itemPrice, itemImg, isSold, postType = 'idle') {
