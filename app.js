@@ -271,11 +271,11 @@ function renderHomeTrending(list, containerId, type) {
 
 // ================= 集市模块模拟数据与渲染 =================
 const mockIdleItems = [
-    { img: "https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?w=400&auto=format&fit=crop", title: "九成新空气炸锅，回国急出带原包装", price: "25", originalPrice: "€69", avatar: "😎", name: "代村阿强", credit: "极佳", creditClass: "excellent" },
-    { img: "https://images.unsplash.com/photo-1505843490538-5133c6c7d0e1?w=400&auto=format&fit=crop", title: "宜家升降桌，有点小划痕不影响使用", price: "40", originalPrice: "€129", avatar: "👩‍💻", name: "鹿特丹土豆", credit: "良好", creditClass: "good" },
-    { img: "https://images.unsplash.com/photo-1544816155-12df9643f363?w=400&auto=format&fit=crop", title: "RSM 鹿特丹商学院大一必修课纸质教材全套", price: "15", originalPrice: "€80", avatar: "👻", name: "商科牛马", credit: "极佳", creditClass: "excellent" },
-    { img: "https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?w=400&auto=format&fit=crop", title: "只穿过一次的雪地靴，尺码 38 偏小", price: "30", originalPrice: "€95", avatar: "🐼", name: "海牙小丸子", credit: "新人", creditClass: "new" },
-    { img: "https://images.unsplash.com/photo-1610444391690-3490710fc9ba?w=400&auto=format&fit=crop", title: "搬家清仓！各种锅碗瓢盆和调料打包带走", price: "10", originalPrice: "", avatar: "🐱", name: "阿姆食神", credit: "良好", creditClass: "good" }
+    { img: "https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?w=400&auto=format&fit=crop", title: "九成新空气炸锅，回国急出带原包装", price: "25", originalPrice: "€69", avatar: "😎", name: "代村阿强", credit: "极佳", creditClass: "excellent", isSold: false },
+    { img: "https://images.unsplash.com/photo-1505843490538-5133c6c7d0e1?w=400&auto=format&fit=crop", title: "宜家升降桌，有点小划痕不影响使用", price: "40", originalPrice: "€129", avatar: "👩‍💻", name: "鹿特丹土豆", credit: "良好", creditClass: "good", isSold: true }, // 👈 这个已售出
+    { img: "https://images.unsplash.com/photo-1544816155-12df9643f363?w=400&auto=format&fit=crop", title: "RSM 鹿特丹商学院大一必修课纸质教材全套", price: "15", originalPrice: "€80", avatar: "👻", name: "商科牛马", credit: "极佳", creditClass: "excellent", isSold: false },
+    { img: "https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?w=400&auto=format&fit=crop", title: "只穿过一次的雪地靴，尺码 38 偏小", price: "30", originalPrice: "€95", avatar: "🐼", name: "海牙小丸子", credit: "新人", creditClass: "new", isSold: false },
+    { img: "https://images.unsplash.com/photo-1610444391690-3490710fc9ba?w=400&auto=format&fit=crop", title: "搬家清仓！各种锅碗瓢盆和调料打包带走", price: "10", originalPrice: "", avatar: "🐱", name: "阿姆食神", credit: "良好", creditClass: "good", isSold: false }
 ];
 
 function renderMarketIdle() {
@@ -283,27 +283,61 @@ function renderMarketIdle() {
     if(!container) return;
     let html = '';
     mockIdleItems.forEach(item => {
-        // 点击商品触发鉴权，不登录不给看详情，逼迫用户注册留存
+        // 判断是否已售出，添加图层
+        const soldOverlayHtml = item.isSold ? `<div class="wf-sold-overlay"><div class="wf-sold-text">已售出</div></div>` : '';
+        
+        // 注意 openChat 多传了一个参数 item.isSold
         html += `
-        <div class="waterfall-item" onclick="openChat('${item.name}', '${item.avatar}', '${item.title}', '${item.price}', '${item.img}')">
-            <div class="wf-img-box"><img class="wf-img" src="${item.img}"></div>
+        <div class="waterfall-item" onclick="openChat('${item.name}', '${item.avatar}', '${item.title}', '${item.price}', '${item.img}', ${item.isSold})">
+            <div class="wf-img-box">
+                ${soldOverlayHtml}
+                <img class="wf-img" src="${item.img}">
+            </div>
             <div class="wf-info">
-                <div class="wf-title">${item.title}</div>
+                <div class="wf-title" style="${item.isSold ? 'color:#9CA3AF;' : ''}">${item.title}</div>
                 <div class="wf-price-row">
-                    <span class="wf-currency">€</span><span class="wf-price">${item.price}</span>
+                    <span class="wf-currency" style="${item.isSold ? 'color:#9CA3AF;' : ''}">€</span><span class="wf-price" style="${item.isSold ? 'color:#9CA3AF;' : ''}">${item.price}</span>
                     ${item.originalPrice ? `<span class="wf-original-price">${item.originalPrice}</span>` : ''}
                 </div>
                 <div class="wf-user-row">
-                    <div class="wf-user">
-                        <div class="wf-avatar">${item.avatar}</div>
-                        <div class="wf-name">${item.name}</div>
-                    </div>
-                    <div class="wf-credit ${item.creditClass}">${item.credit}</div>
+                    <div class="wf-user"><div class="wf-avatar">${item.avatar}</div><div class="wf-name">${item.name}</div></div>
+                    <div class="wf-credit ${item.creditClass}" style="${item.isSold ? 'background:#F3F4F6; color:#9CA3AF;' : ''}">${item.credit}</div>
                 </div>
             </div>
         </div>`;
     });
     container.innerHTML = html;
+}
+
+// 覆写 openChat，加入状态拦截
+function openChat(sellerName, sellerAvatar, itemTitle, itemPrice, itemImg, isSold) {
+    requireAuth(() => {
+        document.getElementById('chatTargetName').innerText = sellerName;
+        document.getElementById('chatTargetAvatar').innerText = sellerAvatar;
+        document.getElementById('chatProductTitle').innerText = itemTitle;
+        document.getElementById('chatProductPrice').innerText = '€' + itemPrice;
+        document.getElementById('chatProductImg').src = itemImg;
+        
+        const now = new Date();
+        document.getElementById('chatTimeSys').innerText = `今天 ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+        
+        // 核心：处理已售出状态的 UI 冻结
+        if (isSold) {
+            document.getElementById('cpsActionBtn').style.display = 'none';
+            document.getElementById('cpsSoldStamp').style.display = 'block';
+            document.getElementById('chatInputBar').style.display = 'none';
+            document.getElementById('chatInputDisabled').style.display = 'block';
+        } else {
+            document.getElementById('cpsActionBtn').style.display = 'block';
+            document.getElementById('cpsSoldStamp').style.display = 'none';
+            document.getElementById('chatInputBar').style.display = 'flex';
+            document.getElementById('chatInputDisabled').style.display = 'none';
+        }
+
+        document.getElementById('chatModal').style.display = 'flex';
+        const msgList = document.getElementById('chatMsgList');
+        msgList.scrollTop = msgList.scrollHeight;
+    });
 }
 
 
