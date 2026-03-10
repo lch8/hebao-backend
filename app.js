@@ -150,6 +150,7 @@ function renderProfileState() {
         if(postsEmptyState) postsEmptyState.innerHTML = '<div class="empty-state-icon">📭</div>你还没有发布过闲置/互助哦';
         if(reviewsEmptyState) reviewsEmptyState.innerHTML = '<div class="empty-state-icon">📭</div>暂无收到的评价';
         loadAvatar();
+        loadMyPosts();
     } else {
         guestBlock.style.display = 'block'; actionsBlock.style.display = 'none';
         uidText.innerText = 'ID: 未登录'; nameText.innerText = '管家游客';
@@ -894,6 +895,82 @@ function renderMarketPartner(data = mockPartnerItems) {
         </div>`;
     });
     container.innerHTML = html;
+}
+// ================= 10. 个人主页资产：我的发布与下架 =================
+
+// 拉取我的发布记录
+async function loadMyPosts() {
+    if (!isLoggedIn) return;
+    const listDiv = document.getElementById('myPostsList');
+    const emptyState = document.getElementById('postsEmptyState');
+    
+    try {
+        const res = await fetch(`/api/get-my-posts?userId=${userUUID}`);
+        const data = await res.json();
+        
+        if (data.success && data.posts && data.posts.length > 0) {
+            emptyState.style.display = 'none'; // 隐藏空状态
+            let html = '';
+            data.posts.forEach(post => {
+                // 如果没有图片，给一个带表情的默认占位块
+                const imgHtml = post.image_url 
+                    ? `<img src="${post.image_url}" style="width:64px; height:64px; object-fit:cover; border-radius:12px; flex-shrink:0; border: 1px solid #E5E7EB;">` 
+                    : `<div style="width:64px; height:64px; background:#F9FAFB; border-radius:12px; display:flex; justify-content:center; align-items:center; font-size:24px; flex-shrink:0; border: 1px solid #E5E7EB;">📄</div>`;
+                
+                html += `
+                <div style="background:#FFF; border-radius:16px; padding:12px; margin-bottom:12px; border:1px solid #E5E7EB; box-shadow: 0 2px 8px rgba(0,0,0,0.02); display:flex; gap:12px; align-items:center;">
+                    ${imgHtml}
+                    <div style="flex:1; overflow:hidden;">
+                        <div style="font-size:14px; font-weight:900; color:#111827; margin-bottom:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${post.title}</div>
+                        <div style="font-size:12px; color:#6B7280; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; line-height: 1.4;">${post.content}</div>
+                    </div>
+                    <div style="background:#FEF2F2; color:#EF4444; padding:6px 14px; border-radius:14px; font-size:12px; font-weight:bold; cursor:pointer; transition: 0.2s;" onclick="deleteMyPost(${post.id}, this)">下架</div>
+                </div>`;
+            });
+            listDiv.innerHTML = html;
+        } else {
+            emptyState.style.display = 'block';
+            if(listDiv) listDiv.innerHTML = '';
+        }
+    } catch (e) {
+        console.error("加载我的发布失败", e);
+    }
+}
+
+// 删除我的发布记录
+async function deleteMyPost(postId, btnElement) {
+    if(!confirm('确定要下架这条发布吗？下架后大厅里也看不到了哦！')) return;
+    
+    // 按钮变成加载状态
+    const originalText = btnElement.innerText;
+    btnElement.innerText = "处理中...";
+    btnElement.style.pointerEvents = "none";
+    
+    try {
+        const res = await fetch('/api/delete-post', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ postId: postId, userId: userUUID })
+        });
+        const data = await res.json();
+        
+        if(data.success) {
+            // 重新拉取一次我的发布列表
+            loadMyPosts(); 
+            // 💡 顺便重新拉取一次集市大厅的数据，确保被删掉的帖子在广场上也消失！
+            if (typeof loadCommunityPosts === 'function') loadCommunityPosts(); 
+            
+            // 屏幕中间飘一个提示
+            const plus = document.createElement('div'); plus.className = 'float-plus'; plus.innerText = '✅ 帖子已下架'; plus.style.color = '#EF4444';
+            plus.style.left = '50%'; plus.style.top = '50%'; plus.style.transform = 'translate(-50%, -50%)'; document.body.appendChild(plus); setTimeout(() => plus.remove(), 1500);
+        } else {
+            alert('删除失败：' + data.error);
+            btnElement.innerText = originalText; btnElement.style.pointerEvents = "auto";
+        }
+    } catch(e) {
+        alert('网络错误，无法下架');
+        btnElement.innerText = originalText; btnElement.style.pointerEvents = "auto";
+    }
 }
 
 // ================= 9. 页面初始化启动器 =================
