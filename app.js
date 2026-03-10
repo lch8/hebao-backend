@@ -318,4 +318,3 @@ window.addEventListener('DOMContentLoaded', () => {
     loadTrendingToHome(); 
     renderProfileState(); 
 });
-</script>
