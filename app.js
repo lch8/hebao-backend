@@ -147,10 +147,9 @@ function renderProfileState() {
         document.getElementById('profileGenderTag').innerText = savedGender || '保密';
         document.getElementById('profileMbtiTag').innerText = savedMbti || 'MBTI未知';
 
-        if(postsEmptyState) postsEmptyState.innerHTML = '<div class="empty-state-icon">📭</div>你还没有发布过闲置/互助哦';
         if(reviewsEmptyState) reviewsEmptyState.innerHTML = '<div class="empty-state-icon">📭</div>暂无收到的评价';
         loadAvatar();
-        loadMyPosts();
+        loadMyPosts(); // 登录状态下自动拉取我的帖子
     } else {
         guestBlock.style.display = 'block'; actionsBlock.style.display = 'none';
         uidText.innerText = 'ID: 未登录'; nameText.innerText = '管家游客';
@@ -160,6 +159,8 @@ function renderProfileState() {
         document.getElementById('profileAvatarEmoji').textContent = '👻';
         if(postsEmptyState) postsEmptyState.innerHTML = '<div class="empty-state-icon">🔒</div>请先登录查看你的发布记录';
         if(reviewsEmptyState) reviewsEmptyState.innerHTML = '<div class="empty-state-icon">🔒</div>请先登录查看收到的评价';
+        const listDiv = document.getElementById('myPostsList');
+        if(listDiv) listDiv.innerHTML = '';
     }
 }
 
@@ -199,11 +200,124 @@ function loadAvatar() {
     }
 }
 
-// ================= 4. 首页扫码与真实 API (商品与榜单) =================
+// ================= 4. 首页双扫码引擎与榜单 =================
 let currentProductData = null; 
 let currentDetailData = null; 
 let globalTrendingLikes = []; 
 let globalTrendingDislikes = [];
+
+// [引擎A：AI 拍包装排雷]
+async function handlePackageImage(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    document.getElementById('homeActionBox').style.display = 'none';
+    document.getElementById('previewContainer').style.display = 'block';
+    document.getElementById('scanOverlay').style.display = 'flex';
+    document.getElementById('scanText').innerText = "📡 管家双眼发光，正在解析包装...";
+    document.getElementById('miniResultCard').style.display = 'none';
+
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        const base64Data = e.target.result.split(',')[1];
+        const previewImg = document.getElementById('previewImg');
+        if (previewImg) previewImg.src = e.target.result;
+
+        try {
+            const res = await fetch('/api/scan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ imageBase64: base64Data })
+            });
+            
+            const data = await res.json();
+            if(!res.ok || data.error) throw new Error(data.error || "识别失败");
+
+            currentProductData = data; 
+            currentProductData.image_url = e.target.result; 
+
+            document.getElementById('scanOverlay').style.display = 'none'; 
+            document.getElementById('previewContainer').style.display = 'none'; 
+            document.getElementById('miniResultCard').style.display = 'block'; 
+            
+            const isGood = data.is_recommended === 1;
+            const emoji = isGood ? '👍' : '💣';
+            
+            document.getElementById('miniChineseName').innerText = `${emoji} ${data.chinese_name || data.dutch_name || '未知商品'}`; 
+            document.getElementById('miniInsight').innerText = data.insight || '管家觉得这个还不错~'; 
+            
+            saveToLocalFootprint(data, data.image_url);
+        } catch (err) {
+            alert("识别失败：" + err.message);
+            resetApp();
+        } finally {
+            document.getElementById('packageImgInput').value = '';
+        }
+    };
+    reader.readAsDataURL(file);
+}
+
+// [引擎B：扫条形码精确匹配]
+let html5Scanner = null;
+
+function startBarcodeScan() {
+    document.getElementById('scannerModal').style.display = 'flex'; 
+    html5Scanner = new Html5Qrcode("reader");
+    
+    const config = { 
+        fps: 10, 
+        qrbox: { width: 250, height: 150 }, 
+        aspectRatio: 1.0, 
+        formatsToSupport: [ Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8, Html5QrcodeSupportedFormats.UPC_A ] 
+    };
+    
+    html5Scanner.start({ facingMode: "environment" }, config, (decodedText) => {
+        if (navigator.vibrate) navigator.vibrate(100); 
+        closeScanner();
+        document.getElementById('mainSearchInput').value = decodedText; 
+        executeSearch(); 
+    }).catch(err => { 
+        alert("调用摄像头失败！请确保您允许了网页使用相机权限。"); 
+        closeScanner();
+    });
+}
+
+function closeScanner() { 
+    if(html5Scanner) { 
+        html5Scanner.stop().catch(e => console.log("停止相机失败", e)); 
+        html5Scanner = null;
+    }
+    document.getElementById('scannerModal').style.display = 'none'; 
+}
+
+function executeSearch() {
+    const query = document.getElementById('mainSearchInput').value.trim(); if (!query) return;
+    document.getElementById('homeActionBox').style.display='none'; document.getElementById('previewContainer').style.display='block'; document.getElementById('scanOverlay').style.display='flex'; document.getElementById('scanText').innerText = "📡 正在全网检索..."; document.getElementById('miniResultCard').style.display='none';
+    
+    fetch('/api/scan-barcode', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ barcode: query, userId: userUUID }) })
+    .then(res => res.json())
+    .then(data => {
+        currentProductData = data; 
+        document.getElementById('scanOverlay').style.display='none'; 
+        document.getElementById('previewContainer').style.display='none'; 
+        document.getElementById('miniResultCard').style.display='block'; 
+        document.getElementById('miniChineseName').innerText=data.chinese_name||'未知商品'; 
+        document.getElementById('miniInsight').innerText=data.insight||'暂无评价'; 
+        saveToLocalFootprint(data, data.image_url);
+    })
+    .catch(err => { 
+        alert("未找到商品信息！"); 
+        resetApp(); 
+    });
+}
+
+function resetApp() { 
+    document.getElementById('previewContainer').style.display='none'; 
+    document.getElementById('scanOverlay').style.display='none'; 
+    document.getElementById('miniResultCard').style.display='none'; 
+    document.getElementById('homeActionBox').style.display='flex'; 
+    document.getElementById('mainSearchInput').value = '';
+}
 
 async function loadTrendingToHome() {
     try {
@@ -240,45 +354,6 @@ function renderHomeTrending(list, containerId, type) {
         html += `<div class="trending-card" onclick="openDetailsFromHomeTrending('${type}', ${index})"><div class="rank-badge ${badgeClass}">TOP ${index + 1}</div><img src="${safeImg}" onerror="this.onerror=null; this.src='${fallbackSvg}'" style="width: 50px; height: 50px; border-radius: 10px; object-fit: cover; background: #F3F4F6; border: 1px solid #E5E7EB;"><div class="t-info"><div class="t-name">${item.chinese_name || '未命名商品'}</div><div style="font-size: 11px; color: #9CA3AF; margin-top:2px;">${item.dutch_name || ''}</div></div><div class="t-score" style="color: ${scoreColor}">${icon} ${score}</div></div>`;
     });
     container.innerHTML = html;
-}
-
-function startBarcodeScan() {
-    document.getElementById('scannerModal').style.display = 'flex'; let html5QrcodeScanner = new Html5Qrcode("reader");
-    const config = { fps: 10, qrbox: { width: 250, height: 150 }, aspectRatio: 1.0, formatsToSupport: [ Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8, Html5QrcodeSupportedFormats.UPC_A ] };
-    html5QrcodeScanner.start({ facingMode: "environment" }, config, (decodedText) => {
-        if (navigator.vibrate) navigator.vibrate(100); document.getElementById('scannerModal').style.display = 'none'; html5QrcodeScanner.stop(); document.getElementById('mainSearchInput').value = decodedText; executeSearch();
-    }).catch(err => { alert("调用摄像头失败！"); document.getElementById('scannerModal').style.display = 'none'; });
-}
-
-function closeScanner() { document.getElementById('scannerModal').style.display = 'none'; }
-
-function executeSearch() {
-    const query = document.getElementById('mainSearchInput').value.trim(); if (!query) return;
-    document.getElementById('homeActionBox').style.display='none'; document.getElementById('previewContainer').style.display='block'; document.getElementById('scanOverlay').style.display='flex'; document.getElementById('scanText').innerText = "📡 正在全网检索..."; document.getElementById('miniResultCard').style.display='none';
-    
-    fetch('/api/scan-barcode', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ barcode: query, userId: userUUID }) })
-    .then(res => res.json())
-    .then(data => {
-        currentProductData = data; 
-        document.getElementById('scanOverlay').style.display='none'; 
-        document.getElementById('previewContainer').style.display='none'; 
-        document.getElementById('miniResultCard').style.display='block'; 
-        document.getElementById('miniChineseName').innerText=data.chinese_name||'未知商品'; 
-        document.getElementById('miniInsight').innerText=data.insight||'暂无评价'; 
-        saveToLocalFootprint(data, data.image_url);
-    })
-    .catch(err => { 
-        alert("未找到商品信息！"); 
-        resetApp(); 
-    });
-}
-
-function resetApp() { 
-    document.getElementById('previewContainer').style.display='none'; 
-    document.getElementById('scanOverlay').style.display='none'; 
-    document.getElementById('miniResultCard').style.display='none'; 
-    document.getElementById('homeActionBox').style.display='flex'; 
-    document.getElementById('mainSearchInput').value = '';
 }
 
 // ================= 5. 详情页与足迹逻辑 =================
@@ -540,6 +615,7 @@ async function submitIdlePost() {
         if(document.getElementById('idleImgPreview')) document.getElementById('idleImgPreview').style.display = 'none';
         if(document.getElementById('idleImgPlaceholder')) document.getElementById('idleImgPlaceholder').style.display = 'flex';
         document.getElementById('idleDesc').value = '';
+        loadCommunityPosts(); // 发布后立即刷新集市大厅
     } catch(e) {
         alert("发布失败：" + e.message);
     } finally {
@@ -578,6 +654,7 @@ async function submitHelpPost() {
         alert("🎉 悬赏发布成功！已永久写入数据库！");
         closeHelpPublish();
         document.getElementById('helpDesc').value = '';
+        loadCommunityPosts(); 
     } catch(e) { alert("发布失败：" + e.message); } 
     finally { btn.innerText = "发布"; btn.style.pointerEvents = 'auto'; }
 }
@@ -611,12 +688,104 @@ async function submitPartnerPost() {
         closePartnerPublish();
         document.getElementById('partnerTitle').value = '';
         document.getElementById('partnerDesc').value = '';
+        loadCommunityPosts(); 
     } catch(e) { alert("发布失败：" + e.message); } 
     finally { btn.innerText = "发布"; btn.style.pointerEvents = 'auto'; }
 }
 
+// ================= 8. 集市模块：从数据库拉取与渲染 =================
+let mockIdleItems = [];
+let mockHelpItems = [];
+let mockPartnerItems = [];
 
-// ================= 8. 集市模块：聊天、数据与过滤渲染 =================
+async function loadCommunityPosts() {
+    try {
+        const res = await fetch('/api/get-community');
+        const data = await res.json();
+        
+        if (data.success && data.posts) {
+            mockIdleItems = [];
+            mockHelpItems = [];
+            mockPartnerItems = [];
+
+            data.posts.forEach(post => {
+                const title = post.title || '';
+                const content = post.content || '';
+                const time = new Date(post.created_at).getTime() || Date.now();
+                const author = post.author_name || '匿名管家';
+                const img = post.image_url || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&auto=format&fit=crop';
+
+                if (title.includes('[闲置]')) {
+                    const priceMatch = title.match(/€(\d+(\.\d+)?)/);
+                    const price = priceMatch ? priceMatch[1] : '面议';
+                    
+                    mockIdleItems.push({
+                        id: post.id,
+                        img: img,
+                        title: content.substring(0, 40) + (content.length > 40 ? '...' : ''),
+                        price: price,
+                        priceNum: parseFloat(price) || 0,
+                        originalPrice: '',
+                        avatar: "😎", 
+                        name: author,
+                        credit: "极佳",
+                        creditClass: "excellent",
+                        isSold: false,
+                        isBargain: content.includes('刀'), 
+                        timestamp: time
+                    });
+                } 
+                else if (title.includes('[互助')) {
+                    const rewardMatch = title.match(/€(\d+(\.\d+)?)/);
+                    const reward = rewardMatch ? rewardMatch[1] : '0';
+                    const isUrgent = title.includes('🔥急');
+                    
+                    mockHelpItems.push({
+                        id: post.id,
+                        type: isUrgent ? "🔥 紧急" : "🤝 求助",
+                        isUrgent: isUrgent,
+                        title: content.substring(0, 40) + '...',
+                        reward: reward,
+                        rewardNum: parseFloat(reward) || 0,
+                        date: "私信确认", 
+                        location: "荷兰", 
+                        avatar: "🐼",
+                        name: author,
+                        credit: "新人",
+                        creditClass: "new",
+                        distKm: Math.floor(Math.random() * 15) + 1, 
+                        timestamp: time,
+                        imgIcon: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23EFF6FF'/><text x='50%' y='50%' font-size='20' text-anchor='middle' dominant-baseline='middle'>🤝</text></svg>"
+                    });
+                }
+                else if (title.includes('[找搭子]')) {
+                    const cleanTitle = title.replace('[找搭子] ', '');
+                    mockPartnerItems.push({
+                        id: post.id,
+                        avatar: "👱‍♀️",
+                        name: author,
+                        gender: Math.random() > 0.5 ? "f" : "m",
+                        mbti: "未知",
+                        mbtiType: "all",
+                        title: cleanTitle,
+                        desc: content,
+                        tags: ["✨ 新发布"],
+                        distKm: Math.floor(Math.random() * 15) + 1,
+                        daysAway: 1,
+                        timestamp: time
+                    });
+                }
+            });
+
+            applyMarketFilters('idle');
+            applyMarketFilters('help');
+            applyMarketFilters('partner');
+        }
+    } catch (err) {
+        console.error("获取社区数据失败:", err);
+    }
+}
+
 function openChat(sellerName, sellerAvatar, itemTitle, itemPrice, itemImg, isSold, postType = 'idle') {
     requireAuth(() => {
         document.getElementById('chatTargetName').innerText = sellerName;
@@ -678,108 +847,6 @@ function sendChatMessage() {
     }, 1200);
 }
 
-// ⚠️ 注意：这里把 const 改成了 let，这样我们才能用数据库里的真实数据覆盖它们！
-let mockIdleItems = [];
-let mockHelpItems = [];
-let mockPartnerItems = [];
-
-// 🚀 核心大招：从 Turso 数据库拉取所有网友发布的真实帖子
-async function loadCommunityPosts() {
-    try {
-        const res = await fetch('/api/get-community');
-        const data = await res.json();
-        
-        if (data.success && data.posts) {
-            // 清空假数据池
-            mockIdleItems = [];
-            mockHelpItems = [];
-            mockPartnerItems = [];
-
-            // 把从数据库拉出来的帖子，按照标题里的标签 [闲置] [互助] [找搭子] 进行分拣
-            data.posts.forEach(post => {
-                const title = post.title || '';
-                const content = post.content || '';
-                const time = new Date(post.created_at).getTime() || Date.now();
-                const author = post.author_name || '匿名管家';
-                // 如果没传图，给个默认占位图
-                const img = post.image_url || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&auto=format&fit=crop';
-
-                // 1. 投递到【闲置跳蚤】
-                if (title.includes('[闲置]')) {
-                    // 用正则从 "[闲置] €25 · Delft" 中把价格提取出来
-                    const priceMatch = title.match(/€(\d+(\.\d+)?)/);
-                    const price = priceMatch ? priceMatch[1] : '面议';
-                    
-                    mockIdleItems.push({
-                        id: post.id,
-                        img: img,
-                        title: content.substring(0, 40) + (content.length > 40 ? '...' : ''), // 闲置用正文当标题更接地气
-                        price: price,
-                        priceNum: parseFloat(price) || 0,
-                        originalPrice: '',
-                        avatar: "😎", 
-                        name: author,
-                        credit: "极佳",
-                        creditClass: "excellent",
-                        isSold: false,
-                        isBargain: content.includes('刀'), // 如果正文里写了"刀"，就自动打上可讲价标签
-                        timestamp: time
-                    });
-                } 
-                // 2. 投递到【互助悬赏】
-                else if (title.includes('[互助')) {
-                    const rewardMatch = title.match(/€(\d+(\.\d+)?)/);
-                    const reward = rewardMatch ? rewardMatch[1] : '0';
-                    const isUrgent = title.includes('🔥急');
-                    
-                    mockHelpItems.push({
-                        id: post.id,
-                        type: isUrgent ? "🔥 紧急" : "🤝 求助",
-                        isUrgent: isUrgent,
-                        title: content.substring(0, 40) + '...',
-                        reward: reward,
-                        rewardNum: parseFloat(reward) || 0,
-                        date: "私信确认", 
-                        location: "荷兰", 
-                        avatar: "🐼",
-                        name: author,
-                        credit: "新人",
-                        creditClass: "new",
-                        distKm: Math.floor(Math.random() * 15) + 1, 
-                        timestamp: time,
-                        imgIcon: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23EFF6FF'/><text x='50%' y='50%' font-size='20' text-anchor='middle' dominant-baseline='middle'>🤝</text></svg>"
-                    });
-                }
-                // 3. 投递到【找搭子】
-                else if (title.includes('[找搭子]')) {
-                    const cleanTitle = title.replace('[找搭子] ', '');
-                    mockPartnerItems.push({
-                        id: post.id,
-                        avatar: "👱‍♀️",
-                        name: author,
-                        gender: Math.random() > 0.5 ? "f" : "m",
-                        mbti: "未知",
-                        mbtiType: "all",
-                        title: cleanTitle,
-                        desc: content,
-                        tags: ["✨ 新发布"],
-                        distKm: Math.floor(Math.random() * 15) + 1,
-                        daysAway: 1,
-                        timestamp: time
-                    });
-                }
-            });
-
-            // 拿到真实数据后，重新渲染三个页面的瀑布流！
-            renderMarketIdle();
-            renderMarketHelp();
-            renderMarketPartner();
-        }
-    } catch (err) {
-        console.error("获取社区数据失败:", err);
-    }
-}
-
 function toggleFilterPill(element, type) {
     element.classList.toggle('active');
     applyMarketFilters(type);
@@ -821,7 +888,7 @@ function applyMarketFilters(type) {
 function renderMarketIdle(data = mockIdleItems) {
     const container = document.getElementById('idleWaterfall');
     if(!container) return;
-    if(data.length === 0) { container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:40px 0; grid-column:span 2;">没有找到符合条件的闲置~</div>'; return; }
+    if(data.length === 0) { container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:40px 0; grid-column:span 2;">集市空空如也，快去发一个吧！</div>'; return; }
     
     let html = '';
     data.forEach(item => {
@@ -896,9 +963,8 @@ function renderMarketPartner(data = mockPartnerItems) {
     });
     container.innerHTML = html;
 }
-// ================= 10. 个人主页资产：我的发布与下架 =================
 
-// 拉取我的发布记录
+// ================= 10. 个人主页资产：我的发布与下架 =================
 async function loadMyPosts() {
     if (!isLoggedIn) return;
     const listDiv = document.getElementById('myPostsList');
@@ -909,10 +975,9 @@ async function loadMyPosts() {
         const data = await res.json();
         
         if (data.success && data.posts && data.posts.length > 0) {
-            emptyState.style.display = 'none'; // 隐藏空状态
+            if(emptyState) emptyState.style.display = 'none'; 
             let html = '';
             data.posts.forEach(post => {
-                // 如果没有图片，给一个带表情的默认占位块
                 const imgHtml = post.image_url 
                     ? `<img src="${post.image_url}" style="width:64px; height:64px; object-fit:cover; border-radius:12px; flex-shrink:0; border: 1px solid #E5E7EB;">` 
                     : `<div style="width:64px; height:64px; background:#F9FAFB; border-radius:12px; display:flex; justify-content:center; align-items:center; font-size:24px; flex-shrink:0; border: 1px solid #E5E7EB;">📄</div>`;
@@ -927,9 +992,9 @@ async function loadMyPosts() {
                     <div style="background:#FEF2F2; color:#EF4444; padding:6px 14px; border-radius:14px; font-size:12px; font-weight:bold; cursor:pointer; transition: 0.2s;" onclick="deleteMyPost(${post.id}, this)">下架</div>
                 </div>`;
             });
-            listDiv.innerHTML = html;
+            if(listDiv) listDiv.innerHTML = html;
         } else {
-            emptyState.style.display = 'block';
+            if(emptyState) emptyState.style.display = 'block';
             if(listDiv) listDiv.innerHTML = '';
         }
     } catch (e) {
@@ -937,11 +1002,9 @@ async function loadMyPosts() {
     }
 }
 
-// 删除我的发布记录
 async function deleteMyPost(postId, btnElement) {
     if(!confirm('确定要下架这条发布吗？下架后大厅里也看不到了哦！')) return;
     
-    // 按钮变成加载状态
     const originalText = btnElement.innerText;
     btnElement.innerText = "处理中...";
     btnElement.style.pointerEvents = "none";
@@ -955,12 +1018,9 @@ async function deleteMyPost(postId, btnElement) {
         const data = await res.json();
         
         if(data.success) {
-            // 重新拉取一次我的发布列表
             loadMyPosts(); 
-            // 💡 顺便重新拉取一次集市大厅的数据，确保被删掉的帖子在广场上也消失！
             if (typeof loadCommunityPosts === 'function') loadCommunityPosts(); 
             
-            // 屏幕中间飘一个提示
             const plus = document.createElement('div'); plus.className = 'float-plus'; plus.innerText = '✅ 帖子已下架'; plus.style.color = '#EF4444';
             plus.style.left = '50%'; plus.style.top = '50%'; plus.style.transform = 'translate(-50%, -50%)'; document.body.appendChild(plus); setTimeout(() => plus.remove(), 1500);
         } else {
@@ -982,5 +1042,7 @@ window.addEventListener('DOMContentLoaded', () => {
     renderMarketIdle(); 
     renderMarketHelp();
     renderMarketPartner(); 
+    
+    // 去后端拉取真实的社区帖子！
     loadCommunityPosts();
 });
