@@ -504,166 +504,148 @@ function toggleTipsContent(element) {
     element.classList.toggle('active');
 }
 
-// ================= 7. 集市社区发帖、图片上传真实API =================
-let currentUploadBase64 = null;
+// ================= 7. 语音识别与多图上传发布引擎 =================
 
-function handleImageSelect(event, previewId, placeholderId) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        currentUploadBase64 = e.target.result.split(',')[1]; 
-        document.getElementById(previewId).src = e.target.result;
-        document.getElementById(previewId).style.display = 'block';
-        if(document.getElementById(placeholderId)) document.getElementById(placeholderId).style.display = 'none';
-    };
-    reader.readAsDataURL(file);
+// 【1】Web Speech API 语音识别逻辑
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+if (SpeechRecognition) {
+    recognition = new SpeechRecognition();
+    recognition.lang = 'zh-CN'; // 设定为中文
+    recognition.interimResults = false; // 只返回最终结果
 }
 
-async function uploadImageToCOS() {
-    if (!currentUploadBase64) return ''; 
-    try {
-        const res = await fetch('/api/upload', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ imageBase64: currentUploadBase64 })
-        });
-        const data = await res.json();
-        if(data.success) return data.url; 
-        throw new Error(data.error || '上传失败');
-    } catch(e) {
-        alert("图片上传失败：" + e.message);
-        return '';
-    }
-}
-
-function openPublishSheet() {
-    const overlay = document.querySelector('.publish-overlay');
-    const sheet = document.querySelector('.publish-sheet');
-    if(overlay) { overlay.style.display = 'block'; setTimeout(()=>overlay.classList.add('show'),10); }
-    if(sheet) { setTimeout(()=>sheet.classList.add('show'),10); }
-}
-function closePublishSheet() {
-    const overlay = document.querySelector('.publish-overlay');
-    const sheet = document.querySelector('.publish-sheet');
-    if(sheet) sheet.classList.remove('show');
-    if(overlay) { overlay.classList.remove('show'); setTimeout(()=>overlay.style.display='none',300); }
-}
-
-function openIdlePublish() {
-    closePublishSheet();
-    setTimeout(() => {
-        document.getElementById('publishIdleModal').style.display = 'flex';
-        const d = new Date(); d.setDate(d.getDate() + 7);
-        if(document.getElementById('idleDeadline')) document.getElementById('idleDeadline').value = d.toISOString().split('T')[0];
-    }, 300);
-}
-function closeIdlePublish() { document.getElementById('publishIdleModal').style.display = 'none'; }
-
-function selectPill(element, groupName) {
-    document.querySelectorAll(`#${groupName} .pill`).forEach(el => el.classList.remove('active'));
-    element.classList.add('active');
-}
-
-// 🪄 核心颠覆：接入 DeepSeek 的一句话全自动填表系统
-async function generateAICopy() {
-    const keyword = document.getElementById('aiKeywords').value.trim();
-    if (!keyword) return alert("请随意输入一句你的发帖需求，例如：代尔夫特出个电饭煲15欧，不讲价只收现金，明天必须拿走...");
+function toggleVoiceInput() {
+    const btn = document.getElementById('btnVoiceInput');
+    const input = document.getElementById('aiKeywords');
     
-    const btn = document.getElementById('btnAiMagic');
-    btn.innerText = "⏳ DeepSeek 正在为你撰写文案并填表...";
-    btn.disabled = true;
-
-    try {
-        const res = await fetch('/api/generate-copy', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ keyword })
-        });
-        
-        const data = await res.json();
-        if(data.error) throw new Error(data.error);
-
-        // 1. 自动填入神仙文案
-        if(data.copy) document.getElementById('idleDesc').value = data.copy;
-        
-        // 2. 自动填价格
-        if(data.price) document.getElementById('idlePrice').value = data.price;
-        
-        // 3. 自动填日期
-        if(data.deadline) document.getElementById('idleDeadline').value = data.deadline;
-        
-        // 4. 自动操控下拉框选地点
-        if(data.location) {
-            const locSelect = document.getElementById('idleLocation');
-            for(let i=0; i<locSelect.options.length; i++) {
-                if(locSelect.options[i].value === data.location || locSelect.options[i].text.includes(data.location)) {
-                    locSelect.selectedIndex = i;
-                    break;
-                }
-            }
-        }
-        
-        // 5. 自动点亮 UI 胶囊按钮
-        if(data.bargain) {
-            document.querySelectorAll('#bargainGroup .pill').forEach(el => {
-                if(el.innerText.includes(data.bargain) || data.bargain.includes(el.innerText)) {
-                    selectPill(el, 'bargainGroup');
-                }
-            });
-        }
-        if(data.payment) {
-            document.querySelectorAll('#paymentGroup .pill').forEach(el => {
-                // 处理 "Tikkie/银行转账" 这种较长的文本匹配
-                if(el.innerText.includes(data.payment.split('/')[0]) || data.payment.includes(el.innerText)) {
-                    selectPill(el, 'paymentGroup');
-                }
-            });
-        }
-
-        // 清空输入框，给予震撼提示
-        document.getElementById('aiKeywords').value = '';
-        btn.innerText = "✨ 魔法完成！所有表单已自动填好！";
-        
-    } catch (err) {
-        alert("AI生成失败：" + err.message);
-        btn.innerText = "🪄 帮我生成小红书体";
-    } finally {
-        setTimeout(() => { btn.innerText = "🪄 重新生成"; btn.disabled = false; }, 3000);
+    if (!recognition) return alert('抱歉，您的浏览器不支持语音输入，请打字或换用 Chrome 浏览器哦~');
+    
+    if (btn.classList.contains('recording')) {
+        recognition.stop();
+        return;
     }
+
+    btn.classList.add('recording');
+    btn.innerText = '🔴';
+    input.placeholder = '请说话，管家正在听...';
+    
+    try {
+        recognition.start();
+    } catch(e) {}
+
+    recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        input.value += transcript; // 将语音转文字追加到输入框
+    };
+
+    recognition.onend = () => {
+        btn.classList.remove('recording');
+        btn.innerText = '🎙️';
+        input.placeholder = '输入或语音：代村出桌子30欧明天拿走...';
+        // 语音结束后，自动触发 AI 填表
+        if(input.value.trim() !== '') generateAICopy(); 
+    };
+
+    recognition.onerror = (event) => {
+        btn.classList.remove('recording');
+        btn.innerText = '🎙️';
+        input.placeholder = '听不清，请重试或直接打字...';
+    };
 }
 
+// 【2】多图上传逻辑
+let selectedImagesArray = []; // 用于存储多张图片的 {id, base64}
+
+function handleMultiImageSelect(event) {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    Array.from(files).forEach(file => {
+        if (selectedImagesArray.length >= 9) return; // 限制最多9张
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const base64Data = e.target.result.split(',')[1]; 
+            const id = Date.now() + Math.random(); // 唯一ID
+            selectedImagesArray.push({ id: id, base64: base64Data, preview: e.target.result });
+            renderThumbnails();
+        };
+        reader.readAsDataURL(file);
+    });
+    event.target.value = ''; // 清空 input 允许重复选同一张
+}
+
+function removeImage(id) {
+    selectedImagesArray = selectedImagesArray.filter(img => img.id !== id);
+    renderThumbnails();
+}
+
+function renderThumbnails() {
+    const container = document.getElementById('idleImgPreviewContainer');
+    let html = '';
+    selectedImagesArray.forEach(img => {
+        html += `<div class="thumb-box"><img src="${img.preview}"><div class="thumb-del" onclick="removeImage(${img.id})">✕</div></div>`;
+    });
+    if (selectedImagesArray.length < 9) {
+        html += `<div class="upload-btn" onclick="document.getElementById('idleImgInput').click()"><span style="font-size: 24px;">📷</span><span style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">多图</span></div>`;
+    }
+    container.innerHTML = html;
+}
+
+// 核心：将多张图片依次传给腾讯云，返回以逗号拼接的 URL 字符串
+async function uploadImagesToCOS() {
+    if (selectedImagesArray.length === 0) return ''; 
+    let uploadedUrls = [];
+    
+    // 用 for...of 保证按顺序同步上传
+    for (let img of selectedImagesArray) {
+        try {
+            const res = await fetch('/api/upload', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ imageBase64: img.base64 })
+            });
+            const data = await res.json();
+            if(data.success) uploadedUrls.push(data.url); 
+        } catch(e) { console.error("部分图片上传失败", e); }
+    }
+    return uploadedUrls.join(','); // 返回 "url1,url2,url3"
+}
+
+// 【3】发布闲置逻辑 (结合多图与刚才的 DeepSeek 逻辑)
 async function submitIdlePost() {
     const desc = document.getElementById('idleDesc').value.trim();
     const price = document.getElementById('idlePrice').value.trim();
     const loc = document.getElementById('idleLocation').value;
-    if(!desc) return alert("文案还没写呢！快试试 AI 一键生成吧！");
+    if(!desc) return alert("文案还没写呢！快试试语音一句话发帖吧！");
     
     const btn = document.querySelector('#publishIdleModal .fm-submit');
     btn.innerText = "上传中..."; btn.style.pointerEvents = 'none';
 
     try {
-        let finalImageUrl = await uploadImageToCOS();
+        // 等待所有图片上传腾讯云完毕
+        let finalImageUrls = await uploadImagesToCOS();
+        
         const finalTitle = `[闲置] €${price || '面议'} · ${loc}`;
         const authorName = localStorage.getItem('hp_name') || '管家新人';
         
         const res = await fetch('/api/publish-community', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: userUUID, authorName: authorName, title: finalTitle, text: desc, imageUrl: finalImageUrl })
+            body: JSON.stringify({ userId: userUUID, authorName: authorName, title: finalTitle, text: desc, imageUrl: finalImageUrls })
         });
         
         const data = await res.json();
         if(!data.success) throw new Error(data.error);
 
-        alert("🎉 发布成功！你的闲置已经永久存入社区数据库！");
+        alert("🎉 发布成功！支持多图的闲置帖已上架！");
         closeIdlePublish();
         
-        currentUploadBase64 = null;
-        if(document.getElementById('idleImgPreview')) document.getElementById('idleImgPreview').style.display = 'none';
-        if(document.getElementById('idleImgPlaceholder')) document.getElementById('idleImgPlaceholder').style.display = 'flex';
+        // 清理现场
+        selectedImagesArray = [];
+        renderThumbnails();
         document.getElementById('idleDesc').value = '';
-        loadCommunityPosts(); // 发布后立即刷新集市大厅
+        loadCommunityPosts(); 
     } catch(e) {
         alert("发布失败：" + e.message);
     } finally {
