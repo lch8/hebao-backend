@@ -95,13 +95,43 @@
         </div>
 
         <div id="market-idle" class="market-content active">
+            <div class="filter-bar">
+                <select id="sortIdle" class="filter-select" onchange="applyMarketFilters('idle')">
+                    <option value="newest">✨ 最新发布</option>
+                    <option value="priceAsc">💶 价格最低</option>
+                    <option value="priceDesc">💎 价格最高</option>
+                </select>
+                <div class="filter-pill" id="pillIdleBargain" onclick="toggleFilterPill(this, 'idle')">可小刀</div>
+            </div>
             <div class="waterfall-container" id="idleWaterfall"></div>
         </div>
+
         <div id="market-help" class="market-content">
+            <div class="filter-bar">
+                <select id="sortHelp" class="filter-select" onchange="applyMarketFilters('help')">
+                    <option value="newest">✨ 最新发布</option>
+                    <option value="rewardDesc">💰 赏金最高</option>
+                    <option value="distAsc">📍 离我最近</option>
+                </select>
+                <div class="filter-pill" id="pillHelpUrgent" onclick="toggleFilterPill(this, 'help')">🔥 只看加急</div>
+            </div>
             <div class="help-list-container" id="helpListContainer"></div>
         </div>
+
         <div id="market-partner" class="market-content">
-            <div class="empty-market-state">🏕️<br>周末找搭子功能开发中...</div>
+            <div class="filter-bar">
+                <select id="sortPartner" class="filter-select" onchange="applyMarketFilters('partner')">
+                    <option value="newest">✨ 最新发布</option>
+                    <option value="timeAsc">⏰ 时间最近</option>
+                    <option value="distAsc">📍 离我最近</option>
+                </select>
+                <select id="filterMBTI" class="filter-select" onchange="applyMarketFilters('partner')">
+                    <option value="all">所有 MBTI</option>
+                    <option value="e">只看 E 人</option>
+                    <option value="i">只看 I 人</option>
+                </select>
+            </div>
+            <div class="partner-list-container" id="partnerListContainer"></div>
         </div>
     </div>
 
