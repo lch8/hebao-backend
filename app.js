@@ -473,7 +473,31 @@ function submitIdlePost() {
     alert("🎉 发布成功！你的闲置已经进入集市，等待有缘人。");
     closeIdlePublish();
 }
+// ================= AI 发布互助悬赏逻辑 =================
+function openHelpPublish() {
+    closePublishSheet();
+    setTimeout(() => { document.getElementById('publishHelpModal').style.display = 'flex'; }, 300);
+}
+function closeHelpPublish() { document.getElementById('publishHelpModal').style.display = 'none'; }
+function submitHelpPost() {
+    const desc = document.getElementById('helpDesc').value.trim();
+    if(!desc) return alert("请简单描述一下你需要什么帮助哦！");
+    alert("🎉 悬赏发布成功！已进入互助大厅，祝你早日找到帮手。");
+    closeHelpPublish();
+}
 
+// ================= 发帖找搭子逻辑 =================
+function openPartnerPublish() {
+    closePublishSheet();
+    setTimeout(() => { document.getElementById('publishPartnerModal').style.display = 'flex'; }, 300);
+}
+function closePartnerPublish() { document.getElementById('publishPartnerModal').style.display = 'none'; }
+function submitPartnerPost() {
+    const title = document.getElementById('partnerTitle').value.trim();
+    if(!title) return alert("写个吸引人的标题吧！");
+    alert("🎉 找搭子发布成功！缘分正在赶来的路上...");
+    closePartnerPublish();
+}
 // ================= 8. 集市模块：聊天与列表 =================
 function openChat(sellerName, sellerAvatar, itemTitle, itemPrice, itemImg, isSold, postType = 'idle') {
     requireAuth(() => {
@@ -609,13 +633,32 @@ function renderMarketIdle(data = mockIdleItems) {
 function renderMarketHelp(data = mockHelpItems) {
     const container = document.getElementById('helpListContainer');
     if(!container) return;
-    if(data.length === 0) { container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:40px 0;">暂时没有符合条件的悬赏单~</div>'; return; }
+    if(data.length === 0) { container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:40px 0; grid-column:span 2;">暂时没有符合条件的悬赏单~</div>'; return; }
     
     let html = '';
     data.forEach(item => {
         const tagClass = item.isUrgent ? 'hc-type-tag urgent' : 'hc-type-tag';
-        const tagText = item.isUrgent ? `🔥 急 · ${item.type}` : item.type;
-        html += `<div class="help-card" onclick="openChat('${item.name}', '${item.avatar}', '${item.title}', '${item.reward}', \`${item.imgIcon}\`, false, 'help')"><div class="hc-header"><div class="hc-title-box"><div class="${tagClass}">${tagText}</div><div class="hc-title">${item.title}</div></div><div class="hc-reward-box"><span class="hc-reward-currency">€</span><span class="hc-reward-num">${item.reward}</span><div class="hc-reward-label">悬赏金</div></div></div><div class="hc-details"><div class="hc-detail-item"><span>⏰</span> ${item.date}</div><div class="hc-detail-item"><span>📍</span> ${item.location} (${item.distKm} km)</div></div><div class="hc-footer"><div class="hc-user"><div class="hc-avatar">${item.avatar}</div><div class="hc-name">${item.name}</div><div class="wf-credit ${item.creditClass}">${item.credit}</div></div><div class="hc-action-btn">立即私信</div></div></div>`;
+        const tagText = item.isUrgent ? `🔥 急·${item.type.split(' ')[1]}` : item.type.split(' ')[1]; // 缩短标签字数
+        html += `
+        <div class="help-card" onclick="openChat('${item.name}', '${item.avatar}', '${item.title}', '${item.reward}', \`${item.imgIcon}\`, false, 'help')">
+            <div class="hc-top-row">
+                <div class="${tagClass}">${tagText}</div>
+                <div class="hc-reward-compact">€${item.reward}</div>
+            </div>
+            <div class="hc-title">${item.title}</div>
+            <div class="hc-details">
+                <div class="hc-detail-item"><span>⏰</span> ${item.date}</div>
+                <div class="hc-detail-item"><span>📍</span> ${item.location}</div>
+            </div>
+            <div class="hc-footer">
+                <div class="hc-user">
+                    <div class="hc-avatar">${item.avatar}</div>
+                    <div class="hc-name">${item.name}</div>
+                    <div class="wf-credit ${item.creditClass}" style="margin-left:auto; transform:scale(0.9);">${item.credit}</div>
+                </div>
+                <div class="hc-action-btn">立即私信</div>
+            </div>
+        </div>`;
     });
     container.innerHTML = html;
 }
@@ -623,14 +666,32 @@ function renderMarketHelp(data = mockHelpItems) {
 function renderMarketPartner(data = mockPartnerItems) {
     const container = document.getElementById('partnerListContainer');
     if(!container) return;
-    if(data.length === 0) { container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:40px 0;">没有找到合适的搭子，自己发一个吧！</div>'; return; }
+    if(data.length === 0) { container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:40px 0; grid-column:span 2;">没有找到合适的搭子，自己发一个吧！</div>'; return; }
     
     let html = '';
     data.forEach(item => {
         const genderIcon = item.gender === 'f' ? '♀' : '♂';
-        const tagsHtml = item.tags.map(t => `<div class="pc-tag">${t}</div>`).join('');
+        const tagsHtml = item.tags.slice(0, 2).map(t => `<div class="pc-tag">${t}</div>`).join(''); // 最多只显示两个tag防止撑爆
         const iconSvg = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23F3E8FF'/><text x='50%' y='50%' font-size='20' text-anchor='middle' dominant-baseline='middle'>🥂</text></svg>`;
-        html += `<div class="partner-card" onclick="openChat('${item.name}', '${item.avatar}', '${item.title}', '0', \`${iconSvg}\`, false, 'partner')"><div class="pc-header"><div class="pc-user"><div class="pc-avatar">${item.avatar}</div><div class="pc-info"><div class="pc-name-row"><span class="pc-name">${item.name}</span><span class="pc-gender ${item.gender}">${genderIcon}</span></div><span class="pc-mbti">${item.mbti}</span></div></div></div><div class="pc-title">${item.title}</div><div class="pc-desc">${item.desc}</div><div class="pc-tags">${tagsHtml}</div><div class="pc-footer"><div class="pc-dist"><span>📍</span> 距你 ${item.distKm} km · ${item.daysAway}天后</div><div class="pc-action">打招呼</div></div></div>`;
+        html += `
+        <div class="partner-card" onclick="openChat('${item.name}', '${item.avatar}', '${item.title}', '0', \`${iconSvg}\`, false, 'partner')">
+            <div class="pc-header">
+                <div class="pc-user">
+                    <div class="pc-avatar">${item.avatar}</div>
+                    <div class="pc-info">
+                        <div class="pc-name-row"><span class="pc-name">${item.name}</span><span class="pc-gender ${item.gender}">${genderIcon}</span></div>
+                        <span class="pc-mbti">${item.mbti}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="pc-title">${item.title}</div>
+            <div class="pc-desc">${item.desc}</div>
+            <div class="pc-tags">${tagsHtml}</div>
+            <div class="pc-footer">
+                <div class="pc-dist"><span>📍</span> 距你 ${item.distKm} km</div>
+                <div class="pc-action">打招呼</div>
+            </div>
+        </div>`;
     });
     container.innerHTML = html;
 }
