@@ -346,13 +346,15 @@
         </div>
 
         <div class="ai-magic-box">
-            <div class="ai-header"><span>✨ 管家一句话帮发</span> <span style="font-size: 11px; font-weight: normal; color: #D97706;">小白/懒人必用</span></div>
+            <div class="ai-header"><span>✨ 管家一句话帮发</span> <span style="font-size: 11px; font-weight: normal; color: #D97706;">支持多次追加物品</span></div>
             <div class="ai-input-wrapper">
-                <input type="text" id="aiKeywords" class="ai-input" style="margin-bottom: 0;" placeholder="输入或语音：代村出桌子30欧明天拿走...">
-                <button class="voice-btn" id="btnVoiceInput" onclick="toggleVoiceInput()">🎙️</button>
+                <input type="text" id="aiKeywords_idle" class="ai-input" style="margin-bottom: 0;" placeholder="代村出书桌30欧，再加个椅子10欧...">
+                <button class="voice-btn" id="btnVoiceInput_idle" onclick="toggleVoiceInput('idle')">🎙️</button>
             </div>
-            <button class="ai-btn" id="btnAiMagic" style="margin-top: 10px;" onclick="generateAICopy()">🪄 自动填表</button>
+            <div style="font-size: 11px; color: #B45309; margin-top: 8px;">💡 <b>连招公式：</b>物品 + 价格 + 地点 + 交易要求</div>
+            <button class="ai-btn" id="btnAiMagic_idle" style="margin-top: 10px;" onclick="generateAICopy('idle')">🪄 自动填表</button>
         </div>
+        
         <textarea id="idleDesc" class="fm-textarea" placeholder="在这里描述你的闲置。你也可以直接在这里手写..."></textarea>
 
         <div class="fm-row">
@@ -408,6 +410,15 @@
         <div class="fm-submit" onclick="submitHelpPost()">发布</div>
     </div>
     <div class="fm-content">
+            <div class="ai-magic-box" style="margin-bottom: 20px;">
+                <div class="ai-header"><span>✨ 一句话发悬赏</span></div>
+                <div class="ai-input-wrapper">
+                    <input type="text" id="aiKeywords_help" class="ai-input" style="margin-bottom: 0;" placeholder="明天早7点史基浦接机，赏金50欧...">
+                    <button class="voice-btn" id="btnVoiceInput_help" onclick="toggleVoiceInput('help')">🎙️</button>
+                </div>
+                <div style="font-size: 11px; color: #B45309; margin-top: 8px;">💡 <b>连招公式：</b>任务 + 时间地点 + 赏金 (可喊十万火急)</div>
+                <button class="ai-btn" id="btnAiMagic_help" style="margin-top: 10px;" onclick="generateAICopy('help')">🪄 自动填表</button>
+            </div>
         <div class="fm-section-title" style="margin-top: 5px;">帮我做点什么？</div>
         <div class="fm-row" style="border-bottom:none;">
             <div class="pill-group" style="justify-content: flex-start; gap: 10px;" id="helpTypeGroup">
@@ -450,6 +461,15 @@
         <div class="fm-submit" style="background:#8B5CF6;" onclick="submitPartnerPost()">发布</div>
     </div>
     <div class="fm-content">
+            <div class="ai-magic-box" style="margin-bottom: 20px; background: linear-gradient(135deg, #F3E8FF, #E9D5FF); border-color: #D8B4FE;">
+                <div class="ai-header" style="color: #6B21A8;"><span>🥂 灵魂搭子召唤术</span></div>
+                <div class="ai-input-wrapper">
+                    <input type="text" id="aiKeywords_partner" class="ai-input" style="margin-bottom: 0; border-color: #C084FC;" placeholder="这周末阿姆逛展，只找E人姐妹...">
+                    <button class="voice-btn" id="btnVoiceInput_partner" style="border-color: #C084FC;" onclick="toggleVoiceInput('partner')">🎙️</button>
+                </div>
+                <div style="font-size: 11px; color: #7E22CE; margin-top: 8px;">💡 <b>连招公式：</b>活动 + 时间地点 + MBTI要求</div>
+                <button class="ai-btn" id="btnAiMagic_partner" style="margin-top: 10px; background: #6B21A8; color: #FFF;" onclick="generateAICopy('partner')">🪄 自动填表</button>
+            </div>
         <input type="text" id="partnerTitle" class="ai-input" style="font-size:16px; font-weight:bold; border-color:#E5E7EB; margin-top:5px;" placeholder="一句话标题 (例如: 周末有人去国王节吗)">
         <textarea id="partnerDesc" class="fm-textarea" style="height: 120px; border-color:#E5E7EB; margin-bottom:10px;" placeholder="介绍一下你的计划，或者希望找个什么样的搭子..."></textarea>
         
