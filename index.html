@@ -334,25 +334,25 @@
     </div>
     
     <div class="fm-content">
-        <div class="upload-img-box">
-            <input type="file" id="idleImgInput" accept="image/*" style="display: none;" onchange="handleImageSelect(event, 'idleImgPreview', 'idleImgPlaceholder')">
-            
-            <div class="upload-btn" onclick="document.getElementById('idleImgInput').click()">
-                <img id="idleImgPreview" src="" style="width:100%; height:100%; border-radius:14px; object-fit:cover; display:none;">
-                <div id="idleImgPlaceholder" style="display:flex; flex-direction:column; align-items:center;">
+        <div class="upload-img-box" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+            <input type="file" id="idleImgInput" accept="image/*" multiple style="display: none;" onchange="handleMultiImageSelect(event)">
+            <div class="multi-img-container" id="idleImgPreviewContainer">
+                <div class="upload-btn" onclick="document.getElementById('idleImgInput').click()">
                     <span style="font-size: 24px;">📷</span>
-                    <span style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">添加图片</span>
+                    <span style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">多图</span>
                 </div>
             </div>
-            <div style="font-size: 12px; color: #9CA3AF; margin-left: 10px;">建议首图传大合照，让买家一眼心动</div>
+            <div style="font-size: 12px; color: #9CA3AF;">首图建议传大合照，最多支持 9 张</div>
         </div>
 
         <div class="ai-magic-box">
-            <div class="ai-header"><span>✨ AI 一键写神仙文案</span> <span style="font-size: 11px; font-weight: normal; color: #D97706;">小白/多件清仓必用</span></div>
-            <input type="text" id="aiKeywords" class="ai-input" placeholder="输入：宜家桌子30欧，锅碗瓢盆打包10欧，微波炉...">
-            <button class="ai-btn" id="btnAiMagic" onclick="generateAICopy()">🪄 帮我生成小红书体</button>
+            <div class="ai-header"><span>✨ 管家一句话帮发</span> <span style="font-size: 11px; font-weight: normal; color: #D97706;">小白/懒人必用</span></div>
+            <div class="ai-input-wrapper">
+                <input type="text" id="aiKeywords" class="ai-input" style="margin-bottom: 0;" placeholder="输入或语音：代村出桌子30欧明天拿走...">
+                <button class="voice-btn" id="btnVoiceInput" onclick="toggleVoiceInput()">🎙️</button>
+            </div>
+            <button class="ai-btn" id="btnAiMagic" style="margin-top: 10px;" onclick="generateAICopy()">🪄 自动填表</button>
         </div>
-
         <textarea id="idleDesc" class="fm-textarea" placeholder="在这里描述你的闲置。你也可以直接在这里手写..."></textarea>
 
         <div class="fm-row">
