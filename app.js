@@ -269,6 +269,45 @@ function renderHomeTrending(list, containerId, type) {
     container.innerHTML = html;
 }
 
+// ================= 集市模块模拟数据与渲染 =================
+const mockIdleItems = [
+    { img: "https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?w=400&auto=format&fit=crop", title: "九成新空气炸锅，回国急出带原包装", price: "25", originalPrice: "€69", avatar: "😎", name: "代村阿强", credit: "极佳", creditClass: "excellent" },
+    { img: "https://images.unsplash.com/photo-1505843490538-5133c6c7d0e1?w=400&auto=format&fit=crop", title: "宜家升降桌，有点小划痕不影响使用", price: "40", originalPrice: "€129", avatar: "👩‍💻", name: "鹿特丹土豆", credit: "良好", creditClass: "good" },
+    { img: "https://images.unsplash.com/photo-1544816155-12df9643f363?w=400&auto=format&fit=crop", title: "RSM 鹿特丹商学院大一必修课纸质教材全套", price: "15", originalPrice: "€80", avatar: "👻", name: "商科牛马", credit: "极佳", creditClass: "excellent" },
+    { img: "https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?w=400&auto=format&fit=crop", title: "只穿过一次的雪地靴，尺码 38 偏小", price: "30", originalPrice: "€95", avatar: "🐼", name: "海牙小丸子", credit: "新人", creditClass: "new" },
+    { img: "https://images.unsplash.com/photo-1610444391690-3490710fc9ba?w=400&auto=format&fit=crop", title: "搬家清仓！各种锅碗瓢盆和调料打包带走", price: "10", originalPrice: "", avatar: "🐱", name: "阿姆食神", credit: "良好", creditClass: "good" }
+];
+
+function renderMarketIdle() {
+    const container = document.getElementById('idleWaterfall');
+    if(!container) return;
+    let html = '';
+    mockIdleItems.forEach(item => {
+        // 点击商品触发鉴权，不登录不给看详情，逼迫用户注册留存
+        html += `
+        <div class="waterfall-item" onclick="requireAuth(() => alert('闲置详情页正在加紧施工中！\\n\\n💡 提示：买卖双方强制私信沟通，平台不碰交易资金。'))">
+            <div class="wf-img-box"><img class="wf-img" src="${item.img}"></div>
+            <div class="wf-info">
+                <div class="wf-title">${item.title}</div>
+                <div class="wf-price-row">
+                    <span class="wf-currency">€</span><span class="wf-price">${item.price}</span>
+                    ${item.originalPrice ? `<span class="wf-original-price">${item.originalPrice}</span>` : ''}
+                </div>
+                <div class="wf-user-row">
+                    <div class="wf-user">
+                        <div class="wf-avatar">${item.avatar}</div>
+                        <div class="wf-name">${item.name}</div>
+                    </div>
+                    <div class="wf-credit ${item.creditClass}">${item.credit}</div>
+                </div>
+            </div>
+        </div>`;
+    });
+    container.innerHTML = html;
+}
+
+
+
 function switchHomeTrendingTab(type, element) {
     document.querySelectorAll('#page-scan .t-tab').forEach(el => el.classList.remove('active')); element.classList.add('active');
     document.getElementById('homeTrendingListLikes').style.display = type === 'likes' ? 'block' : 'none'; document.getElementById('homeTrendingListDislikes').style.display = type === 'dislikes' ? 'block' : 'none';
@@ -312,9 +351,10 @@ function renderFootprints() {
     listDiv.innerHTML = html; 
 }
 
-// 页面装载完毕后自动启动
+// ⚠️ 注意：修改你现有的 DOMContentLoaded 监听器，把 renderMarketIdle() 加进去
 window.addEventListener('DOMContentLoaded', () => { 
     renderTipsPage(); 
     loadTrendingToHome(); 
     renderProfileState(); 
+    renderMarketIdle(); // 新增：页面加载时渲染集市瀑布流
 });
