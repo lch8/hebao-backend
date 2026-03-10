@@ -388,14 +388,7 @@ function renderMarketHelp() {
     container.innerHTML = html;
 }
 
-// ⚠️ 别忘了在你的 DOMContentLoaded 事件里把 renderMarketHelp() 加上
-window.addEventListener('DOMContentLoaded', () => { 
-    renderTipsPage(); 
-    loadTrendingToHome(); 
-    renderProfileState(); 
-    renderMarketIdle(); 
-    renderMarketHelp(); // <-- 新增渲染悬赏大厅
-});
+
 
 function switchHomeTrendingTab(type, element) {
     document.querySelectorAll('#page-scan .t-tab').forEach(el => el.classList.remove('active')); element.classList.add('active');
@@ -592,10 +585,11 @@ function sendChatMessage() {
 }
 
 
-// ⚠️ 注意：修改你现有的 DOMContentLoaded 监听器，把 renderMarketIdle() 加进去
+// ⚠️ 别忘了在你的 DOMContentLoaded 事件里把 renderMarketHelp() 加上
 window.addEventListener('DOMContentLoaded', () => { 
     renderTipsPage(); 
     loadTrendingToHome(); 
     renderProfileState(); 
-    renderMarketIdle(); // 新增：页面加载时渲染集市瀑布流
+    renderMarketIdle(); 
+    renderMarketHelp(); // <-- 新增渲染悬赏大厅
 });
