@@ -92,7 +92,6 @@ function switchAssetTab(tabId, element) {
     document.getElementById('asset-' + tabId).classList.add('active');
 }
 
-// 🚨 修复集市 Tab 没反应
 function switchMarketTab(tabId, element) {
     document.querySelectorAll('.m-tab').forEach(el => el.classList.remove('active'));
     element.classList.add('active');
@@ -257,10 +256,13 @@ async function loadTrendingToHome() {
 function renderHomeTrending(list, containerId, type) {
     const container = document.getElementById(containerId); if (!list || list.length === 0) return; 
     let html = '';
+    
+    // 安全防爆破的 Fallback SVG (纯 URL 编码)
+    const fallbackSvg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23F3F4F6'/%3E%3Ctext x='50%25' y='50%25' font-family='sans-serif' font-size='10' fill='%239CA3AF' text-anchor='middle' dominant-baseline='middle'%3E暂无图%3C/text%3E%3C/svg%3E";
+
     list.slice(0, 20).forEach((item, index) => {
         let badgeClass = 'rank-other'; if (index === 0) badgeClass = 'rank-1'; else if (index === 1) badgeClass = 'rank-2'; else if (index === 2) badgeClass = 'rank-3'; if (type === 'dislike') badgeClass = 'rank-bad';
         const score = type === 'like' ? item.likes : item.dislikes; const icon = type === 'like' ? '👍' : '💣'; const scoreColor = type === 'like' ? '#10B981' : '#EF4444';
-        const fallbackSvg = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23F3F4F6'/><text x='50%' y='50%' font-family='sans-serif' font-size='10' fill='%239CA3AF' text-anchor='middle' dominant-baseline='middle'>无图</text></svg>`;
         const safeImg = item.image_url || fallbackSvg;
         html += `<div class="trending-card" onclick="openDetailsFromHomeTrending('${type}', ${index})"><div class="rank-badge ${badgeClass}">TOP ${index + 1}</div><img src="${safeImg}" onerror="this.onerror=null; this.src='${fallbackSvg}'" style="width: 50px; height: 50px; border-radius: 10px; object-fit: cover; background: #F3F4F6; border: 1px solid #E5E7EB;"><div class="t-info"><div class="t-name">${item.chinese_name || '未命名商品'}</div><div style="font-size: 11px; color: #9CA3AF; margin-top:2px;">${item.dutch_name || ''}</div></div><div class="t-score" style="color: ${scoreColor}">${icon} ${score}</div></div>`;
     });
@@ -294,7 +296,6 @@ function renderTipsPage() {
     if (typeof tipsMetaData !== 'undefined' && document.getElementById('tipsDisclaimerContainer')) { document.getElementById('tipsDisclaimerContainer').innerHTML = `<div style="margin:0 16px 20px; padding:15px; background:#FFFBEB; border:1px dashed #FCD34D; border-radius:12px; font-size:11px; color:#B45309; line-height:1.6;"><div style="font-weight:bold; margin-bottom:6px; color:#D97706;"><span>⏳</span> 最后更新于：${tipsMetaData.lastUpdated}</div>⚠️ <b>防杠声明：</b> ${tipsMetaData.disclaimer}</div>`; }
 }
 
-// 🚨 终极修复：彻底抛弃内联高度的纯 Class 控制法
 function toggleTipsContent(element) { 
     element.classList.toggle('active');
 }
@@ -303,7 +304,7 @@ function saveToLocalFootprint(data, img) { let h = JSON.parse(localStorage.getIt
 function renderFootprints() { 
     const listDiv = document.getElementById('footprintList'); let h = JSON.parse(localStorage.getItem('hebao_history') || '[]'); 
     if (h.length === 0) { listDiv.innerHTML = '<div style="text-align:center; color:#9CA3AF; margin-top:20px; font-size:13px; border: 1px dashed #E5E7EB; padding: 30px; border-radius: 16px;">暂无足迹，快去首页扫码吧</div>'; return; } 
-    let html = ''; const fallbackSvg = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23F3F4F6'/><text x='50%' y='50%' font-family='sans-serif' font-size='10' fill='%239CA3AF' text-anchor='middle' dominant-baseline='middle'>无图</text></svg>`;
+    let html = ''; const fallbackSvg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23F3F4F6'/%3E%3Ctext x='50%25' y='50%25' font-family='sans-serif' font-size='10' fill='%239CA3AF' text-anchor='middle' dominant-baseline='middle'%3E暂无图%3C/text%3E%3C/svg%3E";
     h.forEach((item, index) => { 
         const safeImg = item.img_src || fallbackSvg;
         html += `<div style="background:#FFF; border-radius:16px; margin-bottom:12px; border:1px solid #E5E7EB; overflow:hidden; display:flex; align-items:center; padding:12px; box-shadow:0 2px 8px rgba(0,0,0,0.02); cursor:pointer;" onclick="openDetailsFromHistory(${index})"><img src="${safeImg}" onerror="this.onerror=null; this.src='${fallbackSvg}'" style="width:50px; height:50px; object-fit:cover; border-radius:10px; flex-shrink:0; background:#F3F4F6;"><div style="flex:1; margin-left:12px;"><div style="font-weight:900; font-size:15px; color:#111827; margin-bottom:2px;">${item.chinese_name || '未命名'}</div><div style="font-size:12px; color:#9CA3AF; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden;">${item.insight || ''}</div></div></div>`; 
@@ -311,7 +312,7 @@ function renderFootprints() {
     listDiv.innerHTML = html; 
 }
 
-// 初始化执行
+// 页面装载完毕后自动启动
 window.addEventListener('DOMContentLoaded', () => { 
     renderTipsPage(); 
     loadTrendingToHome(); 
