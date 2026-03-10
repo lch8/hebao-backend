@@ -677,24 +677,107 @@ function sendChatMessage() {
     }, 1200);
 }
 
-const mockIdleItems = [
-    { img: "https://images.unsplash.com/photo-1626806787461-102c1bfaaea1?w=400&auto=format&fit=crop", title: "九成新空气炸锅，回国急出", price: "25", priceNum: 25, originalPrice: "€69", avatar: "😎", name: "代村阿强", credit: "极佳", creditClass: "excellent", isSold: false, isBargain: true, timestamp: 1690000000 },
-    { img: "https://images.unsplash.com/photo-1505843490538-5133c6c7d0e1?w=400&auto=format&fit=crop", title: "宜家升降桌，有点小划痕", price: "40", priceNum: 40, originalPrice: "€129", avatar: "👩‍💻", name: "鹿特丹土豆", credit: "良好", creditClass: "good", isSold: true, isBargain: false, timestamp: 1680000000 },
-    { img: "https://images.unsplash.com/photo-1544816155-12df9643f363?w=400&auto=format&fit=crop", title: "RSM 鹿特丹商学院必修课教材", price: "15", priceNum: 15, originalPrice: "€80", avatar: "👻", name: "商科牛马", credit: "极佳", creditClass: "excellent", isSold: false, isBargain: false, timestamp: 1695000000 },
-    { img: "https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?w=400&auto=format&fit=crop", title: "只穿过一次的雪地靴，尺码 38", price: "30", priceNum: 30, originalPrice: "€95", avatar: "🐼", name: "海牙小丸子", credit: "新人", creditClass: "new", isSold: false, isBargain: true, timestamp: 1698000000 }
-];
+// ⚠️ 注意：这里把 const 改成了 let，这样我们才能用数据库里的真实数据覆盖它们！
+let mockIdleItems = [];
+let mockHelpItems = [];
+let mockPartnerItems = [];
 
-const mockHelpItems = [
-    { type: "🚗 史基浦接机", isUrgent: true, title: "明天早上 7点 史基浦接机", reward: "45", rewardNum: 45, date: "明天 (周三) 07:00", location: "Schiphol", avatar: "🐼", name: "海牙小丸子", credit: "新人", creditClass: "new", distKm: 15, timestamp: 1690000000, imgIcon: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23EFF6FF'/><text x='50%' y='50%' font-size='20' text-anchor='middle' dominant-baseline='middle'>🚗</text></svg>" },
-    { type: "💪 搬家帮手", isUrgent: false, title: "同城搬家，求一位壮汉帮搬两个大箱子", reward: "20", rewardNum: 20, date: "本周六 14:00", location: "Delft (2628CD)", avatar: "😎", name: "代村阿强", credit: "极佳", creditClass: "excellent", distKm: 2.5, timestamp: 1680000000, imgIcon: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23FFFBEB'/><text x='50%' y='50%' font-size='20' text-anchor='middle' dominant-baseline='middle'>📦</text></svg>" },
-    { type: "🐱 上门喂宠", isUrgent: false, title: "国庆回国一周，求帮忙上门喂两只布偶", reward: "70", rewardNum: 70, date: "10月1日 - 10月7日", location: "Amsterdam Zuid", avatar: "👩‍💻", name: "鹿特丹土豆", credit: "良好", creditClass: "good", distKm: 60, timestamp: 1695000000, imgIcon: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23F3F4F6'/><text x='50%' y='50%' font-size='20' text-anchor='middle' dominant-baseline='middle'>🐱</text></svg>" }
-];
+// 🚀 核心大招：从 Turso 数据库拉取所有网友发布的真实帖子
+async function loadCommunityPosts() {
+    try {
+        const res = await fetch('/api/get-community');
+        const data = await res.json();
+        
+        if (data.success && data.posts) {
+            // 清空假数据池
+            mockIdleItems = [];
+            mockHelpItems = [];
+            mockPartnerItems = [];
 
-const mockPartnerItems = [
-    { avatar: "👱‍♀️", name: "Esther", gender: "f", mbti: "ENFP", mbtiType: "e", title: "周末有人一起去打卡梵高博物馆吗？", desc: "刚买的博物馆卡，想找个小姐姐周末一起去阿姆看展，看完可以顺便去吃那家很火的日料！", tags: ["🎨 看展", "🍣 约饭", "📸 互拍"], distKm: 12, daysAway: 3, timestamp: 1698000000 },
-    { avatar: "👨‍🎓", name: "Jason", gender: "m", mbti: "INTJ", mbtiType: "i", title: "找个TUD图书馆固搭，期末周冲刺", desc: "我是CS研一的，平时比较安静。想找个能在图书馆互卷的搭子，不闲聊，到饭点一起去吃个食堂就行。", tags: ["📚 自习", "🤫 安静", "💻 码农"], distKm: 0.5, daysAway: 1, timestamp: 1699000000 },
-    { avatar: "💃", name: "莉莉安", gender: "f", mbti: "ESFP", mbtiType: "e", title: "国王节蹦迪搭子来啦！！", desc: "准备去鹿特丹那个户外音乐节，本人气氛组，找几个放得开的姐妹一起去嗨！男生也可以如果你们也是气氛组的话哈哈！", tags: ["🪩 蹦迪", "👑 国王节", "🍻 喝酒"], distKm: 18, daysAway: 14, timestamp: 1690000000 }
-];
+            // 把从数据库拉出来的帖子，按照标题里的标签 [闲置] [互助] [找搭子] 进行分拣
+            data.posts.forEach(post => {
+                const title = post.title || '';
+                const content = post.content || '';
+                const time = new Date(post.created_at).getTime() || Date.now();
+                const author = post.author_name || '匿名管家';
+                // 如果没传图，给个默认占位图
+                const img = post.image_url || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&auto=format&fit=crop';
+
+                // 1. 投递到【闲置跳蚤】
+                if (title.includes('[闲置]')) {
+                    // 用正则从 "[闲置] €25 · Delft" 中把价格提取出来
+                    const priceMatch = title.match(/€(\d+(\.\d+)?)/);
+                    const price = priceMatch ? priceMatch[1] : '面议';
+                    
+                    mockIdleItems.push({
+                        id: post.id,
+                        img: img,
+                        title: content.substring(0, 40) + (content.length > 40 ? '...' : ''), // 闲置用正文当标题更接地气
+                        price: price,
+                        priceNum: parseFloat(price) || 0,
+                        originalPrice: '',
+                        avatar: "😎", 
+                        name: author,
+                        credit: "极佳",
+                        creditClass: "excellent",
+                        isSold: false,
+                        isBargain: content.includes('刀'), // 如果正文里写了"刀"，就自动打上可讲价标签
+                        timestamp: time
+                    });
+                } 
+                // 2. 投递到【互助悬赏】
+                else if (title.includes('[互助')) {
+                    const rewardMatch = title.match(/€(\d+(\.\d+)?)/);
+                    const reward = rewardMatch ? rewardMatch[1] : '0';
+                    const isUrgent = title.includes('🔥急');
+                    
+                    mockHelpItems.push({
+                        id: post.id,
+                        type: isUrgent ? "🔥 紧急" : "🤝 求助",
+                        isUrgent: isUrgent,
+                        title: content.substring(0, 40) + '...',
+                        reward: reward,
+                        rewardNum: parseFloat(reward) || 0,
+                        date: "私信确认", 
+                        location: "荷兰", 
+                        avatar: "🐼",
+                        name: author,
+                        credit: "新人",
+                        creditClass: "new",
+                        distKm: Math.floor(Math.random() * 15) + 1, 
+                        timestamp: time,
+                        imgIcon: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23EFF6FF'/><text x='50%' y='50%' font-size='20' text-anchor='middle' dominant-baseline='middle'>🤝</text></svg>"
+                    });
+                }
+                // 3. 投递到【找搭子】
+                else if (title.includes('[找搭子]')) {
+                    const cleanTitle = title.replace('[找搭子] ', '');
+                    mockPartnerItems.push({
+                        id: post.id,
+                        avatar: "👱‍♀️",
+                        name: author,
+                        gender: Math.random() > 0.5 ? "f" : "m",
+                        mbti: "未知",
+                        mbtiType: "all",
+                        title: cleanTitle,
+                        desc: content,
+                        tags: ["✨ 新发布"],
+                        distKm: Math.floor(Math.random() * 15) + 1,
+                        daysAway: 1,
+                        timestamp: time
+                    });
+                }
+            });
+
+            // 拿到真实数据后，重新渲染三个页面的瀑布流！
+            renderMarketIdle();
+            renderMarketHelp();
+            renderMarketPartner();
+        }
+    } catch (err) {
+        console.error("获取社区数据失败:", err);
+    }
+}
 
 function toggleFilterPill(element, type) {
     element.classList.toggle('active');
@@ -822,4 +905,5 @@ window.addEventListener('DOMContentLoaded', () => {
     renderMarketIdle(); 
     renderMarketHelp();
     renderMarketPartner(); 
+    loadCommunityPosts();
 });
