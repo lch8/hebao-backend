@@ -340,7 +340,62 @@ function openChat(sellerName, sellerAvatar, itemTitle, itemPrice, itemImg, isSol
     });
 }
 
+// ================= 集市模块 - 互助悬赏模拟数据 =================
+const mockHelpItems = [
+    { type: "🚗 史基浦接机", isUrgent: true, title: "明天早上 7点 史基浦机场接机到海牙", reward: "45", date: "明天 (周三) 07:00", location: "Schiphol -> Den Haag", avatar: "🐼", name: "海牙小丸子", credit: "新人", creditClass: "new", imgIcon: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23EFF6FF'/><text x='50%' y='50%' font-size='20' text-anchor='middle' dominant-baseline='middle'>🚗</text></svg>" },
+    { type: "💪 搬家帮手", isUrgent: false, title: "代尔夫特同城搬家，需要一位壮汉帮忙搬两个大箱子上三楼", reward: "20", date: "本周六 14:00", location: "Delft (2628CD附近)", avatar: "😎", name: "代村阿强", credit: "极佳", creditClass: "excellent", imgIcon: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23FFFBEB'/><text x='50%' y='50%' font-size='20' text-anchor='middle' dominant-baseline='middle'>📦</text></svg>" },
+    { type: "🐱 上门喂宠", isUrgent: false, title: "国庆回国一周，求阿姆南区附近的姐妹帮忙上门喂两只布偶", reward: "70", date: "10月1日 - 10月7日", location: "Amsterdam Zuid", avatar: "👩‍💻", name: "鹿特丹土豆", credit: "良好", creditClass: "good", imgIcon: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23F3F4F6'/><text x='50%' y='50%' font-size='20' text-anchor='middle' dominant-baseline='middle'>🐱</text></svg>" },
+    { type: "🛠️ 宜家代装", isUrgent: false, title: "手残党求助！拼一个宜家的三门大衣柜 PAX", reward: "35", date: "时间可议", location: "Rotterdam (Blaak)", avatar: "👻", name: "商科牛马", credit: "极佳", creditClass: "excellent", imgIcon: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23ECFDF5'/><text x='50%' y='50%' font-size='20' text-anchor='middle' dominant-baseline='middle'>🛠️</text></svg>" }
+];
 
+function renderMarketHelp() {
+    const container = document.getElementById('helpListContainer');
+    if(!container) return;
+    let html = '';
+    mockHelpItems.forEach(item => {
+        const tagClass = item.isUrgent ? 'hc-type-tag urgent' : 'hc-type-tag';
+        const tagText = item.isUrgent ? `🔥 急 · ${item.type}` : item.type;
+        
+        // 点击直接复用 openChat，并将 imgIcon 传进去作为左上角的小卡片图
+        html += `
+        <div class="help-card" onclick="openChat('${item.name}', '${item.avatar}', '${item.title}', '${item.reward}', \`${item.imgIcon}\`, false)">
+            <div class="hc-header">
+                <div class="hc-title-box">
+                    <div class="${tagClass}">${tagText}</div>
+                    <div class="hc-title">${item.title}</div>
+                </div>
+                <div class="hc-reward-box">
+                    <span class="hc-reward-currency">€</span><span class="hc-reward-num">${item.reward}</span>
+                    <div class="hc-reward-label">悬赏金</div>
+                </div>
+            </div>
+            
+            <div class="hc-details">
+                <div class="hc-detail-item"><span>⏰</span> ${item.date}</div>
+                <div class="hc-detail-item"><span>📍</span> ${item.location}</div>
+            </div>
+            
+            <div class="hc-footer">
+                <div class="hc-user">
+                    <div class="hc-avatar">${item.avatar}</div>
+                    <div class="hc-name">${item.name}</div>
+                    <div class="wf-credit ${item.creditClass}">${item.credit}</div>
+                </div>
+                <div class="hc-action-btn">立即私信</div>
+            </div>
+        </div>`;
+    });
+    container.innerHTML = html;
+}
+
+// ⚠️ 别忘了在你的 DOMContentLoaded 事件里把 renderMarketHelp() 加上
+window.addEventListener('DOMContentLoaded', () => { 
+    renderTipsPage(); 
+    loadTrendingToHome(); 
+    renderProfileState(); 
+    renderMarketIdle(); 
+    renderMarketHelp(); // <-- 新增渲染悬赏大厅
+});
 
 function switchHomeTrendingTab(type, element) {
     document.querySelectorAll('#page-scan .t-tab').forEach(el => el.classList.remove('active')); element.classList.add('active');
