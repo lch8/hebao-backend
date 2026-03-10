@@ -456,7 +456,7 @@ function renderTipsPage() {
 
 function toggleTipsContent(element) { element.classList.toggle('active'); }
 
-// ================= 7. 语音识别、多图上传与发帖引擎 =================
+// ================= AI 语音识别与智能表单生成引擎 =================
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition = null;
 if (SpeechRecognition) {
@@ -465,20 +465,23 @@ if (SpeechRecognition) {
     recognition.interimResults = false; 
 }
 
-function toggleVoiceInput() {
-    const btn = document.getElementById('btnVoiceInput');
-    const input = document.getElementById('aiKeywords');
-    if (!recognition) return alert('抱歉，您的浏览器不支持语音输入，请打字或换用原生浏览器哦~');
+function toggleVoiceInput(type) {
+    const btn = document.getElementById(`btnVoiceInput_${type}`);
+    const input = document.getElementById(`aiKeywords_${type}`);
+    if (!recognition) return alert('抱歉，您的浏览器不支持语音输入，请直接打字哦~');
     
     if (btn.classList.contains('recording')) { recognition.stop(); return; }
 
-    btn.classList.add('recording'); btn.innerText = '🔴'; input.placeholder = '请说话，管家正在听...';
+    btn.classList.add('recording'); btn.innerText = '🔴'; 
+    const oldPlaceholder = input.placeholder;
+    input.placeholder = '请说话，管家正在听...';
+    
     try { recognition.start(); } catch(e) {}
 
     recognition.onresult = (event) => { input.value += event.results[0][0].transcript; };
     recognition.onend = () => {
-        btn.classList.remove('recording'); btn.innerText = '🎙️'; input.placeholder = '输入或语音：代村出桌子30欧明天拿走...';
-        if(input.value.trim() !== '') generateAICopy(); 
+        btn.classList.remove('recording'); btn.innerText = '🎙️'; input.placeholder = oldPlaceholder;
+        if(input.value.trim() !== '') generateAICopy(type); // 语音结束自动呼叫 AI
     };
     recognition.onerror = (event) => {
         btn.classList.remove('recording'); btn.innerText = '🎙️'; input.placeholder = '听不清，请重试或直接打字...';
@@ -560,36 +563,85 @@ function selectPill(element, groupName) {
 }
 
 // DeepSeek 自动填表引擎
-async function generateAICopy() {
-    const keyword = document.getElementById('aiKeywords').value.trim();
-    if (!keyword) return alert("请随意输入一句你的发帖需求，例如：代村出个电饭煲15欧，不讲价只收现金...");
+async function generateAICopy(type) {
+    const inputEl = document.getElementById(`aiKeywords_${type}`);
+    const btnEl = document.getElementById(`btnAiMagic_${type}`);
+    const keyword = inputEl.value.trim();
+    if (!keyword) return alert("请先输入一些文字或使用语音哦！");
     
-    const btn = document.getElementById('btnAiMagic');
-    btn.innerText = "⏳ DeepSeek 正在为你撰写文案并填表..."; btn.disabled = true;
+    btnEl.innerText = "⏳ DeepSeek 疯狂码字并填表中..."; 
+    btnEl.disabled = true;
 
     try {
-        const res = await fetch('/api/generate-copy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ keyword }) });
+        let payload = { keyword, type };
+        
+        // 🔮 闲置特权：如果表单里已经有内容了，把旧内容发给AI，让它合并计算总价！
+        if (type === 'idle') {
+            payload.currentDesc = document.getElementById('idleDesc').value.trim();
+            payload.currentPrice = document.getElementById('idlePrice').value.trim() || 0;
+        }
+
+        const res = await fetch('/api/generate-copy', { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify(payload) 
+        });
         const data = await res.json();
         if(data.error) throw new Error(data.error);
 
-        if(data.copy) document.getElementById('idleDesc').value = data.copy;
-        if(data.price) document.getElementById('idlePrice').value = data.price;
-        if(data.deadline) document.getElementById('idleDeadline').value = data.deadline;
-        if(data.location) {
-            const locSelect = document.getElementById('idleLocation');
-            for(let i=0; i<locSelect.options.length; i++) {
-                if(locSelect.options[i].value === data.location || locSelect.options[i].text.includes(data.location)) { locSelect.selectedIndex = i; break; }
-            }
+        // 动态将 AI 的返回结果填入不同的 DOM
+        if (type === 'idle') {
+            if(data.copy) document.getElementById('idleDesc').value = data.copy;
+            if(data.price) document.getElementById('idlePrice').value = data.price;
+            if(data.deadline) document.getElementById('idleDeadline').value = data.deadline;
+            if(data.location) matchSelect('idleLocation', data.location);
+            if(data.bargain) matchPills('bargainGroup', data.bargain);
+            if(data.payment) matchPills('paymentGroup', data.payment);
+        } 
+        else if (type === 'help') {
+            if(data.copy) document.getElementById('helpDesc').value = data.copy;
+            if(data.reward) document.getElementById('helpReward').value = data.reward;
+            if(data.time) document.getElementById('helpTime').value = data.time;
+            if(data.location) document.getElementById('helpLocation').value = data.location;
+            if(data.urgent) matchPills('helpUrgentGroup', data.urgent);
         }
-        if(data.bargain) document.querySelectorAll('#bargainGroup .pill').forEach(el => { if(el.innerText.includes(data.bargain) || data.bargain.includes(el.innerText)) selectPill(el, 'bargainGroup'); });
-        if(data.payment) document.querySelectorAll('#paymentGroup .pill').forEach(el => { if(el.innerText.includes(data.payment.split('/')[0]) || data.payment.includes(el.innerText)) selectPill(el, 'paymentGroup'); });
+        else if (type === 'partner') {
+            if(data.title) document.getElementById('partnerTitle').value = data.title;
+            if(data.copy) document.getElementById('partnerDesc').value = data.copy;
+            if(data.date) document.getElementById('partnerDate').value = data.date;
+            if(data.location) document.getElementById('partnerLocation').value = data.location;
+            if(data.mbti) matchSelect('partnerMbti', data.mbti);
+        }
 
-        document.getElementById('aiKeywords').value = '';
-        btn.innerText = "✨ 魔法完成！所有表单已自动填好！";
+        inputEl.value = '';
+        btnEl.innerText = "✨ 魔法完成！已自动填表！";
     } catch (err) {
         alert("AI生成失败：" + err.message);
-        btn.innerText = "🪄 自动填表";
-    } finally { setTimeout(() => { btn.innerText = "🪄 重新生成"; btn.disabled = false; }, 3000); }
+        btnEl.innerText = "🪄 自动填表";
+    } finally { 
+        setTimeout(() => { btnEl.innerText = "🪄 自动填表"; btnEl.disabled = false; }, 3000); 
+    }
+}
+
+// 辅助函数：模糊匹配下拉框
+function matchSelect(selectId, text) {
+    const sel = document.getElementById(selectId);
+    if(!sel || !text) return;
+    for(let i=0; i<sel.options.length; i++) {
+        if(sel.options[i].value === text || sel.options[i].text.includes(text) || text.includes(sel.options[i].text)) { 
+            sel.selectedIndex = i; break; 
+        }
+    }
+}
+
+// 辅助函数：模糊匹配胶囊按钮
+function matchPills(groupId, text) {
+    if(!text) return;
+    document.querySelectorAll(`#${groupId} .pill`).forEach(el => { 
+        if(el.innerText.includes(text.split('/')[0]) || text.includes(el.innerText)) {
+            selectPill(el, groupId);
+        }
+    });
 }
 
 async function submitIdlePost() {
