@@ -334,26 +334,26 @@
     </div>
     
     <div class="fm-content">
-        <div class="upload-img-box" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+        <div class="upload-img-box" style="flex-direction: column; align-items: flex-start; gap: 8px; background: transparent; border: none; padding: 0;">
             <input type="file" id="idleImgInput" accept="image/*" multiple style="display: none;" onchange="handleMultiImageSelect(event)">
-            <div class="multi-img-container" id="idleImgPreviewContainer">
-                <div class="upload-btn" onclick="document.getElementById('idleImgInput').click()">
+            
+            <div class="multi-img-container-vertical" id="idleImgPreviewContainer">
+                <div class="upload-btn" onclick="document.getElementById('idleImgInput').click()" style="width: 100%; background: #FFF; border: 1px dashed #D1D5DB;">
                     <span style="font-size: 24px;">📷</span>
-                    <span style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">多图</span>
+                    <span style="font-size: 13px; font-weight: bold; margin-left: 8px; color: #374151;">添加闲置物品照片</span>
                 </div>
             </div>
-            <div style="font-size: 12px; color: #9CA3AF;">首图建议传大合照，最多支持 9 张</div>
+            <div style="font-size: 11px; color: #9CA3AF; margin-bottom: 10px;">*可上传多图并分别标价，管家会自动打上价格水印哦</div>
         </div>
 
         <div class="ai-magic-box">
-            <div class="ai-header"><span>✨ 管家一句话帮发</span> <span style="font-size: 11px; font-weight: normal; color: #D97706;">支持多次追加物品</span></div>
+            <div class="ai-header"><span>✨ 管家自动算账并补全要求</span></div>
             <div class="ai-input-wrapper">
-                <input type="text" id="aiKeywords_idle" class="ai-input" style="margin-bottom: 0;" placeholder="代村出书桌30欧，再加个椅子10欧...">
+                <input type="text" id="aiKeywords_idle" class="ai-input" style="margin-bottom: 0;" placeholder="语音说：我在代村，后天必须拿走...">
                 <button class="voice-btn" style="width: 32px; font-size: 12px; border-color: #E5E7EB; color: #9CA3AF;" onclick="clearAIInput('idle')">✖️</button>
                 <button class="voice-btn" id="btnVoiceInput_idle" onclick="toggleVoiceInput('idle')">🎙️</button>
             </div>
-            <div style="font-size: 11px; color: #B45309; margin-top: 8px;">💡 <b>连招公式：</b>物品 + 价格 + 地点 + 交易要求</div>
-            <button class="ai-btn" id="btnAiMagic_idle" style="margin-top: 10px;" onclick="generateAICopy('idle')">🪄 自动填表</button>
+            <button class="ai-btn" id="btnAiMagic_idle" style="margin-top: 10px;" onclick="generateAICopy('idle')">🪄 算总价并生成神仙文案</button>
         </div>
         
         <textarea id="idleDesc" class="fm-textarea" placeholder="在这里描述你的闲置。你也可以直接在这里手写..."></textarea>
