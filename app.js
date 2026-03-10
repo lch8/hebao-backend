@@ -92,7 +92,7 @@ function switchAssetTab(tabId, element) {
     document.getElementById('asset-' + tabId).classList.add('active');
 }
 
-// 🚨 新增：修复集市页面 Tab 没反应的问题
+// 🚨 修复集市 Tab 没反应
 function switchMarketTab(tabId, element) {
     document.querySelectorAll('.m-tab').forEach(el => el.classList.remove('active'));
     element.classList.add('active');
