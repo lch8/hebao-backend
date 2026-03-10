@@ -743,7 +743,7 @@ async function loadCommunityPosts() {
                 const content = post.content || '';
                 const time = new Date(post.created_at).getTime() || Date.now();
                 const author = post.author_name || '匿名管家';
-                const img = post.image_url || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&auto=format&fit=crop';
+                const img = (post.image_url ? post.image_url.split(',')[0] : 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&auto=format&fit=crop');
 
                 if (title.includes('[闲置]')) {
                     const priceMatch = title.match(/€(\d+(\.\d+)?)/);
