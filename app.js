@@ -456,110 +456,80 @@ function renderTipsPage() {
 
 function toggleTipsContent(element) { element.classList.toggle('active'); }
 
-// ================= AI 语音识别与智能表单生成引擎 =================
+// ================= 7. 语音识别、多图上传与发帖引擎 =================
+
+// 【1】新增：一键清空输入框逻辑
+function clearAIInput(type) {
+    const input = document.getElementById(`aiKeywords_${type}`);
+    if (input) {
+        input.value = '';
+        input.focus(); // 清空后自动拉起键盘，体验更丝滑
+    }
+}
+
+// 【2】Web Speech API 兼容强化版
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition = null;
+
 if (SpeechRecognition) {
     recognition = new SpeechRecognition();
     recognition.lang = 'zh-CN'; 
+    recognition.continuous = false; // ⚠️ 修复安卓：必须设为false，录完一句马上停，否则会卡死
     recognition.interimResults = false; 
 }
 
 function toggleVoiceInput(type) {
     const btn = document.getElementById(`btnVoiceInput_${type}`);
     const input = document.getElementById(`aiKeywords_${type}`);
-    if (!recognition) return alert('抱歉，您的浏览器不支持语音输入，请直接打字哦~');
     
-    if (btn.classList.contains('recording')) { recognition.stop(); return; }
+    if (!recognition) {
+        alert('💡 管家提示：您的浏览器暂不支持网页语音。请直接点击输入框，使用【输入法自带的语音麦克风】说话，效果更好哦！');
+        return;
+    }
+    
+    if (btn.classList.contains('recording')) { 
+        recognition.stop(); 
+        return; 
+    }
 
-    btn.classList.add('recording'); btn.innerText = '🔴'; 
+    btn.classList.add('recording'); 
+    btn.innerText = '🔴'; 
     const oldPlaceholder = input.placeholder;
     input.placeholder = '请说话，管家正在听...';
     
-    try { recognition.start(); } catch(e) {}
-
-    recognition.onresult = (event) => { input.value += event.results[0][0].transcript; };
-    recognition.onend = () => {
-        btn.classList.remove('recording'); btn.innerText = '🎙️'; input.placeholder = oldPlaceholder;
-        if(input.value.trim() !== '') generateAICopy(type); // 语音结束自动呼叫 AI
-    };
-    recognition.onerror = (event) => {
-        btn.classList.remove('recording'); btn.innerText = '🎙️'; input.placeholder = '听不清，请重试或直接打字...';
-    };
-}
-
-let selectedImagesArray = []; 
-function handleMultiImageSelect(event) {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
-    Array.from(files).forEach(file => {
-        if (selectedImagesArray.length >= 9) return; 
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const base64Data = e.target.result.split(',')[1]; 
-            const id = Date.now() + Math.random(); 
-            selectedImagesArray.push({ id: id, base64: base64Data, preview: e.target.result });
-            renderThumbnails();
-        };
-        reader.readAsDataURL(file);
-    });
-    event.target.value = ''; 
-}
-
-function removeImage(id) { selectedImagesArray = selectedImagesArray.filter(img => img.id !== id); renderThumbnails(); }
-
-function renderThumbnails() {
-    const container = document.getElementById('idleImgPreviewContainer');
-    let html = '';
-    selectedImagesArray.forEach(img => { html += `<div class="thumb-box"><img src="${img.preview}"><div class="thumb-del" onclick="removeImage(${img.id})">✕</div></div>`; });
-    if (selectedImagesArray.length < 9) { html += `<div class="upload-btn" onclick="document.getElementById('idleImgInput').click()"><span style="font-size: 24px;">📷</span><span style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">多图</span></div>`; }
-    container.innerHTML = html;
-}
-
-async function uploadImagesToCOS() {
-    if (selectedImagesArray.length === 0) return ''; 
-    let uploadedUrls = [];
-    for (let img of selectedImagesArray) {
-        try {
-            const res = await fetch('/api/upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageBase64: img.base64 }) });
-            const data = await res.json();
-            if(data.success) uploadedUrls.push(data.url); 
-        } catch(e) { console.error("部分图片上传失败", e); }
+    try { 
+        recognition.start(); 
+    } catch(e) {
+        console.warn("语音引擎已在运行中", e);
     }
-    return uploadedUrls.join(','); 
-}
 
-// 🔓 控制菜单和弹窗的“门钥匙” (修复点击失效的问题)
-function openPublishSheet() {
-    const overlay = document.querySelector('.publish-overlay'); const sheet = document.querySelector('.publish-sheet');
-    if(overlay) { overlay.style.display = 'block'; setTimeout(()=>overlay.classList.add('show'),10); }
-    if(sheet) { setTimeout(()=>sheet.classList.add('show'),10); }
-}
-function closePublishSheet() {
-    const overlay = document.querySelector('.publish-overlay'); const sheet = document.querySelector('.publish-sheet');
-    if(sheet) sheet.classList.remove('show');
-    if(overlay) { overlay.classList.remove('show'); setTimeout(()=>overlay.style.display='none',300); }
-}
-
-function openIdlePublish() {
-    closePublishSheet();
-    setTimeout(() => {
-        document.getElementById('publishIdleModal').style.display = 'flex';
-        const d = new Date(); d.setDate(d.getDate() + 7);
-        if(document.getElementById('idleDeadline')) document.getElementById('idleDeadline').value = d.toISOString().split('T')[0];
-    }, 300);
-}
-function closeIdlePublish() { document.getElementById('publishIdleModal').style.display = 'none'; }
-
-function openHelpPublish() { closePublishSheet(); setTimeout(() => { document.getElementById('publishHelpModal').style.display = 'flex'; }, 300); }
-function closeHelpPublish() { document.getElementById('publishHelpModal').style.display = 'none'; }
-
-function openPartnerPublish() { closePublishSheet(); setTimeout(() => { document.getElementById('publishPartnerModal').style.display = 'flex'; }, 300); }
-function closePartnerPublish() { document.getElementById('publishPartnerModal').style.display = 'none'; }
-
-function selectPill(element, groupName) {
-    document.querySelectorAll(`#${groupName} .pill`).forEach(el => el.classList.remove('active'));
-    element.classList.add('active');
+    // 每次开始录音，重新绑定事件防抽风
+    recognition.onresult = (event) => { 
+        input.value += event.results[0][0].transcript; 
+    };
+    
+    recognition.onend = () => {
+        btn.classList.remove('recording'); 
+        btn.innerText = '🎙️'; 
+        input.placeholder = oldPlaceholder;
+        // 如果录到了内容，自动呼叫大模型填表
+        if(input.value.trim() !== '') generateAICopy(type); 
+    };
+    
+    recognition.onerror = (event) => {
+        btn.classList.remove('recording'); 
+        btn.innerText = '🎙️'; 
+        input.placeholder = oldPlaceholder;
+        
+        console.error("语音识别错误:", event.error);
+        if (event.error === 'not-allowed') {
+            alert('🎤 麦克风权限被拒绝。请在浏览器设置中允许本站使用麦克风。');
+        } else if (event.error === 'network') {
+            alert('🌐 安卓手机连接谷歌语音服务器失败。建议直接点击输入框，使用【输入法自带的语音按键】！');
+        } else {
+            alert('没听清哦，可以点 ✖️ 清空重说，或者直接打字。');
+        }
+    };
 }
 
 // DeepSeek 自动填表引擎
