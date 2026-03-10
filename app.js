@@ -565,24 +565,72 @@ function selectPill(element, groupName) {
     element.classList.add('active');
 }
 
-function generateAICopy() {
+// 🪄 核心颠覆：接入 DeepSeek 的一句话全自动填表系统
+async function generateAICopy() {
     const keyword = document.getElementById('aiKeywords').value.trim();
-    if (!keyword) return alert("请先输入一些闲置关键词哦，比如：大书桌30欧，明天搬家...");
+    if (!keyword) return alert("请随意输入一句你的发帖需求，例如：代尔夫特出个电饭煲15欧，不讲价只收现金，明天必须拿走...");
+    
     const btn = document.getElementById('btnAiMagic');
-    btn.innerText = "⏳ 魔法施展中，管家正在码字..."; btn.disabled = true;
+    btn.innerText = "⏳ DeepSeek 正在为你撰写文案并填表...";
+    btn.disabled = true;
 
-    const loc = document.getElementById('idleLocation').value;
-    const deadline = document.getElementById('idleDeadline').value;
-    const bargain = document.querySelector('#bargainGroup .active').innerText;
-    const payment = document.querySelector('#paymentGroup .active').innerText;
+    try {
+        const res = await fetch('/api/generate-copy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ keyword })
+        });
+        
+        const data = await res.json();
+        if(data.error) throw new Error(data.error);
 
-    setTimeout(() => {
-        const aiText = `🌟 【${loc}出】留学生搬家狂甩，骨折价带走！\n哈喽家人们！因为临近搬家/回国，实在带不走啦，忍痛割爱出一批超实用的闲置😭！\n\n🛒 【出物清单与价格】\n根据您的输入：“${keyword}”\n(请在此处补充或修改具体物品状态哦～)\n\n✅ 状态：自用非常爱惜，功能全部完好！\n💰 价格：详见清单，多件打包可骨折！\n📍 坐标：${loc} (可上门自提)\n⏰ 截止日期：务必在 ${deadline} 之前拿走！\n💶 交易方式：支持 ${payment}\n⚠️ 注意：目前是 ${bargain} 的状态，先到先得，手慢无！\n\n带图私信我，看到了就会秒回！\n#荷兰二手 #${loc}闲置 #留学生搬家 #闲置转让 #好物低价出`;
-        document.getElementById('idleDesc').value = aiText;
+        // 1. 自动填入神仙文案
+        if(data.copy) document.getElementById('idleDesc').value = data.copy;
+        
+        // 2. 自动填价格
+        if(data.price) document.getElementById('idlePrice').value = data.price;
+        
+        // 3. 自动填日期
+        if(data.deadline) document.getElementById('idleDeadline').value = data.deadline;
+        
+        // 4. 自动操控下拉框选地点
+        if(data.location) {
+            const locSelect = document.getElementById('idleLocation');
+            for(let i=0; i<locSelect.options.length; i++) {
+                if(locSelect.options[i].value === data.location || locSelect.options[i].text.includes(data.location)) {
+                    locSelect.selectedIndex = i;
+                    break;
+                }
+            }
+        }
+        
+        // 5. 自动点亮 UI 胶囊按钮
+        if(data.bargain) {
+            document.querySelectorAll('#bargainGroup .pill').forEach(el => {
+                if(el.innerText.includes(data.bargain) || data.bargain.includes(el.innerText)) {
+                    selectPill(el, 'bargainGroup');
+                }
+            });
+        }
+        if(data.payment) {
+            document.querySelectorAll('#paymentGroup .pill').forEach(el => {
+                // 处理 "Tikkie/银行转账" 这种较长的文本匹配
+                if(el.innerText.includes(data.payment.split('/')[0]) || data.payment.includes(el.innerText)) {
+                    selectPill(el, 'paymentGroup');
+                }
+            });
+        }
+
+        // 清空输入框，给予震撼提示
         document.getElementById('aiKeywords').value = '';
-        btn.innerText = "✅ 生成成功！快去下方修改细节吧";
+        btn.innerText = "✨ 魔法完成！所有表单已自动填好！";
+        
+    } catch (err) {
+        alert("AI生成失败：" + err.message);
+        btn.innerText = "🪄 帮我生成小红书体";
+    } finally {
         setTimeout(() => { btn.innerText = "🪄 重新生成"; btn.disabled = false; }, 3000);
-    }, 1500);
+    }
 }
 
 async function submitIdlePost() {
