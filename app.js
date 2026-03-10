@@ -288,7 +288,7 @@ function renderMarketIdle() {
         
         // 注意 openChat 多传了一个参数 item.isSold
         html += `
-        <div class="waterfall-item" onclick="openChat('${item.name}', '${item.avatar}', '${item.title}', '${item.price}', '${item.img}', ${item.isSold})">
+        <div class="waterfall-item" onclick="openChat('${item.name}', '${item.avatar}', '${item.title}', '${item.price}', '${item.img}', ${item.isSold}, 'idle')">
             <div class="wf-img-box">
                 ${soldOverlayHtml}
                 <img class="wf-img" src="${item.img}">
@@ -309,8 +309,8 @@ function renderMarketIdle() {
     container.innerHTML = html;
 }
 
-// 覆写 openChat，加入状态拦截
-function openChat(sellerName, sellerAvatar, itemTitle, itemPrice, itemImg, isSold) {
+// 覆写 openChat，加入状态拦截和动态打招呼语
+function openChat(sellerName, sellerAvatar, itemTitle, itemPrice, itemImg, isSold, postType = 'idle') {
     requireAuth(() => {
         document.getElementById('chatTargetName').innerText = sellerName;
         document.getElementById('chatTargetAvatar').innerText = sellerAvatar;
@@ -321,7 +321,17 @@ function openChat(sellerName, sellerAvatar, itemTitle, itemPrice, itemImg, isSol
         const now = new Date();
         document.getElementById('chatTimeSys').innerText = `今天 ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
         
-        // 核心：处理已售出状态的 UI 冻结
+        // 🔮 核心修复：根据帖子类型，动态修改对方的默认打招呼内容
+        const greetingBox = document.getElementById('chatDefaultGreeting');
+        if (postType === 'help') {
+            greetingBox.innerText = "哈喽！你是来接悬赏单的吗？看下详情里的时间和地点合适不？";
+        } else if (postType === 'partner') {
+            greetingBox.innerText = "滴滴！找搭子吗？看我主页MBTI合不合拍~";
+        } else {
+            greetingBox.innerText = "你好，请问你是想看这个闲置吗？还在的哦！";
+        }
+
+        // 处理已售出状态的 UI 冻结
         if (isSold) {
             document.getElementById('cpsActionBtn').style.display = 'none';
             document.getElementById('cpsSoldStamp').style.display = 'block';
@@ -358,7 +368,7 @@ function renderMarketHelp() {
         
         // 点击直接复用 openChat，并将 imgIcon 传进去作为左上角的小卡片图
         html += `
-        <div class="help-card" onclick="openChat('${item.name}', '${item.avatar}', '${item.title}', '${item.reward}', \`${item.imgIcon}\`, false)">
+        <div class="help-card" onclick="openChat('${item.name}', '${item.avatar}', '${item.title}', '${item.reward}', \`${item.imgIcon}\`, false, 'help')">
             <div class="hc-header">
                 <div class="hc-title-box">
                     <div class="${tagClass}">${tagText}</div>
