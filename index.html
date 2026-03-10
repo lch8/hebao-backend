@@ -33,15 +33,18 @@
     <div class="ps-close" onclick="closePublishSheet()">✕</div>
     <div class="ps-title">你想发点什么？</div>
     <div class="ps-options">
-        <div class="ps-opt ps-opt-1" onclick="openIdlePublish()">
-            <div class="ps-icon">📦</div><div class="ps-text">发闲置</div><div class="ps-sub">AI 帮写文案</div>
-        </div>
-        <div class="ps-opt ps-opt-2" onclick="alert('🤝 互助悬赏大厅加载中...')">
-            <div class="ps-icon">🤝</div><div class="ps-text">发互助</div><div class="ps-sub">接送机/搬家</div>
-        </div>
-        <div class="ps-opt ps-opt-3" onclick="alert('🏕️ 周末搭子社区加载中...')">
-            <div class="ps-icon">🏕️</div><div class="ps-text">找搭子</div><div class="ps-sub">周末游/凑单</div>
-        </div>
+            <div class="ps-opt ps-opt-1" onclick="openIdlePublish()">
+                <div class="ps-icon">📦</div>
+                <div class="ps-text">卖闲置</div><div class="ps-sub">回血清仓</div>
+            </div>
+            <div class="ps-opt ps-opt-2" onclick="openHelpPublish()">
+                <div class="ps-icon">🤝</div>
+                <div class="ps-text">发悬赏</div><div class="ps-sub">花钱求助</div>
+            </div>
+            <div class="ps-opt ps-opt-3" onclick="openPartnerPublish()">
+                <div class="ps-icon">🥂</div>
+                <div class="ps-text">找搭子</div><div class="ps-sub">灵魂共鸣</div>
+            </div>
     </div>
 </div>
 
@@ -363,6 +366,88 @@
             </div>
         </div>
         
+        <div style="height: 50px;"></div>
+    </div>
+</div>
+
+<div class="full-modal" id="publishHelpModal" style="display: none;">
+    <div class="fm-header">
+        <div class="fm-close" onclick="closeHelpPublish()">✕</div>
+        <div class="fm-title">发布悬赏</div>
+        <div class="fm-submit" onclick="submitHelpPost()">发布</div>
+    </div>
+    <div class="fm-content">
+        <div class="fm-section-title" style="margin-top: 5px;">帮我做点什么？</div>
+        <div class="fm-row" style="border-bottom:none;">
+            <div class="pill-group" style="justify-content: flex-start; gap: 10px;" id="helpTypeGroup">
+                <div class="pill active" onclick="selectPill(this, 'helpTypeGroup')">🚗 接送机</div>
+                <div class="pill" onclick="selectPill(this, 'helpTypeGroup')">💪 搬家/装家具</div>
+                <div class="pill" onclick="selectPill(this, 'helpTypeGroup')">🐱 代喂宠物</div>
+                <div class="pill" onclick="selectPill(this, 'helpTypeGroup')">🛠️ 其他求助</div>
+            </div>
+        </div>
+        <textarea id="helpDesc" class="fm-textarea" style="height: 120px;" placeholder="具体需要帮什么忙？比如：明天早上7点，从海牙带两个大箱子去史基浦机场..."></textarea>
+        
+        <div class="fm-section-title">悬赏与时间</div>
+        <div class="fm-row">
+            <div class="fm-label">💰 赏金 (€)</div>
+            <input type="number" id="helpReward" class="fm-input-small" style="color: #D97706;" placeholder="0.00">
+        </div>
+        <div class="fm-row">
+            <div class="fm-label">⏰ 期待时间</div>
+            <input type="datetime-local" id="helpTime" class="fm-select">
+        </div>
+        <div class="fm-row">
+            <div class="fm-label">📍 地点</div>
+            <input type="text" id="helpLocation" class="fm-select" style="text-align: right; background: transparent;" placeholder="例如: Delft (可留空)">
+        </div>
+        <div class="fm-row" style="border-bottom:none;">
+            <div class="fm-label">🔥 是否十万火急？</div>
+            <div class="pill-group" id="helpUrgentGroup">
+                <div class="pill active" onclick="selectPill(this, 'helpUrgentGroup')">普通</div>
+                <div class="pill" onclick="selectPill(this, 'helpUrgentGroup')" style="color:#DC2626;">十万火急</div>
+            </div>
+        </div>
+        <div style="height: 50px;"></div>
+    </div>
+</div>
+
+<div class="full-modal" id="publishPartnerModal" style="display: none;">
+    <div class="fm-header">
+        <div class="fm-close" onclick="closePartnerPublish()">✕</div>
+        <div class="fm-title">找搭子</div>
+        <div class="fm-submit" style="background:#8B5CF6;" onclick="submitPartnerPost()">发布</div>
+    </div>
+    <div class="fm-content">
+        <input type="text" id="partnerTitle" class="ai-input" style="font-size:16px; font-weight:bold; border-color:#E5E7EB; margin-top:5px;" placeholder="一句话标题 (例如: 周末有人去国王节吗)">
+        <textarea id="partnerDesc" class="fm-textarea" style="height: 120px; border-color:#E5E7EB; margin-bottom:10px;" placeholder="介绍一下你的计划，或者希望找个什么样的搭子..."></textarea>
+        
+        <div class="fm-row" style="padding: 5px 0 15px; border-bottom:none;">
+            <div class="pill-group" style="justify-content: flex-start;" id="partnerTagGroup">
+                <div class="pill active" onclick="selectPill(this, 'partnerTagGroup')">🎨 看展/旅游</div>
+                <div class="pill" onclick="selectPill(this, 'partnerTagGroup')">🍽️ 约饭探店</div>
+                <div class="pill" onclick="selectPill(this, 'partnerTagGroup')">📚 图书馆自习</div>
+                <div class="pill" onclick="selectPill(this, 'partnerTagGroup')">🪩 蹦迪/音乐节</div>
+            </div>
+        </div>
+
+        <div class="fm-section-title">匹配条件</div>
+        <div class="fm-row">
+            <div class="fm-label">⏰ 计划日期</div>
+            <input type="date" id="partnerDate" class="fm-select">
+        </div>
+        <div class="fm-row">
+            <div class="fm-label">📍 目标地点</div>
+            <input type="text" id="partnerLocation" class="fm-select" style="text-align: right; background: transparent;" placeholder="阿姆 / 鹿特丹 等">
+        </div>
+        <div class="fm-row" style="border-bottom:none;">
+            <div class="fm-label">🔮 MBTI 偏好</div>
+            <select id="partnerMbti" class="fm-select">
+                <option value="all">不限</option>
+                <option value="e">只找 E 人 (外向)</option>
+                <option value="i">只找 I 人 (内向)</option>
+            </select>
+        </div>
         <div style="height: 50px;"></div>
     </div>
 </div>
