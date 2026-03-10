@@ -367,3 +367,25 @@ body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "S
 .pc-footer { display: flex; flex-direction: column; gap: 6px; border-top: 1px dashed #E5E7EB; padding-top: 8px; font-size: 10px; color: #9CA3AF; font-weight: bold;}
 .pc-dist { display: flex; align-items: center; gap: 4px; }
 .pc-action { background: #111827; color: #FFF; padding: 6px 0; width: 100%; text-align: center; border-radius: 12px; font-size: 12px; font-weight: bold;}
+
+/* ================= 认证中心样式 ================= */
+.auth-container { margin-bottom: 25px; }
+.auth-card { display: flex; justify-content: space-between; align-items: center; background: #FFF; border-radius: 16px; padding: 15px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); border: 1px solid #E5E7EB; cursor: pointer; transition: transform 0.2s;}
+.auth-card:active { transform: scale(0.98); background: #F9FAFB; }
+.auth-info { display: flex; align-items: center; gap: 12px; }
+.auth-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; justify-content: center; align-items: center; font-size: 20px; }
+.auth-icon.edu { background: #EFF6FF; color: #3B82F6; }
+.auth-icon.wechat { background: #ECFDF5; color: #10B981; }
+.auth-name { font-size: 14px; font-weight: 900; color: #111827; margin-bottom: 2px;}
+.auth-sub { font-size: 11px; color: #9CA3AF; }
+.auth-action { font-size: 12px; font-weight: bold; padding: 6px 12px; border-radius: 10px; background: #F3F4F6; color: #4B5563;}
+.auth-action.done { background: transparent; color: #10B981; border: 1px solid #A7F3D0; }
+
+.verify-code-row { display: flex; gap: 10px; margin-top: 10px; }
+.verify-code-row input { flex: 1; }
+.btn-send-code { background: #111827; color: #FFF; border: none; border-radius: 12px; padding: 0 15px; font-size: 12px; font-weight: bold; cursor: pointer; white-space: nowrap;}
+.btn-send-code:disabled { background: #E5E7EB; color: #9CA3AF; cursor: not-allowed; }
+
+/* 认证专属高光标签 */
+.p-tag.verified-edu { background: linear-gradient(135deg, #3B82F6, #2563EB); color: #FFF; border: none; box-shadow: 0 2px 6px rgba(59,130,246,0.3);}
+.p-tag.verified-wechat { background: linear-gradient(135deg, #10B981, #059669); color: #FFF; border: none; box-shadow: 0 2px 6px rgba(16,185,129,0.3);}
