@@ -37,23 +37,6 @@
         .btn-publish { width: 52px; height: 52px; background: linear-gradient(135deg, #10B981 0%, #059669 100%); border-radius: 20px; display: flex; justify-content: center; align-items: center; color: white; font-size: 28px; font-weight: bold; position: absolute; top: -18px; box-shadow: 0 8px 20px rgba(16, 185, 129, 0.35); transition: transform 0.2s; border: 4px solid #FFF;}
         .tab-item-publish:active .btn-publish { transform: scale(0.92); }
 
-        /* ================= 🚨 修复：发布菜单 Bottom Sheet 样式 (找回) ================= */
-        .publish-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 1001; display: none; opacity: 0; transition: opacity 0.3s; backdrop-filter: blur(4px); }
-        .publish-overlay.show { display: block; opacity: 1; }
-        .publish-sheet { position: fixed; bottom: -100%; left: 0; right: 0; max-width: 600px; margin: 0 auto; background: #FFF; border-top-left-radius: 28px; border-top-right-radius: 28px; z-index: 1002; padding: 30px 20px calc(30px + env(safe-area-inset-bottom)); transition: bottom 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.1); box-shadow: 0 -10px 40px rgba(0,0,0,0.1); }
-        .publish-sheet.show { bottom: 0; }
-        .ps-close { position: absolute; top: 15px; right: 20px; width: 30px; height: 30px; background: #F3F4F6; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 14px; color: #6B7280; cursor: pointer; font-weight: bold;}
-        .ps-title { font-size: 18px; font-weight: 900; color: #111827; margin-bottom: 25px; margin-left: 10px; }
-        .ps-options { display: flex; justify-content: space-around; }
-        .ps-opt { display: flex; flex-direction: column; align-items: center; gap: 10px; cursor: pointer; width: 30%; transition: transform 0.2s;}
-        .ps-opt:active { transform: scale(0.95); }
-        .ps-icon { width: 65px; height: 65px; border-radius: 22px; display: flex; justify-content: center; align-items: center; font-size: 32px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); margin-bottom: 4px; }
-        .ps-opt-1 .ps-icon { background: #ECFDF5; color: #10B981; } 
-        .ps-opt-2 .ps-icon { background: #FFFBEB; color: #D97706; } 
-        .ps-opt-3 .ps-icon { background: #EFF6FF; color: #3B82F6; } 
-        .ps-text { font-size: 13px; font-weight: 900; color: #374151; }
-        .ps-sub { font-size: 11px; color: #9CA3AF; }
-
         /* ================= 首页相关 ================= */
         .home-action-btn { background: #ECFDF5; border: 2px dashed #10B981; border-radius: 20px; padding: 25px 15px; text-align: center; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.02); display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 30px;}
         .home-action-btn:active { transform: scale(0.98); background: #D1FAE5; }
@@ -97,7 +80,24 @@
         .m-tab { font-size: 16px; font-weight: 900; color: #9CA3AF; cursor: pointer; padding-bottom: 6px; transition: 0.2s;}
         .m-tab.active { color: #111827; border-bottom: 3px solid #10B981; }
 
-        /* ================= 🚨 修复：省钱秘籍 CSS (找回) ================= */
+        /* ================= 发布菜单 Bottom Sheet ================= */
+        .publish-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 1001; display: none; opacity: 0; transition: opacity 0.3s; backdrop-filter: blur(4px); }
+        .publish-overlay.show { display: block; opacity: 1; }
+        .publish-sheet { position: fixed; bottom: -100%; left: 0; right: 0; max-width: 600px; margin: 0 auto; background: #FFF; border-top-left-radius: 28px; border-top-right-radius: 28px; z-index: 1002; padding: 30px 20px calc(30px + env(safe-area-inset-bottom)); transition: bottom 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.1); box-shadow: 0 -10px 40px rgba(0,0,0,0.1); }
+        .publish-sheet.show { bottom: 0; }
+        .ps-close { position: absolute; top: 15px; right: 20px; width: 30px; height: 30px; background: #F3F4F6; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 14px; color: #6B7280; cursor: pointer; font-weight: bold;}
+        .ps-title { font-size: 18px; font-weight: 900; color: #111827; margin-bottom: 25px; margin-left: 10px; }
+        .ps-options { display: flex; justify-content: space-around; }
+        .ps-opt { display: flex; flex-direction: column; align-items: center; gap: 10px; cursor: pointer; width: 30%; transition: transform 0.2s;}
+        .ps-opt:active { transform: scale(0.95); }
+        .ps-icon { width: 65px; height: 65px; border-radius: 22px; display: flex; justify-content: center; align-items: center; font-size: 32px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); margin-bottom: 4px; }
+        .ps-opt-1 .ps-icon { background: #ECFDF5; color: #10B981; } 
+        .ps-opt-2 .ps-icon { background: #FFFBEB; color: #D97706; } 
+        .ps-opt-3 .ps-icon { background: #EFF6FF; color: #3B82F6; } 
+        .ps-text { font-size: 13px; font-weight: 900; color: #374151; }
+        .ps-sub { font-size: 11px; color: #9CA3AF; }
+        
+        /* ================= 修复：省钱秘籍 CSS ================= */
         .quick-links-wrap { display: flex; overflow-x: auto; gap: 12px; padding: 0 5px 20px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
         .quick-links-wrap::-webkit-scrollbar { display: none; }
         .ql-card { flex: 0 0 auto; width: 140px; background: #FFF; border-radius: 16px; padding: 15px 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); border: 1px solid #E5E7EB; text-decoration: none !important; display: flex; flex-direction: column; align-items: center; justify-content: center; scroll-snap-align: start; transition: transform 0.2s; }
@@ -251,6 +251,7 @@
 
 <div class="tab-bar">
     <div class="tab-item active" onclick="switchTab('scan', this)"><span class="tab-icon">🏠</span><span class="tab-text">首页</span></div>
+    
     <div class="tab-item" onclick="switchTab('market', this)"><span class="tab-icon">📦</span><span class="tab-text">集市</span></div>
     
     <div class="tab-item-publish" onclick="requireAuth(openPublishSheet)">
@@ -326,6 +327,13 @@
 
     <div id="page-market" class="page-section">
         <div class="header" style="text-align: left; margin-top: 0;"><h1 class="title">管家集市 📦</h1><div class="subtitle" style="margin-bottom: 20px;">闲置交易与互助悬赏，全员实名认证</div></div>
+        
+        <div class="market-tabs">
+            <div class="m-tab active">🏷️ 闲置跳蚤</div>
+            <div class="m-tab">🤝 互助悬赏</div>
+            <div class="m-tab">🏕️ 找搭子</div>
+        </div>
+
         <div style="text-align: center; color: #9CA3AF; margin-top: 60px; line-height: 1.8;"><div style="font-size: 40px; margin-bottom: 10px;">🚧</div><b>二手集市双列瀑布流正在建设中...</b></div>
     </div>
 
@@ -870,7 +878,21 @@
         }
         if (typeof tipsMetaData !== 'undefined' && document.getElementById('tipsDisclaimerContainer')) { document.getElementById('tipsDisclaimerContainer').innerHTML = `<div style="margin:0 16px 20px; padding:15px; background:#FFFBEB; border:1px dashed #FCD34D; border-radius:12px; font-size:11px; color:#B45309; line-height:1.6;"><div style="font-weight:bold; margin-bottom:6px; color:#D97706;"><span>⏳</span> 最后更新于：${tipsMetaData.lastUpdated}</div>⚠️ <b>防杠声明：</b> ${tipsMetaData.disclaimer}</div>`; }
     }
-    function toggleTipsContent(element) { const content = element.nextElementSibling; if (!element.classList.contains('active')) { element.classList.add('active'); content.style.maxHeight = content.scrollHeight + "px"; setTimeout(() => { if(element.classList.contains('active')) content.style.maxHeight = 'none'; }, 300); } else { content.style.maxHeight = content.scrollHeight + "px"; requestAnimationFrame(() => { element.classList.remove('active'); content.style.maxHeight = null; }); } }
+    
+    // 🚨 完美解决收不回去的 Bug
+    function toggleTipsContent(element) { 
+        const content = element.nextElementSibling; 
+        if (!element.classList.contains('active')) { 
+            element.classList.add('active'); 
+            content.style.maxHeight = content.scrollHeight + "px"; 
+            setTimeout(() => { if(element.classList.contains('active')) content.style.maxHeight = 'none'; }, 300); 
+        } else { 
+            content.style.maxHeight = content.scrollHeight + "px"; 
+            void content.offsetHeight; // 强制重绘，解决收回卡顿问题
+            element.classList.remove('active'); 
+            content.style.maxHeight = null; 
+        } 
+    }
 
     function saveToLocalFootprint(data, img) { let h = JSON.parse(localStorage.getItem('hebao_history')||'[]'); if(!h.find(i=>i.dutch_name===data.dutch_name)){data.img_src=img; h.unshift(data); localStorage.setItem('hebao_history',JSON.stringify(h));} }
     function renderFootprints() { 
