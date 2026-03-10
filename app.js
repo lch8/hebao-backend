@@ -149,7 +149,7 @@ function renderProfileState() {
 
         if(reviewsEmptyState) reviewsEmptyState.innerHTML = '<div class="empty-state-icon">📭</div>暂无收到的评价';
         loadAvatar();
-        loadMyPosts(); // 登录状态下自动拉取我的帖子
+        loadMyPosts(); // 自动拉取我的帖子
     } else {
         guestBlock.style.display = 'block'; actionsBlock.style.display = 'none';
         uidText.innerText = 'ID: 未登录'; nameText.innerText = '管家游客';
@@ -229,7 +229,6 @@ async function handlePackageImage(event) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ imageBase64: base64Data })
             });
-            
             const data = await res.json();
             if(!res.ok || data.error) throw new Error(data.error || "识别失败");
 
@@ -242,7 +241,6 @@ async function handlePackageImage(event) {
             
             const isGood = data.is_recommended === 1;
             const emoji = isGood ? '👍' : '💣';
-            
             document.getElementById('miniChineseName').innerText = `${emoji} ${data.chinese_name || data.dutch_name || '未知商品'}`; 
             document.getElementById('miniInsight').innerText = data.insight || '管家觉得这个还不错~'; 
             
@@ -263,14 +261,7 @@ let html5Scanner = null;
 function startBarcodeScan() {
     document.getElementById('scannerModal').style.display = 'flex'; 
     html5Scanner = new Html5Qrcode("reader");
-    
-    const config = { 
-        fps: 10, 
-        qrbox: { width: 250, height: 150 }, 
-        aspectRatio: 1.0, 
-        formatsToSupport: [ Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8, Html5QrcodeSupportedFormats.UPC_A ] 
-    };
-    
+    const config = { fps: 10, qrbox: { width: 250, height: 150 }, aspectRatio: 1.0, formatsToSupport: [ Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8, Html5QrcodeSupportedFormats.UPC_A ] };
     html5Scanner.start({ facingMode: "environment" }, config, (decodedText) => {
         if (navigator.vibrate) navigator.vibrate(100); 
         closeScanner();
@@ -283,10 +274,7 @@ function startBarcodeScan() {
 }
 
 function closeScanner() { 
-    if(html5Scanner) { 
-        html5Scanner.stop().catch(e => console.log("停止相机失败", e)); 
-        html5Scanner = null;
-    }
+    if(html5Scanner) { html5Scanner.stop().catch(e => console.log("停止相机失败", e)); html5Scanner = null; }
     document.getElementById('scannerModal').style.display = 'none'; 
 }
 
@@ -304,11 +292,7 @@ function executeSearch() {
         document.getElementById('miniChineseName').innerText=data.chinese_name||'未知商品'; 
         document.getElementById('miniInsight').innerText=data.insight||'暂无评价'; 
         saveToLocalFootprint(data, data.image_url);
-    })
-    .catch(err => { 
-        alert("未找到商品信息！"); 
-        resetApp(); 
-    });
+    }).catch(err => { alert("未找到商品信息！"); resetApp(); });
 }
 
 function resetApp() { 
@@ -329,10 +313,7 @@ async function loadTrendingToHome() {
             renderHomeTrending(globalTrendingLikes, 'homeTrendingListLikes', 'like'); 
             renderHomeTrending(globalTrendingDislikes, 'homeTrendingListDislikes', 'dislike'); 
         }
-    } catch(e) { 
-        console.error('加载榜单失败', e);
-        document.getElementById('homeTrendingListLikes').innerHTML = '<div style="text-align:center; color:#9CA3AF; font-size: 12px; margin-top:20px;">榜单加载休息中...</div>'; 
-    }
+    } catch(e) { document.getElementById('homeTrendingListLikes').innerHTML = '<div style="text-align:center; color:#9CA3AF; font-size: 12px; margin-top:20px;">榜单加载中...</div>'; }
 }
 
 function renderHomeTrending(list, containerId, type) {
@@ -342,15 +323,10 @@ function renderHomeTrending(list, containerId, type) {
 
     list.slice(0, 20).forEach((item, index) => {
         let badgeClass = 'rank-other'; 
-        if (index === 0) badgeClass = 'rank-1'; 
-        else if (index === 1) badgeClass = 'rank-2'; 
-        else if (index === 2) badgeClass = 'rank-3'; 
+        if (index === 0) badgeClass = 'rank-1'; else if (index === 1) badgeClass = 'rank-2'; else if (index === 2) badgeClass = 'rank-3'; 
         if (type === 'dislike') badgeClass = 'rank-bad';
-        const score = type === 'like' ? item.likes : item.dislikes; 
-        const icon = type === 'like' ? '👍' : '💣'; 
-        const scoreColor = type === 'like' ? '#10B981' : '#EF4444';
+        const score = type === 'like' ? item.likes : item.dislikes; const icon = type === 'like' ? '👍' : '💣'; const scoreColor = type === 'like' ? '#10B981' : '#EF4444';
         const safeImg = item.image_url || fallbackSvg;
-        
         html += `<div class="trending-card" onclick="openDetailsFromHomeTrending('${type}', ${index})"><div class="rank-badge ${badgeClass}">TOP ${index + 1}</div><img src="${safeImg}" onerror="this.onerror=null; this.src='${fallbackSvg}'" style="width: 50px; height: 50px; border-radius: 10px; object-fit: cover; background: #F3F4F6; border: 1px solid #E5E7EB;"><div class="t-info"><div class="t-name">${item.chinese_name || '未命名商品'}</div><div style="font-size: 11px; color: #9CA3AF; margin-top:2px;">${item.dutch_name || ''}</div></div><div class="t-score" style="color: ${scoreColor}">${icon} ${score}</div></div>`;
     });
     container.innerHTML = html;
@@ -369,10 +345,8 @@ function setupDetailPage() {
     document.getElementById('detailWarningBox').style.display = d.warning ? 'block' : 'none'; document.getElementById('detailWarning').innerText = d.warning || '';
     document.getElementById('detailAltBox').style.display = 'none';
     if(d.alternatives) { document.getElementById('detailAltBox').style.display='block'; document.getElementById('detailAlternatives').innerHTML = d.alternatives.split('|').map(p=>`<div class="alt-tag">${p}</div>`).join(''); }
-
     if (d.pairing) { document.getElementById('detailRecipeBox').style.display = 'block'; renderReviewCards(d.pairing); } 
     else { document.getElementById('detailRecipeBox').style.display = 'block'; document.getElementById('recipeCardList').innerHTML = '<div style="text-align:center;color:#9CA3AF;font-size:13px;padding:20px 0;">暂无评价，快来抢沙发！</div>'; }
-    
     document.getElementById('chatHistory').innerHTML = ''; document.getElementById('askInput').value = '';
     switchTab('details', null);
 }
@@ -388,7 +362,6 @@ function renderReviewCards(pairingString) {
         return { id: idx, text: cleanText, isLike, isRealUser, likes: mockLikes, avatar, name };
     });
     reviews.sort((a, b) => b.likes - a.likes);
-
     reviews.forEach(r => {
         const tagHtml = r.isRealUser ? `<span class="r-tag ${r.isLike ? 'like' : 'dislike'}">${r.isLike ? '👍 推荐' : '💣 避雷'}</span>` : `<span class="r-tag" style="background:#F3F4F6; color:#6B7280;">🤖 AI</span>`;
         list.innerHTML += `<div class="recipe-card"><div class="r-header"><div class="r-user" onclick="alert('即将开放 [${r.name}] 的主页')"><div class="r-avatar">${r.avatar}</div><div class="r-name">${r.name}</div>${tagHtml}</div><div class="r-like-btn" id="reviewLike_${r.id}" onclick="likeReviewCard(${r.id}, event)"><span style="font-size:14px;">💡</span> <span id="rLikeCount_${r.id}">${r.likes}</span></div></div><div class="r-text">${r.text}</div></div>`;
@@ -416,26 +389,16 @@ async function submitDetailReview() {
         if(index !== -1) { history[index].pairing = currentDetailData.pairing; localStorage.setItem('hebao_history', JSON.stringify(history)); }
         
         const actionType = attitude.includes('推荐') ? 'like' : 'dislike';
-        await fetch('/api/vote', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ dutch_name: currentDetailData.dutch_name, action: actionType })
-        });
+        await fetch('/api/vote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dutch_name: currentDetailData.dutch_name, action: actionType }) });
 
-        alert("🎉 评价发布成功！同时已为该商品投票！");
-        document.getElementById('addReviewModal').style.display = 'none'; setupDetailPage();
-    } catch(e) { 
-        alert("网络开小差了..."); 
-    } finally { 
-        btn.innerText = "🚀 提交评价"; btn.disabled = false; 
-    }
+        alert("🎉 评价发布成功！"); document.getElementById('addReviewModal').style.display = 'none'; setupDetailPage();
+    } catch(e) { alert("网络错误..."); } finally { btn.innerText = "🚀 提交评价"; btn.disabled = false; }
 }
 
 async function sendQuestion() {
     const input = document.getElementById('askInput'); const question = input.value.trim(); if(!question) return;
     const chatBox = document.getElementById('chatHistory');
-    const dName = currentDetailData.dutch_name || currentDetailData.chinese_name || "未知商品"; 
-    const dInsight = currentDetailData.insight || "";
+    const dName = currentDetailData.dutch_name || currentDetailData.chinese_name || "未知商品"; const dInsight = currentDetailData.insight || "";
     
     chatBox.innerHTML += `<div class="chat-bubble bubble-user">${question}</div>`; input.value = ''; window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     const loadingId = 'loading-' + Date.now(); chatBox.innerHTML += `<div class="chat-bubble bubble-ai" id="${loadingId}">管家正在查阅资料...</div>`;
@@ -450,9 +413,7 @@ async function sendQuestion() {
 
 function saveToLocalFootprint(data, img) { 
     let h = JSON.parse(localStorage.getItem('hebao_history')||'[]'); 
-    if(!h.find(i=>i.dutch_name===data.dutch_name)){
-        data.img_src=img; h.unshift(data); localStorage.setItem('hebao_history',JSON.stringify(h));
-    } 
+    if(!h.find(i=>i.dutch_name===data.dutch_name)){ data.img_src=img; h.unshift(data); localStorage.setItem('hebao_history',JSON.stringify(h)); } 
 }
 
 function renderFootprints() { 
@@ -470,9 +431,7 @@ function renderFootprints() {
 function renderTipsPage() {
     if (typeof quickLinksData !== 'undefined') { 
         let qlHtml = ''; 
-        quickLinksData.forEach(link => { 
-            qlHtml += `<a href="${link.url}" target="_blank" class="ql-card"><div class="ql-icon">${link.icon}</div><div class="ql-title">${link.title}</div><div class="ql-sub">${link.sub}</div></a>`; 
-        }); 
+        quickLinksData.forEach(link => { qlHtml += `<a href="${link.url}" target="_blank" class="ql-card"><div class="ql-icon">${link.icon}</div><div class="ql-title">${link.title}</div><div class="ql-sub">${link.sub}</div></a>`; }); 
         if(document.getElementById('quickLinksContainer')) document.getElementById('quickLinksContainer').innerHTML = qlHtml; 
     }
     
@@ -481,7 +440,6 @@ function renderTipsPage() {
         tipsData.forEach(cat => {
             const highlightHtml = cat.highlight ? `<span style="background: #FEF2F2; color: #EF4444; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; margin-left: 5px;">${cat.highlight}</span>` : '';
             let storesHtml = '';
-            
             cat.stores.forEach(store => {
                 let itemsHtml = '';
                 store.tips.forEach(tip => {
@@ -494,125 +452,146 @@ function renderTipsPage() {
         });
         if(document.getElementById('tipsAccordionContainer')) document.getElementById('tipsAccordionContainer').innerHTML = accHtml;
     }
-    
-    if (typeof tipsMetaData !== 'undefined' && document.getElementById('tipsDisclaimerContainer')) { 
-        document.getElementById('tipsDisclaimerContainer').innerHTML = `<div class="tips-disclaimer"><div style="font-weight:bold; margin-bottom:6px; color:#D97706;"><span>⏳</span> 最后更新于：${tipsMetaData.lastUpdated}</div>⚠️ <b>防杠声明：</b> ${tipsMetaData.disclaimer}</div>`; 
-    }
 }
 
-function toggleTipsContent(element) {
-    element.classList.toggle('active');
-}
+function toggleTipsContent(element) { element.classList.toggle('active'); }
 
-// ================= 7. 语音识别与多图上传发布引擎 =================
-
-// 【1】Web Speech API 语音识别逻辑
+// ================= 7. 语音识别、多图上传与发帖引擎 =================
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition = null;
 if (SpeechRecognition) {
     recognition = new SpeechRecognition();
-    recognition.lang = 'zh-CN'; // 设定为中文
-    recognition.interimResults = false; // 只返回最终结果
+    recognition.lang = 'zh-CN'; 
+    recognition.interimResults = false; 
 }
 
 function toggleVoiceInput() {
     const btn = document.getElementById('btnVoiceInput');
     const input = document.getElementById('aiKeywords');
+    if (!recognition) return alert('抱歉，您的浏览器不支持语音输入，请打字或换用原生浏览器哦~');
     
-    if (!recognition) return alert('抱歉，您的浏览器不支持语音输入，请打字或换用 Chrome 浏览器哦~');
-    
-    if (btn.classList.contains('recording')) {
-        recognition.stop();
-        return;
-    }
+    if (btn.classList.contains('recording')) { recognition.stop(); return; }
 
-    btn.classList.add('recording');
-    btn.innerText = '🔴';
-    input.placeholder = '请说话，管家正在听...';
-    
-    try {
-        recognition.start();
-    } catch(e) {}
+    btn.classList.add('recording'); btn.innerText = '🔴'; input.placeholder = '请说话，管家正在听...';
+    try { recognition.start(); } catch(e) {}
 
-    recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        input.value += transcript; // 将语音转文字追加到输入框
-    };
-
+    recognition.onresult = (event) => { input.value += event.results[0][0].transcript; };
     recognition.onend = () => {
-        btn.classList.remove('recording');
-        btn.innerText = '🎙️';
-        input.placeholder = '输入或语音：代村出桌子30欧明天拿走...';
-        // 语音结束后，自动触发 AI 填表
+        btn.classList.remove('recording'); btn.innerText = '🎙️'; input.placeholder = '输入或语音：代村出桌子30欧明天拿走...';
         if(input.value.trim() !== '') generateAICopy(); 
     };
-
     recognition.onerror = (event) => {
-        btn.classList.remove('recording');
-        btn.innerText = '🎙️';
-        input.placeholder = '听不清，请重试或直接打字...';
+        btn.classList.remove('recording'); btn.innerText = '🎙️'; input.placeholder = '听不清，请重试或直接打字...';
     };
 }
 
-// 【2】多图上传逻辑
-let selectedImagesArray = []; // 用于存储多张图片的 {id, base64}
-
+let selectedImagesArray = []; 
 function handleMultiImageSelect(event) {
     const files = event.target.files;
     if (!files || files.length === 0) return;
-
     Array.from(files).forEach(file => {
-        if (selectedImagesArray.length >= 9) return; // 限制最多9张
+        if (selectedImagesArray.length >= 9) return; 
         const reader = new FileReader();
         reader.onload = function(e) {
             const base64Data = e.target.result.split(',')[1]; 
-            const id = Date.now() + Math.random(); // 唯一ID
+            const id = Date.now() + Math.random(); 
             selectedImagesArray.push({ id: id, base64: base64Data, preview: e.target.result });
             renderThumbnails();
         };
         reader.readAsDataURL(file);
     });
-    event.target.value = ''; // 清空 input 允许重复选同一张
+    event.target.value = ''; 
 }
 
-function removeImage(id) {
-    selectedImagesArray = selectedImagesArray.filter(img => img.id !== id);
-    renderThumbnails();
-}
+function removeImage(id) { selectedImagesArray = selectedImagesArray.filter(img => img.id !== id); renderThumbnails(); }
 
 function renderThumbnails() {
     const container = document.getElementById('idleImgPreviewContainer');
     let html = '';
-    selectedImagesArray.forEach(img => {
-        html += `<div class="thumb-box"><img src="${img.preview}"><div class="thumb-del" onclick="removeImage(${img.id})">✕</div></div>`;
-    });
-    if (selectedImagesArray.length < 9) {
-        html += `<div class="upload-btn" onclick="document.getElementById('idleImgInput').click()"><span style="font-size: 24px;">📷</span><span style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">多图</span></div>`;
-    }
+    selectedImagesArray.forEach(img => { html += `<div class="thumb-box"><img src="${img.preview}"><div class="thumb-del" onclick="removeImage(${img.id})">✕</div></div>`; });
+    if (selectedImagesArray.length < 9) { html += `<div class="upload-btn" onclick="document.getElementById('idleImgInput').click()"><span style="font-size: 24px;">📷</span><span style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">多图</span></div>`; }
     container.innerHTML = html;
 }
 
-// 核心：将多张图片依次传给腾讯云，返回以逗号拼接的 URL 字符串
 async function uploadImagesToCOS() {
     if (selectedImagesArray.length === 0) return ''; 
     let uploadedUrls = [];
-    
-    // 用 for...of 保证按顺序同步上传
     for (let img of selectedImagesArray) {
         try {
-            const res = await fetch('/api/upload', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ imageBase64: img.base64 })
-            });
+            const res = await fetch('/api/upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageBase64: img.base64 }) });
             const data = await res.json();
             if(data.success) uploadedUrls.push(data.url); 
         } catch(e) { console.error("部分图片上传失败", e); }
     }
-    return uploadedUrls.join(','); // 返回 "url1,url2,url3"
+    return uploadedUrls.join(','); 
 }
 
-// 【3】发布闲置逻辑 (结合多图与刚才的 DeepSeek 逻辑)
+// 🔓 控制菜单和弹窗的“门钥匙” (修复点击失效的问题)
+function openPublishSheet() {
+    const overlay = document.querySelector('.publish-overlay'); const sheet = document.querySelector('.publish-sheet');
+    if(overlay) { overlay.style.display = 'block'; setTimeout(()=>overlay.classList.add('show'),10); }
+    if(sheet) { setTimeout(()=>sheet.classList.add('show'),10); }
+}
+function closePublishSheet() {
+    const overlay = document.querySelector('.publish-overlay'); const sheet = document.querySelector('.publish-sheet');
+    if(sheet) sheet.classList.remove('show');
+    if(overlay) { overlay.classList.remove('show'); setTimeout(()=>overlay.style.display='none',300); }
+}
+
+function openIdlePublish() {
+    closePublishSheet();
+    setTimeout(() => {
+        document.getElementById('publishIdleModal').style.display = 'flex';
+        const d = new Date(); d.setDate(d.getDate() + 7);
+        if(document.getElementById('idleDeadline')) document.getElementById('idleDeadline').value = d.toISOString().split('T')[0];
+    }, 300);
+}
+function closeIdlePublish() { document.getElementById('publishIdleModal').style.display = 'none'; }
+
+function openHelpPublish() { closePublishSheet(); setTimeout(() => { document.getElementById('publishHelpModal').style.display = 'flex'; }, 300); }
+function closeHelpPublish() { document.getElementById('publishHelpModal').style.display = 'none'; }
+
+function openPartnerPublish() { closePublishSheet(); setTimeout(() => { document.getElementById('publishPartnerModal').style.display = 'flex'; }, 300); }
+function closePartnerPublish() { document.getElementById('publishPartnerModal').style.display = 'none'; }
+
+function selectPill(element, groupName) {
+    document.querySelectorAll(`#${groupName} .pill`).forEach(el => el.classList.remove('active'));
+    element.classList.add('active');
+}
+
+// DeepSeek 自动填表引擎
+async function generateAICopy() {
+    const keyword = document.getElementById('aiKeywords').value.trim();
+    if (!keyword) return alert("请随意输入一句你的发帖需求，例如：代村出个电饭煲15欧，不讲价只收现金...");
+    
+    const btn = document.getElementById('btnAiMagic');
+    btn.innerText = "⏳ DeepSeek 正在为你撰写文案并填表..."; btn.disabled = true;
+
+    try {
+        const res = await fetch('/api/generate-copy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ keyword }) });
+        const data = await res.json();
+        if(data.error) throw new Error(data.error);
+
+        if(data.copy) document.getElementById('idleDesc').value = data.copy;
+        if(data.price) document.getElementById('idlePrice').value = data.price;
+        if(data.deadline) document.getElementById('idleDeadline').value = data.deadline;
+        if(data.location) {
+            const locSelect = document.getElementById('idleLocation');
+            for(let i=0; i<locSelect.options.length; i++) {
+                if(locSelect.options[i].value === data.location || locSelect.options[i].text.includes(data.location)) { locSelect.selectedIndex = i; break; }
+            }
+        }
+        if(data.bargain) document.querySelectorAll('#bargainGroup .pill').forEach(el => { if(el.innerText.includes(data.bargain) || data.bargain.includes(el.innerText)) selectPill(el, 'bargainGroup'); });
+        if(data.payment) document.querySelectorAll('#paymentGroup .pill').forEach(el => { if(el.innerText.includes(data.payment.split('/')[0]) || data.payment.includes(el.innerText)) selectPill(el, 'paymentGroup'); });
+
+        document.getElementById('aiKeywords').value = '';
+        btn.innerText = "✨ 魔法完成！所有表单已自动填好！";
+    } catch (err) {
+        alert("AI生成失败：" + err.message);
+        btn.innerText = "🪄 自动填表";
+    } finally { setTimeout(() => { btn.innerText = "🪄 重新生成"; btn.disabled = false; }, 3000); }
+}
+
 async function submitIdlePost() {
     const desc = document.getElementById('idleDesc').value.trim();
     const price = document.getElementById('idlePrice').value.trim();
@@ -623,41 +602,22 @@ async function submitIdlePost() {
     btn.innerText = "上传中..."; btn.style.pointerEvents = 'none';
 
     try {
-        // 等待所有图片上传腾讯云完毕
         let finalImageUrls = await uploadImagesToCOS();
-        
         const finalTitle = `[闲置] €${price || '面议'} · ${loc}`;
         const authorName = localStorage.getItem('hp_name') || '管家新人';
         
-        const res = await fetch('/api/publish-community', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: userUUID, authorName: authorName, title: finalTitle, text: desc, imageUrl: finalImageUrls })
-        });
-        
+        const res = await fetch('/api/publish-community', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: userUUID, authorName: authorName, title: finalTitle, text: desc, imageUrl: finalImageUrls }) });
         const data = await res.json();
         if(!data.success) throw new Error(data.error);
 
         alert("🎉 发布成功！支持多图的闲置帖已上架！");
         closeIdlePublish();
         
-        // 清理现场
-        selectedImagesArray = [];
-        renderThumbnails();
-        document.getElementById('idleDesc').value = '';
+        selectedImagesArray = []; renderThumbnails(); document.getElementById('idleDesc').value = '';
         loadCommunityPosts(); 
-    } catch(e) {
-        alert("发布失败：" + e.message);
-    } finally {
-        btn.innerText = "发布"; btn.style.pointerEvents = 'auto';
-    }
+    } catch(e) { alert("发布失败：" + e.message); } 
+    finally { btn.innerText = "发布"; btn.style.pointerEvents = 'auto'; }
 }
-
-function openHelpPublish() {
-    closePublishSheet();
-    setTimeout(() => { document.getElementById('publishHelpModal').style.display = 'flex'; }, 300);
-}
-function closeHelpPublish() { document.getElementById('publishHelpModal').style.display = 'none'; }
 
 async function submitHelpPost() {
     const desc = document.getElementById('helpDesc').value.trim();
@@ -666,154 +626,66 @@ async function submitHelpPost() {
     const urgent = urgentGroup && urgentGroup.innerText.includes('十万火急') ? '🔥急' : '普通';
     
     if(!desc) return alert("请简单描述一下你需要什么帮助哦！");
-    
-    const btn = document.querySelector('#publishHelpModal .fm-submit');
-    btn.innerText = "发送中..."; btn.style.pointerEvents = 'none';
+    const btn = document.querySelector('#publishHelpModal .fm-submit'); btn.innerText = "发送中..."; btn.style.pointerEvents = 'none';
 
     try {
         const finalTitle = `[互助-${urgent}] 赏金 €${reward || '0'}`;
         const authorName = localStorage.getItem('hp_name') || '管家新人';
         
-        const res = await fetch('/api/publish-community', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: userUUID, authorName: authorName, title: finalTitle, text: desc, imageUrl: '' })
-        });
+        const res = await fetch('/api/publish-community', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: userUUID, authorName: authorName, title: finalTitle, text: desc, imageUrl: '' }) });
         if(!res.ok) throw new Error("保存到数据库失败");
 
         alert("🎉 悬赏发布成功！已永久写入数据库！");
-        closeHelpPublish();
-        document.getElementById('helpDesc').value = '';
-        loadCommunityPosts(); 
+        closeHelpPublish(); document.getElementById('helpDesc').value = ''; loadCommunityPosts(); 
     } catch(e) { alert("发布失败：" + e.message); } 
     finally { btn.innerText = "发布"; btn.style.pointerEvents = 'auto'; }
 }
-
-function openPartnerPublish() {
-    closePublishSheet();
-    setTimeout(() => { document.getElementById('publishPartnerModal').style.display = 'flex'; }, 300);
-}
-function closePartnerPublish() { document.getElementById('publishPartnerModal').style.display = 'none'; }
 
 async function submitPartnerPost() {
     const title = document.getElementById('partnerTitle').value.trim();
     const desc = document.getElementById('partnerDesc').value.trim();
     if(!title) return alert("写个吸引人的标题吧！");
-    
-    const btn = document.querySelector('#publishPartnerModal .fm-submit');
-    btn.innerText = "发送中..."; btn.style.pointerEvents = 'none';
+    const btn = document.querySelector('#publishPartnerModal .fm-submit'); btn.innerText = "发送中..."; btn.style.pointerEvents = 'none';
 
     try {
         const finalTitle = `[找搭子] ${title}`;
         const authorName = localStorage.getItem('hp_name') || '管家新人';
-        
-        const res = await fetch('/api/publish-community', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId: userUUID, authorName: authorName, title: finalTitle, text: desc, imageUrl: '' })
-        });
+        const res = await fetch('/api/publish-community', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: userUUID, authorName: authorName, title: finalTitle, text: desc, imageUrl: '' }) });
         if(!res.ok) throw new Error("保存到数据库失败");
 
         alert("🎉 找搭子发布成功！缘分正在赶来的路上...");
-        closePartnerPublish();
-        document.getElementById('partnerTitle').value = '';
-        document.getElementById('partnerDesc').value = '';
-        loadCommunityPosts(); 
+        closePartnerPublish(); document.getElementById('partnerTitle').value = ''; document.getElementById('partnerDesc').value = ''; loadCommunityPosts(); 
     } catch(e) { alert("发布失败：" + e.message); } 
     finally { btn.innerText = "发布"; btn.style.pointerEvents = 'auto'; }
 }
 
 // ================= 8. 集市模块：从数据库拉取与渲染 =================
-let mockIdleItems = [];
-let mockHelpItems = [];
-let mockPartnerItems = [];
+let mockIdleItems = []; let mockHelpItems = []; let mockPartnerItems = [];
 
 async function loadCommunityPosts() {
     try {
-        const res = await fetch('/api/get-community');
-        const data = await res.json();
-        
+        const res = await fetch('/api/get-community'); const data = await res.json();
         if (data.success && data.posts) {
-            mockIdleItems = [];
-            mockHelpItems = [];
-            mockPartnerItems = [];
-
+            mockIdleItems = []; mockHelpItems = []; mockPartnerItems = [];
             data.posts.forEach(post => {
-                const title = post.title || '';
-                const content = post.content || '';
-                const time = new Date(post.created_at).getTime() || Date.now();
-                const author = post.author_name || '匿名管家';
+                const title = post.title || ''; const content = post.content || ''; const time = new Date(post.created_at).getTime() || Date.now(); const author = post.author_name || '匿名管家';
+                // 支持多图：只取逗号分割后的第一张图做封面
                 const img = (post.image_url ? post.image_url.split(',')[0] : 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&auto=format&fit=crop');
 
                 if (title.includes('[闲置]')) {
-                    const priceMatch = title.match(/€(\d+(\.\d+)?)/);
-                    const price = priceMatch ? priceMatch[1] : '面议';
-                    
-                    mockIdleItems.push({
-                        id: post.id,
-                        img: img,
-                        title: content.substring(0, 40) + (content.length > 40 ? '...' : ''),
-                        price: price,
-                        priceNum: parseFloat(price) || 0,
-                        originalPrice: '',
-                        avatar: "😎", 
-                        name: author,
-                        credit: "极佳",
-                        creditClass: "excellent",
-                        isSold: false,
-                        isBargain: content.includes('刀'), 
-                        timestamp: time
-                    });
-                } 
-                else if (title.includes('[互助')) {
-                    const rewardMatch = title.match(/€(\d+(\.\d+)?)/);
-                    const reward = rewardMatch ? rewardMatch[1] : '0';
-                    const isUrgent = title.includes('🔥急');
-                    
-                    mockHelpItems.push({
-                        id: post.id,
-                        type: isUrgent ? "🔥 紧急" : "🤝 求助",
-                        isUrgent: isUrgent,
-                        title: content.substring(0, 40) + '...',
-                        reward: reward,
-                        rewardNum: parseFloat(reward) || 0,
-                        date: "私信确认", 
-                        location: "荷兰", 
-                        avatar: "🐼",
-                        name: author,
-                        credit: "新人",
-                        creditClass: "new",
-                        distKm: Math.floor(Math.random() * 15) + 1, 
-                        timestamp: time,
-                        imgIcon: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23EFF6FF'/><text x='50%' y='50%' font-size='20' text-anchor='middle' dominant-baseline='middle'>🤝</text></svg>"
-                    });
-                }
-                else if (title.includes('[找搭子]')) {
+                    const priceMatch = title.match(/€(\d+(\.\d+)?)/); const price = priceMatch ? priceMatch[1] : '面议';
+                    mockIdleItems.push({ id: post.id, img: img, title: content.substring(0, 40) + (content.length > 40 ? '...' : ''), price: price, priceNum: parseFloat(price) || 0, originalPrice: '', avatar: "😎", name: author, credit: "极佳", creditClass: "excellent", isSold: false, isBargain: content.includes('刀'), timestamp: time });
+                } else if (title.includes('[互助')) {
+                    const rewardMatch = title.match(/€(\d+(\.\d+)?)/); const reward = rewardMatch ? rewardMatch[1] : '0'; const isUrgent = title.includes('🔥急');
+                    mockHelpItems.push({ id: post.id, type: isUrgent ? "🔥 紧急" : "🤝 求助", isUrgent: isUrgent, title: content.substring(0, 40) + '...', reward: reward, rewardNum: parseFloat(reward) || 0, date: "私信确认", location: "荷兰", avatar: "🐼", name: author, credit: "新人", creditClass: "new", distKm: Math.floor(Math.random() * 15) + 1, timestamp: time, imgIcon: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23EFF6FF'/><text x='50%' y='50%' font-size='20' text-anchor='middle' dominant-baseline='middle'>🤝</text></svg>" });
+                } else if (title.includes('[找搭子]')) {
                     const cleanTitle = title.replace('[找搭子] ', '');
-                    mockPartnerItems.push({
-                        id: post.id,
-                        avatar: "👱‍♀️",
-                        name: author,
-                        gender: Math.random() > 0.5 ? "f" : "m",
-                        mbti: "未知",
-                        mbtiType: "all",
-                        title: cleanTitle,
-                        desc: content,
-                        tags: ["✨ 新发布"],
-                        distKm: Math.floor(Math.random() * 15) + 1,
-                        daysAway: 1,
-                        timestamp: time
-                    });
+                    mockPartnerItems.push({ id: post.id, avatar: "👱‍♀️", name: author, gender: Math.random() > 0.5 ? "f" : "m", mbti: "未知", mbtiType: "all", title: cleanTitle, desc: content, tags: ["✨ 新发布"], distKm: Math.floor(Math.random() * 15) + 1, daysAway: 1, timestamp: time });
                 }
             });
-
-            applyMarketFilters('idle');
-            applyMarketFilters('help');
-            applyMarketFilters('partner');
+            applyMarketFilters('idle'); applyMarketFilters('help'); applyMarketFilters('partner');
         }
-    } catch (err) {
-        console.error("获取社区数据失败:", err);
-    }
+    } catch (err) {}
 }
 
 function openChat(sellerName, sellerAvatar, itemTitle, itemPrice, itemImg, isSold, postType = 'idle') {
@@ -824,73 +696,44 @@ function openChat(sellerName, sellerAvatar, itemTitle, itemPrice, itemImg, isSol
         document.getElementById('chatProductPrice').innerText = '€' + itemPrice;
         document.getElementById('chatProductImg').src = itemImg;
         
-        const now = new Date();
-        document.getElementById('chatTimeSys').innerText = `今天 ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-        
+        const now = new Date(); document.getElementById('chatTimeSys').innerText = `今天 ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
         const greetingBox = document.getElementById('chatDefaultGreeting');
-        if (postType === 'help') {
-            if(greetingBox) greetingBox.innerText = "哈喽！你是来接悬赏单的吗？看下详情里的时间和地点合适不？";
-        } else if (postType === 'partner') {
-            if(greetingBox) greetingBox.innerText = "滴滴！找搭子吗？看我主页MBTI合不合拍~";
-        } else {
-            if(greetingBox) greetingBox.innerText = "你好，请问你是想看这个闲置吗？还在的哦！";
-        }
+        if (postType === 'help') { if(greetingBox) greetingBox.innerText = "哈喽！你是来接悬赏单的吗？"; } 
+        else if (postType === 'partner') { if(greetingBox) greetingBox.innerText = "滴滴！找搭子吗？"; } 
+        else { if(greetingBox) greetingBox.innerText = "你好，请问你是想看这个闲置吗？还在的哦！"; }
 
         if (isSold) {
-            document.getElementById('cpsActionBtn').style.display = 'none';
-            document.getElementById('cpsSoldStamp').style.display = 'block';
-            document.getElementById('chatInputBar').style.display = 'none';
-            document.getElementById('chatInputDisabled').style.display = 'block';
+            document.getElementById('cpsActionBtn').style.display = 'none'; document.getElementById('cpsSoldStamp').style.display = 'block';
+            document.getElementById('chatInputBar').style.display = 'none'; document.getElementById('chatInputDisabled').style.display = 'block';
         } else {
-            document.getElementById('cpsActionBtn').style.display = 'block';
-            document.getElementById('cpsSoldStamp').style.display = 'none';
-            document.getElementById('chatInputBar').style.display = 'flex';
-            document.getElementById('chatInputDisabled').style.display = 'none';
+            document.getElementById('cpsActionBtn').style.display = 'block'; document.getElementById('cpsSoldStamp').style.display = 'none';
+            document.getElementById('chatInputBar').style.display = 'flex'; document.getElementById('chatInputDisabled').style.display = 'none';
         }
-
         document.getElementById('chatModal').style.display = 'flex';
-        const msgList = document.getElementById('chatMsgList');
-        if(msgList) msgList.scrollTop = msgList.scrollHeight;
+        const msgList = document.getElementById('chatMsgList'); if(msgList) msgList.scrollTop = msgList.scrollHeight;
     });
 }
-
 function closeChat() { document.getElementById('chatModal').style.display = 'none'; }
-
 function sendChatMessage() {
-    const input = document.getElementById('chatInput');
-    const text = input.value.trim();
-    if(!text) return;
-    
-    const msgList = document.getElementById('chatMsgList');
-    const savedAvatar = localStorage.getItem('hebao_avatar') || '';
+    const input = document.getElementById('chatInput'); const text = input.value.trim(); if(!text) return;
+    const msgList = document.getElementById('chatMsgList'); const savedAvatar = localStorage.getItem('hebao_avatar') || '';
     const avatarHtml = savedAvatar ? `<img src="${savedAvatar}">` : `<span>👻</span>`;
-    
-    const html = `<div class="chat-row me"><div class="chat-text">${text}</div><div class="chat-avatar">${avatarHtml}</div></div>`;
-    msgList.insertAdjacentHTML('beforeend', html);
-    input.value = ''; 
-    msgList.scrollTop = msgList.scrollHeight; 
-    
+    msgList.insertAdjacentHTML('beforeend', `<div class="chat-row me"><div class="chat-text">${text}</div><div class="chat-avatar">${avatarHtml}</div></div>`);
+    input.value = ''; msgList.scrollTop = msgList.scrollHeight; 
     setTimeout(() => {
-        const replyHtml = `<div class="chat-row other"><div class="chat-avatar">${document.getElementById('chatTargetAvatar').innerText}</div><div class="chat-text">系统提示：对方可能正在骑车或上课🚴。如果迟迟未回复，可以点击顶部【发送链接】引起对方注意哦。</div></div>`;
-        msgList.insertAdjacentHTML('beforeend', replyHtml);
+        msgList.insertAdjacentHTML('beforeend', `<div class="chat-row other"><div class="chat-avatar">${document.getElementById('chatTargetAvatar').innerText}</div><div class="chat-text">系统提示：对方可能正在骑车🚴。</div></div>`);
         msgList.scrollTop = msgList.scrollHeight;
     }, 1200);
 }
 
-function toggleFilterPill(element, type) {
-    element.classList.toggle('active');
-    applyMarketFilters(type);
-}
-
+function toggleFilterPill(element, type) { element.classList.toggle('active'); applyMarketFilters(type); }
 function applyMarketFilters(type) {
     if (type === 'idle') {
         const sortMode = document.getElementById('sortIdle') ? document.getElementById('sortIdle').value : 'newest';
         const onlyBargain = document.getElementById('pillIdleBargain') && document.getElementById('pillIdleBargain').classList.contains('active');
         let filtered = [...mockIdleItems];
         if (onlyBargain) filtered = filtered.filter(item => item.isBargain);
-        if (sortMode === 'priceAsc') filtered.sort((a, b) => a.priceNum - b.priceNum);
-        else if (sortMode === 'priceDesc') filtered.sort((a, b) => b.priceNum - a.priceNum);
-        else filtered.sort((a, b) => b.timestamp - a.timestamp);
+        if (sortMode === 'priceAsc') filtered.sort((a, b) => a.priceNum - b.priceNum); else if (sortMode === 'priceDesc') filtered.sort((a, b) => b.priceNum - a.priceNum); else filtered.sort((a, b) => b.timestamp - a.timestamp);
         renderMarketIdle(filtered);
     } 
     else if (type === 'help') {
@@ -898,9 +741,7 @@ function applyMarketFilters(type) {
         const onlyUrgent = document.getElementById('pillHelpUrgent') && document.getElementById('pillHelpUrgent').classList.contains('active');
         let filtered = [...mockHelpItems];
         if (onlyUrgent) filtered = filtered.filter(item => item.isUrgent);
-        if (sortMode === 'rewardDesc') filtered.sort((a, b) => b.rewardNum - a.rewardNum);
-        else if (sortMode === 'distAsc') filtered.sort((a, b) => a.distKm - b.distKm);
-        else filtered.sort((a, b) => b.timestamp - a.timestamp);
+        if (sortMode === 'rewardDesc') filtered.sort((a, b) => b.rewardNum - a.rewardNum); else if (sortMode === 'distAsc') filtered.sort((a, b) => a.distKm - b.distKm); else filtered.sort((a, b) => b.timestamp - a.timestamp);
         renderMarketHelp(filtered);
     }
     else if (type === 'partner') {
@@ -908,18 +749,14 @@ function applyMarketFilters(type) {
         const mbtiMode = document.getElementById('filterMBTI') ? document.getElementById('filterMBTI').value : 'all';
         let filtered = [...mockPartnerItems];
         if (mbtiMode !== 'all') filtered = filtered.filter(item => item.mbtiType === mbtiMode);
-        if (sortMode === 'timeAsc') filtered.sort((a, b) => a.daysAway - b.daysAway);
-        else if (sortMode === 'distAsc') filtered.sort((a, b) => a.distKm - b.distKm);
-        else filtered.sort((a, b) => b.timestamp - a.timestamp);
+        if (sortMode === 'timeAsc') filtered.sort((a, b) => a.daysAway - b.daysAway); else if (sortMode === 'distAsc') filtered.sort((a, b) => a.distKm - b.distKm); else filtered.sort((a, b) => b.timestamp - a.timestamp);
         renderMarketPartner(filtered);
     }
 }
 
 function renderMarketIdle(data = mockIdleItems) {
-    const container = document.getElementById('idleWaterfall');
-    if(!container) return;
+    const container = document.getElementById('idleWaterfall'); if(!container) return;
     if(data.length === 0) { container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:40px 0; grid-column:span 2;">集市空空如也，快去发一个吧！</div>'; return; }
-    
     let html = '';
     data.forEach(item => {
         const soldOverlayHtml = item.isSold ? `<div class="wf-sold-overlay"><div class="wf-sold-text">已售出</div></div>` : '';
@@ -929,67 +766,24 @@ function renderMarketIdle(data = mockIdleItems) {
 }
 
 function renderMarketHelp(data = mockHelpItems) {
-    const container = document.getElementById('helpListContainer');
-    if(!container) return;
+    const container = document.getElementById('helpListContainer'); if(!container) return;
     if(data.length === 0) { container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:40px 0; grid-column:span 2;">暂时没有符合条件的悬赏单~</div>'; return; }
-    
     let html = '';
     data.forEach(item => {
-        const tagClass = item.isUrgent ? 'hc-type-tag urgent' : 'hc-type-tag';
-        const tagText = item.isUrgent ? `🔥 急·${item.type.split(' ')[1]}` : item.type.split(' ')[1];
-        html += `
-        <div class="help-card" onclick="openChat('${item.name}', '${item.avatar}', '${item.title}', '${item.reward}', \`${item.imgIcon}\`, false, 'help')">
-            <div class="hc-top-row">
-                <div class="${tagClass}">${tagText}</div>
-                <div class="hc-reward-compact">€${item.reward}</div>
-            </div>
-            <div class="hc-title">${item.title}</div>
-            <div class="hc-details">
-                <div class="hc-detail-item"><span>⏰</span> ${item.date}</div>
-                <div class="hc-detail-item"><span>📍</span> ${item.location}</div>
-            </div>
-            <div class="hc-footer">
-                <div class="hc-user">
-                    <div class="hc-avatar">${item.avatar}</div>
-                    <div class="hc-name">${item.name}</div>
-                    <div class="wf-credit ${item.creditClass}" style="margin-left:auto; transform:scale(0.9);">${item.credit}</div>
-                </div>
-                <div class="hc-action-btn">立即私信</div>
-            </div>
-        </div>`;
+        const tagClass = item.isUrgent ? 'hc-type-tag urgent' : 'hc-type-tag'; const tagText = item.isUrgent ? `🔥 急·${item.type.split(' ')[1]}` : item.type.split(' ')[1];
+        html += `<div class="help-card" onclick="openChat('${item.name}', '${item.avatar}', '${item.title}', '${item.reward}', \`${item.imgIcon}\`, false, 'help')"><div class="hc-top-row"><div class="${tagClass}">${tagText}</div><div class="hc-reward-compact">€${item.reward}</div></div><div class="hc-title">${item.title}</div><div class="hc-details"><div class="hc-detail-item"><span>⏰</span> ${item.date}</div><div class="hc-detail-item"><span>📍</span> ${item.location}</div></div><div class="hc-footer"><div class="hc-user"><div class="hc-avatar">${item.avatar}</div><div class="hc-name">${item.name}</div><div class="wf-credit ${item.creditClass}" style="margin-left:auto; transform:scale(0.9);">${item.credit}</div></div><div class="hc-action-btn">立即私信</div></div></div>`;
     });
     container.innerHTML = html;
 }
 
 function renderMarketPartner(data = mockPartnerItems) {
-    const container = document.getElementById('partnerListContainer');
-    if(!container) return;
+    const container = document.getElementById('partnerListContainer'); if(!container) return;
     if(data.length === 0) { container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:40px 0; grid-column:span 2;">没有找到合适的搭子，自己发一个吧！</div>'; return; }
-    
     let html = '';
     data.forEach(item => {
-        const genderIcon = item.gender === 'f' ? '♀' : '♂';
-        const tagsHtml = item.tags.slice(0, 2).map(t => `<div class="pc-tag">${t}</div>`).join(''); 
+        const genderIcon = item.gender === 'f' ? '♀' : '♂'; const tagsHtml = item.tags.slice(0, 2).map(t => `<div class="pc-tag">${t}</div>`).join(''); 
         const iconSvg = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23F3E8FF'/><text x='50%' y='50%' font-size='20' text-anchor='middle' dominant-baseline='middle'>🥂</text></svg>`;
-        html += `
-        <div class="partner-card" onclick="openChat('${item.name}', '${item.avatar}', '${item.title}', '0', \`${iconSvg}\`, false, 'partner')">
-            <div class="pc-header">
-                <div class="pc-user">
-                    <div class="pc-avatar">${item.avatar}</div>
-                    <div class="pc-info">
-                        <div class="pc-name-row"><span class="pc-name">${item.name}</span><span class="pc-gender ${item.gender}">${genderIcon}</span></div>
-                        <span class="pc-mbti">${item.mbti}</span>
-                    </div>
-                </div>
-            </div>
-            <div class="pc-title">${item.title}</div>
-            <div class="pc-desc">${item.desc}</div>
-            <div class="pc-tags">${tagsHtml}</div>
-            <div class="pc-footer">
-                <div class="pc-dist"><span>📍</span> 距你 ${item.distKm} km</div>
-                <div class="pc-action">打招呼</div>
-            </div>
-        </div>`;
+        html += `<div class="partner-card" onclick="openChat('${item.name}', '${item.avatar}', '${item.title}', '0', \`${iconSvg}\`, false, 'partner')"><div class="pc-header"><div class="pc-user"><div class="pc-avatar">${item.avatar}</div><div class="pc-info"><div class="pc-name-row"><span class="pc-name">${item.name}</span><span class="pc-gender ${item.gender}">${genderIcon}</span></div><span class="pc-mbti">${item.mbti}</span></div></div></div><div class="pc-title">${item.title}</div><div class="pc-desc">${item.desc}</div><div class="pc-tags">${tagsHtml}</div><div class="pc-footer"><div class="pc-dist"><span>📍</span> 距你 ${item.distKm} km</div><div class="pc-action">打招呼</div></div></div>`;
     });
     container.innerHTML = html;
 }
@@ -997,70 +791,36 @@ function renderMarketPartner(data = mockPartnerItems) {
 // ================= 10. 个人主页资产：我的发布与下架 =================
 async function loadMyPosts() {
     if (!isLoggedIn) return;
-    const listDiv = document.getElementById('myPostsList');
-    const emptyState = document.getElementById('postsEmptyState');
-    
+    const listDiv = document.getElementById('myPostsList'); const emptyState = document.getElementById('postsEmptyState');
     try {
-        const res = await fetch(`/api/get-my-posts?userId=${userUUID}`);
-        const data = await res.json();
-        
+        const res = await fetch(`/api/get-my-posts?userId=${userUUID}`); const data = await res.json();
         if (data.success && data.posts && data.posts.length > 0) {
             if(emptyState) emptyState.style.display = 'none'; 
             let html = '';
             data.posts.forEach(post => {
-                const imgHtml = post.image_url 
-                    ? `<img src="${post.image_url}" style="width:64px; height:64px; object-fit:cover; border-radius:12px; flex-shrink:0; border: 1px solid #E5E7EB;">` 
-                    : `<div style="width:64px; height:64px; background:#F9FAFB; border-radius:12px; display:flex; justify-content:center; align-items:center; font-size:24px; flex-shrink:0; border: 1px solid #E5E7EB;">📄</div>`;
-                
-                html += `
-                <div style="background:#FFF; border-radius:16px; padding:12px; margin-bottom:12px; border:1px solid #E5E7EB; box-shadow: 0 2px 8px rgba(0,0,0,0.02); display:flex; gap:12px; align-items:center;">
-                    ${imgHtml}
-                    <div style="flex:1; overflow:hidden;">
-                        <div style="font-size:14px; font-weight:900; color:#111827; margin-bottom:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${post.title}</div>
-                        <div style="font-size:12px; color:#6B7280; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; line-height: 1.4;">${post.content}</div>
-                    </div>
-                    <div style="background:#FEF2F2; color:#EF4444; padding:6px 14px; border-radius:14px; font-size:12px; font-weight:bold; cursor:pointer; transition: 0.2s;" onclick="deleteMyPost(${post.id}, this)">下架</div>
-                </div>`;
+                const img = post.image_url ? post.image_url.split(',')[0] : '';
+                const imgHtml = img ? `<img src="${img}" style="width:64px; height:64px; object-fit:cover; border-radius:12px; flex-shrink:0; border: 1px solid #E5E7EB;">` : `<div style="width:64px; height:64px; background:#F9FAFB; border-radius:12px; display:flex; justify-content:center; align-items:center; font-size:24px; flex-shrink:0; border: 1px solid #E5E7EB;">📄</div>`;
+                html += `<div style="background:#FFF; border-radius:16px; padding:12px; margin-bottom:12px; border:1px solid #E5E7EB; box-shadow: 0 2px 8px rgba(0,0,0,0.02); display:flex; gap:12px; align-items:center;">${imgHtml}<div style="flex:1; overflow:hidden;"><div style="font-size:14px; font-weight:900; color:#111827; margin-bottom:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${post.title}</div><div style="font-size:12px; color:#6B7280; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; line-height: 1.4;">${post.content}</div></div><div style="background:#FEF2F2; color:#EF4444; padding:6px 14px; border-radius:14px; font-size:12px; font-weight:bold; cursor:pointer; transition: 0.2s;" onclick="deleteMyPost(${post.id}, this)">下架</div></div>`;
             });
             if(listDiv) listDiv.innerHTML = html;
         } else {
             if(emptyState) emptyState.style.display = 'block';
             if(listDiv) listDiv.innerHTML = '';
         }
-    } catch (e) {
-        console.error("加载我的发布失败", e);
-    }
+    } catch (e) {}
 }
 
 async function deleteMyPost(postId, btnElement) {
     if(!confirm('确定要下架这条发布吗？下架后大厅里也看不到了哦！')) return;
-    
-    const originalText = btnElement.innerText;
-    btnElement.innerText = "处理中...";
-    btnElement.style.pointerEvents = "none";
-    
+    const originalText = btnElement.innerText; btnElement.innerText = "处理中..."; btnElement.style.pointerEvents = "none";
     try {
-        const res = await fetch('/api/delete-post', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ postId: postId, userId: userUUID })
-        });
+        const res = await fetch('/api/delete-post', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ postId: postId, userId: userUUID }) });
         const data = await res.json();
-        
         if(data.success) {
-            loadMyPosts(); 
-            if (typeof loadCommunityPosts === 'function') loadCommunityPosts(); 
-            
-            const plus = document.createElement('div'); plus.className = 'float-plus'; plus.innerText = '✅ 帖子已下架'; plus.style.color = '#EF4444';
-            plus.style.left = '50%'; plus.style.top = '50%'; plus.style.transform = 'translate(-50%, -50%)'; document.body.appendChild(plus); setTimeout(() => plus.remove(), 1500);
-        } else {
-            alert('删除失败：' + data.error);
-            btnElement.innerText = originalText; btnElement.style.pointerEvents = "auto";
-        }
-    } catch(e) {
-        alert('网络错误，无法下架');
-        btnElement.innerText = originalText; btnElement.style.pointerEvents = "auto";
-    }
+            loadMyPosts(); loadCommunityPosts(); 
+            const plus = document.createElement('div'); plus.className = 'float-plus'; plus.innerText = '✅ 帖子已下架'; plus.style.color = '#EF4444'; plus.style.left = '50%'; plus.style.top = '50%'; plus.style.transform = 'translate(-50%, -50%)'; document.body.appendChild(plus); setTimeout(() => plus.remove(), 1500);
+        } else { alert('删除失败：' + data.error); btnElement.innerText = originalText; btnElement.style.pointerEvents = "auto"; }
+    } catch(e) { alert('网络错误，无法下架'); btnElement.innerText = originalText; btnElement.style.pointerEvents = "auto"; }
 }
 
 // ================= 9. 页面初始化启动器 =================
@@ -1068,11 +828,6 @@ window.addEventListener('DOMContentLoaded', () => {
     renderTipsPage(); 
     loadTrendingToHome(); 
     renderProfileState(); 
-    
-    renderMarketIdle(); 
-    renderMarketHelp();
-    renderMarketPartner(); 
-    
-    // 去后端拉取真实的社区帖子！
+    renderMarketIdle(); renderMarketHelp(); renderMarketPartner(); 
     loadCommunityPosts();
 });
