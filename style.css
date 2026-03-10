@@ -429,3 +429,17 @@ body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "S
 .sold-badge { background: #F3F4F6; color: #6B7280; font-size: 11px; padding: 4px 8px; border-radius: 6px; font-weight: bold; border: 1px solid #D1D5DB; }
 .mark-sold-btn { background: #FEF2F2; color: #EF4444; font-size: 12px; padding: 6px 12px; border-radius: 8px; font-weight: bold; border: 1px solid #FECACA; cursor: pointer; flex-shrink: 0;}
 .waterfall-count-badge { position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.65); color: #FFF; padding: 2px 6px; border-radius: 8px; font-size: 10px; font-weight: bold; backdrop-filter: blur(4px); }
+
+/* ================= 极简语音条与定位组件 ================= */
+.ai-magic-mini { display: flex; align-items: center; background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 12px; padding: 6px 12px; gap: 8px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+.location-input-wrapper { display: flex; align-items: center; gap: 8px; flex: 1; justify-content: flex-end; }
+.location-input-wrapper input { border: none; text-align: right; outline: none; background: transparent; font-size: 14px; width: 100%; color: #374151; font-weight: bold;}
+.location-icon-btn { cursor: pointer; color: #3B82F6; font-size: 16px; display: flex; align-items: center; justify-content: center; padding: 4px 6px; background: #EFF6FF; border-radius: 8px; transition: 0.2s;}
+.location-icon-btn:active { transform: scale(0.9); background: #DBEAFE; }
+
+/* ================= 详情页清单：大图重构 ================= */
+.pd-item-card { align-items: flex-start; }
+.pd-item-img { width: 110px !important; height: 110px !important; object-fit: cover; border-radius: 12px; flex-shrink: 0; border: 1px solid #E5E7EB; }
+.pd-item-info { flex: 1; display: flex; flex-direction: column; gap: 8px; justify-content: center; padding-top: 4px;}
+.pd-item-name { font-size: 16px !important; font-weight: 900; color: #111827; line-height: 1.3;}
+.pd-item-price { font-size: 18px !important; font-weight: 900; color: #D97706; }
