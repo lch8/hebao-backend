@@ -35,29 +35,144 @@ function switchHomeTrendingTab(type, element) { document.querySelectorAll('#page
 
 // ================= 3. 个人主页 =================
 function renderProfileState() {
-    const guestBlock = document.getElementById('guestLoginBlock'); const actionsBlock = document.getElementById('profileActions');
-    const uidText = document.getElementById('profileUid'); const nameText = document.getElementById('profileName');
-    const creditBadge = document.getElementById('profileCreditBadge'); const bioText = document.getElementById('profileBio'); const tagsBox = document.getElementById('profileTags');
-    const postsEmptyState = document.getElementById('postsEmptyState'); const reviewsEmptyState = document.getElementById('reviewsEmptyState');
+    const guestBlock = document.getElementById('guestLoginBlock');
+    const actionsBlock = document.getElementById('profileActions');
+    const uidText = document.getElementById('profileUid');
+    const nameText = document.getElementById('profileName');
+    const creditBadge = document.getElementById('profileCreditBadge');
+    const bioText = document.getElementById('profileBio');
+    const tagsBox = document.getElementById('profileTags');
+    const authCenter = document.getElementById('authCenterBlock');
+    
     if(!guestBlock) return;
 
     if (isLoggedIn) {
-        guestBlock.style.display = 'none'; actionsBlock.style.display = 'flex'; uidText.innerText = 'ID: ' + userUUID.substring(0,8).toUpperCase();
-        const savedName = localStorage.getItem('hp_name') || '管家新人'; const savedGender = localStorage.getItem('hp_gender') || ''; const savedMbti = localStorage.getItem('hp_mbti') || ''; const savedBio = localStorage.getItem('hp_bio') || '这个人很懒，还没写自我介绍~';
+        guestBlock.style.display = 'none'; actionsBlock.style.display = 'flex';
+        if(authCenter) authCenter.style.display = 'block'; // 登录后显示认证中心
+        uidText.innerText = 'ID: ' + userUUID.substring(0,8).toUpperCase();
+        
+        const savedName = localStorage.getItem('hp_name') || '管家新人';
+        const savedGender = localStorage.getItem('hp_gender') || '';
+        const savedMbti = localStorage.getItem('hp_mbti') || '';
+        const savedBio = localStorage.getItem('hp_bio') || '这个人很懒，还没写自我介绍~';
+        const isEmailVerified = localStorage.getItem('hp_email_verified') === 'true';
+        const savedWechat = localStorage.getItem('hp_wechat') || '';
+
         nameText.innerText = savedName; bioText.innerText = savedBio; bioText.style.display = 'block';
-        let score = 500; if(localStorage.getItem('hebao_avatar')) score += 20; if(savedMbti) score += 30;
-        let badgeText = '良好'; let badgeColor = '#D97706'; if(score > 530) { badgeText = '极佳'; badgeColor = '#10B981'; }
-        creditBadge.innerText = `${badgeText} ${score}`; creditBadge.style.background = badgeColor; creditBadge.style.display = 'inline-block';
-        tagsBox.style.display = 'flex'; document.getElementById('profileGenderTag').innerText = savedGender || '保密'; document.getElementById('profileMbtiTag').innerText = savedMbti || 'MBTI未知';
-        if(reviewsEmptyState) reviewsEmptyState.innerHTML = '<div class="empty-state-icon">📭</div>暂无收到的评价';
+
+        // 🏆 芝麻信用分计算引擎
+        let score = 500;
+        if(localStorage.getItem('hebao_avatar')) score += 20; 
+        if(savedMbti) score += 20;
+        if(savedBio && savedBio !== '这个人很懒，还没写自我介绍~') score += 10;
+        if(isEmailVerified) score += 50; // 邮箱认证加巨分
+        if(savedWechat) score += 30;     // 绑定微信加分
+        
+        let badgeText = '良好'; let badgeColor = '#D97706'; 
+        if(score >= 600) { badgeText = '极品守信'; badgeColor = '#059669'; }
+        else if(score >= 550) { badgeText = '极佳'; badgeColor = '#10B981'; }
+        
+        creditBadge.innerText = `${badgeText} ${score}`; 
+        creditBadge.style.background = badgeColor; 
+        creditBadge.style.display = 'inline-block';
+
+        // 动态生成专属身份标签
+        tagsBox.style.display = 'flex';
+        tagsBox.innerHTML = '';
+        if(savedGender) tagsBox.innerHTML += `<div class="p-tag">${savedGender}</div>`;
+        if(savedMbti) tagsBox.innerHTML += `<div class="p-tag">${savedMbti}</div>`;
+        if(isEmailVerified) {
+            const emailDomain = localStorage.getItem('hp_email').split('@')[1];
+            const schoolName = emailDomain.includes('tudelft') ? 'TUDelft' : (emailDomain.includes('uva') ? 'UvA' : '校园');
+            tagsBox.innerHTML += `<div class="p-tag verified-edu">🎓 ${schoolName} 认证</div>`;
+        }
+        if(savedWechat) tagsBox.innerHTML += `<div class="p-tag verified-wechat">💬 微信已绑</div>`;
+        if(tagsBox.innerHTML === '') tagsBox.innerHTML = `<div class="p-tag">萌新小白</div>`;
+
+        // 渲染认证中心状态
+        if(isEmailVerified) {
+            document.getElementById('emailAuthStatusText').innerText = localStorage.getItem('hp_email');
+            const btn = document.getElementById('emailAuthBtn'); btn.innerText = "已认证"; btn.classList.add('done');
+        }
+        if(savedWechat) {
+            document.getElementById('wechatAuthStatusText').innerText = `已绑定: ${savedWechat.substring(0,2)}***`;
+            const btn = document.getElementById('wechatAuthBtn'); btn.innerText = "已绑定"; btn.classList.add('done');
+        }
+
         loadAvatar(); loadMyPosts(); 
     } else {
-        guestBlock.style.display = 'block'; actionsBlock.style.display = 'none'; uidText.innerText = 'ID: 未登录'; nameText.innerText = '管家游客'; creditBadge.style.display = 'none'; bioText.style.display = 'none'; tagsBox.style.display = 'none';
-        document.getElementById('profileAvatarImg').style.display = 'none'; document.getElementById('profileAvatarBox').style.background = '#E5E7EB'; document.getElementById('profileAvatarEmoji').textContent = '👻';
-        if(postsEmptyState) postsEmptyState.innerHTML = '<div class="empty-state-icon">🔒</div>请先登录查看你的发布记录';
-        if(reviewsEmptyState) reviewsEmptyState.innerHTML = '<div class="empty-state-icon">🔒</div>请先登录查看收到的评价';
+        guestBlock.style.display = 'block'; actionsBlock.style.display = 'none';
+        if(authCenter) authCenter.style.display = 'none';
+        uidText.innerText = 'ID: 未登录'; nameText.innerText = '管家游客'; 
+        creditBadge.style.display = 'none'; bioText.style.display = 'none'; tagsBox.style.display = 'none';
+        document.getElementById('profileAvatarImg').style.display = 'none';
+        document.getElementById('profileAvatarBox').style.background = '#E5E7EB';
+        document.getElementById('profileAvatarEmoji').textContent = '👻';
         const listDiv = document.getElementById('myPostsList'); if(listDiv) listDiv.innerHTML = '';
     }
+}
+
+// ================= 安全认证引擎 =================
+function openEmailVerifyModal() {
+    if(localStorage.getItem('hp_email_verified') === 'true') return alert("您的邮箱已经认证通过啦！");
+    document.getElementById('emailVerifyModal').style.display = 'flex';
+}
+
+function sendAuthCode() {
+    const email = document.getElementById('authEmailInput').value.trim();
+    if(!email || !email.includes('@')) return alert("请输入正确的邮箱格式！");
+    
+    const btn = document.getElementById('btnSendCode');
+    let timeLeft = 60;
+    btn.disabled = true;
+    
+    // 模拟发送邮件的网络请求
+    setTimeout(() => {
+        alert(`测试环境：验证码 123456 已发送至 ${email}`);
+        const timer = setInterval(() => {
+            timeLeft--;
+            btn.innerText = `${timeLeft}s 后重发`;
+            if(timeLeft <= 0) {
+                clearInterval(timer);
+                btn.disabled = false;
+                btn.innerText = "获取验证码";
+            }
+        }, 1000);
+    }, 800);
+}
+
+function verifyEmailCode() {
+    const email = document.getElementById('authEmailInput').value.trim();
+    const code = document.getElementById('authCodeInput').value.trim();
+    if(code !== '123456') return alert("验证码错误 (测试环境请输入 123456)");
+    
+    localStorage.setItem('hp_email', email);
+    localStorage.setItem('hp_email_verified', 'true');
+    document.getElementById('emailVerifyModal').style.display = 'none';
+    
+    // 触发炫酷的撒花特效
+    const plus = document.createElement('div'); plus.className = 'float-plus'; plus.innerText = '🎉 认证成功 信用分+50'; plus.style.color = '#3B82F6';
+    plus.style.left = '50%'; plus.style.top = '40%'; plus.style.transform = 'translate(-50%, -50%)'; document.body.appendChild(plus); setTimeout(() => plus.remove(), 2000);
+    
+    renderProfileState();
+}
+
+function openWechatBindModal() {
+    document.getElementById('authWechatInput').value = localStorage.getItem('hp_wechat') || '';
+    document.getElementById('wechatBindModal').style.display = 'flex';
+}
+
+function saveWechatBind() {
+    const wx = document.getElementById('authWechatInput').value.trim();
+    if(!wx) return alert("微信号不能为空哦！");
+    
+    localStorage.setItem('hp_wechat', wx);
+    document.getElementById('wechatBindModal').style.display = 'none';
+    
+    const plus = document.createElement('div'); plus.className = 'float-plus'; plus.innerText = '💬 绑定成功 信用分+30'; plus.style.color = '#10B981';
+    plus.style.left = '50%'; plus.style.top = '40%'; plus.style.transform = 'translate(-50%, -50%)'; document.body.appendChild(plus); setTimeout(() => plus.remove(), 2000);
+    
+    renderProfileState();
 }
 function openEditProfileModal() { document.getElementById('epName').value = localStorage.getItem('hp_name') || ''; document.getElementById('epGender').value = localStorage.getItem('hp_gender') || '保密'; document.getElementById('epMbti').value = localStorage.getItem('hp_mbti') || ''; document.getElementById('epWechat').value = localStorage.getItem('hp_wechat') || ''; document.getElementById('epBio').value = localStorage.getItem('hp_bio') || ''; document.getElementById('editProfileModal').style.display = 'flex'; }
 function saveProfileData() { const name = document.getElementById('epName').value.trim(); if(!name) return alert('昵称不能为空哦！'); localStorage.setItem('hp_name', name); localStorage.setItem('hp_gender', document.getElementById('epGender').value); localStorage.setItem('hp_mbti', document.getElementById('epMbti').value); localStorage.setItem('hp_wechat', document.getElementById('epWechat').value.trim()); localStorage.setItem('hp_bio', document.getElementById('epBio').value.trim()); document.getElementById('editProfileModal').style.display = 'none'; renderProfileState(); }
