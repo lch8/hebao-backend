@@ -37,6 +37,15 @@
         .btn-publish { width: 52px; height: 52px; background: linear-gradient(135deg, #10B981 0%, #059669 100%); border-radius: 20px; display: flex; justify-content: center; align-items: center; color: white; font-size: 28px; font-weight: bold; position: absolute; top: -18px; box-shadow: 0 8px 20px rgba(16, 185, 129, 0.35); transition: transform 0.2s; border: 4px solid #F3F4F6;}
         .tab-item-publish:active .btn-publish { transform: scale(0.92); }
 
+        /* ================= 省钱页横向快捷入口 ================= */
+        .quick-links-wrap { display: flex; overflow-x: auto; gap: 12px; padding: 0 5px 20px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
+        .quick-links-wrap::-webkit-scrollbar { display: none; }
+        .ql-card { flex: 0 0 auto; width: 140px; background: #FFF; border-radius: 16px; padding: 15px 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); border: 1px solid #E5E7EB; text-decoration: none !important; display: flex; flex-direction: column; align-items: center; justify-content: center; scroll-snap-align: start; transition: transform 0.2s; }
+        .ql-card:active { transform: scale(0.95); }
+        .ql-icon { font-size: 32px; margin-bottom: 8px; }
+        .ql-title { font-size: 14px; font-weight: 900; color: #111827; }
+        .ql-sub { font-size: 11px; color: #6B7280; margin-top: 4px; }
+
         /* ================= 发布菜单 Bottom Sheet ================= */
         .publish-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 1001; display: none; opacity: 0; transition: opacity 0.3s; backdrop-filter: blur(4px); }
         .publish-overlay.show { display: block; opacity: 1; }
@@ -54,15 +63,14 @@
         .ps-text { font-size: 13px; font-weight: 900; color: #374151; }
         .ps-sub { font-size: 11px; color: #9CA3AF; }
 
-        /* ================= 首页扫码大卡片 ================= */
+        /* ================= 首页扫码大卡片与动画 ================= */
         .home-action-btn { background: #ECFDF5; border: 2px dashed #10B981; border-radius: 20px; padding: 25px 15px; text-align: center; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.02); display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 30px;}
         .home-action-btn:active { transform: scale(0.98); background: #D1FAE5; }
         .action-icon { font-size: 42px; margin-bottom: 10px; display: inline-block; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));}
         .action-title { font-size: 16px; font-weight: 900; color: #065F46; margin-bottom: 4px;}
         .action-sub { font-size: 12px; color: #047857; font-weight: bold;}
 
-        /* ================= 🚨 修复：扫码动画与容器约束 ================= */
-        .preview-container { position: relative; width: 100%; height: 200px; border-radius: 20px; overflow: hidden; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05); background: #000; }
+        .preview-container { position: relative; width: 100%; height: 200px; border-radius: 20px; overflow: hidden; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05); background: #000; margin-bottom: 20px;}
         .preview-img { width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0.6;}
         .scan-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.4); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
         .scan-line { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: #10B981; box-shadow: 0 0 20px #10B981; animation: scanAnim 2s linear infinite; }
@@ -75,7 +83,7 @@
         .t-tab { flex: 1; text-align: center; padding: 10px 0; background: #FFF; border-radius: 12px; font-weight: 900; color: #6B7280; font-size: 13px; cursor: pointer; transition: 0.3s; box-shadow: 0 2px 8px rgba(0,0,0,0.02); border: 1px solid #E5E7EB;}
         .t-tab.active { background: #111827; color: #FFF; box-shadow: 0 4px 15px rgba(17,24,39,0.2); border-color: #111827; }
         
-        .trending-card { background: #FFF; margin-bottom: 12px; border-radius: 16px; padding: 15px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); position: relative; overflow: hidden; border: 1px solid #E5E7EB; transition: 0.2s;}
+        .trending-card { background: #FFF; margin-bottom: 12px; border-radius: 16px; padding: 15px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); position: relative; overflow: hidden; border: 1px solid #E5E7EB; transition: 0.2s; cursor: pointer;}
         .trending-card:active { transform: scale(0.98); }
         .rank-badge { position: absolute; top: 0; left: 0; padding: 4px 10px; border-bottom-right-radius: 12px; font-size: 11px; font-weight: 900; color: #FFF; z-index: 1; }
         .rank-1 { background: linear-gradient(135deg, #F59E0B, #FBBF24); }
@@ -88,8 +96,8 @@
         .t-name { font-size: 15px; font-weight: 900; color: #111827; line-height: 1.3; margin-bottom: 3px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;}
         .t-score { font-size: 16px; font-weight: 900; }
 
-        /* ================= 详情与公共样式 ================= */
-        #miniResultCard { display: none; margin-top: 25px; background: #FFF; border-radius: 20px; padding: 25px; box-shadow: 0 8px 30px rgba(0,0,0,0.06); text-align: center; animation: fadeIn 0.4s ease; }
+        /* ================= 小结果卡片 ================= */
+        #miniResultCard { display: none; margin-bottom: 30px; background: #FFF; border-radius: 20px; padding: 25px; box-shadow: 0 8px 30px rgba(0,0,0,0.06); text-align: center; animation: fadeIn 0.4s ease; }
         .name-box { margin-bottom: 10px; }
         .item-name { display: block; font-size: 22px; font-weight: 900; }
         .btn-view-detail { background: #111827; color: #FFF; border: none; padding: 14px; width: 100%; border-radius: 25px; font-size: 15px; font-weight: bold; margin-top: 10px; cursor: pointer; }
@@ -107,14 +115,15 @@
         .p-sub { font-size: 12px; color: #6B7280; }
         .auth-banner { background: #FFFBEB; border: 1px dashed #FCD34D; border-radius: 16px; padding: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
         
-        /* 省钱页顶端横卡 */
-        .quick-links-wrap { display: flex; overflow-x: auto; gap: 12px; padding: 0 5px 20px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
-        .quick-links-wrap::-webkit-scrollbar { display: none; }
-        .ql-card { flex: 0 0 auto; width: 140px; background: #FFF; border-radius: 16px; padding: 15px 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); border: 1px solid #E5E7EB; text-decoration: none !important; display: flex; flex-direction: column; align-items: center; justify-content: center; scroll-snap-align: start; transition: transform 0.2s; }
-        .ql-card:active { transform: scale(0.95); }
-        .ql-icon { font-size: 32px; margin-bottom: 8px; }
-        .ql-title { font-size: 14px; font-weight: 900; color: #111827; }
-        .ql-sub { font-size: 11px; color: #6B7280; margin-top: 4px; }
+        /* ================= 🚨 新增修复：详情页专属样式 ================= */
+        #page-details { background: #F7F8FA; min-height: 100vh; padding-bottom: 100px; margin: -20px; padding: 20px;}
+        .top-nav { position: sticky; top: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); padding: 15px 20px; display: flex; align-items: center; z-index: 50; border-bottom: 1px solid #E5E7EB; margin: -20px -20px 20px;}
+        .back-btn { font-size: 16px; font-weight: 900; cursor: pointer; display: flex; align-items: center; gap: 5px; color: #111827;}
+        .detail-hero { background: #FFF; padding: 20px; border-radius: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 20px; text-align: center;}
+        .detail-img { width: 100%; height: 220px; object-fit: contain; background: #F9FAFB; border-radius: 16px; margin-bottom: 15px; }
+        .info-block { background: #FFF; border-radius: 16px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);}
+        .block-title { font-size: 16px; font-weight: 900; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; color: #111827;}
+        .block-text { font-size: 14px; color: #4B5563; line-height: 1.6; margin: 0; }
     </style>
 </head>
 
@@ -265,6 +274,29 @@
         <div class="home-section-title" style="margin-top:10px;">👣 我的避雷足迹</div>
         <div id="footprintList"></div>
     </div>
+
+    <div id="page-details" class="page-section">
+        <div class="top-nav"><div class="back-btn" onclick="goBack()">‹ 返回上一页</div></div>
+        
+        <div class="detail-hero">
+            <img id="detailImg" class="detail-img" src="">
+            <div class="name-box">
+                <span class="item-name" id="detailChineseName"></span>
+                <span id="detailDutchName" style="display:block; font-size:13px; color:#9CA3AF; margin-top:4px;"></span>
+            </div>
+        </div>
+
+        <div class="info-block">
+            <div class="block-title">💡 管家锐评</div>
+            <p class="block-text" id="detailInsight"></p>
+        </div>
+        
+        <div class="info-block" id="detailRecipeBox" style="display:none;">
+            <div class="block-title">🧑‍🍳 网友评价 / 做法</div>
+            <div id="recipeCardList"></div>
+        </div>
+    </div>
+
 </div> 
 
 <div id="scannerModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:#000; z-index:9999; flex-direction:column;">
@@ -282,7 +314,12 @@
     if (!userUUID) { userUUID = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) { var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8); return v.toString(16); }); localStorage.setItem('hebao_uuid', userUUID); }
 
     let currentProductData = null; 
+    let currentDetailData = null; // 用于存储当前点开的详情数据
     let lastTab = 'scan'; 
+    
+    // 全局存储榜单数据，方便点击跳转详情
+    let globalTrendingLikes = [];
+    let globalTrendingDislikes = [];
 
     // ================= 底部菜单逻辑 =================
     function switchTab(pageId, element) {
@@ -290,10 +327,23 @@
         if (element) { 
             document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active')); 
             element.classList.add('active'); 
-            lastTab = pageId; 
+            // 只有不是详情页的时候，才记录为 lastTab，方便返回
+            if (pageId !== 'details') lastTab = pageId; 
         }
         document.getElementById('page-' + pageId).classList.add('active');
+        
+        // 如果进入详情页，隐藏底部导航栏
+        if (pageId === 'details') {
+            document.querySelector('.tab-bar').style.display = 'none';
+        } else {
+            document.querySelector('.tab-bar').style.display = 'flex';
+        }
+
         if (pageId === 'profile') renderFootprints();
+    }
+
+    function goBack() { 
+        switchTab(lastTab, document.querySelector(`.tab-item[onclick*="${lastTab}"]`)); 
     }
 
     // ================= 发布悬浮菜单逻辑 =================
@@ -357,14 +407,57 @@
         document.getElementById('homeActionBox').style.display='flex'; 
     }
 
+    // ================= 🚨 修复：详情页装载逻辑 =================
+    function openDetailsFromScan() { 
+        currentDetailData = {...currentProductData}; 
+        setupDetailPage(); 
+    }
+    
+    function openDetailsFromHistory(index) { 
+        let h = JSON.parse(localStorage.getItem('hebao_history')||'[]'); 
+        currentDetailData = h[index]; 
+        setupDetailPage(); 
+    }
+
+    function openDetailsFromHomeTrending(type, index) {
+        const list = type === 'like' ? globalTrendingLikes : globalTrendingDislikes;
+        currentDetailData = list[index];
+        setupDetailPage();
+    }
+    
+    function setupDetailPage() {
+        const d = currentDetailData;
+        if (!d) return;
+        
+        const safeImg = d.image_url || d.img_src || 'data:image/gif;base64,R0lGODlhAQABAIAAAMLCwgAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==';
+        document.getElementById('detailImg').src = safeImg; 
+        document.getElementById('detailChineseName').innerText = d.chinese_name || '未命名商品'; 
+        document.getElementById('detailDutchName').innerText = d.dutch_name || ''; 
+        document.getElementById('detailInsight').innerText = d.insight || '暂无详细评价';
+        
+        const recipeBox = document.getElementById('detailRecipeBox');
+        const recipeList = document.getElementById('recipeCardList');
+        
+        if (d.pairing) {
+            recipeBox.style.display = 'block';
+            recipeList.innerHTML = `<div style="font-size:14px; color:#4B5563; white-space:pre-wrap;">${d.pairing}</div>`;
+        } else {
+            recipeBox.style.display = 'none';
+        }
+        
+        switchTab('details', null);
+    }
+
     // ================= 首页 Top 20 榜单逻辑 =================
     async function loadTrendingToHome() {
         try {
             const res = await fetch('/api/trending'); 
             const data = await res.json();
             if(data.success) {
-                renderHomeTrending(data.topLikes || [], 'homeTrendingListLikes', 'like');
-                renderHomeTrending(data.topDislikes || [], 'homeTrendingListDislikes', 'dislike');
+                globalTrendingLikes = data.topLikes || [];
+                globalTrendingDislikes = data.topDislikes || [];
+                renderHomeTrending(globalTrendingLikes, 'homeTrendingListLikes', 'like');
+                renderHomeTrending(globalTrendingDislikes, 'homeTrendingListDislikes', 'dislike');
             }
         } catch(e) {
             document.getElementById('homeTrendingListLikes').innerHTML = '<div style="text-align:center; color:#9CA3AF; font-size: 12px; margin-top:20px;">榜单加载休息中...</div>';
@@ -391,8 +484,9 @@
             const scoreColor = type === 'like' ? '#10B981' : '#EF4444';
             const safeImg = item.image_url || 'data:image/gif;base64,R0lGODlhAQABAIAAAMLCwgAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==';
 
+            // 加上 onclick 触发 openDetailsFromHomeTrending 跳转详情页
             html += `
-            <div class="trending-card" onclick="alert('点击商品查看详情 (开发中)')">
+            <div class="trending-card" onclick="openDetailsFromHomeTrending('${type}', ${index})">
                 <div class="rank-badge ${badgeClass}">TOP ${index + 1}</div>
                 <img src="${safeImg}" onerror="this.src='data:image/gif;base64,R0lGODlhAQABAIAAAMLCwgAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw=='" style="width: 50px; height: 50px; border-radius: 10px; object-fit: cover; background: #F3F4F6; border: 1px solid #E5E7EB;">
                 <div class="t-info">
@@ -473,7 +567,7 @@
         h.forEach((item, index) => { 
             const safeImg = item.img_src || 'data:image/gif;base64,R0lGODlhAQABAIAAAMLCwgAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==';
             html += ` 
-            <div style="background:#FFF; border-radius:16px; margin-bottom:12px; border:1px solid #E5E7EB; overflow:hidden; display:flex; align-items:center; padding:12px; box-shadow:0 2px 8px rgba(0,0,0,0.02);"> 
+            <div style="background:#FFF; border-radius:16px; margin-bottom:12px; border:1px solid #E5E7EB; overflow:hidden; display:flex; align-items:center; padding:12px; box-shadow:0 2px 8px rgba(0,0,0,0.02); cursor:pointer;" onclick="openDetailsFromHistory(${index})"> 
                 <img src="${safeImg}" onerror="this.src='data:image/gif;base64,R0lGODlhAQABAIAAAMLCwgAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw=='" style="width:50px; height:50px; object-fit:cover; border-radius:10px; flex-shrink:0; background:#F3F4F6;"> 
                 <div style="flex:1; margin-left:12px;"> 
                     <div style="font-weight:900; font-size:15px; color:#111827; margin-bottom:2px;">${item.chinese_name || '未命名'}</div>
