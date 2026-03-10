@@ -412,3 +412,20 @@ body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "S
 .item-edit-inputs input:focus { border-color: #10B981; }
 .price-input-row { display: flex; align-items: center; gap: 6px; font-weight: bold; color: #D97706; }
 .item-del-btn { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; background: #EF4444; color: #FFF; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 12px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 2px solid #FFF;}
+
+/* ================= 清单详情页样式 ================= */
+.pd-item-card { display: flex; gap: 12px; background: #FFF; padding: 12px; border-radius: 16px; border: 1px solid #E5E7EB; align-items: center; transition: 0.2s; }
+.pd-item-card.sold { opacity: 0.5; filter: grayscale(1); pointer-events: none; }
+.pd-item-img { width: 70px; height: 70px; object-fit: cover; border-radius: 10px; flex-shrink: 0; border: 1px solid #E5E7EB; }
+.pd-item-info { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.pd-item-name { font-size: 14px; font-weight: 900; color: #111827; }
+.pd-item-price { font-size: 15px; font-weight: 900; color: #D97706; }
+
+/* 自定义复选框 */
+.custom-checkbox { appearance: none; width: 24px; height: 24px; border: 2px solid #D1D5DB; border-radius: 6px; cursor: pointer; position: relative; transition: 0.2s; flex-shrink: 0;}
+.custom-checkbox:checked { background-color: #10B981; border-color: #10B981; }
+.custom-checkbox:checked::after { content: '✔'; position: absolute; color: white; font-size: 14px; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+
+.sold-badge { background: #F3F4F6; color: #6B7280; font-size: 11px; padding: 4px 8px; border-radius: 6px; font-weight: bold; border: 1px solid #D1D5DB; }
+.mark-sold-btn { background: #FEF2F2; color: #EF4444; font-size: 12px; padding: 6px 12px; border-radius: 8px; font-weight: bold; border: 1px solid #FECACA; cursor: pointer; flex-shrink: 0;}
+.waterfall-count-badge { position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.65); color: #FFF; padding: 2px 6px; border-radius: 8px; font-size: 10px; font-weight: bold; backdrop-filter: blur(4px); }
