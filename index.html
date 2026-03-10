@@ -7,21 +7,18 @@
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="./style.css">
 </head>
 
 <body>
 
 <div class="tab-bar">
     <div class="tab-item active" onclick="switchTab('scan', this)"><span class="tab-icon">🏠</span><span class="tab-text">首页</span></div>
-    
     <div class="tab-item" onclick="switchTab('market', this)"><span class="tab-icon">📦</span><span class="tab-text">集市</span></div>
-    
     <div class="tab-item-publish" onclick="requireAuth(openPublishSheet)">
         <div class="btn-publish">+</div>
         <span class="tab-text" style="position: absolute; bottom: 8px; color:#9CA3AF;">发布</span>
     </div>
-    
     <div class="tab-item" onclick="switchTab('tips', this)"><span class="tab-icon">💰</span><span class="tab-text">省钱</span></div>
     <div class="tab-item" onclick="switchTab('profile', this)"><span class="tab-icon">👤</span><span class="tab-text">我的</span></div>
 </div>
@@ -117,16 +114,13 @@
     </div>
 
     <div id="page-profile" class="page-section">
-        
         <div class="profile-header-card">
             <div class="p-user-wrap">
                 <input type="file" id="avatarUpload" accept="image/*" style="display:none;" onchange="previewAvatar(event)">
-                
                 <div class="p-avatar" id="profileAvatarBox" onclick="requireAuth(() => document.getElementById('avatarUpload').click())">
                     <span id="profileAvatarEmoji">👻</span>
                     <img id="profileAvatarImg" class="p-avatar-img" src="">
                 </div>
-                
                 <div class="p-info">
                     <div class="p-name-row">
                         <span class="p-name" id="profileName">管家游客</span>
@@ -140,7 +134,6 @@
                     <div class="p-bio" id="profileBio">这个人很懒，还没写自我介绍~</div>
                 </div>
             </div>
-            
             <div class="p-actions" id="profileActions">
                 <button class="btn-edit-profile" onclick="openEditProfileModal()">编辑资料</button>
                 <button class="btn-settings" onclick="handleLogout()">⚙️</button>
@@ -181,68 +174,39 @@
             <div class="a-tab" onclick="switchAssetTab('reviews', this)">💬 收到评价</div>
         </div>
 
-        <div id="asset-footprint" class="asset-content active">
-            <div id="footprintList"></div>
-        </div>
-        <div id="asset-posts" class="asset-content">
-            <div class="empty-state" id="postsEmptyState">
-                <div class="empty-state-icon">🔒</div>
-                请先登录查看你的发布记录
-            </div>
-        </div>
-        <div id="asset-reviews" class="asset-content">
-            <div class="empty-state" id="reviewsEmptyState">
-                <div class="empty-state-icon">🔒</div>
-                请先登录查看收到的评价
-            </div>
-        </div>
-
+        <div id="asset-footprint" class="asset-content active"><div id="footprintList"></div></div>
+        <div id="asset-posts" class="asset-content"><div class="empty-state" id="postsEmptyState"></div></div>
+        <div id="asset-reviews" class="asset-content"><div class="empty-state" id="reviewsEmptyState"></div></div>
     </div>
 
     <div id="page-details" class="page-section">
         <div class="detail-back-btn" onclick="goBack()">‹</div>
-        
         <div class="detail-hero-img-wrap">
-            <img id="detailImg" class="detail-img" src="" 
-                 onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100%\' height=\'100%\'><rect width=\'100%\' height=\'100%\' fill=\'%23E5E7EB\'/><text x=\'50%\' y=\'50%\' font-family=\'sans-serif\' font-size=\'16\' font-weight=\'bold\' fill=\'%239CA3AF\' text-anchor=\'middle\' dominant-baseline=\'middle\'>📸 暂无图片</text></svg>'">
+            <img id="detailImg" class="detail-img" src="" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100%\' height=\'100%\'><rect width=\'100%\' height=\'100%\' fill=\'%23E5E7EB\'/><text x=\'50%\' y=\'50%\' font-family=\'sans-serif\' font-size=\'16\' font-weight=\'bold\' fill=\'%239CA3AF\' text-anchor=\'middle\' dominant-baseline=\'middle\'>📸 暂无图片</text></svg>'">
         </div>
-
         <div class="detail-content-wrap">
-            
             <div class="d-name-box">
                 <span class="d-item-name" id="detailChineseName"></span>
                 <span class="d-item-dutch" id="detailDutchName"></span>
             </div>
-
             <div class="info-block" id="detailInsightBox">
-                <div class="block-title">💡 管家锐评</div>
-                <p class="block-text" id="detailInsight"></p>
+                <div class="block-title">💡 管家锐评</div><p class="block-text" id="detailInsight"></p>
             </div>
-            
             <div class="info-block" id="detailWarningBox" style="display:none; border: 1px dashed #FCA5A5; background: #FEF2F2;">
-                <div class="block-title" style="color: #DC2626;">⚠️ 致命避雷</div>
-                <p class="block-text" id="detailWarning" style="color: #B91C1C;"></p>
+                <div class="block-title" style="color: #DC2626;">⚠️ 致命避雷</div><p class="block-text" id="detailWarning" style="color: #B91C1C;"></p>
             </div>
-
             <div class="info-block" id="detailAltBox" style="display:none;">
-                <div class="block-title">🛍️ 购物指南 (平替/升级)</div>
-                <div class="alt-tags" id="detailAlternatives"></div>
+                <div class="block-title">🛍️ 购物指南 (平替/升级)</div><div class="alt-tags" id="detailAlternatives"></div>
             </div>
-            
             <div class="info-block" id="detailRecipeBox" style="display:none; background: transparent; box-shadow: none; border: none; padding: 0;">
                 <div class="block-title" style="margin-left: 5px; margin-bottom: 15px;">🧑‍🍳 网友真实评价</div>
-                
                 <div id="recipeCardList"></div>
-
                 <button class="add-review-btn" onclick="requireAuth(openAddReviewModal)"><span>✍️</span> 我也来评一句</button>
             </div>
-
             <div id="chatHistory" style="margin-top: 20px;"></div>
-            
             <div style="height: 60px;"></div>
         </div>
     </div>
-
 </div> 
 
 <div class="modal-overlay" id="loginModal" onclick="this.style.display='none'">
@@ -250,13 +214,8 @@
         <div class="modal-close" onclick="document.getElementById('loginModal').style.display='none'">✕</div>
         <h2 style="margin-top:0; color: #111827; text-align: center; font-size: 24px;">👋 欢迎来到管家</h2>
         <p style="font-size: 13px; color: #6B7280; text-align: center; margin-bottom: 25px;">为保证真实社区环境，请先登录/注册</p>
-        
-        <button style="width: 100%; padding: 14px; background: #05C160; color: #FFF; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; margin-bottom: 12px; cursor:pointer; display: flex; justify-content: center; align-items: center; gap: 8px;" onclick="mockLoginProcess()">
-            <span style="font-size: 18px;">💬</span> 微信一键登录
-        </button>
-        <button style="width: 100%; padding: 14px; background: #F3F4F6; color: #111827; border: 1px solid #E5E7EB; border-radius: 12px; font-weight: bold; font-size: 15px; cursor:pointer;" onclick="mockLoginProcess()">
-            ✉️ 邮箱验证登录
-        </button>
+        <button style="width: 100%; padding: 14px; background: #05C160; color: #FFF; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; margin-bottom: 12px; cursor:pointer; display: flex; justify-content: center; align-items: center; gap: 8px;" onclick="mockLoginProcess()"><span style="font-size: 18px;">💬</span> 微信一键登录</button>
+        <button style="width: 100%; padding: 14px; background: #F3F4F6; color: #111827; border: 1px solid #E5E7EB; border-radius: 12px; font-weight: bold; font-size: 15px; cursor:pointer;" onclick="mockLoginProcess()">✉️ 邮箱验证登录</button>
         <div style="text-align: center; font-size: 11px; color: #9CA3AF; margin-top: 20px;">登录即代表同意《管家社区规范》</div>
     </div>
 </div>
@@ -265,55 +224,13 @@
     <div class="modal-content" onclick="event.stopPropagation()" style="max-height: 85vh; overflow-y: auto;">
         <div class="modal-close" onclick="document.getElementById('editProfileModal').style.display='none'">✕</div>
         <h3 style="margin-top:0; color: #111827; margin-bottom: 20px;">✏️ 完善你的数字名片</h3>
-        
-        <div class="edit-form-row">
-            <div class="edit-label">管家昵称</div>
-            <input type="text" id="epName" class="modal-input" placeholder="给别人留下深刻印象~">
-        </div>
-        
+        <div class="edit-form-row"><div class="edit-label">管家昵称</div><input type="text" id="epName" class="modal-input" placeholder="给别人留下深刻印象~"></div>
         <div style="display: flex; gap: 10px;">
-            <div class="edit-form-row" style="flex:1;">
-                <div class="edit-label">性别</div>
-                <select id="epGender" class="modal-input">
-                    <option value="保密">保密</option>
-                    <option value="男 ♂">男 ♂</option>
-                    <option value="女 ♀">女 ♀</option>
-                </select>
-            </div>
-            <div class="edit-form-row" style="flex:1;">
-                <div class="edit-label">MBTI <span class="edit-score-tag">+30 分</span></div>
-                <select id="epMbti" class="modal-input">
-                    <option value="">未填写</option>
-                    <option value="INTJ">INTJ 建筑师</option>
-                    <option value="INTP">INTP 逻辑学家</option>
-                    <option value="ENTJ">ENTJ 指挥官</option>
-                    <option value="ENTP">ENTP 辩论家</option>
-                    <option value="INFJ">INFJ 提倡者</option>
-                    <option value="INFP">INFP 调停者</option>
-                    <option value="ENFJ">ENFJ 主人公</option>
-                    <option value="ENFP">ENFP 竞选者</option>
-                    <option value="ISTJ">ISTJ 物流师</option>
-                    <option value="ISFJ">ISFJ 守卫者</option>
-                    <option value="ESTJ">ESTJ 总经理</option>
-                    <option value="ESFJ">ESFJ 执政官</option>
-                    <option value="ISTP">ISTP 鉴赏家</option>
-                    <option value="ISFP">ISFP 探险家</option>
-                    <option value="ESTP">ESTP 企业家</option>
-                    <option value="ESFP">ESFP 表演者</option>
-                </select>
-            </div>
+            <div class="edit-form-row" style="flex:1;"><div class="edit-label">性别</div><select id="epGender" class="modal-input"><option value="保密">保密</option><option value="男 ♂">男 ♂</option><option value="女 ♀">女 ♀</option></select></div>
+            <div class="edit-form-row" style="flex:1;"><div class="edit-label">MBTI <span class="edit-score-tag">+30 分</span></div><select id="epMbti" class="modal-input"><option value="">未填写</option><option value="INTJ">INTJ 建筑师</option><option value="INFP">INFP 调停者</option><option value="ENTJ">ENTJ 指挥官</option><option value="ENFP">ENFP 竞选者</option><option value="ISFJ">ISFJ 守卫者</option><option value="ESFJ">ESFJ 执政官</option></select></div>
         </div>
-
-        <div class="edit-form-row">
-            <div class="edit-label">微信号 (安全) <span class="edit-score-tag">必填</span></div>
-            <input type="text" id="epWechat" class="modal-input" placeholder="仅在交易/搭子确认后对Ta可见">
-        </div>
-
-        <div class="edit-form-row">
-            <div class="edit-label">一句话签名 / 自我介绍</div>
-            <textarea id="epBio" class="modal-textarea" style="height: 80px;" placeholder="你是什么样的人？找什么样的搭子？"></textarea>
-        </div>
-
+        <div class="edit-form-row"><div class="edit-label">微信号 (安全) <span class="edit-score-tag">必填</span></div><input type="text" id="epWechat" class="modal-input" placeholder="仅在交易/搭子确认后对Ta可见"></div>
+        <div class="edit-form-row"><div class="edit-label">一句话签名 / 自我介绍</div><textarea id="epBio" class="modal-textarea" style="height: 80px;" placeholder="你是什么样的人？找什么样的搭子？"></textarea></div>
         <button style="width: 100%; padding: 14px; background: #111827; color: #FFF; border: none; border-radius: 12px; font-weight: bold; margin-top: 10px; cursor:pointer;" onclick="saveProfileData()">💾 保存并计算信用分</button>
     </div>
 </div>
@@ -324,11 +241,8 @@
         <h3 style="margin-top:0; color: #111827; display:flex; align-items:center; gap:8px;">🛡️ 什么是管家信用分？</h3>
         <div style="font-size: 14px; color: #4B5563; line-height: 1.7;">
             <p>为了打造<b>荷兰最安全的留学生互助社区</b>，我们引入了严格的信用体系。</p>
-            <p><b>✨ 信用分有什么用？</b><br>
-            • 分数越高，你发布的二手物品曝光率越高！<br>
-            • 信用极佳的用户，将拥有专属绿色信誉徽章，买家更敢先款购买。</p>
-            <p><b>📈 如何获取分数？</b><br>
-            初始 500 分。通过设置自定义头像 (+20)、完善 MBTI (+30)、验证大学/名企邮箱 (+200)，或在交易后获得好评，分数都会自动上涨。</p>
+            <p><b>✨ 信用分有什么用？</b><br>• 分数越高，曝光率越高！<br>• 信用极佳的用户将拥有专属徽章，买家更敢先款购买。</p>
+            <p><b>📈 如何获取分数？</b><br>初始 500 分。通过设置头像 (+20)、完善 MBTI (+30)、验证大学邮箱 (+200) 自动上涨。</p>
         </div>
         <button style="width: 100%; padding: 14px; background: #111827; color: #FFF; border: none; border-radius: 14px; font-weight: bold; margin-top: 15px; cursor:pointer;" onclick="document.getElementById('creditInfoModal').style.display='none'">我明白了</button>
     </div>
@@ -338,10 +252,7 @@
     <div class="modal-content" onclick="event.stopPropagation()">
         <div class="modal-close" onclick="document.getElementById('addReviewModal').style.display='none'">✕</div>
         <h3 style="margin-top:0; color: #111827;">发表你的锐评</h3>
-        <select id="reviewAttitude" class="modal-input" style="background:#F9FAFB; margin-bottom:10px;">
-            <option value="👍 推荐">👍 疯狂安利 (种草)</option>
-            <option value="💣 拔草">💣 难吃/巨坑 (避雷)</option>
-        </select>
+        <select id="reviewAttitude" class="modal-input" style="background:#F9FAFB; margin-bottom:10px;"><option value="👍 推荐">👍 疯狂安利 (种草)</option><option value="💣 拔草">💣 难吃/巨坑 (避雷)</option></select>
         <textarea id="reviewText" class="modal-textarea" placeholder="这玩意到底好不好吃？写下你的真实评价，帮大家避坑！"></textarea>
         <button id="btnSubmitReview" style="width: 100%; padding: 14px; background: #10B981; color: #FFF; border: none; border-radius: 12px; font-weight: bold; margin-top: 15px; cursor:pointer;" onclick="submitDetailReview()">🚀 提交评价</button>
     </div>
@@ -355,8 +266,8 @@
     <div id="reader" style="width:100%; flex:1; background:#000;"></div>
 </div>
 
-<script src="/tips-data.js"></script>
-<script src="app.js"></script>
+<script src="./tips-data.js"></script>
+<script src="./app.js"></script>
 
 </body>
 </html>
