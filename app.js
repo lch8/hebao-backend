@@ -563,7 +563,9 @@ function matchPills(groupId, text) {
     });
 }
 
+// ================= 多图上传卡片化 与 Canvas 自动打水印 =================
 let selectedImagesArray = []; 
+
 function handleMultiImageSelect(event) {
     const files = event.target.files; if (!files || files.length === 0) return;
     Array.from(files).forEach(file => {
@@ -572,25 +574,114 @@ function handleMultiImageSelect(event) {
         reader.onload = function(e) {
             const base64Data = e.target.result.split(',')[1]; 
             const id = Date.now() + Math.random(); 
-            selectedImagesArray.push({ id: id, base64: base64Data, preview: e.target.result });
-            renderThumbnails();
+            // 数据结构升级：增加 name 和 price 字段
+            selectedImagesArray.push({ id: id, base64: base64Data, preview: e.target.result, name: '', price: '' });
+            renderIdleItemCards();
         };
         reader.readAsDataURL(file);
     });
     event.target.value = ''; 
 }
-function removeImage(id) { selectedImagesArray = selectedImagesArray.filter(img => img.id !== id); renderThumbnails(); }
-function renderThumbnails() {
-    const container = document.getElementById('idleImgPreviewContainer'); let html = '';
-    selectedImagesArray.forEach(img => { html += `<div class="thumb-box"><img src="${img.preview}"><div class="thumb-del" onclick="removeImage(${img.id})">✕</div></div>`; });
-    if (selectedImagesArray.length < 9) { html += `<div class="upload-btn" onclick="document.getElementById('idleImgInput').click()"><span style="font-size: 24px;">📷</span><span style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">多图</span></div>`; }
+
+function removeImage(id) { 
+    selectedImagesArray = selectedImagesArray.filter(img => img.id !== id); 
+    renderIdleItemCards(); 
+    updateTotalIdlePrice(); 
+}
+
+// 实时更新单品数据
+function updateItemData(id, field, value) {
+    const item = selectedImagesArray.find(i => i.id === id);
+    if (item) item[field] = value;
+    if (field === 'price') updateTotalIdlePrice();
+}
+
+// 自动计算总价并填入底部总价框
+function updateTotalIdlePrice() {
+    let total = 0;
+    selectedImagesArray.forEach(i => { if (i.price && !isNaN(i.price)) total += parseFloat(i.price); });
+    document.getElementById('idlePrice').value = total > 0 ? total : '';
+}
+
+// 渲染左图右输入的编辑卡片
+function renderIdleItemCards() {
+    const container = document.getElementById('idleImgPreviewContainer'); 
+    let html = '';
+    selectedImagesArray.forEach((img, idx) => { 
+        html += `
+        <div class="item-edit-card">
+            <img src="${img.preview}">
+            <div class="item-edit-inputs">
+                <input type="text" placeholder="物品名称 (如: 九成新电饭煲)" value="${img.name}" onchange="updateItemData(${img.id}, 'name', this.value)">
+                <div class="price-input-row">
+                    <span>€</span>
+                    <input type="number" placeholder="价格 (数字)" value="${img.price}" onchange="updateItemData(${img.id}, 'price', this.value)">
+                </div>
+            </div>
+            <div class="item-del-btn" onclick="removeImage(${img.id})">✕</div>
+        </div>`; 
+    });
+    if (selectedImagesArray.length < 9) { 
+        html += `<div class="upload-btn" onclick="document.getElementById('idleImgInput').click()" style="width: 100%; background: #FFF; border: 1px dashed #D1D5DB; margin-top: 5px;"><span style="font-size: 24px;">📷</span><span style="font-size: 13px; font-weight: bold; margin-left: 8px; color: #374151;">继续添加物品</span></div>`; 
+    }
     container.innerHTML = html;
 }
+
+// 🎨 黑科技：用 Canvas 将名字和价格烙印在图片上 (小红书风水印)
+function addTagToImage(previewUrl, name, price) {
+    return new Promise((resolve) => {
+        if (!name && !price) return resolve(previewUrl.split(',')[1]); // 没填信息就不打水印
+
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width; canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+
+            const tagText = `${name ? name + ' ' : ''}${price ? '€'+price : ''}`.trim();
+            const fontSize = Math.max(24, Math.floor(img.width * 0.045)); // 根据图片大小自适应字号
+            ctx.font = `bold ${fontSize}px sans-serif`;
+            const paddingX = fontSize * 0.8;
+            const paddingY = fontSize * 0.5;
+            const textWidth = ctx.measureText(tagText).width;
+            
+            // 水印位置：左下角
+            const x = img.width * 0.05;
+            const y = img.height - img.width * 0.05 - fontSize;
+            
+            // 绘制半透明黑色圆角背景
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+            ctx.beginPath();
+            if(ctx.roundRect) { ctx.roundRect(x, y, textWidth + paddingX * 2.2, fontSize + paddingY * 2, (fontSize + paddingY * 2) / 2); } 
+            else { ctx.fillRect(x, y, textWidth + paddingX * 2.2, fontSize + paddingY * 2); }
+            ctx.fill();
+
+            // 绘制小红书标志性黄点
+            ctx.fillStyle = '#FCD34D';
+            ctx.beginPath();
+            ctx.arc(x + paddingX * 0.9, y + (fontSize + paddingY * 2)/2, fontSize * 0.25, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 绘制文字
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillText(tagText, x + paddingX * 1.6, y + fontSize + paddingY * 0.4);
+            
+            resolve(canvas.toDataURL('image/jpeg', 0.85).split(',')[1]);
+        };
+        img.src = previewUrl;
+    });
+}
+
+// 依次打水印并上传到腾讯云
 async function uploadImagesToCOS() {
-    if (selectedImagesArray.length === 0) return ''; let uploadedUrls = [];
+    if (selectedImagesArray.length === 0) return ''; 
+    let uploadedUrls = [];
     for (let img of selectedImagesArray) {
         try {
-            const res = await fetch('/api/upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageBase64: img.base64 }) });
+            // 在上传前，先执行 Canvas 打水印逻辑
+            const taggedBase64 = await addTagToImage(img.preview, img.name, img.price);
+            const res = await fetch('/api/upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageBase64: taggedBase64 }) });
             const data = await res.json();
             if(data.success) uploadedUrls.push(data.url); 
         } catch(e) { console.error("图片上传失败", e); }
@@ -598,15 +689,81 @@ async function uploadImagesToCOS() {
     return uploadedUrls.join(','); 
 }
 
+// 🧠 升级版 AI 魔法：读取图片卡片信息，打包发给 DeepSeek
+async function generateAICopy(type) {
+    const inputEl = document.getElementById(`aiKeywords_${type}`);
+    const btnEl = document.getElementById(`btnAiMagic_${type}`);
+    const keyword = inputEl.value.trim();
+    if (!keyword && type !== 'idle') return alert("请先输入一些文字或使用语音哦！");
+    
+    btnEl.innerText = "⏳ DeepSeek 疯狂算账并填表中..."; btnEl.disabled = true;
+
+    try {
+        let payload = { keyword: keyword || "帮我总结一下", type };
+        
+        // 核心：把用户刚才在图片旁边写的物品清单提取出来，喂给大模型
+        if (type === 'idle') {
+            let itemsStr = selectedImagesArray.map((i, idx) => `图${idx+1}: ${i.name||'某物品'} - €${i.price||'面议'}`).join('\n');
+            let manualDesc = document.getElementById('idleDesc').value.trim();
+            payload.currentDesc = itemsStr + (manualDesc ? '\n\n' + manualDesc : '');
+            payload.currentPrice = document.getElementById('idlePrice').value.trim() || 0;
+        }
+
+        const res = await fetch('/api/generate-copy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        const data = await res.json();
+        if(data.error) throw new Error(data.error);
+
+        if (type === 'idle') {
+            if(data.copy) document.getElementById('idleDesc').value = data.copy;
+            // 只有当 AI 算出的总价大于当前总价时，才覆盖底部的价格（防止覆盖掉准确的加和）
+            if(data.price && parseFloat(data.price) > parseFloat(payload.currentPrice)) document.getElementById('idlePrice').value = data.price;
+            if(data.deadline) document.getElementById('idleDeadline').value = data.deadline;
+            if(data.location) matchSelect('idleLocation', data.location);
+            if(data.bargain) matchPills('bargainGroup', data.bargain);
+            if(data.payment) matchPills('paymentGroup', data.payment);
+        } else if (type === 'help') {
+            if(data.copy) document.getElementById('helpDesc').value = data.copy;
+            if(data.reward) document.getElementById('helpReward').value = data.reward;
+            if(data.time) document.getElementById('helpTime').value = data.time;
+            if(data.location) document.getElementById('helpLocation').value = data.location;
+            if(data.urgent) matchPills('helpUrgentGroup', data.urgent);
+        } else if (type === 'partner') {
+            if(data.title) document.getElementById('partnerTitle').value = data.title;
+            if(data.copy) document.getElementById('partnerDesc').value = data.copy;
+            if(data.date) document.getElementById('partnerDate').value = data.date;
+            if(data.location) document.getElementById('partnerLocation').value = data.location;
+            if(data.mbti) matchSelect('partnerMbti', data.mbti);
+        }
+
+        inputEl.value = ''; btnEl.innerText = "✨ 魔法完成！已自动算账并填表！";
+    } catch (err) {
+        alert("AI生成失败：" + err.message); btnEl.innerText = "🪄 算总价并生成神仙文案";
+    } finally { setTimeout(() => { btnEl.innerText = "🪄 算总价并生成神仙文案"; btnEl.disabled = false; }, 3000); }
+}
+
+// 辅助匹配函数
+function matchSelect(selectId, text) {
+    const sel = document.getElementById(selectId); if(!sel || !text) return;
+    for(let i=0; i<sel.options.length; i++) {
+        if(sel.options[i].value === text || sel.options[i].text.includes(text) || text.includes(sel.options[i].text)) { sel.selectedIndex = i; break; }
+    }
+}
+function matchPills(groupId, text) {
+    if(!text) return;
+    document.querySelectorAll(`#${groupId} .pill`).forEach(el => { 
+        if(el.innerText.includes(text.split('/')[0]) || text.includes(el.innerText)) selectPill(el, groupId);
+    });
+}
+
 // ================= 8. 发帖写入数据库 =================
 async function submitIdlePost() {
     const desc = document.getElementById('idleDesc').value.trim();
     const price = document.getElementById('idlePrice').value.trim();
     const loc = document.getElementById('idleLocation').value;
-    if(!desc) return alert("文案还没写呢！快试试语音一句话发帖吧！");
+    if(!desc && selectedImagesArray.length === 0) return alert("总得填点内容或者传张图吧！");
     
     const btn = document.querySelector('#publishIdleModal .fm-submit');
-    btn.innerText = "上传中..."; btn.style.pointerEvents = 'none';
+    btn.innerText = "正在烙印水印并上传..."; btn.style.pointerEvents = 'none';
 
     try {
         let finalImageUrls = await uploadImagesToCOS();
@@ -616,9 +773,9 @@ async function submitIdlePost() {
         const res = await fetch('/api/publish-community', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: userUUID, authorName: authorName, title: finalTitle, text: desc, imageUrl: finalImageUrls }) });
         const data = await res.json(); if(!data.success) throw new Error(data.error);
 
-        alert("🎉 发布成功！支持多图的闲置帖已上架！");
+        alert("🎉 发布成功！带专属水印的闲置已上架！");
         closeIdlePublish();
-        selectedImagesArray = []; renderThumbnails(); document.getElementById('idleDesc').value = ''; 
+        selectedImagesArray = []; renderIdleItemCards(); document.getElementById('idleDesc').value = ''; document.getElementById('idlePrice').value = '';
         if(document.getElementById('aiKeywords_idle')) document.getElementById('aiKeywords_idle').value = '';
         loadCommunityPosts(); 
     } catch(e) { alert("发布失败：" + e.message); } finally { btn.innerText = "发布"; btn.style.pointerEvents = 'auto'; }
