@@ -58,15 +58,15 @@ body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "S
 .btn-view-detail { background: #111827; color: #FFF; border: none; padding: 14px; width: 100%; border-radius: 25px; font-size: 15px; font-weight: bold; margin-top: 10px; cursor: pointer; }
 .btn-secondary { background: transparent; color: #EF4444; border: 2px solid #EF4444; width: 100%; padding: 12px; border-radius: 25px; font-size: 15px; font-weight: bold; margin-top: 15px; cursor: pointer;}
 
-/* ================= 🚨 修复：集市 Tab 样式 ================= */
+/* ================= 集市 Tab ================= */
 .market-tabs { display: flex; gap: 15px; margin-bottom: 20px; }
 .m-tab { font-size: 16px; font-weight: 900; color: #9CA3AF; cursor: pointer; padding-bottom: 6px; transition: 0.2s;}
 .m-tab.active { color: #111827; border-bottom: 3px solid #10B981; }
 .market-content { display: none; animation: fadeIn 0.3s ease; }
 .market-content.active { display: block; }
-.empty-market-state { text-align: center; color: #9CA3AF; margin-top: 60px; line-height: 1.8; }
+.empty-market-state { text-align: center; color: #9CA3AF; margin-top: 60px; line-height: 1.8; font-weight: bold; }
 
-/* ================= 🚨 修复：省钱秘籍安全展开 ================= */
+/* ================= 纯 CSS 解决省钱秘籍展开 ================= */
 .quick-links-wrap { display: flex; overflow-x: auto; gap: 12px; padding: 0 5px 20px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
 .quick-links-wrap::-webkit-scrollbar { display: none; }
 .ql-card { flex: 0 0 auto; width: 140px; background: #FFF; border-radius: 16px; padding: 15px 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); border: 1px solid #E5E7EB; text-decoration: none !important; display: flex; flex-direction: column; align-items: center; justify-content: center; scroll-snap-align: start; transition: transform 0.2s; }
@@ -83,7 +83,6 @@ body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "S
 .tips-icon { font-size: 22px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));}
 .tips-arrow { transition: transform 0.3s ease; color: #9CA3AF; font-size: 12px;}
 .tips-header.active .tips-arrow { transform: rotate(180deg); color: #10B981; }
-/* 纯 CSS max-height 控制，抛弃易错的 JS 计算 */
 .tips-content { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1); background: #F9FAFB; }
 .tips-header.active + .tips-content { max-height: 5000px; } 
 .tips-inner { padding: 15px; }
