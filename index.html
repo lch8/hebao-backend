@@ -60,8 +60,28 @@
             <input type="text" id="mainSearchInput" class="search-input" placeholder="搜商品名或扫条形码..." onkeypress="if(event.key==='Enter') executeSearch()">
             <button class="barcode-btn" onclick="startBarcodeScan()">|||</button>
         </div>
-        <div class="home-action-btn" id="homeActionBox" onclick="startBarcodeScan()">
-            <div class="action-icon">📸</div><div class="action-title">扫商品条码排雷</div><div class="action-sub">看全网评价 · 找平替 · 避开刺客</div>
+        <div id="homeActionBox">
+            <input type="file" id="packageImgInput" accept="image/*" capture="environment" style="display: none;" onchange="handlePackageImage(event)">
+            
+            <div class="home-action-btn" onclick="document.getElementById('packageImgInput').click()">
+                <span class="action-icon">📸</span>
+                <div class="action-title">拍包装 排雷</div>
+                <div class="action-sub">一键识破荷兰超市“科技狠活”</div>
+            </div>
+            
+            <div class="search-container">
+                <span style="color:#9CA3AF; font-size:18px;">🔍</span>
+                <input type="text" id="mainSearchInput" class="search-input" placeholder="输入商品名或搜条码..." onkeypress="if(event.key==='Enter') executeSearch()">
+                <button class="barcode-btn" onclick="startBarcodeScan()">⏸️</button>
+            </div>
+        </div>
+
+        <div class="preview-container" id="previewContainer">
+            <img id="previewImg" src="" class="preview-img">
+            <div class="scan-overlay" id="scanOverlay">
+                <div class="scan-line"></div>
+                <div class="scan-text" id="scanText">📡 正在呼叫 AI 双擎解析包装...</div>
+            </div>
         </div>
 
         <div class="preview-container" id="previewContainer" style="display:none;">
