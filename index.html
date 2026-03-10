@@ -338,10 +338,11 @@
 </div>
 
 <div class="full-modal" id="chatModal" style="display: none; z-index: 3000; background: #F3F4F6;">
-    <div class="fm-header">
-        <div class="fm-close" onclick="closeChat()">‹ 返回</div>
-        <div class="fm-title" id="chatTargetName">正在联系卖家...</div>
-        <div style="width: 50px; text-align: right; color: #9CA3AF; font-size: 20px; cursor: pointer;">...</div> </div>
+    <div class="chat-header">
+        <div class="ch-back" onclick="closeChat()">‹ 返回</div>
+        <div class="ch-title" id="chatTargetName">正在联系卖家...</div>
+        <div class="ch-more">···</div>
+    </div>
     
     <div class="chat-product-snippet">
         <img id="chatProductImg" src="" class="cps-img">
@@ -349,14 +350,15 @@
             <div class="cps-title" id="chatProductTitle">商品名称加载中...</div>
             <div class="cps-price" id="chatProductPrice">€0.00</div>
         </div>
-        <button class="cps-btn" onclick="alert('已发送【我想要】给对方！')">发送链接</button>
+        <button class="cps-btn" id="cpsActionBtn" onclick="alert('已发送【我想要】给对方！')">发送链接</button>
+        <div class="cps-sold-stamp" id="cpsSoldStamp" style="display: none;">已售出</div>
     </div>
 
     <div class="chat-msg-container" id="chatMsgList">
         <div class="chat-time-sys" id="chatTimeSys">今天 14:30</div>
         
         <div class="chat-sys-tip">
-            🛡️ 管家提示：在荷兰面交请选择火车站等公共区域。大额付款推荐当面扫 Tikkie 或银行转账（Betaalverzoek），**切勿点击不明退款链接！**
+            🛡️ <b>管家提示：</b>在荷兰面交请选择火车站等公共区域。大额付款推荐当面扫 Tikkie 或银行转账，切勿点击不明退款链接！
         </div>
 
         <div class="chat-row other">
@@ -365,10 +367,14 @@
         </div>
     </div>
 
-    <div class="chat-input-bar">
-        <div class="c-action-btn" onclick="alert('发图片/发定位功能开发中')">➕</div>
+    <div class="chat-input-bar" id="chatInputBar">
+        <div class="c-action-btn" onclick="alert('发图片功能开发中')">➕</div>
         <input type="text" id="chatInput" class="c-input" placeholder="问问成色，或者约个面交地点..." onkeypress="if(event.key==='Enter') sendChatMessage()">
-        <button class="c-send-btn" onclick="sendChatMessage()">发送</button>
+        <button class="c-send-btn" id="chatSendBtn" onclick="sendChatMessage()">发送</button>
+    </div>
+    
+    <div class="chat-input-disabled" id="chatInputDisabled" style="display: none;">
+        🚫 该闲置已售出，无法继续发送消息
     </div>
 </div>
     
