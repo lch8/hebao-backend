@@ -64,22 +64,51 @@ function saveProfileData() { const name = document.getElementById('epName').valu
 function previewAvatar(event) { const file = event.target.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = function(e) { localStorage.setItem('hebao_avatar', e.target.result); renderProfileState(); }; reader.readAsDataURL(file); }
 function loadAvatar() { const savedAvatar = localStorage.getItem('hebao_avatar'); if(savedAvatar && isLoggedIn) { document.getElementById('profileAvatarImg').src = savedAvatar; document.getElementById('profileAvatarImg').style.display = 'block'; document.getElementById('profileAvatarBox').style.background = '#FFF'; document.getElementById('profileAvatarEmoji').textContent = ''; } }
 
-// ================= 4. GPS 自动定位 =================
+// ================= 4. GPS 自动定位与邮编提取 =================
+let currentCity = "";
+let currentPostcode = "";
+
 function autoLocate(inputId) {
     const inputEl = document.getElementById(inputId);
     if (!navigator.geolocation) return alert("浏览器不支持定位功能");
     const oldVal = inputEl.value;
     inputEl.value = "定位中...";
+    
+    // 隐藏邮编控件
+    const toggleWrapper = document.getElementById('postcodeToggleWrapper');
+    if(toggleWrapper) toggleWrapper.style.display = 'none';
+    
     navigator.geolocation.getCurrentPosition(async (pos) => {
         try {
             const { latitude, longitude } = pos.coords;
-            // 调用免费的 OpenStreetMap 接口进行反向地理编码
-            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&accept-language=zh`);
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1&accept-language=zh`);
             const data = await res.json();
-            const city = data.address.city || data.address.town || data.address.village || data.address.state || "荷兰";
-            inputEl.value = city;
+            
+            currentCity = data.address.city || data.address.town || data.address.village || data.address.state || "荷兰";
+            
+            // 提取荷兰邮编的前4位数字 (如 2628 CD -> 2628)
+            let fullPostcode = data.address.postcode || "";
+            currentPostcode = fullPostcode.replace(/\s+/g, '').substring(0, 4); 
+            
+            inputEl.value = currentCity;
+            
+            if (currentPostcode && toggleWrapper) {
+                document.getElementById('detectedPostcode').innerText = currentPostcode;
+                toggleWrapper.style.display = 'flex';
+                document.getElementById('showPostcodeCheck').checked = false; // 默认不显示
+            }
         } catch (e) { inputEl.value = oldVal; alert("获取城市名称失败，请手动输入"); }
     }, (err) => { inputEl.value = oldVal; alert("定位权限被拒绝，请手动输入"); }, { timeout: 10000 });
+}
+
+function togglePostcode() {
+    const inputEl = document.getElementById('idleLocation');
+    const isChecked = document.getElementById('showPostcodeCheck').checked;
+    if (isChecked) {
+        inputEl.value = `${currentCity} (${currentPostcode})`;
+    } else {
+        inputEl.value = currentCity;
+    }
 }
 
 // ================= 5. 首页扫码引擎与榜单 =================
@@ -147,6 +176,7 @@ function renderHomeTrending(list, containerId, type) {
 function openDetailsFromScan() { currentDetailData = {...currentProductData}; setupDetailPage(); }
 function openDetailsFromHomeTrending(type, index) { currentDetailData = type === 'like' ? globalTrendingLikes[index] : globalTrendingDislikes[index]; setupDetailPage(); }
 function openDetailsFromHistory(index) { let h = JSON.parse(localStorage.getItem('hebao_history')||'[]'); currentDetailData = h[index]; setupDetailPage(); }
+
 function setupDetailPage() {
     const d = currentDetailData; if (!d) return;
     const imgEl = document.getElementById('detailImg'); imgEl.src = d.image_url || d.img_src || ''; 
@@ -202,6 +232,7 @@ async function sendQuestion() {
     } catch (err) { document.getElementById(loadingId).remove(); chatBox.innerHTML += `<div class="chat-bubble bubble-ai" style="color:red;">网络断了...</div>`; }
     window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
 }
+
 function saveToLocalFootprint(data, img) { 
     let h = JSON.parse(localStorage.getItem('hebao_history')||'[]'); 
     if(!h.find(i=>i.dutch_name===data.dutch_name)){ data.img_src=img; h.unshift(data); localStorage.setItem('hebao_history',JSON.stringify(h)); } 
@@ -216,7 +247,32 @@ function renderFootprints() {
     }); 
     listDiv.innerHTML = html; 
 }
-function renderTipsPage() {} 
+
+// 恢复省钱秘籍渲染逻辑
+function renderTipsPage() {
+    if (typeof quickLinksData !== 'undefined') { 
+        let qlHtml = ''; 
+        quickLinksData.forEach(link => { qlHtml += `<a href="${link.url}" target="_blank" class="ql-card"><div class="ql-icon">${link.icon}</div><div class="ql-title">${link.title}</div><div class="ql-sub">${link.sub}</div></a>`; }); 
+        if(document.getElementById('quickLinksContainer')) document.getElementById('quickLinksContainer').innerHTML = qlHtml; 
+    }
+    if (typeof tipsData !== 'undefined') {
+        let accHtml = '';
+        tipsData.forEach(cat => {
+            const highlightHtml = cat.highlight ? `<span style="background: #FEF2F2; color: #EF4444; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; margin-left: 5px;">${cat.highlight}</span>` : '';
+            let storesHtml = '';
+            cat.stores.forEach(store => {
+                let itemsHtml = '';
+                store.tips.forEach(tip => {
+                    const formattedDesc = tip.desc.replace(/\*\*(.*?)\*\*/g, '<span style="color:#D97706; font-weight:bold; background:#FFFBEB; padding:1px 5px; border-radius:6px; margin:0 2px;">$1</span>');
+                    itemsHtml += `<div class="tip-item"><div class="tip-title">${tip.title}</div><div class="tip-desc">${formattedDesc}</div></div>`;
+                });
+                storesHtml += `<div class="store-card"><div class="store-header" onclick="toggleTipsContent(this)"><div class="s-icon-name"><span class="s-logo">${store.storeLogo}</span>${store.storeName}</div><span class="store-arrow">▼</span></div><div class="store-content"><div class="store-inner">${itemsHtml}</div></div></div>`;
+            });
+            accHtml += `<div class="tips-accordion"><div class="tips-header" onclick="toggleTipsContent(this)"><div class="tips-title-wrap"><span class="tips-icon">${cat.categoryIcon}</span> <span>${cat.categoryName}</span> ${highlightHtml}</div><span class="tips-arrow">▼</span></div><div class="tips-content"><div class="tips-inner">${storesHtml}</div></div></div>`;
+        });
+        if(document.getElementById('tipsAccordionContainer')) document.getElementById('tipsAccordionContainer').innerHTML = accHtml;
+    }
+}
 function toggleTipsContent(element) { element.classList.toggle('active'); }
 
 // ================= 7. 发布弹窗开关 =================
@@ -268,6 +324,7 @@ function renderIdleItemCards() {
     if (selectedImagesArray.length < 9) { html += `<div class="upload-btn" onclick="document.getElementById('idleImgInput').click()" style="width: 100%; background: #FFF; border: 1px dashed #D1D5DB; margin-top: 5px;"><span style="font-size: 24px;">📷</span><span style="font-size: 13px; font-weight: bold; margin-left: 8px; color: #374151;">继续添加物品</span></div>`; }
     container.innerHTML = html;
 }
+
 function addTagToImage(previewUrl, name, price) {
     return new Promise((resolve) => {
         if (!name && !price) return resolve(previewUrl.split(',')[1]); 
@@ -298,10 +355,9 @@ function toggleVoiceInput(type) {
     const btn = document.getElementById(`btnVoiceInput_${type}`); const input = document.getElementById(`aiKeywords_${type}`);
     if (!recognition) return alert('请使用系统自带语音输入法！');
     if (btn.classList.contains('recording')) { recognition.stop(); return; }
-    btn.classList.add('recording'); btn.innerText = '🔴'; const oldPlaceholder = input.placeholder; input.placeholder = '请说话...';
+    btn.classList.add('recording'); btn.innerText = '🔴'; const oldPlaceholder = input.placeholder; input.placeholder = '听着呢...';
     try { recognition.start(); } catch(e) {}
     recognition.onresult = (event) => { input.value += event.results[0][0].transcript; };
-    // 语音结束后，如果录到了字，自动触发提取
     recognition.onend = () => { btn.classList.remove('recording'); btn.innerText = '🎙️'; input.placeholder = oldPlaceholder; if(input.value.trim() !== '') generateAICopy(type); };
     recognition.onerror = () => { btn.classList.remove('recording'); btn.innerText = '🎙️'; input.placeholder = oldPlaceholder; };
 }
@@ -309,7 +365,7 @@ function toggleVoiceInput(type) {
 async function generateAICopy(type) {
     const inputEl = document.getElementById(`aiKeywords_${type}`); 
     const keyword = inputEl.value.trim(); if (!keyword && type !== 'idle') return alert("说点什么吧！");
-    const oldVal = inputEl.value; inputEl.value = "⏳ AI提取中..."; inputEl.disabled = true;
+    const oldVal = inputEl.value; inputEl.value = "⏳ AI分析中..."; inputEl.disabled = true;
 
     try {
         const payload = { keyword, type };
@@ -339,7 +395,7 @@ async function generateAICopy(type) {
         }
         inputEl.value = "✨ 提取成功！";
     } catch (err) { alert("提取失败：" + err.message); inputEl.value = oldVal; } 
-    finally { setTimeout(() => { inputEl.value = ''; inputEl.disabled = false; inputEl.placeholder="语音说：我在代村，后天必须拿走..."; }, 2000); }
+    finally { setTimeout(() => { inputEl.value = ''; inputEl.disabled = false; inputEl.placeholder="按住说：代村自提，明天拿走..."; }, 2000); }
 }
 
 function matchSelect(selectId, text) {
@@ -372,7 +428,7 @@ async function submitIdlePost() {
         }
         
         const contentJson = JSON.stringify({ items: finalItemsData, conditions: { loc, deadline, bargain, payment } });
-        const finalTitle = `[闲置] €${totalPrice} · ${loc}`;
+        const finalTitle = `[闲置] €${totalPrice} · ${loc.split(' (')[0]}`; // 标题里省去邮编更清爽
         const authorName = localStorage.getItem('hp_name') || '管家新人';
         
         const resDb = await fetch('/api/publish-community', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: userUUID, authorName: authorName, title: finalTitle, text: contentJson, imageUrl: '' }) });
