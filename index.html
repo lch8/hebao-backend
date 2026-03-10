@@ -205,6 +205,31 @@
             </div>
             <div class="vip-btn">去点亮</div>
         </div>
+        <div id="authCenterBlock" class="auth-container" style="display: none;">
+            <div class="fm-section-title" style="margin-left: 0; margin-bottom: 12px;">盾牌守护 · 提升信任分</div>
+            
+            <div class="auth-card" onclick="openEmailVerifyModal()">
+                <div class="auth-info">
+                    <div class="auth-icon edu">🎓</div>
+                    <div>
+                        <div class="auth-name">教育/机构邮箱认证</div>
+                        <div class="auth-sub" id="emailAuthStatusText">点亮校友身份 (信用分+50)</div>
+                    </div>
+                </div>
+                <div class="auth-action" id="emailAuthBtn">去认证</div>
+            </div>
+
+            <div class="auth-card" onclick="openWechatBindModal()">
+                <div class="auth-info">
+                    <div class="auth-icon wechat">💬</div>
+                    <div>
+                        <div class="auth-name">一键绑定微信</div>
+                        <div class="auth-sub" id="wechatAuthStatusText">买家可一键复制添加</div>
+                    </div>
+                </div>
+                <div class="auth-action" id="wechatAuthBtn">去绑定</div>
+            </div>
+        </div>
 
         <div class="menu-list">
             <div class="menu-item" onclick="document.getElementById('creditInfoModal').style.display='flex'">
@@ -559,6 +584,34 @@
             <span id="pdTotalPrice" style="font-size: 20px; font-weight: 900; color: #D97706;">€0.00</span>
         </div>
         <button id="pdChatBtn" onclick="initiateBuyChat()" style="background: #111827; color: #FFF; padding: 10px 24px; border-radius: 14px; font-size: 14px; font-weight: bold; border: none;">私信想要 (0件)</button>
+    </div>
+</div>
+
+<div class="modal-overlay" id="emailVerifyModal">
+    <div class="modal-content">
+        <div class="modal-close" onclick="document.getElementById('emailVerifyModal').style.display='none'">✕</div>
+        <div style="font-size:18px; font-weight:900; margin-bottom:10px;">🎓 邮箱认证</div>
+        <div style="font-size:12px; color:#6B7280; margin-bottom:15px; line-height: 1.5;">建议使用 .edu 或 .nl 结尾的学校/工作邮箱，认证后将点亮专属徽章。</div>
+        
+        <input type="email" id="authEmailInput" class="modal-input" placeholder="输入邮箱地址 (如: @tudelft.nl)">
+        <div class="verify-code-row">
+            <input type="number" id="authCodeInput" class="modal-input" style="margin-top:0;" placeholder="输入6位验证码">
+            <button class="btn-send-code" id="btnSendCode" onclick="sendAuthCode()">获取验证码</button>
+        </div>
+        
+        <button class="btn-huge-login" style="width:100%; margin-top:20px; padding:12px;" onclick="verifyEmailCode()">✅ 立即认证</button>
+    </div>
+</div>
+
+<div class="modal-overlay" id="wechatBindModal">
+    <div class="modal-content">
+        <div class="modal-close" onclick="document.getElementById('wechatBindModal').style.display='none'">✕</div>
+        <div style="font-size:18px; font-weight:900; margin-bottom:10px;">💬 绑定微信</div>
+        <div style="font-size:12px; color:#6B7280; margin-bottom:15px; line-height: 1.5;">绑定后，买家在与您私信时可以一键复制微信号，大幅提高沟通效率！</div>
+        
+        <input type="text" id="authWechatInput" class="modal-input" placeholder="请输入准确的微信号">
+        
+        <button class="btn-huge-login" style="width:100%; margin-top:20px; padding:12px; background:#10B981;" onclick="saveWechatBind()">✅ 安全绑定</button>
     </div>
 </div>
     
