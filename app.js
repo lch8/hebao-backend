@@ -314,25 +314,40 @@ function switchHomeTrendingTab(type, element) {
 }
 
 function renderTipsPage() {
-    if (typeof quickLinksData !== 'undefined') { let qlHtml = ''; quickLinksData.forEach(link => { qlHtml += `<a href="${link.url}" target="_blank" class="ql-card"><div class="ql-icon">${link.icon}</div><div class="ql-title">${link.title}</div><div class="ql-sub">${link.sub}</div></a>`; }); if(document.getElementById('quickLinksContainer')) document.getElementById('quickLinksContainer').innerHTML = qlHtml; }
+    if (typeof quickLinksData !== 'undefined') { 
+        let qlHtml = ''; 
+        quickLinksData.forEach(link => { 
+            qlHtml += `<a href="${link.url}" target="_blank" class="ql-card"><div class="ql-icon">${link.icon}</div><div class="ql-title">${link.title}</div><div class="ql-sub">${link.sub}</div></a>`; 
+        }); 
+        if(document.getElementById('quickLinksContainer')) document.getElementById('quickLinksContainer').innerHTML = qlHtml; 
+    }
+    
     if (typeof tipsData !== 'undefined') {
         let accHtml = '';
         tipsData.forEach(cat => {
             const highlightHtml = cat.highlight ? `<span style="background: #FEF2F2; color: #EF4444; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; margin-left: 5px;">${cat.highlight}</span>` : '';
             let storesHtml = '';
+            
             cat.stores.forEach(store => {
                 let itemsHtml = '';
                 store.tips.forEach(tip => {
                     const formattedDesc = tip.desc.replace(/\*\*(.*?)\*\*/g, '<span style="color:#D97706; font-weight:bold; background:#FFFBEB; padding:1px 5px; border-radius:6px; margin:0 2px;">$1</span>');
-                    itemsHtml += `<div style="background:#FFF; border-radius:10px; padding:12px; margin-bottom:10px; border:1px solid #E5E7EB; border-left:4px solid #10B981;"><div style="font-size:14px; font-weight:900; margin-bottom:6px;">${tip.title}</div><div style="font-size:13px; color:#4B5563; line-height:1.6;">${formattedDesc}</div></div>`;
+                    // 这里换成了你写好的 tip-item 类名
+                    itemsHtml += `<div class="tip-item"><div class="tip-title">${tip.title}</div><div class="tip-desc">${formattedDesc}</div></div>`;
                 });
-                storesHtml += `<div style="background:#F9FAFB; border-radius:14px; border:1px solid #E5E7EB; margin-bottom:12px; overflow:hidden;"><div onclick="toggleTipsContent(this)" style="padding:14px 15px; display:flex; justify-content:space-between; background:#FFF; font-weight:900; font-size:15px; cursor:pointer;"><div style="display:flex; gap:10px; align-items:center;"><span style="background:#F3F4F6; width:32px; height:32px; display:flex; justify-content:center; align-items:center; border-radius:10px;">${store.storeLogo}</span>${store.storeName}</div><span style="font-size:10px; color:#9CA3AF;">▼</span></div><div style="max-height:0; overflow:hidden; transition:max-height 0.3s ease;"><div style="padding:12px;">${itemsHtml}</div></div></div>`;
+                // 这里换成了你写好的 store-card 体系类名
+                storesHtml += `<div class="store-card"><div class="store-header" onclick="toggleTipsContent(this)"><div class="s-icon-name"><span class="s-logo">${store.storeLogo}</span>${store.storeName}</div><span class="store-arrow">▼</span></div><div class="store-content"><div class="store-inner">${itemsHtml}</div></div></div>`;
             });
-            accHtml += `<div style="margin:0 16px 15px; background:#FFF; border-radius:16px; border:1px solid #E5E7EB; overflow:hidden;"><div onclick="toggleTipsContent(this)" style="padding:18px 20px; display:flex; justify-content:space-between; font-weight:900; font-size:16px; background:#F9FAFB; cursor:pointer;"><div style="display:flex; align-items:center; gap:10px;"><span>${cat.categoryIcon}</span> <span>${cat.categoryName}</span> ${highlightHtml}</div><span style="font-size:12px; color:#9CA3AF;">▼</span></div><div style="max-height:0; overflow:hidden; transition:max-height 0.3s ease;"><div style="padding:15px;">${storesHtml}</div></div></div>`;
+            // 这里换成了你写好的 tips-accordion 体系类名
+            accHtml += `<div class="tips-accordion"><div class="tips-header" onclick="toggleTipsContent(this)"><div class="tips-title-wrap"><span class="tips-icon">${cat.categoryIcon}</span> <span>${cat.categoryName}</span> ${highlightHtml}</div><span class="tips-arrow">▼</span></div><div class="tips-content"><div class="tips-inner">${storesHtml}</div></div></div>`;
         });
+        
         if(document.getElementById('tipsAccordionContainer')) document.getElementById('tipsAccordionContainer').innerHTML = accHtml;
     }
-    if (typeof tipsMetaData !== 'undefined' && document.getElementById('tipsDisclaimerContainer')) { document.getElementById('tipsDisclaimerContainer').innerHTML = `<div style="margin:0 16px 20px; padding:15px; background:#FFFBEB; border:1px dashed #FCD34D; border-radius:12px; font-size:11px; color:#B45309; line-height:1.6;"><div style="font-weight:bold; margin-bottom:6px; color:#D97706;"><span>⏳</span> 最后更新于：${tipsMetaData.lastUpdated}</div>⚠️ <b>防杠声明：</b> ${tipsMetaData.disclaimer}</div>`; }
+    
+    if (typeof tipsMetaData !== 'undefined' && document.getElementById('tipsDisclaimerContainer')) { 
+        document.getElementById('tipsDisclaimerContainer').innerHTML = `<div class="tips-disclaimer"><div style="font-weight:bold; margin-bottom:6px; color:#D97706;"><span>⏳</span> 最后更新于：${tipsMetaData.lastUpdated}</div>⚠️ <b>防杠声明：</b> ${tipsMetaData.disclaimer}</div>`; 
+    }
 }
 
 function toggleTipsContent(element) { 
