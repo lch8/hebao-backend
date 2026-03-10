@@ -79,33 +79,36 @@
         .market-tabs { display: flex; gap: 15px; margin-bottom: 20px; }
         .m-tab { font-size: 16px; font-weight: 900; color: #9CA3AF; cursor: pointer; padding-bottom: 6px; transition: 0.2s;}
         .m-tab.active { color: #111827; border-bottom: 3px solid #10B981; }
+
+        /* ================= 发布菜单 Bottom Sheet ================= */
+        .publish-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 1001; display: none; opacity: 0; transition: opacity 0.3s; backdrop-filter: blur(4px); }
+        .publish-overlay.show { display: block; opacity: 1; }
+        .publish-sheet { position: fixed; bottom: -100%; left: 0; right: 0; max-width: 600px; margin: 0 auto; background: #FFF; border-top-left-radius: 28px; border-top-right-radius: 28px; z-index: 1002; padding: 30px 20px calc(30px + env(safe-area-inset-bottom)); transition: bottom 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.1); box-shadow: 0 -10px 40px rgba(0,0,0,0.1); }
+        .publish-sheet.show { bottom: 0; }
+        .ps-close { position: absolute; top: 15px; right: 20px; width: 30px; height: 30px; background: #F3F4F6; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 14px; color: #6B7280; cursor: pointer; font-weight: bold;}
+        .ps-title { font-size: 18px; font-weight: 900; color: #111827; margin-bottom: 25px; margin-left: 10px; }
+        .ps-options { display: flex; justify-content: space-around; }
+        .ps-opt { display: flex; flex-direction: column; align-items: center; gap: 10px; cursor: pointer; width: 30%; transition: transform 0.2s;}
+        .ps-opt:active { transform: scale(0.95); }
+        .ps-icon { width: 65px; height: 65px; border-radius: 22px; display: flex; justify-content: center; align-items: center; font-size: 32px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); margin-bottom: 4px; }
+        .ps-opt-1 .ps-icon { background: #ECFDF5; color: #10B981; } 
+        .ps-opt-2 .ps-icon { background: #FFFBEB; color: #D97706; } 
+        .ps-opt-3 .ps-icon { background: #EFF6FF; color: #3B82F6; } 
+        .ps-text { font-size: 13px; font-weight: 900; color: #374151; }
+        .ps-sub { font-size: 11px; color: #9CA3AF; }
         
-        .profile-header { background: #FFF; border-radius: 20px; padding: 20px; display: flex; align-items: center; gap: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid #E5E7EB;}
-        .p-avatar { width: 60px; height: 60px; background: #F3F4F6; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; }
-        .p-info { flex: 1; }
-        .p-name { font-size: 18px; font-weight: 900; color: #111827; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;}
-        .credit-badge { background: linear-gradient(90deg, #10B981, #059669); color: #FFF; font-size: 11px; padding: 3px 8px; border-radius: 12px; font-weight: bold; }
-        .p-sub { font-size: 12px; color: #6B7280; }
-        .auth-banner { background: #FFFBEB; border: 1px dashed #FCD34D; border-radius: 16px; padding: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-        
-        /* ================= 🚨 升级 1：我的主页 (质感升级与游客机制) ================= */
+        /* ================= 我的主页 ================= */
         #page-profile { padding-top: 0; margin-top: -20px; }
-        
-        /* 顶部黑卡质感背景 */
         .profile-hero { background: linear-gradient(135deg, #111827 0%, #374151 100%); padding: 50px 20px 40px; margin: 0 -20px 20px; border-bottom-left-radius: 30px; border-bottom-right-radius: 30px; position: relative; box-shadow: 0 10px 30px rgba(17,24,39,0.15);}
         .ph-top { display: flex; justify-content: space-between; align-items: flex-start; }
-        
         .p-user-wrap { display: flex; align-items: center; gap: 15px; }
         .p-avatar { width: 70px; height: 70px; background: #E5E7EB; border-radius: 50%; border: 3px solid rgba(255,255,255,0.2); display: flex; justify-content: center; align-items: center; font-size: 30px; overflow: hidden; position: relative; cursor: pointer;}
         .p-avatar-img { width: 100%; height: 100%; object-fit: cover; display: none; }
         .p-avatar-add { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.5); font-size: 10px; color: #FFF; text-align: center; padding: 2px 0; }
-        
         .p-info { color: #FFF; }
         .p-name { font-size: 20px; font-weight: 900; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;}
         .p-login-btn { background: #10B981; color: #FFF; border: none; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; cursor: pointer; }
         .p-sub { font-size: 12px; color: #9CA3AF; }
-
-        /* 信用分大屏 */
         .credit-dashboard { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 15px; margin-top: 25px; backdrop-filter: blur(10px); }
         .cd-title { font-size: 13px; color: #D1D5DB; font-weight: bold; display: flex; justify-content: space-between; align-items: center;}
         .cd-help { width: 20px; height: 20px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 12px; cursor: pointer; }
@@ -113,8 +116,6 @@
         .cd-score { font-size: 32px; font-weight: 900; color: #10B981; }
         .cd-status { font-size: 14px; font-weight: bold; color: #FFF; background: rgba(16, 185, 129, 0.2); padding: 4px 10px; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.5);}
         .cd-status.guest { color: #9CA3AF; background: rgba(255,255,255,0.1); border-color: transparent;}
-
-        /* 任务中心卡片 */
         .task-section-title { font-size: 16px; font-weight: 900; color: #111827; margin: 30px 0 15px; display: flex; justify-content: space-between; align-items: center;}
         .task-grid { display: grid; gap: 12px; }
         .task-card { background: #FFF; border-radius: 16px; padding: 15px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); border: 1px solid #E5E7EB;}
@@ -125,33 +126,56 @@
         .task-btn { background: #F3F4F6; color: #4B5563; font-size: 12px; font-weight: bold; padding: 6px 12px; border-radius: 12px; border: none; cursor: pointer;}
         .task-btn.primary { background: #FFFBEB; color: #D97706; border: 1px solid #FDE68A; }
 
-        /* ================= 🚨 升级 2：详情页 (沉浸式大图体验) ================= */
+        /* ================= 🚨 详情页 (沉浸式大图 + 最全卡片 + 聊天框) ================= */
         #page-details { background: #F7F8FA; min-height: 100vh; padding-bottom: 100px; padding-top: 0; margin-top: -20px;}
         
-        /* 顶部悬浮返回按钮 */
         .detail-back-btn { position: fixed; top: 20px; left: 20px; width: 36px; height: 36px; background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 20px; font-weight: bold; color: #111827; z-index: 50; box-shadow: 0 4px 10px rgba(0,0,0,0.1); cursor: pointer;}
         
-        /* 沉浸式头图 */
         .detail-hero-img-wrap { width: 100%; height: 350px; background: #E5E7EB; position: relative; margin: 0 -20px; }
         .detail-img { width: 100%; height: 100%; object-fit: cover; display: block; }
         
-        /* 底部上浮的内容卡片 */
         .detail-content-wrap { background: #F7F8FA; border-top-left-radius: 28px; border-top-right-radius: 28px; padding: 25px 20px; position: relative; margin-top: -30px; z-index: 10; margin-left: -20px; margin-right: -20px; min-height: 500px;}
         
-        .d-name-box { margin-bottom: 25px; }
+        .d-name-box { margin-bottom: 25px; text-align: center; }
         .d-item-name { display: block; font-size: 26px; font-weight: 900; color: #111827; line-height: 1.3; }
-        .d-item-dutch { display: block; font-size: 14px; color: #6B7280; margin-top: 6px; }
+        .d-item-dutch { display: block; font-size: 14px; color: #9CA3AF; margin-top: 6px; font-style: italic; }
 
+        /* 四个核心卡片还原 */
         .info-block { background: #FFF; border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid #F3F4F6;}
         .block-title { font-size: 16px; font-weight: 900; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; color: #111827;}
         .block-text { font-size: 15px; color: #4B5563; line-height: 1.7; margin: 0; }
         
-        /* 其他公共模态框样式 */
+        /* 平替标签 */
+        .alt-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px;}
+        .alt-tag { background: #F3F4F6; border: 1px solid #E5E7EB; font-size: 13px; padding: 8px 14px; border-radius: 8px; color: #4B5563; font-weight: 500;}
+
+        /* 食谱与网友点评 */
+        .recipe-card { background: #FFF; border-radius: 16px; padding: 0; margin-bottom: 15px; }
+        .recipe-title { font-size: 14px; font-weight: 900; color: #111827; margin-bottom: 10px; display: flex; justify-content: space-between;}
+        .recipe-steps { font-size: 14px; color: #4B5563; line-height: 1.6; margin-bottom: 5px; white-space: pre-wrap; font-weight: 500;}
+        
+        /* 底部问答框 (原版还原) */
+        .sticky-chat-bar { position: fixed; bottom: 0; left: 0; right: 0; max-width: 600px; margin: 0 auto; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); padding: 12px 20px; box-shadow: 0 -4px 20px rgba(0,0,0,0.05); display: none; align-items: center; gap: 10px; z-index: 100; box-sizing: border-box; border-top-left-radius: 24px; border-top-right-radius: 24px; padding-bottom: calc(12px + env(safe-area-inset-bottom));}
+        .chat-input { flex: 1; height: 42px; background: #F3F4F6; border: none; border-radius: 20px; padding: 0 15px; font-size: 14px; outline: none; }
+        .chat-send-btn { background: #10B981; color: #FFF; border: none; width: 42px; height: 42px; border-radius: 50%; font-size: 16px; display: flex; justify-content: center; align-items: center; cursor: pointer; }
+        #chatHistory { margin-bottom: 20px; display: flex; flex-direction: column; gap: 12px; }
+        .chat-bubble { max-width: 85%; padding: 12px 16px; border-radius: 16px; font-size: 14px; line-height: 1.5; word-wrap: break-word; margin-bottom: 12px;}
+        .bubble-user { background: #10B981; color: #FFF; border-bottom-right-radius: 4px; align-self: flex-end; margin-left: auto;}
+        .bubble-ai { background: #FFF; color: #1F2937; border: 1px solid #E5E7EB; border-bottom-left-radius: 4px; align-self: flex-start; box-shadow: 0 2px 10px rgba(0,0,0,0.02);}
+
+        /* 公共模态框 */
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; display: none; justify-content: center; align-items: center; animation: fadeIn 0.2s ease; }
         .modal-content { background: #FFF; width: 90%; max-width: 400px; border-radius: 20px; padding: 24px; box-sizing: border-box; }
         .modal-close { position: absolute; top: 15px; right: 15px; width: 30px; height: 30px; background: #F3F4F6; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 14px; cursor: pointer; font-weight: bold; }
         
-        /* 免责与足迹 */
+        /* 省钱页顶端横卡 */
+        .quick-links-wrap { display: flex; overflow-x: auto; gap: 12px; padding: 0 5px 20px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
+        .quick-links-wrap::-webkit-scrollbar { display: none; }
+        .ql-card { flex: 0 0 auto; width: 140px; background: #FFF; border-radius: 16px; padding: 15px 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); border: 1px solid #E5E7EB; text-decoration: none !important; display: flex; flex-direction: column; align-items: center; justify-content: center; scroll-snap-align: start; transition: transform 0.2s; }
+        .ql-card:active { transform: scale(0.95); }
+        .ql-icon { font-size: 32px; margin-bottom: 8px; }
+        .ql-title { font-size: 14px; font-weight: 900; color: #111827; }
+        .ql-sub { font-size: 11px; color: #6B7280; margin-top: 4px; }
         #page-tips .tips-disclaimer, #tipsDisclaimerContainer .tips-disclaimer { margin: 16px 0; padding: 15px; background: #FFFBEB; border: 1px dashed #FCD34D; border-radius: 12px; font-size: 11px; color: #B45309; line-height: 1.6; }
         #footprintList div:active { background: #FFF !important; transform: scale(0.98); }
     </style>
@@ -165,6 +189,28 @@
     <div class="tab-item-publish" onclick="openPublishSheet()"><div class="btn-publish">+</div><span class="tab-text" style="position: absolute; bottom: 8px; color:#9CA3AF;">发布</span></div>
     <div class="tab-item" onclick="switchTab('tips', this)"><span class="tab-icon">💰</span><span class="tab-text">省钱</span></div>
     <div class="tab-item" onclick="switchTab('profile', this)"><span class="tab-icon">👤</span><span class="tab-text">我的</span></div>
+</div>
+
+<div class="sticky-chat-bar" id="stickyChatBar">
+    <input type="text" id="askInput" class="chat-input" placeholder="问管家：这玩意怎么吃？" onkeypress="if(event.key==='Enter') sendQuestion()">
+    <button class="chat-send-btn" id="sendBtn" onclick="sendQuestion()">↑</button>
+</div>
+
+<div class="publish-overlay" id="publishOverlay" onclick="closePublishSheet()"></div>
+<div class="publish-sheet" id="publishSheet">
+    <div class="ps-close" onclick="closePublishSheet()">✕</div>
+    <div class="ps-title">你想发点什么？</div>
+    <div class="ps-options">
+        <div class="ps-opt ps-opt-1" onclick="alert('📦 正在接入闲置发布系统 (AI将帮你写文案)...')">
+            <div class="ps-icon">📦</div><div class="ps-text">发闲置</div><div class="ps-sub">AI 帮写文案</div>
+        </div>
+        <div class="ps-opt ps-opt-2" onclick="alert('🤝 正在接入互助悬赏大厅...')">
+            <div class="ps-icon">🤝</div><div class="ps-text">发互助</div><div class="ps-sub">接送机/搬家</div>
+        </div>
+        <div class="ps-opt ps-opt-3" onclick="alert('🏕️ 正在接入周末搭子社区...')">
+            <div class="ps-icon">🏕️</div><div class="ps-text">找搭子</div><div class="ps-sub">周末游/凑单</div>
+        </div>
+    </div>
 </div>
 
 <div class="container">
@@ -183,6 +229,21 @@
             <div class="action-icon">📸</div><div class="action-title">扫商品条码排雷</div><div class="action-sub">看全网评价 · 找平替 · 避开刺客</div>
         </div>
 
+        <div class="preview-container" id="previewContainer" style="display:none;">
+            <img id="previewImg" class="preview-img" src="" alt="">
+            <div class="scan-overlay" id="scanOverlay" style="display:none;">
+                <div class="scan-line"></div>
+                <div class="scan-text" id="scanText">管家大脑飞速运转中...</div>
+            </div>
+        </div>
+
+        <div id="miniResultCard">
+            <div class="name-box"><span class="item-name" id="miniChineseName"></span></div>
+            <div class="mini-insight" id="miniInsight" style="margin: 15px 0; padding: 12px; background: #F3F4F6; border-radius: 12px; text-align:left;"></div>
+            <button class="btn-view-detail" id="btnViewDetail" onclick="openDetailsFromScan()">👉 查看完整报告</button>
+            <button class="btn-secondary" onclick="resetApp()">🔴 测下一个</button>
+        </div>
+
         <div class="home-section-title">🔥 留学生公认好物 (Top 20)</div>
         <div class="trending-tabs">
             <div class="t-tab active" onclick="switchHomeTrendingTab('likes', this)">🏆 种草红榜</div>
@@ -199,12 +260,13 @@
 
     <div id="page-tips" class="page-section">
         <div class="header"><h1 class="title">省钱秘籍 💰</h1><div class="subtitle">留学生必看的全场景薅羊毛终极指南</div></div>
+        <div class="quick-links-wrap" id="quickLinksContainer"></div>
         <div id="tipsAccordionContainer"></div>
-        <div style="text-align: center; color: #9CA3AF; margin-top: 60px;">内容由数据引擎驱动</div>
+        <div id="tipsDisclaimerContainer"></div>
+        <button class="btn-report-tip" onclick="alert('爆料功能开发中！')" style="background: #111827; color: #FFF; border: none; padding: 16px; border-radius: 20px; font-size: 15px; font-weight: 900; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 8px 20px rgba(17,24,39,0.2); cursor: pointer; margin-bottom: 30px;">📢 我要爆料新羊毛 / 疯狂纠错</button>
     </div>
 
     <div id="page-profile" class="page-section">
-        
         <div class="profile-hero">
             <div class="ph-top">
                 <div class="p-user-wrap">
@@ -249,7 +311,6 @@
                     </div>
                     <button class="task-btn primary" onclick="alert('请先登录！')">去认证</button>
                 </div>
-                
                 <div class="task-card">
                     <div class="task-icon">🎭</div>
                     <div class="task-info">
@@ -258,7 +319,6 @@
                     </div>
                     <button class="task-btn" onclick="alert('请先登录！')">去完善</button>
                 </div>
-
                 <div class="task-card">
                     <div class="task-icon">💼</div>
                     <div class="task-info">
@@ -283,20 +343,33 @@
         </div>
 
         <div class="detail-content-wrap">
+            
             <div class="d-name-box">
                 <span class="d-item-name" id="detailChineseName"></span>
                 <span class="d-item-dutch" id="detailDutchName"></span>
             </div>
 
-            <div class="info-block">
+            <div class="info-block" id="detailInsightBox">
                 <div class="block-title">💡 管家锐评</div>
                 <p class="block-text" id="detailInsight"></p>
             </div>
             
-            <div class="info-block" id="detailRecipeBox" style="display:none;">
-                <div class="block-title">🧑‍🍳 网友评价 / 神仙吃法</div>
-                <div id="recipeCardList" style="font-size:14px; color:#4B5563; white-space:pre-wrap; line-height: 1.7;"></div>
+            <div class="info-block" id="detailWarningBox" style="display:none; border: 1px dashed #FCA5A5; background: #FEF2F2;">
+                <div class="block-title" style="color: #DC2626;">⚠️ 致命避雷</div>
+                <p class="block-text" id="detailWarning" style="color: #B91C1C;"></p>
             </div>
+
+            <div class="info-block" id="detailAltBox" style="display:none;">
+                <div class="block-title">🛍️ 购物指南 (平替/升级)</div>
+                <div class="alt-tags" id="detailAlternatives"></div>
+            </div>
+            
+            <div class="info-block" id="detailRecipeBox" style="display:none; background: transparent; box-shadow: none; border: none; padding: 0;">
+                <div class="block-title" style="margin-left: 5px; margin-bottom: 15px;">🧑‍🍳 网友评价 / 神仙吃法</div>
+                <div id="recipeCardList"></div>
+            </div>
+
+            <div id="chatHistory"></div>
             
             <div style="height: 60px;"></div>
         </div>
@@ -334,6 +407,7 @@
     let userUUID = localStorage.getItem('hebao_uuid');
     if (!userUUID) { userUUID = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) { var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8); return v.toString(16); }); localStorage.setItem('hebao_uuid', userUUID); }
 
+    let currentProductData = null; 
     let currentDetailData = null; 
     let lastTab = 'scan'; 
     let globalTrendingLikes = [];
@@ -349,16 +423,22 @@
         }
         document.getElementById('page-' + pageId).classList.add('active');
         
+        // 🚨 控制详情页底部元素的显示与隐藏
         if (pageId === 'details') {
             document.querySelector('.tab-bar').style.display = 'none';
+            document.getElementById('stickyChatBar').style.display = 'flex'; // 显示底部问答框
         } else {
             document.querySelector('.tab-bar').style.display = 'flex';
+            document.getElementById('stickyChatBar').style.display = 'none'; // 隐藏底部问答框
         }
         if (pageId === 'profile') renderFootprints();
     }
+    
     function goBack() { switchTab(lastTab, document.querySelector(`.tab-item[onclick*="${lastTab}"]`)); }
 
-    // ================= 详情页渲染逻辑 =================
+    // ================= 详情页渲染逻辑 (原版最全卡片缝合) =================
+    function openDetailsFromScan() { currentDetailData = {...currentProductData}; setupDetailPage(); }
+    
     function openDetailsFromHomeTrending(type, index) {
         const list = type === 'like' ? globalTrendingLikes : globalTrendingDislikes;
         currentDetailData = list[index];
@@ -375,41 +455,159 @@
         const d = currentDetailData;
         if (!d) return;
         
-        // 重置图片，触发 onerror 回退机制
+        // 图片
         const imgEl = document.getElementById('detailImg');
         imgEl.src = d.image_url || d.img_src || ''; 
         
+        // 标题与名字
         document.getElementById('detailChineseName').innerText = d.chinese_name || '未命名商品'; 
         document.getElementById('detailDutchName').innerText = d.dutch_name || ''; 
-        document.getElementById('detailInsight').innerText = d.insight || '暂无管家评价';
         
-        const recipeBox = document.getElementById('detailRecipeBox');
-        const recipeList = document.getElementById('recipeCardList');
+        // 核心锐评
+        document.getElementById('detailInsightBox').style.display = d.insight ? 'block' : 'none'; 
+        document.getElementById('detailInsight').innerText = d.insight || '';
         
+        // 致命避雷
+        document.getElementById('detailWarningBox').style.display = d.warning ? 'block' : 'none'; 
+        document.getElementById('detailWarning').innerText = d.warning || '';
+        
+        // 购物指南/平替
+        document.getElementById('detailAltBox').style.display = 'none';
+        if(d.alternatives) { 
+            document.getElementById('detailAltBox').style.display='block'; 
+            document.getElementById('detailAlternatives').innerHTML = d.alternatives.split('|').map(p=>`<div class="alt-tag">${p}</div>`).join(''); 
+        }
+
+        // 网友评价 / 神仙吃法
+        document.getElementById('recipeCardList').innerHTML = '';
         if (d.pairing) {
-            recipeBox.style.display = 'block';
-            recipeList.innerHTML = d.pairing;
+            document.getElementById('detailRecipeBox').style.display = 'block';
+            renderRecipes(d.pairing);
         } else {
-            recipeBox.style.display = 'none';
+            document.getElementById('detailRecipeBox').style.display = 'none';
         }
         
+        // 清空之前的聊天记录
+        document.getElementById('chatHistory').innerHTML = '';
+        document.getElementById('askInput').value = '';
+
         switchTab('details', null);
     }
 
-    // ================= 首页榜单渲染逻辑 =================
+    // 渲染网友评论卡片 (之前版本的精美样式)
+    function renderRecipes(pairing) {
+        const list = document.getElementById('recipeCardList'); 
+        list.innerHTML = '';
+        
+        pairing.split('\n\n').filter(l=>l.trim()).forEach(line => {
+            const isLike = line.includes('👍');
+            const isRealUser = line.includes('🧑‍🍳 网友点评');
+            
+            const cleanText = line.replace(/🧑‍🍳 网友点评 \[.*?\]：|🤖 AI预测口味 \[.*?\]：/, '').trim();
+            
+            const cardStyle = isRealUser 
+                ? `border-left: 4px solid ${isLike ? '#10B981' : '#EF4444'}; background: #FFF; box-shadow: 0 2px 8px rgba(0,0,0,0.04);` 
+                : `border: 1px dashed #D1D5DB; background: #F9FAFB; opacity: 0.85;`;
+                
+            const titleHtml = isRealUser 
+                ? `<span style="color: ${isLike ? '#047857' : '#B91C1C'}">🔥 真实留学生评价</span>`
+                : `<span>🤖 AI 预测口味 (仅供参考)</span>`;
+
+            list.innerHTML += `
+                <div class="recipe-card" style="${cardStyle} padding: 15px;">
+                    <div class="recipe-title">${titleHtml}</div>
+                    <div class="recipe-steps" style="${isLike ? '' : 'color:#DC2626'}">${cleanText}</div>
+                </div>`;
+        });
+    }
+
+    // ================= 底部 AI 对话框逻辑 =================
+    async function sendQuestion() {
+        const input = document.getElementById('askInput'); const question = input.value.trim(); 
+        if(!question) return;
+
+        const chatBox = document.getElementById('chatHistory');
+        const dName = currentDetailData.dutch_name || currentDetailData.chinese_name || "未知商品";
+        const dInsight = currentDetailData.insight || "";
+        
+        chatBox.innerHTML += `<div class="chat-bubble bubble-user">${question}</div>`;
+        input.value = ''; 
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        
+        const loadingId = 'loading-' + Date.now();
+        chatBox.innerHTML += `<div class="chat-bubble bubble-ai" id="${loadingId}">管家正在查阅资料...</div>`;
+
+        try {
+            const response = await fetch('/api/ask', { 
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ productName: dName, insight: dInsight, question: question, userId: userUUID }) 
+            });
+            const data = await response.json(); document.getElementById(loadingId).remove();
+            if (response.ok) { chatBox.innerHTML += `<div class="chat-bubble bubble-ai">🤖 ${data.reply}</div>`; } 
+            else { chatBox.innerHTML += `<div class="chat-bubble bubble-ai" style="color:red;">哎呀卡住了：${data.error}</div>`; }
+        } catch (err) { document.getElementById(loadingId).remove(); chatBox.innerHTML += `<div class="chat-bubble bubble-ai" style="color:red;">网络断了...</div>`; }
+        
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+
+    // ================= 发布悬浮菜单逻辑 =================
+    function openPublishSheet() {
+        document.getElementById('publishOverlay').classList.add('show');
+        setTimeout(() => { document.getElementById('publishSheet').classList.add('show'); }, 10);
+    }
+    function closePublishSheet() {
+        document.getElementById('publishSheet').classList.remove('show');
+        setTimeout(() => { document.getElementById('publishOverlay').classList.remove('show'); }, 300);
+    }
+
+    // ================= 扫码与检索逻辑 =================
+    function startBarcodeScan() {
+        document.getElementById('scannerModal').style.display = 'flex';
+        let html5QrcodeScanner = new Html5Qrcode("reader");
+        const config = { fps: 10, qrbox: { width: 250, height: 150 }, aspectRatio: 1.0, formatsToSupport: [ Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8, Html5QrcodeSupportedFormats.UPC_A ] };
+        html5QrcodeScanner.start({ facingMode: "environment" }, config, (decodedText) => {
+            if (navigator.vibrate) navigator.vibrate(100);
+            document.getElementById('scannerModal').style.display = 'none';
+            html5QrcodeScanner.stop();
+            document.getElementById('mainSearchInput').value = decodedText;
+            executeSearch();
+        }).catch(err => { alert("调用摄像头失败！"); document.getElementById('scannerModal').style.display = 'none'; });
+    }
+    function closeScanner() { document.getElementById('scannerModal').style.display = 'none'; }
+
+    function executeSearch() {
+        const query = document.getElementById('mainSearchInput').value.trim();
+        if (!query) return;
+        
+        document.getElementById('homeActionBox').style.display='none';
+        document.getElementById('previewContainer').style.display='block';
+        document.getElementById('scanOverlay').style.display='flex';
+        document.getElementById('scanText').innerText = "📡 正在全网检索...";
+        document.getElementById('miniResultCard').style.display='none';
+
+        fetch('/api/scan-barcode', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ barcode: query, userId: userUUID }) })
+        .then(res => res.json())
+        .then(data => {
+            currentProductData = data;
+            document.getElementById('scanOverlay').style.display='none';
+            document.getElementById('previewContainer').style.display='none';
+            document.getElementById('miniResultCard').style.display='block';
+            document.getElementById('miniChineseName').innerText=data.chinese_name||'未知商品';
+            document.getElementById('miniInsight').innerText=data.insight||'暂无评价';
+            saveToLocalFootprint(data, data.image_url);
+        }).catch(err => { alert("未找到商品信息！"); resetApp(); });
+    }
+    function resetApp() { document.getElementById('previewContainer').style.display='none'; document.getElementById('scanOverlay').style.display='none'; document.getElementById('miniResultCard').style.display='none'; document.getElementById('homeActionBox').style.display='flex'; }
+
+    // ================= 首页 Top 20 榜单逻辑 =================
     async function loadTrendingToHome() {
         try {
-            const res = await fetch('/api/trending'); 
-            const data = await res.json();
+            const res = await fetch('/api/trending'); const data = await res.json();
             if(data.success) {
-                globalTrendingLikes = data.topLikes || [];
-                globalTrendingDislikes = data.topDislikes || [];
-                renderHomeTrending(globalTrendingLikes, 'homeTrendingListLikes', 'like');
-                renderHomeTrending(globalTrendingDislikes, 'homeTrendingListDislikes', 'dislike');
+                globalTrendingLikes = data.topLikes || []; globalTrendingDislikes = data.topDislikes || [];
+                renderHomeTrending(globalTrendingLikes, 'homeTrendingListLikes', 'like'); renderHomeTrending(globalTrendingDislikes, 'homeTrendingListDislikes', 'dislike');
             }
-        } catch(e) {
-            document.getElementById('homeTrendingListLikes').innerHTML = '<div style="text-align:center; color:#9CA3AF; font-size: 12px; margin-top:20px;">榜单加载休息中...</div>';
-        }
+        } catch(e) { document.getElementById('homeTrendingListLikes').innerHTML = '<div style="text-align:center; color:#9CA3AF; font-size: 12px; margin-top:20px;">榜单加载休息中...</div>'; }
     }
 
     function renderHomeTrending(list, containerId, type) {
@@ -419,47 +617,27 @@
         let html = '';
         list.slice(0, 20).forEach((item, index) => {
             let badgeClass = 'rank-other';
-            if (index === 0) badgeClass = 'rank-1';
-            else if (index === 1) badgeClass = 'rank-2';
-            else if (index === 2) badgeClass = 'rank-3';
+            if (index === 0) badgeClass = 'rank-1'; else if (index === 1) badgeClass = 'rank-2'; else if (index === 2) badgeClass = 'rank-3';
             if (type === 'dislike') badgeClass = 'rank-bad';
             
-            const score = type === 'like' ? item.likes : item.dislikes;
-            const icon = type === 'like' ? '👍' : '💣';
-            const scoreColor = type === 'like' ? '#10B981' : '#EF4444';
-            
-            // 列表缩略图防裂图机制
+            const score = type === 'like' ? item.likes : item.dislikes; const icon = type === 'like' ? '👍' : '💣'; const scoreColor = type === 'like' ? '#10B981' : '#EF4444';
             const fallbackSvg = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23F3F4F6'/><text x='50%' y='50%' font-family='sans-serif' font-size='10' fill='%239CA3AF' text-anchor='middle' dominant-baseline='middle'>无图</text></svg>`;
             const safeImg = item.image_url || fallbackSvg;
 
-            html += `
-            <div class="trending-card" onclick="openDetailsFromHomeTrending('${type}', ${index})">
-                <div class="rank-badge ${badgeClass}">TOP ${index + 1}</div>
-                <img src="${safeImg}" onerror="this.onerror=null; this.src='${fallbackSvg}'" style="width: 50px; height: 50px; border-radius: 10px; object-fit: cover; background: #F3F4F6; border: 1px solid #E5E7EB;">
-                <div class="t-info">
-                    <div class="t-name">${item.chinese_name || '未命名商品'}</div>
-                    <div style="font-size: 11px; color: #9CA3AF; margin-top:2px;">${item.dutch_name || ''}</div>
-                </div>
-                <div class="t-score" style="color: ${scoreColor}">${icon} ${score}</div>
-            </div>`;
+            html += `<div class="trending-card" onclick="openDetailsFromHomeTrending('${type}', ${index})"><div class="rank-badge ${badgeClass}">TOP ${index + 1}</div><img src="${safeImg}" onerror="this.onerror=null; this.src='${fallbackSvg}'" style="width: 50px; height: 50px; border-radius: 10px; object-fit: cover; background: #F3F4F6; border: 1px solid #E5E7EB;"><div class="t-info"><div class="t-name">${item.chinese_name || '未命名商品'}</div><div style="font-size: 11px; color: #9CA3AF; margin-top:2px;">${item.dutch_name || ''}</div></div><div class="t-score" style="color: ${scoreColor}">${icon} ${score}</div></div>`;
         });
         container.innerHTML = html;
     }
 
     function switchHomeTrendingTab(type, element) {
-        document.querySelectorAll('#page-scan .t-tab').forEach(el => el.classList.remove('active'));
-        element.classList.add('active');
-        document.getElementById('homeTrendingListLikes').style.display = type === 'likes' ? 'block' : 'none';
-        document.getElementById('homeTrendingListDislikes').style.display = type === 'dislikes' ? 'block' : 'none';
+        document.querySelectorAll('#page-scan .t-tab').forEach(el => el.classList.remove('active')); element.classList.add('active');
+        document.getElementById('homeTrendingListLikes').style.display = type === 'likes' ? 'block' : 'none'; document.getElementById('homeTrendingListDislikes').style.display = type === 'dislikes' ? 'block' : 'none';
     }
 
     // ================= 省钱秘籍渲染逻辑 =================
     function renderTipsPage() {
         if (typeof quickLinksData !== 'undefined') {
-            let qlHtml = '';
-            quickLinksData.forEach(link => { 
-                qlHtml += `<a href="${link.url}" target="_blank" class="ql-card"><div class="ql-icon">${link.icon}</div><div class="ql-title">${link.title}</div><div class="ql-sub">${link.sub}</div></a>`; 
-            });
+            let qlHtml = ''; quickLinksData.forEach(link => { qlHtml += `<a href="${link.url}" target="_blank" class="ql-card"><div class="ql-icon">${link.icon}</div><div class="ql-title">${link.title}</div><div class="ql-sub">${link.sub}</div></a>`; });
             if(document.getElementById('quickLinksContainer')) document.getElementById('quickLinksContainer').innerHTML = qlHtml;
         }
 
@@ -485,68 +663,38 @@
             document.getElementById('tipsDisclaimerContainer').innerHTML = `<div style="margin:0 16px 20px; padding:15px; background:#FFFBEB; border:1px dashed #FCD34D; border-radius:12px; font-size:11px; color:#B45309; line-height:1.6;"><div style="font-weight:bold; margin-bottom:6px; color:#D97706;"><span>⏳</span> 最后更新于：${tipsMetaData.lastUpdated}</div>⚠️ <b>防杠声明：</b> ${tipsMetaData.disclaimer}</div>`;
         }
     }
-
     function toggleTipsContent(element) {
         const content = element.nextElementSibling;
-        if (!element.classList.contains('active')) {
-            element.classList.add('active');
-            content.style.maxHeight = content.scrollHeight + "px";
-            setTimeout(() => { if(element.classList.contains('active')) content.style.maxHeight = 'none'; }, 300);
-        } else {
-            content.style.maxHeight = content.scrollHeight + "px"; 
-            requestAnimationFrame(() => { element.classList.remove('active'); content.style.maxHeight = null; });
-        }
+        if (!element.classList.contains('active')) { element.classList.add('active'); content.style.maxHeight = content.scrollHeight + "px"; setTimeout(() => { if(element.classList.contains('active')) content.style.maxHeight = 'none'; }, 300); } 
+        else { content.style.maxHeight = content.scrollHeight + "px"; requestAnimationFrame(() => { element.classList.remove('active'); content.style.maxHeight = null; }); }
     }
 
     // ================= 足迹与个人资料逻辑 =================
+    function saveToLocalFootprint(data, img) { let h = JSON.parse(localStorage.getItem('hebao_history')||'[]'); if(!h.find(i=>i.dutch_name===data.dutch_name)){data.img_src=img; h.unshift(data); localStorage.setItem('hebao_history',JSON.stringify(h));} }
+
     function renderFootprints() { 
-        const listDiv = document.getElementById('footprintList'); 
-        let h = JSON.parse(localStorage.getItem('hebao_history') || '[]'); 
+        const listDiv = document.getElementById('footprintList'); let h = JSON.parse(localStorage.getItem('hebao_history') || '[]'); 
         if (h.length === 0) { listDiv.innerHTML = '<div style="text-align:center; color:#9CA3AF; margin-top:20px; font-size:13px; border: 1px dashed #E5E7EB; padding: 30px; border-radius: 16px;">暂无足迹，快去首页扫码吧</div>'; return; } 
-        let html = ''; 
-        const fallbackSvg = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23F3F4F6'/><text x='50%' y='50%' font-family='sans-serif' font-size='10' fill='%239CA3AF' text-anchor='middle' dominant-baseline='middle'>无图</text></svg>`;
+        let html = ''; const fallbackSvg = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23F3F4F6'/><text x='50%' y='50%' font-family='sans-serif' font-size='10' fill='%239CA3AF' text-anchor='middle' dominant-baseline='middle'>无图</text></svg>`;
         h.forEach((item, index) => { 
             const safeImg = item.img_src || fallbackSvg;
-            html += ` 
-            <div style="background:#FFF; border-radius:16px; margin-bottom:12px; border:1px solid #E5E7EB; overflow:hidden; display:flex; align-items:center; padding:12px; box-shadow:0 2px 8px rgba(0,0,0,0.02); cursor:pointer;" onclick="openDetailsFromHistory(${index})"> 
-                <img src="${safeImg}" onerror="this.onerror=null; this.src='${fallbackSvg}'" style="width:50px; height:50px; object-fit:cover; border-radius:10px; flex-shrink:0; background:#F3F4F6;"> 
-                <div style="flex:1; margin-left:12px;"> 
-                    <div style="font-weight:900; font-size:15px; color:#111827; margin-bottom:2px;">${item.chinese_name || '未命名'}</div>
-                    <div style="font-size:12px; color:#9CA3AF; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden;">${item.insight || ''}</div>
-                </div> 
-            </div>`; 
+            html += `<div style="background:#FFF; border-radius:16px; margin-bottom:12px; border:1px solid #E5E7EB; overflow:hidden; display:flex; align-items:center; padding:12px; box-shadow:0 2px 8px rgba(0,0,0,0.02); cursor:pointer;" onclick="openDetailsFromHistory(${index})"><img src="${safeImg}" onerror="this.onerror=null; this.src='${fallbackSvg}'" style="width:50px; height:50px; object-fit:cover; border-radius:10px; flex-shrink:0; background:#F3F4F6;"><div style="flex:1; margin-left:12px;"><div style="font-weight:900; font-size:15px; color:#111827; margin-bottom:2px;">${item.chinese_name || '未命名'}</div><div style="font-size:12px; color:#9CA3AF; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden;">${item.insight || ''}</div></div></div>`; 
         }); 
-        listDiv.innerHTML = html; 
-        loadAvatar();
+        listDiv.innerHTML = html; loadAvatar();
     }
 
-    // 头像预览与持久化
     function previewAvatar(event) {
-        const file = event.target.files[0];
-        if(!file) return;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            localStorage.setItem('hebao_avatar', e.target.result);
-            loadAvatar();
-        };
-        reader.readAsDataURL(file);
+        const file = event.target.files[0]; if(!file) return; const reader = new FileReader();
+        reader.onload = function(e) { localStorage.setItem('hebao_avatar', e.target.result); loadAvatar(); }; reader.readAsDataURL(file);
     }
     
     function loadAvatar() {
         const savedAvatar = localStorage.getItem('hebao_avatar');
-        if(savedAvatar) {
-            document.getElementById('userAvatarImg').src = savedAvatar;
-            document.getElementById('userAvatarImg').style.display = 'block';
-            document.querySelector('.p-avatar').style.background = '#FFF';
-            document.querySelector('.p-avatar').childNodes[0].textContent = ''; // 移除 emoji
-        }
+        if(savedAvatar) { document.getElementById('userAvatarImg').src = savedAvatar; document.getElementById('userAvatarImg').style.display = 'block'; document.querySelector('.p-avatar').style.background = '#FFF'; document.querySelector('.p-avatar').childNodes[0].textContent = ''; }
     }
 
     // 初始化执行
-    window.addEventListener('DOMContentLoaded', () => {
-        loadTrendingToHome();
-        loadAvatar();
-    });
+    window.addEventListener('DOMContentLoaded', () => { loadTrendingToHome(); loadAvatar(); });
 </script>
 </body>
 </html>
