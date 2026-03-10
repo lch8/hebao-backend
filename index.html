@@ -37,15 +37,6 @@
         .btn-publish { width: 52px; height: 52px; background: linear-gradient(135deg, #10B981 0%, #059669 100%); border-radius: 20px; display: flex; justify-content: center; align-items: center; color: white; font-size: 28px; font-weight: bold; position: absolute; top: -18px; box-shadow: 0 8px 20px rgba(16, 185, 129, 0.35); transition: transform 0.2s; border: 4px solid #F3F4F6;}
         .tab-item-publish:active .btn-publish { transform: scale(0.92); }
 
-        /* ================= 修复：省钱页顶部横向快捷入口 CSS ================= */
-        .quick-links-wrap { display: flex; overflow-x: auto; gap: 12px; padding: 0 5px 20px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
-        .quick-links-wrap::-webkit-scrollbar { display: none; }
-        .ql-card { flex: 0 0 auto; width: 140px; background: #FFF; border-radius: 16px; padding: 15px 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); border: 1px solid #E5E7EB; text-decoration: none !important; display: flex; flex-direction: column; align-items: center; justify-content: center; scroll-snap-align: start; transition: transform 0.2s; }
-        .ql-card:active { transform: scale(0.95); }
-        .ql-icon { font-size: 32px; margin-bottom: 8px; }
-        .ql-title { font-size: 14px; font-weight: 900; color: #111827; }
-        .ql-sub { font-size: 11px; color: #6B7280; margin-top: 4px; }
-
         /* ================= 发布菜单 Bottom Sheet ================= */
         .publish-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 1001; display: none; opacity: 0; transition: opacity 0.3s; backdrop-filter: blur(4px); }
         .publish-overlay.show { display: block; opacity: 1; }
@@ -57,11 +48,9 @@
         .ps-opt { display: flex; flex-direction: column; align-items: center; gap: 10px; cursor: pointer; width: 30%; transition: transform 0.2s;}
         .ps-opt:active { transform: scale(0.95); }
         .ps-icon { width: 65px; height: 65px; border-radius: 22px; display: flex; justify-content: center; align-items: center; font-size: 32px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); margin-bottom: 4px; }
-        
-        .ps-opt-1 .ps-icon { background: #ECFDF5; color: #10B981; } /* 闲置 */
-        .ps-opt-2 .ps-icon { background: #FFFBEB; color: #D97706; } /* 互助 */
-        .ps-opt-3 .ps-icon { background: #EFF6FF; color: #3B82F6; } /* 搭子 */
-        
+        .ps-opt-1 .ps-icon { background: #ECFDF5; color: #10B981; } 
+        .ps-opt-2 .ps-icon { background: #FFFBEB; color: #D97706; } 
+        .ps-opt-3 .ps-icon { background: #EFF6FF; color: #3B82F6; } 
         .ps-text { font-size: 13px; font-weight: 900; color: #374151; }
         .ps-sub { font-size: 11px; color: #9CA3AF; }
 
@@ -71,6 +60,14 @@
         .action-icon { font-size: 42px; margin-bottom: 10px; display: inline-block; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));}
         .action-title { font-size: 16px; font-weight: 900; color: #065F46; margin-bottom: 4px;}
         .action-sub { font-size: 12px; color: #047857; font-weight: bold;}
+
+        /* ================= 🚨 修复：扫码动画与容器约束 ================= */
+        .preview-container { position: relative; width: 100%; height: 200px; border-radius: 20px; overflow: hidden; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05); background: #000; }
+        .preview-img { width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0.6;}
+        .scan-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.4); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
+        .scan-line { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: #10B981; box-shadow: 0 0 20px #10B981; animation: scanAnim 2s linear infinite; }
+        @keyframes scanAnim { 0% { top: 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+        .scan-text { color: #FFF; font-size: 14px; font-weight: bold; margin-top: 15px; letter-spacing: 1px; text-align: center; padding: 0 20px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);}
 
         /* ================= 首页榜单专属样式 ================= */
         .home-section-title { font-size: 18px; font-weight: 900; margin: 30px 0 15px; display: flex; align-items: center; gap: 8px;}
@@ -97,9 +94,6 @@
         .item-name { display: block; font-size: 22px; font-weight: 900; }
         .btn-view-detail { background: #111827; color: #FFF; border: none; padding: 14px; width: 100%; border-radius: 25px; font-size: 15px; font-weight: bold; margin-top: 10px; cursor: pointer; }
         .btn-secondary { background: transparent; color: #EF4444; border: 2px solid #EF4444; width: 100%; padding: 12px; border-radius: 25px; font-size: 15px; font-weight: bold; margin-top: 15px; cursor: pointer;}
-        .scan-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
-        .scan-line { position: absolute; top: 0; left: 0; right: 0; height: 3px; background: #10B981; box-shadow: 0 0 15px #10B981; animation: scanAnim 2s linear infinite; }
-        @keyframes scanAnim { 0% { top: 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
         
         .market-tabs { display: flex; gap: 15px; margin-bottom: 20px; }
         .m-tab { font-size: 16px; font-weight: 900; color: #9CA3AF; cursor: pointer; padding-bottom: 6px; transition: 0.2s;}
@@ -112,6 +106,15 @@
         .credit-badge { background: linear-gradient(90deg, #10B981, #059669); color: #FFF; font-size: 11px; padding: 3px 8px; border-radius: 12px; font-weight: bold; }
         .p-sub { font-size: 12px; color: #6B7280; }
         .auth-banner { background: #FFFBEB; border: 1px dashed #FCD34D; border-radius: 16px; padding: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        
+        /* 省钱页顶端横卡 */
+        .quick-links-wrap { display: flex; overflow-x: auto; gap: 12px; padding: 0 5px 20px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
+        .quick-links-wrap::-webkit-scrollbar { display: none; }
+        .ql-card { flex: 0 0 auto; width: 140px; background: #FFF; border-radius: 16px; padding: 15px 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); border: 1px solid #E5E7EB; text-decoration: none !important; display: flex; flex-direction: column; align-items: center; justify-content: center; scroll-snap-align: start; transition: transform 0.2s; }
+        .ql-card:active { transform: scale(0.95); }
+        .ql-icon { font-size: 32px; margin-bottom: 8px; }
+        .ql-title { font-size: 14px; font-weight: 900; color: #111827; }
+        .ql-sub { font-size: 11px; color: #6B7280; margin-top: 4px; }
     </style>
 </head>
 
@@ -181,10 +184,11 @@
             <div class="action-sub">看全网评价 · 找平替 · 避开刺客</div>
         </div>
 
-        <div class="preview-container" id="previewContainer">
-            <img id="previewImg" class="preview-img" src="" alt="预览">
-            <div class="scan-overlay" id="scanOverlay" style="display:flex;">
-                <div class="scan-line"></div><div class="scan-text" id="scanText">管家大脑飞速运转中...</div>
+        <div class="preview-container" id="previewContainer" style="display:none;">
+            <img id="previewImg" class="preview-img" src="" alt="">
+            <div class="scan-overlay" id="scanOverlay" style="display:none;">
+                <div class="scan-line"></div>
+                <div class="scan-text" id="scanText">管家大脑飞速运转中...</div>
             </div>
         </div>
 
@@ -234,9 +238,7 @@
         </div>
 
         <div class="quick-links-wrap" id="quickLinksContainer"></div>
-        
         <div id="tipsAccordionContainer"></div>
-        
         <div id="tipsDisclaimerContainer"></div>
 
         <button class="btn-report-tip" onclick="alert('爆料功能开发中！')" style="background: #111827; color: #FFF; border: none; padding: 16px; border-radius: 20px; font-size: 15px; font-weight: 900; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 8px 20px rgba(17,24,39,0.2); cursor: pointer; margin-bottom: 30px;">📢 我要爆料新羊毛 / 疯狂纠错</button>
@@ -337,6 +339,7 @@
         .then(data => {
             currentProductData = data;
             document.getElementById('scanOverlay').style.display='none';
+            document.getElementById('previewContainer').style.display='none';
             document.getElementById('miniResultCard').style.display='block';
             document.getElementById('miniChineseName').innerText=data.chinese_name||'未知商品';
             document.getElementById('miniInsight').innerText=data.insight||'暂无评价';
@@ -349,6 +352,7 @@
 
     function resetApp() { 
         document.getElementById('previewContainer').style.display='none';
+        document.getElementById('scanOverlay').style.display='none';
         document.getElementById('miniResultCard').style.display='none';
         document.getElementById('homeActionBox').style.display='flex'; 
     }
@@ -375,21 +379,16 @@
         }
         
         let html = '';
-        // 提取前 20 名
         list.slice(0, 20).forEach((item, index) => {
             let badgeClass = 'rank-other';
             if (index === 0) badgeClass = 'rank-1';
             else if (index === 1) badgeClass = 'rank-2';
             else if (index === 2) badgeClass = 'rank-3';
-            
-            // 如果是黑榜，覆盖徽章颜色
             if (type === 'dislike') badgeClass = 'rank-bad';
             
             const score = type === 'like' ? item.likes : item.dislikes;
             const icon = type === 'like' ? '👍' : '💣';
             const scoreColor = type === 'like' ? '#10B981' : '#EF4444';
-            
-            // 加入一个图片加载失败的默认处理，防止变成丑陋的破裂图标
             const safeImg = item.image_url || 'data:image/gif;base64,R0lGODlhAQABAIAAAMLCwgAAACH5BAAAAAAALAAAAAABAAEAAAICRAEAOw==';
 
             html += `
@@ -434,7 +433,6 @@
                         const formattedDesc = tip.desc.replace(/\*\*(.*?)\*\*/g, '<span style="color:#D97706; font-weight:bold; background:#FFFBEB; padding:1px 5px; border-radius:6px; margin:0 2px;">$1</span>');
                         itemsHtml += `<div style="background:#FFF; border-radius:10px; padding:12px; margin-bottom:10px; border:1px solid #E5E7EB; border-left:4px solid #10B981;"><div style="font-size:14px; font-weight:900; margin-bottom:6px;">${tip.title}</div><div style="font-size:13px; color:#4B5563; line-height:1.6;">${formattedDesc}</div></div>`;
                     });
-                    // 二级手风琴使用 onclick="toggleTipsContent(this)"
                     storesHtml += `<div style="background:#F9FAFB; border-radius:14px; border:1px solid #E5E7EB; margin-bottom:12px; overflow:hidden;"><div onclick="toggleTipsContent(this)" style="padding:14px 15px; display:flex; justify-content:space-between; background:#FFF; font-weight:900; font-size:15px; cursor:pointer;"><div style="display:flex; gap:10px; align-items:center;"><span style="background:#F3F4F6; width:32px; height:32px; display:flex; justify-content:center; align-items:center; border-radius:10px;">${store.storeLogo}</span>${store.storeName}</div><span style="font-size:10px; color:#9CA3AF;">▼</span></div><div style="max-height:0; overflow:hidden; transition:max-height 0.3s ease;"><div style="padding:12px;">${itemsHtml}</div></div></div>`;
                 });
                 accHtml += `<div style="margin:0 16px 15px; background:#FFF; border-radius:16px; border:1px solid #E5E7EB; overflow:hidden;"><div onclick="toggleTipsContent(this)" style="padding:18px 20px; display:flex; justify-content:space-between; font-weight:900; font-size:16px; background:#F9FAFB; cursor:pointer;"><div style="display:flex; align-items:center; gap:10px;"><span>${cat.categoryIcon}</span> <span>${cat.categoryName}</span> ${highlightHtml}</div><span style="font-size:12px; color:#9CA3AF;">▼</span></div><div style="max-height:0; overflow:hidden; transition:max-height 0.3s ease;"><div style="padding:15px;">${storesHtml}</div></div></div>`;
@@ -447,13 +445,11 @@
         }
     }
 
-    // 修复后的折叠面板通用控制逻辑
     function toggleTipsContent(element) {
         const content = element.nextElementSibling;
         if (!element.classList.contains('active')) {
             element.classList.add('active');
             content.style.maxHeight = content.scrollHeight + "px";
-            // 解除高度限制以适应内部嵌套的展开
             setTimeout(() => { if(element.classList.contains('active')) content.style.maxHeight = 'none'; }, 300);
         } else {
             content.style.maxHeight = content.scrollHeight + "px"; 
@@ -491,7 +487,7 @@
     // 初始化执行
     window.addEventListener('DOMContentLoaded', () => {
         renderTipsPage();
-        loadTrendingToHome(); // 加载首页榜单
+        loadTrendingToHome();
     });
 </script>
 </body>
