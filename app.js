@@ -272,6 +272,10 @@ function renderTipsPage() {
         });
         if(document.getElementById('tipsAccordionContainer')) document.getElementById('tipsAccordionContainer').innerHTML = accHtml;
     }
+    // 🚨 恢复：免责声明模块重见天日
+    if (typeof tipsMetaData !== 'undefined' && document.getElementById('tipsDisclaimerContainer')) { 
+        document.getElementById('tipsDisclaimerContainer').innerHTML = `<div class="tips-disclaimer"><div style="font-weight:bold; margin-bottom:6px; color:#D97706;"><span>⏳</span> 最后更新于：${tipsMetaData.lastUpdated}</div>⚠️ <b>防杠声明：</b> ${tipsMetaData.disclaimer}</div>`; 
+    }
 }
 function toggleTipsContent(element) { element.classList.toggle('active'); }
 
@@ -491,10 +495,10 @@ function openCommunityPost(postId) {
         </div>
         ${payload.conditions ? `
         <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top: 10px;">
-            <span class="sold-badge">📍 ${payload.conditions.loc || '未填'}</span>
-            <span class="sold-badge">⏳ 截止: ${payload.conditions.deadline || '未填'}</span>
-            <span class="sold-badge">💶 ${payload.conditions.payment || '未填'}</span>
-            <span class="sold-badge">🔪 ${payload.conditions.bargain || '未填'}</span>
+            <span class="sold-badge" style="position:static;">📍 ${payload.conditions.loc || '未填'}</span>
+            <span class="sold-badge" style="position:static;">⏳ 截止: ${payload.conditions.deadline || '未填'}</span>
+            <span class="sold-badge" style="position:static;">💶 ${payload.conditions.payment || '未填'}</span>
+            <span class="sold-badge" style="position:static;">🔪 ${payload.conditions.bargain || '未填'}</span>
         </div>` : `<div style="font-size:13px; color:#4B5563; line-height:1.5;">${payload.oldText}</div>`}
     `;
     document.getElementById('pdSellerInfo').innerHTML = sellerInfoHtml;
@@ -503,18 +507,37 @@ function openCommunityPost(postId) {
     if(payload.items && payload.items.length > 0) {
         payload.items.forEach(item => {
             const soldClass = item.is_sold ? 'sold' : '';
-            const actionHtml = isMe 
-                ? (item.is_sold ? `<span class="sold-badge">已出</span>` : `<button class="mark-sold-btn" onclick="markItemSold(${post.id}, ${item.id}, event)">标为售出</button>`)
-                : (item.is_sold ? `<span class="sold-badge">被抢了</span>` : `<input type="checkbox" class="custom-checkbox" onchange="toggleItemSelect(${item.price}, ${item.id}, this)">`);
             
+            // UI 构建：右上角悬浮操作区
+            let actionHtml = '';
+            let clickAction = '';
+
+            if (isMe) {
+                if (item.is_sold) {
+                    actionHtml = `<div class="pd-sold-badge" style="position:absolute; top:8px; right:8px; z-index:10;">已售出</div>`;
+                } else {
+                    actionHtml = `<button class="mark-sold-btn" style="position:absolute; top:8px; right:8px; z-index:10; font-size:10px; padding:4px 8px; box-shadow:0 2px 4px rgba(0,0,0,0.2); border:none;" onclick="markItemSold(${post.id}, ${item.id}, event)">标为售出</button>`;
+                }
+            } else {
+                if (item.is_sold) {
+                    actionHtml = `<div class="pd-sold-badge" style="position:absolute; top:8px; right:8px; z-index:10;">被抢了</div>`;
+                } else {
+                    // 买家视角：悬浮玻璃态复选框
+                    actionHtml = `<input type="checkbox" class="custom-checkbox" id="chk_${item.id}" style="position:absolute; top:8px; right:8px; z-index:10;" onclick="event.stopPropagation()" onchange="toggleItemSelect(${item.price}, ${item.id}, this)">`;
+                    // 点击整个卡片都可以触发复选框选中
+                    clickAction = `onclick="document.getElementById('chk_${item.id}').click()"`;
+                }
+            }
+            
+            // 组装瀑布流卡片：图片铺满，文字在底部渐变层上
             itemsHtml += `
-            <div class="pd-item-card ${soldClass}">
+            <div class="pd-item-card ${soldClass}" ${clickAction}>
                 <img src="${item.url}" class="pd-item-img">
-                <div class="pd-item-info">
+                ${actionHtml}
+                <div class="pd-item-overlay">
                     <div class="pd-item-name">${item.name || '某物品'}</div>
                     <div class="pd-item-price">€${item.price || '0'}</div>
                 </div>
-                ${actionHtml}
             </div>`;
         });
     } else { itemsHtml = `<div style="text-align:center; color:#9CA3AF; padding:20px;">这是一个老版本的纯文字帖子</div>`; }
