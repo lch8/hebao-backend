@@ -36,6 +36,7 @@ function mockLoginProcess() {
         if(!localStorage.getItem('hp_name')) localStorage.setItem('hp_name', '管家新人_' + Math.floor(Math.random()*1000));
         const modal = document.getElementById('loginModal');
         if(modal) modal.style.display = 'none';
+        if(btn) btn.innerText = '一键登录 / 注册';
         
         renderProfileState(); 
         
@@ -71,10 +72,13 @@ function switchTab(tabId, element) {
     }
 
     if (tabId === 'details') { 
-        document.querySelector('.tab-bar').style.display = 'none'; 
-        document.getElementById('stickyChatBar').style.display = 'flex'; 
+        const tabBar = document.querySelector('.tab-bar');
+        if(tabBar) tabBar.style.display = 'none'; 
+        const chatBar = document.getElementById('stickyChatBar');
+        if(chatBar) chatBar.style.display = 'flex'; 
     } else { 
-        document.querySelector('.tab-bar').style.display = 'flex'; 
+        const tabBar = document.querySelector('.tab-bar');
+        if(tabBar) tabBar.style.display = 'flex'; 
         const chatBar = document.getElementById('stickyChatBar');
         if(chatBar) chatBar.style.display = 'none'; 
     }
@@ -143,8 +147,8 @@ function renderProfileState() {
         document.getElementById('profileGenderTag').innerText = savedGender || '保密';
         document.getElementById('profileMbtiTag').innerText = savedMbti || 'MBTI未知';
 
-        postsEmptyState.innerHTML = '<div class="empty-state-icon">📭</div>你还没有发布过闲置/互助哦';
-        reviewsEmptyState.innerHTML = '<div class="empty-state-icon">📭</div>暂无收到的评价';
+        if(postsEmptyState) postsEmptyState.innerHTML = '<div class="empty-state-icon">📭</div>你还没有发布过闲置/互助哦';
+        if(reviewsEmptyState) reviewsEmptyState.innerHTML = '<div class="empty-state-icon">📭</div>暂无收到的评价';
         loadAvatar();
     } else {
         guestBlock.style.display = 'block'; actionsBlock.style.display = 'none';
@@ -153,8 +157,8 @@ function renderProfileState() {
         document.getElementById('profileAvatarImg').style.display = 'none';
         document.getElementById('profileAvatarBox').style.background = '#E5E7EB';
         document.getElementById('profileAvatarEmoji').textContent = '👻';
-        postsEmptyState.innerHTML = '<div class="empty-state-icon">🔒</div>请先登录查看你的发布记录';
-        reviewsEmptyState.innerHTML = '<div class="empty-state-icon">🔒</div>请先登录查看收到的评价';
+        if(postsEmptyState) postsEmptyState.innerHTML = '<div class="empty-state-icon">🔒</div>请先登录查看你的发布记录';
+        if(reviewsEmptyState) reviewsEmptyState.innerHTML = '<div class="empty-state-icon">🔒</div>请先登录查看收到的评价';
     }
 }
 
@@ -194,34 +198,30 @@ function loadAvatar() {
     }
 }
 
-// ================= 4. 首页扫码与榜单逻辑 =================
+// ================= 4. 首页扫码与真实 API (整合了你的 trending 接口) =================
 let currentProductData = null; 
 let currentDetailData = null; 
 let globalTrendingLikes = []; 
 let globalTrendingDislikes = [];
 
-// 模拟首页榜单数据
-const mockTrendingLikes = [
-    { chinese_name: "AH神仙五花肉", dutch_name: "Varkensbuik", likes: 185, image_url: "https://images.unsplash.com/photo-1606850780554-b55ea40f0ebb?w=400&auto=format&fit=crop" },
-    { chinese_name: "冷鲜区新鲜青酱", dutch_name: "Verse Pesto", likes: 142, image_url: "https://images.unsplash.com/photo-1596796960163-f018e7c2e365?w=400&auto=format&fit=crop" },
-    { chinese_name: "国民小吃炸鱼块", dutch_name: "Kibbeling", likes: 120, image_url: "https://images.unsplash.com/photo-1599084942896-67b1bf0525d8?w=400&auto=format&fit=crop" }
-];
-const mockTrendingDislikes = [
-    { chinese_name: "荷兰甘草糖", dutch_name: "Drop", dislikes: 298, image_url: "https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?w=400&auto=format&fit=crop" },
-    { chinese_name: "脱脂馊水酪乳", dutch_name: "Karnemelk", dislikes: 215, image_url: "https://images.unsplash.com/photo-1563636619-e9143da7973b?w=400&auto=format&fit=crop" }
-];
-
 async function loadTrendingToHome() {
-    // 使用本地模拟数据渲染首页榜单
-    globalTrendingLikes = mockTrendingLikes; 
-    globalTrendingDislikes = mockTrendingDislikes; 
-    renderHomeTrending(globalTrendingLikes, 'homeTrendingListLikes', 'like'); 
-    renderHomeTrending(globalTrendingDislikes, 'homeTrendingListDislikes', 'dislike'); 
+    try {
+        const res = await fetch('/api/trending'); 
+        const data = await res.json();
+        if(data.success) { 
+            globalTrendingLikes = data.topLikes || []; 
+            globalTrendingDislikes = data.topDislikes || []; 
+            renderHomeTrending(globalTrendingLikes, 'homeTrendingListLikes', 'like'); 
+            renderHomeTrending(globalTrendingDislikes, 'homeTrendingListDislikes', 'dislike'); 
+        }
+    } catch(e) { 
+        console.error('加载榜单失败', e);
+        document.getElementById('homeTrendingListLikes').innerHTML = '<div style="text-align:center; color:#9CA3AF; font-size: 12px; margin-top:20px;">榜单加载休息中...</div>'; 
+    }
 }
 
 function renderHomeTrending(list, containerId, type) {
-    const container = document.getElementById(containerId); 
-    if (!container || !list || list.length === 0) return; 
+    const container = document.getElementById(containerId); if (!container || !list || list.length === 0) return; 
     let html = '';
     const fallbackSvg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23F3F4F6'/%3E%3Ctext x='50%25' y='50%25' font-family='sans-serif' font-size='10' fill='%239CA3AF' text-anchor='middle' dominant-baseline='middle'%3E暂无图%3C/text%3E%3C/svg%3E";
 
@@ -246,7 +246,7 @@ function startBarcodeScan() {
     const config = { fps: 10, qrbox: { width: 250, height: 150 }, aspectRatio: 1.0, formatsToSupport: [ Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8, Html5QrcodeSupportedFormats.UPC_A ] };
     html5QrcodeScanner.start({ facingMode: "environment" }, config, (decodedText) => {
         if (navigator.vibrate) navigator.vibrate(100); document.getElementById('scannerModal').style.display = 'none'; html5QrcodeScanner.stop(); document.getElementById('mainSearchInput').value = decodedText; executeSearch();
-    }).catch(err => { alert("调用摄像头失败！请确保网页有摄像头权限。"); document.getElementById('scannerModal').style.display = 'none'; });
+    }).catch(err => { alert("调用摄像头失败！"); document.getElementById('scannerModal').style.display = 'none'; });
 }
 
 function closeScanner() { document.getElementById('scannerModal').style.display = 'none'; }
@@ -255,17 +255,21 @@ function executeSearch() {
     const query = document.getElementById('mainSearchInput').value.trim(); if (!query) return;
     document.getElementById('homeActionBox').style.display='none'; document.getElementById('previewContainer').style.display='block'; document.getElementById('scanOverlay').style.display='flex'; document.getElementById('scanText').innerText = "📡 正在全网检索..."; document.getElementById('miniResultCard').style.display='none';
     
-    // 模拟搜索结果
-    setTimeout(() => {
-        const fakeData = { chinese_name: "搜索结果模拟", dutch_name: query, insight: "这是本地模拟的搜索结果，后端接入后会显示真实数据。", image_url: "" };
-        currentProductData = fakeData; 
+    fetch('/api/scan-barcode', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ barcode: query, userId: userUUID }) })
+    .then(res => res.json())
+    .then(data => {
+        currentProductData = data; 
         document.getElementById('scanOverlay').style.display='none'; 
         document.getElementById('previewContainer').style.display='none'; 
         document.getElementById('miniResultCard').style.display='block'; 
-        document.getElementById('miniChineseName').innerText=fakeData.chinese_name; 
-        document.getElementById('miniInsight').innerText=fakeData.insight; 
-        saveToLocalFootprint(fakeData, fakeData.image_url);
-    }, 1500);
+        document.getElementById('miniChineseName').innerText=data.chinese_name||'未知商品'; 
+        document.getElementById('miniInsight').innerText=data.insight||'暂无评价'; 
+        saveToLocalFootprint(data, data.image_url);
+    })
+    .catch(err => { 
+        alert("未找到商品信息！"); 
+        resetApp(); 
+    });
 }
 
 function resetApp() { 
@@ -334,23 +338,39 @@ async function submitDetailReview() {
         let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
         let index = history.findIndex(i => i.dutch_name === currentDetailData.dutch_name);
         if(index !== -1) { history[index].pairing = currentDetailData.pairing; localStorage.setItem('hebao_history', JSON.stringify(history)); }
-        alert("🎉 评价发布成功！快看看你的评价排在第几名！");
+        
+        // 此处你可以调用 /api/vote 接口，将点赞/踩同步到数据库
+        const actionType = attitude.includes('推荐') ? 'like' : 'dislike';
+        await fetch('/api/vote', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ dutch_name: currentDetailData.dutch_name, action: actionType })
+        });
+
+        alert("🎉 评价发布成功！同时已为该商品投票！");
         document.getElementById('addReviewModal').style.display = 'none'; setupDetailPage();
-    } catch(e) { alert("网络开小差了..."); } finally { btn.innerText = "🚀 提交评价"; btn.disabled = false; }
+    } catch(e) { 
+        alert("网络开小差了..."); 
+    } finally { 
+        btn.innerText = "🚀 提交评价"; btn.disabled = false; 
+    }
 }
 
 async function sendQuestion() {
     const input = document.getElementById('askInput'); const question = input.value.trim(); if(!question) return;
     const chatBox = document.getElementById('chatHistory');
+    const dName = currentDetailData.dutch_name || currentDetailData.chinese_name || "未知商品"; 
+    const dInsight = currentDetailData.insight || "";
+    
     chatBox.innerHTML += `<div class="chat-bubble bubble-user">${question}</div>`; input.value = ''; window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     const loadingId = 'loading-' + Date.now(); chatBox.innerHTML += `<div class="chat-bubble bubble-ai" id="${loadingId}">管家正在查阅资料...</div>`;
     
-    // 模拟AI回复
-    setTimeout(() => {
-        document.getElementById(loadingId).remove();
-        chatBox.innerHTML += `<div class="chat-bubble bubble-ai">🤖 模拟回复：关于您问的 "${question}"，等后端接通后我会给您更详细的解答哦！</div>`;
-        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-    }, 1500);
+    try {
+        const response = await fetch('/api/ask', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productName: dName, insight: dInsight, question: question, userId: userUUID }) });
+        const data = await response.json(); document.getElementById(loadingId).remove();
+        if (response.ok) { chatBox.innerHTML += `<div class="chat-bubble bubble-ai">🤖 ${data.reply}</div>`; } else { chatBox.innerHTML += `<div class="chat-bubble bubble-ai" style="color:red;">哎呀卡住了：${data.error}</div>`; }
+    } catch (err) { document.getElementById(loadingId).remove(); chatBox.innerHTML += `<div class="chat-bubble bubble-ai" style="color:red;">网络断了...</div>`; }
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
 }
 
 function saveToLocalFootprint(data, img) { 
@@ -365,7 +385,7 @@ function renderFootprints() {
     if (h.length === 0) { listDiv.innerHTML = '<div style="text-align:center; color:#9CA3AF; margin-top:20px; font-size:13px; border: 1px dashed #E5E7EB; padding: 30px; border-radius: 16px;">暂无足迹，快去首页扫码吧</div>'; return; } 
     let html = ''; const fallbackSvg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23F3F4F6'/%3E%3Ctext x='50%25' y='50%25' font-family='sans-serif' font-size='10' fill='%239CA3AF' text-anchor='middle' dominant-baseline='middle'%3E暂无图%3C/text%3E%3C/svg%3E";
     h.forEach((item, index) => { 
-        const safeImg = item.img_src || fallbackSvg;
+        const safeImg = item.img_src || item.image_url || fallbackSvg;
         html += `<div style="background:#FFF; border-radius:16px; margin-bottom:12px; border:1px solid #E5E7EB; overflow:hidden; display:flex; align-items:center; padding:12px; box-shadow:0 2px 8px rgba(0,0,0,0.02); cursor:pointer;" onclick="openDetailsFromHistory(${index})"><img src="${safeImg}" onerror="this.onerror=null; this.src='${fallbackSvg}'" style="width:50px; height:50px; object-fit:cover; border-radius:10px; flex-shrink:0; background:#F3F4F6;"><div style="flex:1; margin-left:12px;"><div style="font-weight:900; font-size:15px; color:#111827; margin-bottom:2px;">${item.chinese_name || '未命名'}</div><div style="font-size:12px; color:#9CA3AF; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden;">${item.insight || ''}</div></div></div>`; 
     }); 
     listDiv.innerHTML = html; 
@@ -473,7 +493,7 @@ function submitIdlePost() {
     alert("🎉 发布成功！你的闲置已经进入集市，等待有缘人。");
     closeIdlePublish();
 }
-// ================= AI 发布互助悬赏逻辑 =================
+
 function openHelpPublish() {
     closePublishSheet();
     setTimeout(() => { document.getElementById('publishHelpModal').style.display = 'flex'; }, 300);
@@ -486,7 +506,6 @@ function submitHelpPost() {
     closeHelpPublish();
 }
 
-// ================= 发帖找搭子逻辑 =================
 function openPartnerPublish() {
     closePublishSheet();
     setTimeout(() => { document.getElementById('publishPartnerModal').style.display = 'flex'; }, 300);
@@ -498,7 +517,8 @@ function submitPartnerPost() {
     alert("🎉 找搭子发布成功！缘分正在赶来的路上...");
     closePartnerPublish();
 }
-// ================= 8. 集市模块：聊天与列表 =================
+
+// ================= 8. 集市模块：聊天、数据与过滤渲染 =================
 function openChat(sellerName, sellerAvatar, itemTitle, itemPrice, itemImg, isSold, postType = 'idle') {
     requireAuth(() => {
         document.getElementById('chatTargetName').innerText = sellerName;
@@ -512,11 +532,11 @@ function openChat(sellerName, sellerAvatar, itemTitle, itemPrice, itemImg, isSol
         
         const greetingBox = document.getElementById('chatDefaultGreeting');
         if (postType === 'help') {
-            greetingBox.innerText = "哈喽！你是来接悬赏单的吗？看下详情里的时间和地点合适不？";
+            if(greetingBox) greetingBox.innerText = "哈喽！你是来接悬赏单的吗？看下详情里的时间和地点合适不？";
         } else if (postType === 'partner') {
-            greetingBox.innerText = "滴滴！找搭子吗？看我主页MBTI合不合拍~";
+            if(greetingBox) greetingBox.innerText = "滴滴！找搭子吗？看我主页MBTI合不合拍~";
         } else {
-            greetingBox.innerText = "你好，请问你是想看这个闲置吗？还在的哦！";
+            if(greetingBox) greetingBox.innerText = "你好，请问你是想看这个闲置吗？还在的哦！";
         }
 
         if (isSold) {
@@ -533,7 +553,7 @@ function openChat(sellerName, sellerAvatar, itemTitle, itemPrice, itemImg, isSol
 
         document.getElementById('chatModal').style.display = 'flex';
         const msgList = document.getElementById('chatMsgList');
-        msgList.scrollTop = msgList.scrollHeight;
+        if(msgList) msgList.scrollTop = msgList.scrollHeight;
     });
 }
 
@@ -638,7 +658,7 @@ function renderMarketHelp(data = mockHelpItems) {
     let html = '';
     data.forEach(item => {
         const tagClass = item.isUrgent ? 'hc-type-tag urgent' : 'hc-type-tag';
-        const tagText = item.isUrgent ? `🔥 急·${item.type.split(' ')[1]}` : item.type.split(' ')[1]; // 缩短标签字数
+        const tagText = item.isUrgent ? `🔥 急·${item.type.split(' ')[1]}` : item.type.split(' ')[1];
         html += `
         <div class="help-card" onclick="openChat('${item.name}', '${item.avatar}', '${item.title}', '${item.reward}', \`${item.imgIcon}\`, false, 'help')">
             <div class="hc-top-row">
@@ -671,7 +691,7 @@ function renderMarketPartner(data = mockPartnerItems) {
     let html = '';
     data.forEach(item => {
         const genderIcon = item.gender === 'f' ? '♀' : '♂';
-        const tagsHtml = item.tags.slice(0, 2).map(t => `<div class="pc-tag">${t}</div>`).join(''); // 最多只显示两个tag防止撑爆
+        const tagsHtml = item.tags.slice(0, 2).map(t => `<div class="pc-tag">${t}</div>`).join(''); 
         const iconSvg = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23F3E8FF'/><text x='50%' y='50%' font-size='20' text-anchor='middle' dominant-baseline='middle'>🥂</text></svg>`;
         html += `
         <div class="partner-card" onclick="openChat('${item.name}', '${item.avatar}', '${item.title}', '0', \`${iconSvg}\`, false, 'partner')">
