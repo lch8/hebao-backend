@@ -15,69 +15,38 @@
         .title { font-size: 28px; font-weight: 900; margin: 0; letter-spacing: 1px;}
         .subtitle { font-size: 13px; color: #6B7280; margin-top: 5px; }
 
+        .pwa-banner { background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 12px; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.02); transition: 0.2s;}
+        .pwa-banner:active { transform: scale(0.98); background: #DBEAFE; }
+        .pwa-banner-text { font-size: 13px; font-weight: 900; color: #1E3A8A; display: flex; align-items: center; gap: 8px;}
+        .pwa-close-btn { color: #93C5FD; font-size: 16px; padding: 0 5px; cursor: pointer; }
+
+        /* ================= 搜索与条码框 ================= */
         .search-container { display: flex; gap: 10px; margin-bottom: 20px; background: #FFF; border-radius: 20px; padding: 8px 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #E5E7EB; align-items: center; }
         .search-input { flex: 1; border: none; outline: none; font-size: 15px; padding: 8px; background: transparent; color: #111827; }
         .barcode-btn { background: #F3F4F6; border: none; width: 40px; height: 40px; border-radius: 12px; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 18px; transition: 0.2s; }
         .barcode-btn:active { background: #E5E7EB; transform: scale(0.95); }
 
+        .legal-disclaimer { font-size: 11px; color: #9CA3AF; text-align: center; padding: 20px 10px 40px; line-height: 1.6; margin-top: 20px; }
+
         .page-section { display: none; padding-bottom: 90px; animation: fadeIn 0.3s ease; }
         .page-section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* ================= 新增：商业级 5 Tab 导航栏 ================= */
-        .tab-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 65px; background: #FFF; box-shadow: 0 -4px 30px rgba(0,0,0,0.08); display: flex; justify-content: space-around; align-items: center; z-index: 100; max-width: 600px; margin: 0 auto; padding-bottom: env(safe-area-inset-bottom); border-top-left-radius: 24px; border-top-right-radius: 24px; }
-        .tab-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #9CA3AF; cursor: pointer; transition: 0.2s; height: 100%; position: relative;}
-        .tab-item.active { color: #111827; }
-        .tab-icon { font-size: 22px; margin-bottom: 4px; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .tab-item.active .tab-icon { transform: translateY(-3px) scale(1.15); }
-        .tab-text { font-size: 10px; font-weight: 900; }
+        /* ================= 1. 首页三擎仪表盘 ================= */
+        .home-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .action-card { background: #FFF; border-radius: 20px; padding: 20px 10px; text-align: center; border: 2px dashed #D1D5DB; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.02); display: flex; flex-direction: column; align-items: center; justify-content: center;}
+        .action-card:active { transform: scale(0.96); }
+        .action-card.scan-mode { grid-column: span 2; padding: 25px 15px; border-color: #10B981; background: #ECFDF5; border-style: solid; }
+        .action-card.ingredient-mode { border-color: #93C5FD; background: #EFF6FF; border-style: solid; }
+        .action-card.dish-mode { border-color: #FCD34D; background: #FFFBEB; border-style: solid; }
+        
+        .action-icon { font-size: 38px; margin-bottom: 10px; display: inline-block; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));}
+        .action-title { font-size: 15px; font-weight: 900; color: #111827; margin-bottom: 4px;}
+        .action-sub { font-size: 12px; color: #6B7280; font-weight: bold;}
+        .scan-mode .action-title { color: #065F46; } .scan-mode .action-sub { color: #047857; }
+        .ingredient-mode .action-title { color: #1E3A8A; } .ingredient-mode .action-sub { color: #1D4ED8; }
+        .dish-mode .action-title { color: #D97706; } .dish-mode .action-sub { color: #B45309; }
 
-        /* ➕ 中间悬浮发布大按钮 */
-        .tab-item-publish { flex: 1; display: flex; justify-content: center; align-items: flex-start; height: 100%; position: relative; cursor: pointer; }
-        .btn-publish { width: 52px; height: 52px; background: linear-gradient(135deg, #10B981 0%, #059669 100%); border-radius: 20px; display: flex; justify-content: center; align-items: center; color: white; font-size: 28px; font-weight: bold; position: absolute; top: -18px; box-shadow: 0 8px 20px rgba(16, 185, 129, 0.35); transition: transform 0.2s; border: 4px solid #F3F4F6;}
-        .tab-item-publish:active .btn-publish { transform: scale(0.92); }
-
-        /* ================= 发布菜单 Bottom Sheet ================= */
-        .publish-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 1001; display: none; opacity: 0; transition: opacity 0.3s; backdrop-filter: blur(4px); }
-        .publish-overlay.show { display: block; opacity: 1; }
-        .publish-sheet { position: fixed; bottom: -100%; left: 0; right: 0; max-width: 600px; margin: 0 auto; background: #FFF; border-top-left-radius: 28px; border-top-right-radius: 28px; z-index: 1002; padding: 30px 20px calc(30px + env(safe-area-inset-bottom)); transition: bottom 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.1); box-shadow: 0 -10px 40px rgba(0,0,0,0.1); }
-        .publish-sheet.show { bottom: 0; }
-        .ps-close { position: absolute; top: 15px; right: 20px; width: 30px; height: 30px; background: #F3F4F6; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 14px; color: #6B7280; cursor: pointer; font-weight: bold;}
-        .ps-title { font-size: 18px; font-weight: 900; color: #111827; margin-bottom: 25px; margin-left: 10px; }
-        .ps-options { display: flex; justify-content: space-around; }
-        .ps-opt { display: flex; flex-direction: column; align-items: center; gap: 10px; cursor: pointer; width: 30%; transition: transform 0.2s;}
-        .ps-opt:active { transform: scale(0.95); }
-        .ps-icon { width: 65px; height: 65px; border-radius: 22px; display: flex; justify-content: center; align-items: center; font-size: 32px; box-shadow: 0 4px 15px rgba(0,0,0,0.04); margin-bottom: 4px; }
-        .ps-opt-1 .ps-icon { background: #ECFDF5; color: #10B981; } /* 闲置 */
-        .ps-opt-2 .ps-icon { background: #FFFBEB; color: #D97706; } /* 互助 */
-        .ps-opt-3 .ps-icon { background: #EFF6FF; color: #3B82F6; } /* 查新品 */
-        .ps-text { font-size: 13px; font-weight: 900; color: #374151; }
-        .ps-sub { font-size: 11px; color: #9CA3AF; }
-
-        /* ================= 扫码与首页卡片 ================= */
-        .home-action-btn { background: #ECFDF5; border: 2px dashed #10B981; border-radius: 20px; padding: 25px 15px; text-align: center; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 15px rgba(0,0,0,0.02); display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 30px;}
-        .home-action-btn:active { transform: scale(0.98); background: #D1FAE5; }
-        .action-icon { font-size: 42px; margin-bottom: 10px; display: inline-block; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));}
-        .action-title { font-size: 16px; font-weight: 900; color: #065F46; margin-bottom: 4px;}
-        .action-sub { font-size: 12px; color: #047857; font-weight: bold;}
-
-        /* ================= 我的 (信用与资产页) ================= */
-        .profile-header { background: #FFF; border-radius: 20px; padding: 20px; display: flex; align-items: center; gap: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid #E5E7EB;}
-        .p-avatar { width: 60px; height: 60px; background: #F3F4F6; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; }
-        .p-info { flex: 1; }
-        .p-name { font-size: 18px; font-weight: 900; color: #111827; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;}
-        .credit-badge { background: linear-gradient(90deg, #10B981, #059669); color: #FFF; font-size: 11px; padding: 3px 8px; border-radius: 12px; font-weight: bold; }
-        .p-sub { font-size: 12px; color: #6B7280; }
-        .auth-banner { background: #FFFBEB; border: 1px dashed #FCD34D; border-radius: 16px; padding: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-        .auth-text { font-size: 13px; color: #B45309; font-weight: bold; }
-        .auth-btn { background: #D97706; color: #FFF; padding: 6px 12px; border-radius: 12px; font-size: 12px; font-weight: 900; }
-
-        /* 集市骨架 */
-        .market-tabs { display: flex; gap: 15px; margin-bottom: 20px; }
-        .m-tab { font-size: 16px; font-weight: 900; color: #9CA3AF; cursor: pointer; padding-bottom: 6px; transition: 0.2s;}
-        .m-tab.active { color: #111827; border-bottom: 3px solid #10B981; }
-
-        /* 隐藏之前的旧UI代码，保持其余复用代码不变 */
         .preview-container { position: relative; width: 100%; height: 200px; border-radius: 20px; overflow: hidden; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .preview-img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .scan-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
@@ -88,30 +57,188 @@
         #miniResultCard { display: none; margin-top: 25px; background: #FFF; border-radius: 20px; padding: 25px; box-shadow: 0 8px 30px rgba(0,0,0,0.06); text-align: center; animation: fadeIn 0.4s ease; }
         .name-box { margin-bottom: 10px; }
         .item-name { display: block; font-size: 22px; font-weight: 900; }
-        .btn-view-detail { background: #111827; color: #FFF; border: none; padding: 14px; width: 100%; border-radius: 25px; font-size: 15px; font-weight: bold; margin-top: 10px; cursor: pointer; }
+        .item-dutch { display: block; font-size: 13px; color: #9CA3AF; margin-top: 4px; font-style: italic; }
+        .feature-tag { display: inline-block; background: #FFFBEB; color: #D97706; font-size: 13px; padding: 6px 14px; border-radius: 20px; font-weight: 900; margin-bottom: 15px; border: 1px solid #FDE68A; }
+        .mini-insight { font-size: 14px; color: #374151; line-height: 1.6; margin: 15px 0; padding: 12px; background: #F3F4F6; border-radius: 12px; text-align: left; border-left: 4px solid #111827;}
+        .mini-warning { background: #FEF2F2; color: #DC2626; padding: 10px; border-radius: 10px; font-size: 13px; font-weight: bold; margin: 15px 0; border: 1px dashed #FCA5A5; }
+        .btn-view-detail { background: #111827; color: #FFF; border: none; padding: 14px; width: 100%; border-radius: 25px; font-size: 15px; font-weight: bold; margin-top: 10px; cursor: pointer; box-shadow: 0 4px 15px rgba(17, 24, 39, 0.2); }
+        .btn-share-community { background: linear-gradient(135deg, #F59E0B, #D97706); color: #FFF; border: none; padding: 14px; width: 100%; border-radius: 25px; font-size: 15px; font-weight: bold; margin-top: 15px; cursor: pointer; display: none;}
         .btn-secondary { background: transparent; color: #EF4444; border: 2px solid #EF4444; width: 100%; padding: 12px; border-radius: 25px; font-size: 15px; font-weight: bold; margin-top: 15px; cursor: pointer;}
 
-        /* 榜单收纳进首页的样式 */
-        .home-section-title { font-size: 18px; font-weight: 900; margin: 30px 0 15px; display: flex; align-items: center; gap: 8px;}
-        .trending-card { background: #FFF; margin-bottom: 12px; border-radius: 16px; padding: 15px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); position: relative; overflow: hidden; border: 1px solid #E5E7EB;}
-        .rank-badge { position: absolute; top: 0; left: 0; padding: 4px 10px; border-bottom-right-radius: 12px; font-size: 11px; font-weight: 900; color: #FFF; z-index: 1; }
-        .rank-1 { background: #F59E0B; } .rank-other { background: #9CA3AF; }
-        .t-info { flex: 1; margin-top: 8px; }
-        .t-name { font-size: 15px; font-weight: 900; color: #111827; }
-        .t-score { font-size: 16px; font-weight: 900; color: #10B981; }
-
-        /* 足迹复用样式 */
-        .history-card-wrap { background: #FFF; border-radius: 20px; margin-bottom: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); border: 1px solid #F3F4F6; overflow: hidden;}
-        .hc-top-clickable { display: flex; gap: 15px; padding: 15px; cursor: pointer; }
-
-        /* 弹窗等全局组件 */
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; display: none; justify-content: center; align-items: center; animation: fadeIn 0.2s ease; }
-        .modal-content { background: #FFF; width: 90%; max-width: 400px; border-radius: 20px; padding: 24px; box-sizing: border-box; }
-        
-        /* 详情页组件（用于秒开） */
+        /* ================= 2. 详情页纯净阅读版 ================= */
         #page-details { background: #F7F8FA; min-height: 100vh; padding-bottom: 100px; }
         .top-nav { position: sticky; top: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); padding: 15px 20px; display: flex; align-items: center; z-index: 50; border-bottom: 1px solid #E5E7EB;}
         .back-btn { font-size: 16px; font-weight: 900; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+        .detail-hero { background: #FFF; padding: 20px; border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 20px; text-align: center;}
+        .detail-img { width: 100%; height: 220px; object-fit: contain; background: #F9FAFB; border-radius: 16px; margin-bottom: 15px; }
+        .info-block { background: #FFF; border-radius: 16px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);}
+        .block-title { font-size: 16px; font-weight: 900; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;}
+        .block-text { font-size: 14px; color: #4B5563; line-height: 1.6; margin: 0; }
+        .alt-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px;}
+        .alt-tag { background: #F3F4F6; border: 1px solid #E5E7EB; font-size: 12px; padding: 6px 12px; border-radius: 8px; color: #4B5563;}
+        
+        .recipe-submit-box { background: #FFFBEB; border: 2px dashed #FCD34D; border-radius: 16px; padding: 15px; margin-bottom: 20px; text-align: center; cursor: pointer;}
+        .recipe-submit-title { font-size: 15px; font-weight: 900; color: #D97706; }
+        .recipe-submit-sub { font-size: 12px; color: #B45309; margin-top: 4px; }
+        .recipe-card { background: #FFF; border-radius: 16px; padding: 18px; margin-bottom: 15px; border: 1px solid #F3F4F6; }
+        .recipe-title { font-size: 14px; font-weight: 900; color: #111827; margin-bottom: 10px; display: flex; justify-content: space-between;}
+        .recipe-steps { font-size: 14px; color: #4B5563; line-height: 1.6; margin-bottom: 15px; white-space: pre-wrap; font-weight: 500;}
+
+        /* ================= 3. 双列瀑布流 UI ================= */
+        .waterfall-container { column-count: 2; column-gap: 12px; padding: 0 16px; }
+        .c-card { break-inside: avoid; margin-bottom: 12px; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.04); display: inline-block; width: 100%; cursor: pointer; transition: transform 0.2s; animation: fadeIn 0.4s ease; }
+        .c-card:active { transform: scale(0.97); }
+        .c-img { width: 100%; display: block; border-bottom: 1px solid #f3f4f6; object-fit: cover; max-height: 250px; background: #F9FAFB; }
+        .c-body { padding: 10px; }
+        .c-title { font-size: 14px; font-weight: 800; color: #111827; margin-bottom: 6px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .c-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; }
+        .c-user { font-size: 11px; color: #6b7280; display: flex; align-items: center; gap: 4px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 60%; }
+        .c-like-btn { font-size: 12px; color: #6b7280; display: flex; align-items: center; gap: 3px; font-weight: bold; background: #F3F4F6; padding: 4px 8px; border-radius: 12px;}
+        .c-like-btn.voted { color: #D97706; background: #FEF3C7;}
+
+        /* ================= 社区详情页 Modal ================= */
+        .community-detail-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 2000; display: none; align-items: flex-end; justify-content: center; animation: fadeIn 0.2s ease; }
+        .cd-content-wrap { background: #fff; width: 100%; max-width: 600px; height: 88vh; border-top-left-radius: 24px; border-top-right-radius: 24px; display: flex; flex-direction: column; overflow: hidden; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .cd-header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #E5E7EB; background: #FFF; z-index: 10;}
+        .cd-author-box { display: flex; align-items: center; gap: 8px; }
+        .cd-avatar { width: 32px; height: 32px; background: #F3F4F6; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 16px; }
+        .cd-author-name { font-weight: 900; font-size: 14px; color: #111827; }
+        .cd-close { width: 32px; height: 32px; background: #F3F4F6; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; cursor: pointer; color: #4B5563;}
+        .cd-scroll-area { flex: 1; overflow-y: auto; padding-bottom: 90px; background: #F9FAFB;}
+        .cd-main-img { width: 100%; max-height: 400px; object-fit: contain; background: #000; display: block;}
+        .cd-text-body { padding: 20px; background: #FFF;}
+        .cd-title { margin: 0 0 15px 0; font-size: 20px; font-weight: 900; color: #111827; line-height: 1.4;}
+        .cd-desc { font-size: 15px; color: #374151; line-height: 1.7; white-space: pre-wrap; font-weight: 500;}
+        .cd-chat-area { padding: 20px; }
+        .cd-chat-title { font-size: 13px; color: #9CA3AF; font-weight: bold; margin-bottom: 15px; text-align: center;}
+        .cd-bottom-bar { position: absolute; bottom: 0; left: 0; right: 0; background: #FFF; border-top: 1px solid #E5E7EB; padding: 12px 20px 25px; display: flex; gap: 10px; align-items: center;}
+        .cd-input { flex: 1; height: 42px; background: #F3F4F6; border: none; border-radius: 20px; padding: 0 15px; font-size: 14px; outline: none; }
+        .cd-send-btn { background: #10B981; color: #FFF; border: none; height: 42px; border-radius: 20px; padding: 0 15px; font-weight: 900; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 4px;}
+        .cd-like-big-btn { height: 42px; border: 1px solid #E5E7EB; border-radius: 20px; padding: 0 15px; background: #FFF; color: #4B5563; font-weight: bold; display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 14px;}
+        .cd-like-big-btn.voted { border-color: #FDE68A; background: #FFFBEB; color: #D97706; }
+
+        /* ================= 4. 足迹与榜单优化版 ================= */
+        .history-card-wrap { background: #FFF; border-radius: 20px; margin-bottom: 20px; box-shadow: 0 6px 20px rgba(0,0,0,0.05); overflow: hidden; border: 1px solid #F3F4F6;}
+        .hc-top-clickable { display: flex; gap: 15px; padding: 16px 16px 10px 16px; cursor: pointer; background: transparent; transition: background 0.2s;}
+        .hc-top-clickable:active { background: #F9FAFB; }
+        .mini-btn { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 900; background: #F3F4F6; color: #6B7280; border: 1px solid transparent; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: inline-flex; align-items: center; gap: 4px; user-select: none;}
+        .mini-btn:active { transform: scale(0.9); }
+        .mini-btn .emoji { display: inline-block; transition: transform 0.2s; }
+        .mini-btn:active .emoji { transform: scale(1.5) rotate(-10deg); }
+        .mini-btn.active-like { background: #ECFDF5; color: #047857; border-color: #A7F3D0; }
+        .mini-btn.active-dislike { background: #FEF2F2; color: #B91C1C; border-color: #FECACA; }
+
+        .ugc-compact-box { margin: 0 16px 12px; border: 2px solid #E5E7EB; border-radius: 12px; display: flex; align-items: center; overflow: hidden; background: #FFF; transition: all 0.3s ease; }
+        .ugc-compact-input { flex: 1; border: none; background: transparent; padding: 12px; font-size: 13px; outline: none; color: #111827; }
+        .ugc-compact-submit { background: #111827; color: #FFF; border: none; padding: 0 16px; height: 100%; font-weight: bold; font-size: 13px; cursor: pointer; transition: 0.3s; }
+
+        .share-footer-btn { padding: 10px 15px 15px; text-align: center; cursor: pointer; transition: 0.2s; user-select: none;}
+        .share-footer-btn:active { transform: scale(0.97); }
+        .share-text-chic { font-size: 13px; font-weight: 900; background: linear-gradient(90deg, #D97706 0%, #F59E0B 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: inline-flex; align-items: center; gap: 6px; letter-spacing: 0.5px;}
+        
+        .float-plus { position: fixed; font-size: 24px; font-weight: 900; z-index: 9999; pointer-events: none; text-shadow: 0 2px 5px rgba(0,0,0,0.2); animation: popAndFloat 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; }
+        @keyframes popAndFloat { 0% { transform: translateY(0) scale(0.5) rotate(-10deg); opacity: 1; } 40% { transform: translateY(-40px) scale(1.4) rotate(5deg); opacity: 1; } 100% { transform: translateY(-80px) scale(1) rotate(0); opacity: 0; } }
+
+        /* ================= 导航与悬浮聊天 ================= */
+        .tab-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 65px; background: #FFF; box-shadow: 0 -4px 20px rgba(0,0,0,0.06); display: flex; justify-content: space-around; align-items: center; z-index: 100; max-width: 600px; margin: 0 auto;}
+        
+        .tab-item { display: flex; flex-direction: column; align-items: center; justify-content: center; color: #9CA3AF; cursor: pointer; width: 20%; transition: 0.2s;}
+        .tab-item.active { color: #10B981; transform: translateY(-2px);}
+        .tab-icon { font-size: 22px; margin-bottom: 4px; }
+        .tab-text { font-size: 11px; font-weight: bold; }
+
+        .sticky-chat-bar { position: fixed; bottom: 0; left: 0; right: 0; max-width: 600px; margin: 0 auto; background: #FFF; padding: 12px 20px; box-shadow: 0 -4px 20px rgba(0,0,0,0.08); display: none; align-items: center; gap: 10px; z-index: 100; box-sizing: border-box; border-top-left-radius: 20px; border-top-right-radius: 20px;}
+        .chat-input { flex: 1; height: 40px; background: #F3F4F6; border: none; border-radius: 20px; padding: 0 15px; font-size: 14px; outline: none; }
+        .chat-send-btn { background: #10B981; color: #FFF; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 16px; display: flex; justify-content: center; align-items: center; cursor: pointer; }
+        #chatHistory { margin-bottom: 20px; display: flex; flex-direction: column; gap: 12px; }
+        
+        /* 模态弹窗复用 */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; display: none; justify-content: center; align-items: center; animation: fadeIn 0.2s ease; }
+        .modal-content { background: #FFF; width: 90%; max-width: 400px; border-radius: 20px; padding: 24px; box-sizing: border-box; max-height: 90vh; overflow-y: auto;}
+        .modal-input { width: 100%; border-radius: 12px; border: 2px solid #E5E7EB; padding: 12px; font-size: 15px; box-sizing: border-box; margin-top: 10px; font-weight: bold; outline: none;}
+        .modal-textarea { width: 100%; height: 180px; border-radius: 12px; border: 2px solid #E5E7EB; padding: 12px; font-size: 14px; box-sizing: border-box; outline: none; resize: none; margin-top: 10px; transition: border 0.2s;}
+        
+        .chat-bubble { max-width: 85%; padding: 12px 16px; border-radius: 16px; font-size: 14px; line-height: 1.5; word-wrap: break-word; margin-bottom: 12px;}
+        .bubble-user { background: #10B981; color: #FFF; border-bottom-right-radius: 4px; align-self: flex-end; margin-left: auto;}
+        .bubble-ai { background: #FFF; color: #1F2937; border: 1px solid #E5E7EB; border-bottom-left-radius: 4px; align-self: flex-start; box-shadow: 0 2px 10px rgba(0,0,0,0.02);}
+        
+        /* 神图海报与榜单 UI */
+        .poster-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 999; justify-content: center; align-items: center; flex-direction: column; animation: fadeIn 0.3s ease; }
+        .poster-modal.show { display: flex; }
+        .poster-result-img { max-width: 85%; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+        .close-poster-btn { margin-top: 30px; background: #FFF; color: #111827; border: none; padding: 12px 40px; border-radius: 25px; font-weight: bold; font-size: 15px; cursor: pointer; }
+        #poster-template { position: fixed; left: -9999px; top: 0; width: 350px; background: #F3F4F6; padding: 25px; box-sizing: border-box; font-family: -apple-system, sans-serif; }
+    
+        .trending-tabs { display: flex; gap: 15px; padding: 0 20px; margin-bottom: 20px; }
+        .t-tab { flex: 1; text-align: center; padding: 12px 0; background: #FFF; border-radius: 12px; font-weight: 900; color: #6B7280; font-size: 14px; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
+        .t-tab.active { background: #111827; color: #FFF; box-shadow: 0 4px 15px rgba(17,24,39,0.2); transform: translateY(-2px); }
+        .trending-card { background: #FFF; margin: 0 20px 15px; border-radius: 16px; padding: 15px 20px; display: flex; align-items: center; gap: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); position: relative; overflow: hidden; }
+        .rank-badge { position: absolute; top: 0; left: 0; padding: 4px 12px; border-bottom-right-radius: 12px; font-size: 12px; font-weight: 900; color: #FFF; z-index: 1; box-shadow: 2px 2px 8px rgba(0,0,0,0.1); }
+        .rank-1 { background: linear-gradient(135deg, #F59E0B, #FBBF24); }
+        .rank-2 { background: linear-gradient(135deg, #9CA3AF, #D1D5DB); color: #4B5563; }
+        .rank-3 { background: linear-gradient(135deg, #B45309, #D97706); }
+        .rank-other { background: #E5E7EB; color: #6B7280; box-shadow: none; }
+        .rank-bad { background: #EF4444; color: #FFF; }
+        .t-info { flex: 1; margin-top: 10px; }
+        .t-name { font-size: 16px; font-weight: 900; color: #111827; margin-bottom: 2px; }
+        .t-dutch { font-size: 12px; color: #9CA3AF; margin-bottom: 6px; }
+        .t-insight { font-size: 13px; color: #6B7280; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+        .t-score { font-size: 18px; font-weight: 900; display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 40px;}
+        .t-score-label { font-size: 11px; font-weight: bold; opacity: 0.7; }
+        .score-like { color: #10B981; }
+        .score-dislike { color: #EF4444; }
+
+        /* ================= 5. 终极版：嵌套卡片式省钱秘籍 ================= */
+        .quick-links-wrap { display: flex; overflow-x: auto; gap: 12px; padding: 0 20px 15px; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
+        .quick-links-wrap::-webkit-scrollbar { display: none; }
+        .ql-card { flex: 0 0 auto; width: 140px; background: #FFF; border-radius: 16px; padding: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); border: 1px solid #E5E7EB; text-decoration: none; display: flex; flex-direction: column; align-items: center; justify-content: center; scroll-snap-align: start; transition: transform 0.2s; }
+        .ql-card:active { transform: scale(0.95); }
+        .ql-icon { font-size: 28px; margin-bottom: 6px; }
+        .ql-title { font-size: 13px; font-weight: 900; color: #111827; }
+        .ql-sub { font-size: 11px; color: #6B7280; margin-top: 2px; }
+
+        /* 一级分类 (大类) */
+        .tips-accordion { margin: 0 16px 15px; background: #FFF; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #E5E7EB; overflow: hidden; }
+        .tips-header { padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; font-weight: 900; font-size: 16px; color: #111827; cursor: pointer; background: #F9FAFB; user-select: none; transition: background 0.2s;}
+        .tips-header:active { background: #F3F4F6; }
+        .tips-header.active { background: #FFF; border-bottom: 1px solid #F3F4F6; color: #10B981; }
+        .tips-title-wrap { display: flex; align-items: center; gap: 10px; }
+        .tips-icon { font-size: 22px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));}
+        .tips-arrow { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); color: #9CA3AF; font-size: 12px;}
+        .tips-header.active .tips-arrow { transform: rotate(180deg); color: #10B981; }
+        .tips-content { max-height: 0; overflow: hidden; transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1); background: #FFF; }
+        .tips-inner { padding: 15px; }
+
+        /* 二级分类 (商店品牌卡片) */
+        .store-card { background: #F9FAFB; border-radius: 14px; border: 1px solid #E5E7EB; margin-bottom: 12px; overflow: hidden; transition: 0.2s; }
+        .store-card:last-child { margin-bottom: 0; }
+        .store-header { padding: 14px 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: #FFF; font-weight: 900; font-size: 15px; color: #374151; }
+        .store-header:active { background: #F9FAFB; }
+        .store-header.active { border-bottom: 1px dashed #E5E7EB; color: #111827; background: #F9FAFB;}
+        .s-icon-name { display: flex; align-items: center; gap: 10px; }
+        .s-logo { font-size: 16px; background: #F3F4F6; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);}
+        .store-arrow { font-size: 10px; color: #9CA3AF; transition: transform 0.3s; }
+        .store-header.active .store-arrow { transform: rotate(180deg); color: #D97706; }
+        .store-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+        .store-inner { padding: 12px; background: #F9FAFB; }
+
+        /* 三级内容 (具体干货微卡片) */
+        .tip-item { background: #FFF; border-radius: 10px; padding: 12px; margin-bottom: 10px; border: 1px solid #E5E7EB; border-left: 4px solid #10B981; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .tip-item:last-child { margin-bottom: 0; }
+        .tip-title { font-size: 14px; font-weight: 900; color: #111827; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+        .tip-desc { font-size: 13px; color: #4B5563; line-height: 1.6; }
+        .tip-kw { color: #D97706; font-weight: bold; background: #FFFBEB; padding: 1px 5px; border-radius: 6px; margin: 0 2px;}
+        .tips-highlight { display: inline-block; background: #FEF2F2; color: #EF4444; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; margin-left: 5px; border: 1px solid #FECACA;}
+        
+        .btn-report-tip { background: #111827; color: #FFF; border: none; padding: 16px; border-radius: 20px; font-size: 15px; font-weight: 900; width: calc(100% - 32px); margin: 10px 16px 30px; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 8px 20px rgba(17,24,39,0.2); cursor: pointer; transition: 0.2s; }
+        .btn-report-tip:active { transform: scale(0.96); }
+
+        /* ================= 免责声明专属样式 ================= */
+        .tips-disclaimer { margin: 0 16px 20px; padding: 15px; background: #FFFBEB; border: 1px dashed #FCD34D; border-radius: 12px; font-size: 11px; color: #B45309; line-height: 1.6; }
+        .tips-disclaimer .update-time { font-weight: bold; margin-bottom: 6px; color: #D97706; display: flex; align-items: center; gap: 4px;}
+        .tips-disclaimer b { color: #92400E; }
+        
     </style>
 </head>
 
@@ -121,68 +248,58 @@
     <div class="tab-item active" onclick="switchTab('scan', this)">
         <span class="tab-icon">🏠</span><span class="tab-text">首页</span>
     </div>
-    <div class="tab-item" onclick="switchTab('market', this)">
-        <span class="tab-icon">📦</span><span class="tab-text">集市</span>
+    <div class="tab-item" onclick="switchTab('community', this)">
+        <span class="tab-icon">🍳</span><span class="tab-text">食堂</span>
     </div>
-    
-    <div class="tab-item-publish" onclick="openPublishSheet()">
-        <div class="btn-publish">+</div>
-        <span class="tab-text" style="position: absolute; bottom: 8px; color:#9CA3AF;">发布</span>
+    <div class="tab-item" onclick="switchTab('footprint', this)">
+        <span class="tab-icon">👣</span><span class="tab-text">足迹</span>
     </div>
-    
+    <div class="tab-item" onclick="switchTab('trending', this)">
+        <span class="tab-icon">🔥</span><span class="tab-text">榜单</span>
+    </div>
     <div class="tab-item" onclick="switchTab('tips', this)">
         <span class="tab-icon">💰</span><span class="tab-text">省钱</span>
     </div>
-    <div class="tab-item" onclick="switchTab('profile', this)">
-        <span class="tab-icon">👤</span><span class="tab-text">我的</span>
-    </div>
 </div>
 
-<div class="publish-overlay" id="publishOverlay" onclick="closePublishSheet()"></div>
-<div class="publish-sheet" id="publishSheet">
-    <div class="ps-close" onclick="closePublishSheet()">✕</div>
-    <div class="ps-title">你想发点什么？</div>
-    <div class="ps-options">
-        <div class="ps-opt ps-opt-1" onclick="alert('📸 正在接入 AI 闲置文案生成接口，敬请期待！')">
-            <div class="ps-icon">📦</div>
-            <div class="ps-text">卖闲置</div>
-            <div class="ps-sub">AI 帮写文案</div>
-        </div>
-        <div class="ps-opt ps-opt-2" onclick="alert('🤝 正在接入互助悬赏大厅，敬请期待！')">
-            <div class="ps-icon">🤝</div>
-            <div class="ps-text">发互助</div>
-            <div class="ps-sub">接送机/找搭子</div>
-        </div>
-        <div class="ps-opt ps-opt-3" onclick="document.getElementById('fileInput').click(); closePublishSheet();">
-            <div class="ps-icon">🔍</div>
-            <div class="ps-text">测新品</div>
-            <div class="ps-sub">传图片排雷</div>
-        </div>
-    </div>
+<div class="sticky-chat-bar" id="stickyChatBar">
+    <input type="text" id="askInput" class="chat-input" placeholder="问管家：这玩意怎么吃？" onkeypress="if(event.key==='Enter') sendQuestion()">
+    <button class="chat-send-btn" id="sendBtn" onclick="sendQuestion()">↑</button>
 </div>
-
-<input type="file" id="fileInput" accept="image/*" capture="environment" style="display:none;" onchange="handleFileSelect(event)">
-
 
 <div class="container">
-    
     <div id="page-scan" class="page-section active">
         <div class="header">
             <h1 class="title">荷包管家 🇳🇱</h1>
-            <div class="subtitle">留学生专属的避雷与生活神器</div>
+            <div class="subtitle">留学生专属的荷兰超市避雷神器</div>
+        </div>
+
+        <div class="pwa-banner" id="pwaBanner" onclick="showPwaGuide()">
+            <div class="pwa-banner-text"><span style="font-size:18px;">📱</span> 想要秒开管家？添加到主屏幕 ↗</div>
+            <div class="pwa-close-btn" onclick="closePwaBanner(event)">✕</div>
         </div>
 
         <div class="search-container">
             <span style="font-size: 18px; padding-left: 5px;">🔍</span>
-            <input type="text" id="mainSearchInput" class="search-input" placeholder="搜商品名或扫条形码..." onkeypress="if(event.key==='Enter') executeSearch()">
+            <input type="text" id="mainSearchInput" class="search-input" placeholder="搜商品名(中/荷)或扫条码..." onkeypress="if(event.key==='Enter') executeSearch()">
             <button class="barcode-btn" onclick="startBarcodeScan()">|||</button>
         </div>
 
-        <div class="home-action-btn" id="homeActionBox" onclick="startBarcodeScan()">
-            <div class="action-icon">📸</div>
-            <div class="action-title">扫商品条码排雷</div>
-            <div class="action-sub">看全网评价 · 找平替 · 避开刺客</div>
+        <div class="home-grid" id="homeActionBox">
+            <div class="action-card scan-mode" onclick="document.getElementById('fileInput').click()">
+                <div class="action-icon">📸</div><div class="action-title">扫包装排雷</div><div class="action-sub">看全网评价 · 找平替</div>
+            </div>
+            <div class="action-card ingredient-mode" onclick="document.getElementById('ingredientInput').click()">
+                <div class="action-icon">🥬</div><div class="action-title">拍生食材</div><div class="action-sub">清冰箱求做法</div>
+            </div>
+            <div class="action-card dish-mode" onclick="document.getElementById('dishInput').click()">
+                <div class="action-icon">🍳</div><div class="action-title">拍熟菜品</div><div class="action-sub">AI一键求复刻</div>
+            </div>
         </div>
+
+        <input type="file" id="fileInput" accept="image/*" capture="environment" style="display:none;" onchange="handleFileSelect(event)">
+        <input type="file" id="ingredientInput" accept="image/*" capture="environment" style="display:none;" onchange="handleIngredientSelect(event)">
+        <input type="file" id="dishInput" accept="image/*" capture="environment" style="display:none;" onchange="handleDishSelect(event)">
 
         <div class="preview-container" id="previewContainer">
             <img id="previewImg" class="preview-img" src="" alt="预览">
@@ -192,35 +309,79 @@
         </div>
 
         <div id="miniResultCard">
-            <div class="name-box"><span class="item-name" id="miniChineseName"></span></div>
-            <div class="mini-insight" id="miniInsight" style="margin: 15px 0; padding: 12px; background: #F3F4F6; border-radius: 12px;"></div>
+            <div class="name-box"><span class="item-name" id="miniChineseName"></span><span class="item-dutch" id="miniDutchName"></span></div>
+            <div class="feature-tag" id="miniTag" style="display:none;"></div>
+            <div class="mini-warning" id="miniWarning" style="display:none;"></div>
+            <div class="mini-insight" id="miniInsight"></div>
+            
             <button class="btn-view-detail" id="btnViewDetail" onclick="openDetailsFromScan()">👉 查看完整报告</button>
             <button class="btn-secondary" onclick="resetApp()">🔴 测下一个</button>
         </div>
 
-        <div class="home-section-title">🔥 留学生公认好物 TOP 5</div>
-        <div id="homeTrendingList">
-            <div style="text-align: center; color: #888; font-size: 12px; margin-top: 20px;">数据拉取中...</div>
+        <div class="legal-disclaimer">
+            免责声明：本管家评价基于 AI 结合全网华人留学生真实反馈生成，主打中西饮食文化翻译。口味主观，千人千面，仅供避雷参考，最终解释权归吃货所有。
         </div>
     </div>
 
-    <div id="page-market" class="page-section">
-        <div class="header" style="text-align: left; margin-top: 0;">
-            <h1 class="title">管家集市 📦</h1>
-            <div class="subtitle" style="margin-bottom: 20px;">闲置交易与互助悬赏，全员实名认证</div>
-        </div>
-        
-        <div class="market-tabs">
-            <div class="m-tab active">🏷️ 闲置跳蚤</div>
-            <div class="m-tab">🤝 互助悬赏</div>
-            <div class="m-tab">🏕️ 找搭子</div>
+    <div id="page-details" class="page-section">
+        <div class="top-nav"><div class="back-btn" onclick="goBack()">‹ 返回上一页</div></div>
+        <div class="detail-hero">
+            <img id="detailImg" class="detail-img" src="">
+            <div class="name-box"><span class="item-name" id="detailChineseName"></span><span class="item-dutch" id="detailDutchName"></span></div>
         </div>
 
-        <div style="text-align: center; color: #9CA3AF; margin-top: 60px; line-height: 1.8;">
-            <div style="font-size: 40px; margin-bottom: 10px;">🚧</div>
-            <b>二手集市双列瀑布流正在建设中...</b><br>
-            马上就能在这里买白菜价好物啦！
+        <div style="padding: 0 5px;">
+            <div class="info-block" id="detailInsightBox">
+                <div class="block-title" id="insightTitle">💡 管家锐评</div><p class="block-text" id="detailInsight"></p>
+            </div>
+            <div class="info-block warning" id="detailWarningBox" style="display:none;">
+                <div class="block-title warning-title">⚠️ 致命避雷</div><p class="block-text" id="detailWarning"></p>
+            </div>
+            <div class="info-block" id="detailAltBox" style="display:none;">
+                <div class="block-title">🛍️ 购物指南 (平替/升级)</div><div class="alt-tags" id="detailAlternatives"></div>
+            </div>
+            <div class="info-block" id="detailRecipeBox" style="display:none; background: transparent; box-shadow: none; padding: 0;">
+                <div class="block-title" id="recipeBoxTitle" style="margin-left: 5px; margin-bottom: 15px;">🍳 留学生糊弄学菜谱</div>
+                <div class="recipe-submit-box" id="recipeSubmitBoxBtn" onclick="openShareCommunityModal()">
+                    <div class="recipe-submit-title">👨‍🍳 贡献我的神仙吃法</div><div class="recipe-submit-sub">丢几个词，分享给全网留学生！</div>
+                </div>
+                <div id="recipeCardList"></div>
+            </div>
+            <button class="btn-share-community" id="shareToCommunityBtn" onclick="openShareCommunityModal()">✍️ 修改并分享到【深夜食堂】社区</button>
+            
+            <div id="chatHistory" style="margin-top: 20px;"></div>
         </div>
+    </div>
+
+    <div id="page-community" class="page-section">
+        <div class="header">
+            <h1 class="title">深夜食堂 🍳</h1>
+            <div class="subtitle">留学生专属的糊弄学菜谱社区</div>
+        </div>
+        
+        <div class="waterfall-container" id="communityFeedList">
+            <div style="text-align: center; color: #888; margin-top: 50px; grid-column: span 2;">
+                <div class="spinner" style="margin: 0 auto 10px;"></div>正在加载各路大厨的作品...
+            </div>
+        </div>
+    </div>
+
+    <div id="page-footprint" class="page-section">
+        <div class="header" style="position: relative;">
+            <h1 class="title">我的足迹 👣</h1>
+            <button onclick="clearAllFootprints()" style="position: absolute; right: 20px; top: 10px; background: none; border: none; color: #EF4444; font-size: 13px; font-weight: bold; cursor: pointer; padding: 5px;">🧹 清空全部</button>
+        </div>
+        <div id="footprintList"></div>
+    </div>
+
+    <div id="page-trending" class="page-section">
+        <div class="header"><h1 class="title">避雷榜单 🔥</h1></div>
+        <div class="trending-tabs">
+            <div class="t-tab active" onclick="switchTrendingTab('likes', event)">🏆 封神榜</div>
+            <div class="t-tab" onclick="switchTrendingTab('dislikes', event)">💣 冥场面</div>
+        </div>
+        <div id="trendingListLikes" style="display:block;"></div>
+        <div id="trendingListDislikes" style="display:none;"></div>
     </div>
 
     <div id="page-tips" class="page-section">
@@ -230,48 +391,12 @@
         </div>
 
         <div class="quick-links-wrap" id="quickLinksContainer"></div>
+
         <div id="tipsAccordionContainer"></div>
+
         <div id="tipsDisclaimerContainer"></div>
 
-        <button class="btn-report-tip" onclick="alert('开发中，即将上线！')" style="background: #111827; color: #FFF; border: none; padding: 16px; border-radius: 20px; font-size: 15px; font-weight: 900; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 8px 20px rgba(17,24,39,0.2); cursor: pointer;">📢 我要爆料新羊毛 / 疯狂纠错</button>
-    </div>
-
-    <div id="page-profile" class="page-section">
-        <div class="header" style="text-align: left; margin-top: 0;">
-            <h1 class="title">我的主页 👤</h1>
-        </div>
-
-        <div class="profile-header">
-            <div class="p-avatar">😎</div>
-            <div class="p-info">
-                <div class="p-name">荷兰新居民 <span class="credit-badge">信誉分 500 (良好)</span></div>
-                <div class="p-sub">还未绑定学生身份</div>
-            </div>
-        </div>
-
-        <div class="auth-banner" onclick="alert('即将开放认证，+200信用分！')">
-            <div class="auth-text">🎓 验证大学邮箱，解锁二手交易权限</div>
-            <div class="auth-btn">去认证</div>
-        </div>
-
-        <div class="home-section-title">👣 我的避雷足迹</div>
-        <div id="footprintList">
-            </div>
-    </div>
-
-    <div id="page-details" class="page-section" style="margin: -20px; padding: 20px;">
-        <div class="top-nav" style="margin: -20px -20px 20px; padding: 15px 20px;"><div class="back-btn" onclick="goBack()">‹ 返回上一页</div></div>
-        <div class="detail-hero" style="background: #FFF; padding: 20px; border-radius: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 20px; text-align: center;">
-            <img id="detailImg" style="width: 100%; height: 220px; object-fit: contain; background: #F9FAFB; border-radius: 16px; margin-bottom: 15px;" src="">
-            <div style="font-size: 22px; font-weight: 900;" id="detailChineseName"></div>
-        </div>
-
-        <div style="background: #FFF; border-radius: 16px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.02);">
-            <div style="font-size: 16px; font-weight: 900; margin-bottom: 12px;">💡 管家锐评</div>
-            <p style="font-size: 14px; color: #4B5563; line-height: 1.6;" id="detailInsight"></p>
-        </div>
-        
-        <div id="recipeCardList"></div>
+        <button class="btn-report-tip" onclick="openReportModal()">📢 我要爆料新羊毛 / 疯狂纠错</button>
     </div>
 </div> 
 
@@ -283,6 +408,110 @@
     <div id="reader" style="width:100%; flex:1; background:#000;"></div>
 </div>
 
+<div class="modal-overlay" id="reportTipModal">
+    <div class="modal-content">
+        <h3 style="margin-top:0; color: #111827;">📢 爆料 / 纠错</h3>
+        <p style="font-size: 12px; color: #6B7280; margin-top: 0;">发现新羊毛？或者管家写的信息过期/错误了？快告诉我们，审核后立刻上墙/修改！</p>
+        
+        <select id="reportTipType" class="modal-input" style="background:#F9FAFB; margin-bottom:10px;">
+            <option value="爆料">✨ 爆料新羊毛</option>
+            <option value="纠错">🔨 怒锤错误信息</option>
+        </select>
+
+        <input type="text" id="reportTipTitle" class="modal-input" placeholder="一句话概括 (例: Jumbo免单取消了!)" style="margin-top:0;">
+        <textarea id="reportTipText" class="modal-textarea" style="height: 100px;" placeholder="具体是怎么回事..."></textarea>
+        <div style="margin-top: 20px; display: flex; gap: 10px;">
+            <button style="flex:1; padding: 14px; background: #F3F4F6; color: #4B5563; border: none; border-radius: 12px; font-weight: bold; cursor: pointer;" onclick="document.getElementById('reportTipModal').style.display='none'">取消</button>
+            <button id="btnSubmitReport" style="flex:2; padding: 14px; background: #10B981; color: #FFF; border: none; border-radius: 12px; font-weight: bold; cursor: pointer;" onclick="submitReportTip()">🚀 提交给管家</button>
+        </div>
+    </div>
+</div>
+
+<div class="community-detail-modal" id="communityDetailModal">
+    <div class="cd-content-wrap" onclick="event.stopPropagation()">
+        <div class="cd-header">
+            <div class="cd-author-box">
+                <div class="cd-avatar">👨‍🍳</div>
+                <div class="cd-author-name" id="cdAuthorName">匿名大厨</div>
+            </div>
+            <div class="cd-close" onclick="closeCommunityDetail()">✕</div>
+        </div>
+        <div class="cd-scroll-area" id="cdScrollArea">
+            <img id="cdMainImg" class="cd-main-img" src="" alt="美食图片">
+            <div class="cd-text-body">
+                <h1 class="cd-title" id="cdTitle"></h1>
+                <div class="cd-desc" id="cdContent"></div>
+            </div>
+            <div class="cd-chat-area">
+                <div class="cd-chat-title">—— 步骤有疑问？直接问 AI 替作者回答 ——</div>
+                <div id="cdChatHistory" style="display: flex; flex-direction: column;"></div>
+            </div>
+        </div>
+        <div class="cd-bottom-bar">
+            <input type="text" id="cdAskInput" class="cd-input" placeholder="问管家：没老干妈咋办？" onkeypress="if(event.key==='Enter') askInCommunity()">
+            <button class="cd-send-btn" onclick="askInCommunity()">✨ 提问</button>
+            <div class="cd-like-big-btn" id="cdLikeBigBtn" onclick="likeDetailPost()">
+                <span style="font-size:16px;">🤤</span> <span id="cdLikeCountText">0</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="shareCommunityModal">
+    <div class="modal-content">
+        <h3 style="margin-top:0; margin-bottom: 5px; color: #111827;">发布到深夜食堂 🍳</h3>
+        <p style="font-size: 12px; color: #6B7280; margin-top: 0;">独家秘方就是要大声炫耀出来！</p>
+        <div style="display: flex; gap: 10px; margin-top: 10px; align-items: center;">
+            <span style="font-size: 20px;">👨‍🍳</span>
+            <input type="text" id="communityAuthorName" class="modal-input" style="margin-top: 0; flex: 1;" placeholder="你的名号 (留空则随机)">
+        </div>
+        <input type="text" id="communityRecipeTitle" class="modal-input" placeholder="给菜谱起个响亮的名字...">
+        <textarea id="communityRecipeText" class="modal-textarea" style="height: 120px;" placeholder="写下你的神仙做法/所需调料..."></textarea>
+        <div style="margin-top: 20px; display: flex; gap: 10px;">
+            <button style="flex:1; padding: 14px; background: #F3F4F6; color: #4B5563; border: none; border-radius: 12px; font-weight: bold; cursor: pointer;" onclick="document.getElementById('shareCommunityModal').style.display='none'">取消</button>
+            <button id="btnConfirmShare" style="flex:2; padding: 14px; background: #D97706; color: #FFF; border: none; border-radius: 12px; font-weight: bold; cursor: pointer;" onclick="submitToCommunity()">🚀 确认发布</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="pwaGuideModal" onclick="this.style.display='none'">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <h3 style="margin-top:0; color: #111827;">📱 如何添加到桌面？</h3>
+        <div style="font-size: 14px; color: #4B5563; line-height: 1.6;">
+            <p><b>🍎 苹果 iOS：</b> 点击浏览器底部的 <b>[分享图标]</b>，选择 <b>[添加到主屏幕 ➕]</b>。</p>
+            <p><b>🤖 安卓 Android：</b> 点击右上角的 <b>[三个点 ⋮]</b>，选择 <b>[添加到主屏幕]</b>。</p>
+        </div>
+        <button style="width: 100%; padding: 12px; background: #111827; color: #FFF; border: none; border-radius: 12px; font-weight: bold; margin-top: 15px;" onclick="document.getElementById('pwaGuideModal').style.display='none'">我知道啦</button>
+    </div>
+</div>
+
+<div class="poster-modal" id="posterModal">
+    <div style="color:white; margin-bottom:15px; font-weight:bold; font-size: 15px; letter-spacing: 1px;">✨ 长按图片保存发朋友圈 ✨</div>
+    <img id="posterResultImg" class="poster-result-img" src="">
+    <button class="close-poster-btn" onclick="document.getElementById('posterModal').classList.remove('show')">完成</button>
+</div>
+
+<div id="poster-template">
+    <div id="ptWrapper" style="background: #FFF; border-radius: 20px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); box-sizing: border-box; position: relative; overflow: hidden; border: 2px solid transparent;">
+        <div style="position: relative; margin-bottom: 20px;">
+            <img id="ptImage" style="width: 100%; height: 260px; object-fit: cover; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);" src="">
+            <div id="ptBadge" style="display:none; position: absolute; top: -10px; right: -10px; padding: 8px 20px; border-radius: 25px; font-weight: 900; font-size: 18px; box-shadow: 0 6px 15px rgba(0,0,0,0.2); border: 3px solid #FFF; transform: rotate(12deg);"></div>
+        </div>
+        <div id="ptDutch" style="font-size: 26px; font-weight: 900; color: #111827; line-height: 1.2; margin-bottom: 6px; word-wrap: break-word;">Dutch Name</div>
+        <div id="ptChinese" style="font-size: 15px; color: #6B7280; margin-bottom: 18px;">中文名</div>
+        <div id="ptUserReviewBox" style="display:none; background: rgba(255,255,255,0.7); border-radius: 12px; padding: 15px; margin-bottom: 20px; font-size: 15px; font-weight: bold; color: #111827; border-left: 5px solid #10B981; line-height: 1.5;">
+            <span id="ptUserReview"></span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #E5E7EB; padding-top: 18px;" id="ptDivider">
+            <div>
+                <div style="font-size: 18px; font-weight: 900; color: #111827; margin-bottom: 4px;" id="ptBrand">荷包管家 🇳🇱</div>
+                <div style="font-size: 13px; font-weight: bold; opacity: 0.9;" id="ptSlogan">来和大家一起排雷！</div>
+            </div>
+            <img style="width: 60px; height: 60px; border-radius: 10px; border: 1px solid #eee;" src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://hebao-backend.vercel.app/" crossorigin="anonymous">
+        </div>
+    </div>
+</div>
+
 <script src="/tips-data.js"></script>
 
 <script>
@@ -290,216 +519,793 @@
     let userUUID = localStorage.getItem('hebao_uuid');
     if (!userUUID) { userUUID = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) { var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8); return v.toString(16); }); localStorage.setItem('hebao_uuid', userUUID); }
 
+    // PWA 横幅控制
+    if (localStorage.getItem('pwa_closed')) { document.getElementById('pwaBanner').style.display = 'none'; }
+    function showPwaGuide() { document.getElementById('pwaGuideModal').style.display = 'flex'; }
+    function closePwaBanner(event) { event.stopPropagation(); document.getElementById('pwaBanner').style.display = 'none'; localStorage.setItem('pwa_closed', 'true'); }
+
+    // 全局变量区
     let currentProductData = null; 
     let lastTab = 'scan'; 
     let currentDetailData = null; 
+    let communityPostsData = []; 
+    let currentDetailPostIndex = -1;
     let trendingLoaded = false;
+    let trendingLikesData = [];      
+    let trendingDislikesData = [];   
+    let backgroundPrefetchTask = {}; 
 
-    // ================= 底部菜单逻辑 =================
+    // Tab 切换逻辑
     function switchTab(pageId, element) {
         document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
         if (element) { 
-            // 移除所有激活状态，但不移除 publish 的特殊样式
             document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active')); 
             element.classList.add('active'); 
             lastTab = pageId; 
         }
         document.getElementById('page-' + pageId).classList.add('active');
         
+        const tabBar = document.querySelector('.tab-bar');
+        const chatBar = document.getElementById('stickyChatBar');
+        
         if (pageId === 'details') { 
-            document.querySelector('.tab-bar').style.display = 'none'; 
+            tabBar.style.display = 'none'; 
+            if(chatBar) chatBar.style.display = 'flex'; 
         } else { 
-            document.querySelector('.tab-bar').style.display = 'flex'; 
+            tabBar.style.display = 'flex'; 
+            if(chatBar) chatBar.style.display = 'none'; 
         }
         
-        if (pageId === 'profile') renderFootprints();
+        if (pageId === 'footprint') renderFootprints();
+        if (pageId === 'community') loadCommunityFeed(); 
+        if (pageId === 'trending' && !trendingLoaded) loadTrendingData();
     }
     
     function goBack() { switchTab(lastTab, document.querySelector(`.tab-item[onclick*="${lastTab}"]`)); }
 
-    // ================= 发布悬浮菜单逻辑 =================
-    function openPublishSheet() {
-        const overlay = document.getElementById('publishOverlay');
-        const sheet = document.getElementById('publishSheet');
-        overlay.classList.add('show');
-        // 稍微延迟一下触发动画
-        setTimeout(() => { sheet.classList.add('show'); }, 10);
+    // ==========================================
+    // 基础扫描功能
+    // ==========================================
+    function handleFileSelect(event) { const file = event.target.files[0]; if(!file)return; uiScanState("📸 正在上传云端..."); const reader = new FileReader(); reader.onload = function(e) { document.getElementById('previewImg').src = e.target.result; processImageParallel(e.target.result.split(',')[1], 'product'); }; reader.readAsDataURL(file); }
+    function handleIngredientSelect(event) { handleRecipePhoto(event, 'ingredient'); }
+    function handleDishSelect(event) { handleRecipePhoto(event, 'dish'); }
+    function handleRecipePhoto(event, type) { const file = event.target.files[0]; if(!file)return; uiScanState("👨‍🍳 厨神大脑飞速构思中..."); const reader = new FileReader(); reader.onload = function(e){ const img=new Image(); img.onload=function(){ const canvas=document.createElement('canvas');const ctx=canvas.getContext('2d');let width=img.width;let height=img.height;if(width>height){if(width>600){height*=600/width;width=600;}}else{if(height>600){width*=600/height;height=600;}}canvas.width=width;canvas.height=height;ctx.drawImage(img,0,0,width,height);const base64=canvas.toDataURL('image/jpeg',0.6); document.getElementById('previewImg').src=base64; processImageParallel(base64.split(',')[1], type);};img.src=e.target.result; }; reader.readAsDataURL(file); }
+    function uiScanState(msg) { document.getElementById('homeActionBox').style.display='none';document.getElementById('previewContainer').style.display='block';document.getElementById('scanOverlay').style.display='flex';document.getElementById('miniResultCard').style.display='none';document.getElementById('scanText').innerText=msg; }
+    
+    async function processImageParallel(base64Str, type) {
+        try {
+            const apiPath = type === 'product' ? '/api/scan' : '/api/magic-recipe';
+            const reqBody = type === 'product' ? { imageBase64: base64Str, userId: userUUID } : { imageBase64: base64Str, type: type, userId: userUUID };
+            const [res, uploadRes] = await Promise.all([ fetch(apiPath, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(reqBody) }), fetch('/api/upload', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({imageBase64:base64Str,userId:userUUID}) }) ]);
+            const data = await res.json(); const uploadData = await uploadRes.json();
+            if (!res.ok) throw new Error(data.error);
+            data.item_type = type === 'product' ? 'product' : 'recipe'; currentProductData = data; 
+            const cloudImg = uploadData.success ? uploadData.url : document.getElementById('previewImg').src;
+            saveToLocalFootprint(data, cloudImg); data.cloud_img = cloudImg; renderResult(data);
+            fetch('/api/save', { method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...data,userId:userUUID}) }).catch(()=>{});
+        } catch (error) { alert("管家断网了：" + error.message); resetApp(); }
     }
+    
+    function saveToLocalFootprint(data, img) { let h = JSON.parse(localStorage.getItem('hebao_history')||'[]'); if(!h.find(i=>i.dutch_name===data.dutch_name)){data.img_src=img;h.unshift(data);localStorage.setItem('hebao_history',JSON.stringify(h));} }
+    
+    function renderResult(data) { 
+        document.getElementById('scanOverlay').style.display='none';
+        document.getElementById('miniResultCard').style.display='block';
+        document.getElementById('miniChineseName').innerText=data.chinese_name||'未知';
+        document.getElementById('miniDutchName').innerText=data.dutch_name||'';
+        document.getElementById('miniInsight').innerText=data.insight||''; 
+        document.getElementById('btnViewDetail').innerText = data.item_type==='recipe'?'👉 查看详细菜谱':'👉 查看完整报告'; 
 
-    function closePublishSheet() {
-        const overlay = document.getElementById('publishOverlay');
-        const sheet = document.getElementById('publishSheet');
-        sheet.classList.remove('show');
-        setTimeout(() => { overlay.classList.remove('show'); }, 300);
+        if (data.item_type === 'product' && (!data.pairing || !data.alternatives)) {
+            backgroundPrefetchTask[data.dutch_name] = fetch('/api/detail', {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({dutchName: data.dutch_name})
+            }).then(r => r.json());
+        }
     }
+    
+    function resetApp() { ['fileInput','ingredientInput','dishInput'].forEach(id=>document.getElementById(id).value=''); document.getElementById('previewContainer').style.display='none';document.getElementById('miniResultCard').style.display='none';document.getElementById('homeActionBox').style.display='grid'; }
 
-    // ================= 扫码与详情逻辑 =================
-    function startBarcodeScan() {
-        document.getElementById('scannerModal').style.display = 'flex';
-        let html5QrcodeScanner = new Html5Qrcode("reader");
-        const config = { fps: 10, qrbox: { width: 250, height: 150 }, aspectRatio: 1.0, formatsToSupport: [ Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8, Html5QrcodeSupportedFormats.UPC_A ] };
-        html5QrcodeScanner.start({ facingMode: "environment" }, config, (decodedText) => {
-            if (navigator.vibrate) navigator.vibrate(100);
-            document.getElementById('scannerModal').style.display = 'none';
-            html5QrcodeScanner.stop();
-            document.getElementById('mainSearchInput').value = decodedText;
-            executeSearch();
-        }).catch(err => { alert("调用摄像头失败！"); document.getElementById('scannerModal').style.display = 'none'; });
-    }
-
-    function closeScanner() { document.getElementById('scannerModal').style.display = 'none'; }
-
-    function executeSearch() {
-        const query = document.getElementById('mainSearchInput').value.trim();
-        if (!query) return;
-        
-        document.getElementById('homeActionBox').style.display='none';
-        document.getElementById('previewContainer').style.display='block';
-        document.getElementById('scanOverlay').style.display='flex';
-        document.getElementById('scanText').innerText = "📡 正在全网检索条形码...";
-        document.getElementById('miniResultCard').style.display='none';
-
-        // 模拟调用 API (实际应替换为你的 fetch 逻辑)
-        fetch('/api/scan-barcode', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ barcode: query, userId: userUUID }) })
-        .then(res => res.json())
-        .then(data => {
-            currentProductData = data;
-            document.getElementById('scanOverlay').style.display='none';
-            document.getElementById('miniResultCard').style.display='block';
-            document.getElementById('miniChineseName').innerText=data.chinese_name||'未知商品';
-            document.getElementById('miniInsight').innerText=data.insight||'暂无评价';
-            saveToLocalFootprint(data, data.image_url);
-        }).catch(err => {
-            alert("未找到商品信息，建议使用右下角 ➕ 按钮 -> 测新品 拍照排雷！");
-            resetApp();
-        });
-    }
-
-    function resetApp() { 
-        document.getElementById('previewContainer').style.display='none';
-        document.getElementById('miniResultCard').style.display='none';
-        document.getElementById('homeActionBox').style.display='flex'; 
-    }
-
-    function openDetailsFromScan() { currentDetailData = {...currentProductData}; setupDetailPage(); }
+    // ==========================================
+    // 详情页逻辑（秒开优化）
+    // ==========================================
+    function openDetailsFromScan() { currentDetailData = {...currentProductData, img_src:document.getElementById('previewImg').src}; setupDetailPage(); }
     function openDetailsFromHistory(index) { let h = JSON.parse(localStorage.getItem('hebao_history')||'[]'); currentDetailData = h[index]; setupDetailPage(); }
     
     function setupDetailPage() {
         const d = currentDetailData;
-        document.getElementById('detailImg').src = d.image_url || d.img_src || ''; 
+        document.getElementById('detailImg').src = d.img_src; 
         document.getElementById('detailChineseName').innerText = d.chinese_name; 
-        document.getElementById('detailInsight').innerText = d.insight || '暂无详细评价';
+        document.getElementById('detailDutchName').innerText = d.dutch_name;
+        document.getElementById('insightTitle').innerText = d.item_type==='recipe'?'👨‍🍳 厨神点拨':'💡 管家锐评';
+        document.getElementById('recipeBoxTitle').innerText = d.item_type==='recipe'?'📜 详细做法':'🍳 网友避雷/神仙做法';
+        document.getElementById('shareToCommunityBtn').style.display = d.item_type==='recipe'?'block':'none';
+        document.getElementById('recipeSubmitBoxBtn').style.display = d.item_type==='recipe'?'none':'block';
+        document.getElementById('detailInsightBox').style.display = d.insight?'block':'none'; 
+        document.getElementById('detailInsight').innerText = d.insight;
+        document.getElementById('detailWarningBox').style.display = d.warning?'block':'none'; 
+        document.getElementById('detailWarning').innerText = d.warning;
+        document.getElementById('detailAltBox').style.display = 'none';
+        document.getElementById('recipeCardList').innerHTML = '';
+        
+        if(d.item_type === 'recipe') { 
+            renderRecipes('', d.pairing); 
+        } else { 
+            if ((d.pairing && String(d.pairing).trim() !== '') || d.alternatives) {
+                renderRecipes(d.alternatives || '', d.pairing);
+            } else {
+                document.getElementById('recipeCardList').innerHTML='<div style="text-align:center;color:#888;">正在提取全网反馈...</div>'; 
+                fetchDeepDetails(); 
+            }
+        }
         switchTab('details', null);
     }
 
-    function saveToLocalFootprint(data, img) { 
-        let h = JSON.parse(localStorage.getItem('hebao_history')||'[]'); 
-        if(!h.find(i=>i.dutch_name===data.dutch_name)){
-            data.img_src=img; h.unshift(data); localStorage.setItem('hebao_history',JSON.stringify(h));
+    async function fetchDeepDetails() { 
+        try { 
+            const dName = currentDetailData.dutch_name;
+            let data;
+
+            if (backgroundPrefetchTask[dName]) {
+                data = await backgroundPrefetchTask[dName];
+                delete backgroundPrefetchTask[dName]; 
+            } else {
+                const res = await fetch('/api/detail',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({dutchName: dName})}); 
+                data = await res.json(); 
+            }
+
+            if(data && (data.alternatives || data.pairing)) {
+                renderRecipes(data.alternatives, data.pairing);
+                
+                currentDetailData.alternatives = data.alternatives;
+                currentDetailData.pairing = data.pairing;
+
+                let history = JSON.parse(localStorage.getItem('hebao_history') || '[]');
+                let index = history.findIndex(i => i.dutch_name === dName);
+                if(index !== -1) {
+                    history[index].alternatives = data.alternatives;
+                    history[index].pairing = data.pairing;
+                    localStorage.setItem('hebao_history', JSON.stringify(history));
+                }
+
+                fetch('/api/save', { 
+                    method:'POST', 
+                    headers:{'Content-Type':'application/json'}, 
+                    body:JSON.stringify({...currentDetailData, userId: userUUID}) 
+                }).catch(()=>{});
+            } 
+        } catch(e){
+            document.getElementById('recipeCardList').innerHTML = '<div style="text-align:center;color:#EF4444;">网速开小差了，请返回重试</div>';
         } 
     }
+    
+    function renderRecipes(alts, pairing) {
+        if(currentDetailData.item_type !== 'recipe' && alts) { 
+            document.getElementById('detailAltBox').style.display='block'; 
+            document.getElementById('detailAlternatives').innerHTML = alts.split('|').map(p=>`<div class="alt-tag">${p}</div>`).join(''); 
+        }
+        const list = document.getElementById('recipeCardList'); list.innerHTML = '';
+        
+        if(pairing) {
+            if(currentDetailData.item_type === 'recipe') {
+                list.innerHTML = `<div class="recipe-card"><div class="recipe-title"><span>✨ AI 破解神仙做法</span></div><div class="recipe-steps">${pairing.replace(/🧑‍🍳 网友点评 \[.*?\]：|🤖 AI预测口味 \[.*?\]：/,'').trim()}</div></div>`;
+            } else {
+                pairing.split('\n\n').filter(l=>l.trim()).forEach(line => {
+                    const isLike = line.includes('👍');
+                    const isRealUser = line.includes('🧑‍🍳 网友点评');
+                    
+                    const cleanText = line.replace(/🧑‍🍳 网友点评 \[.*?\]：|🤖 AI预测口味 \[.*?\]：/, '').trim();
+                    
+                    const cardStyle = isRealUser 
+                        ? `border-left: 4px solid ${isLike ? '#10B981' : '#EF4444'}; background: #FFF; box-shadow: 0 2px 8px rgba(0,0,0,0.04);` 
+                        : `border: 1px dashed #D1D5DB; background: #F9FAFB; opacity: 0.85;`;
+                        
+                    const titleHtml = isRealUser 
+                        ? `<span style="color: ${isLike ? '#047857' : '#B91C1C'}">🔥 真实留学生评价</span>`
+                        : `<span>🤖 AI 预测口味 (仅供参考)</span>`;
 
+                    list.innerHTML += `
+                        <div class="recipe-card" style="${cardStyle}">
+                            <div class="recipe-title">${titleHtml}</div>
+                            <div class="recipe-steps" style="${isLike ? '' : 'color:#DC2626'}">${cleanText}</div>
+                        </div>`;
+                });
+            }
+        }
+        if(!list.innerHTML) list.innerHTML = '<div style="text-align:center;color:#888;">暂无评价，快去抢首发！</div>';
+    }
+
+    // ==========================================
+    // 社区逻辑
+    // ==========================================
+    function openShareCommunityModal() {
+        const d = currentDetailData; 
+        document.getElementById('communityAuthorName').value = localStorage.getItem('hebao_author_name') || '';
+        document.getElementById('communityRecipeTitle').value = d.chinese_name || '';
+        document.getElementById('communityRecipeText').value = (d.pairing||'').replace(/🧑‍🍳 网友点评 \[.*?\]：|🤖 AI预测口味 \[.*?\]：/,'').trim();
+        document.getElementById('shareCommunityModal').style.display = 'flex';
+    }
+
+    async function submitToCommunity() {
+        const authorName = document.getElementById('communityAuthorName').value.trim();
+        const title = document.getElementById('communityRecipeTitle').value.trim(); 
+        const text = document.getElementById('communityRecipeText').value.trim();
+        
+        if(!title || !text) return alert('标题和做法不能为空哦！');
+        if(authorName) localStorage.setItem('hebao_author_name', authorName);
+
+        const btn = document.getElementById('btnConfirmShare'); btn.innerText = '发布中...'; btn.disabled = true;
+        try {
+            const imgUrl = currentDetailData.cloud_img || currentDetailData.img_src || '';
+            const res = await fetch('/api/publish-community', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({userId:userUUID, authorName: authorName, title: title, text: text, imageUrl:imgUrl})});
+            const data = await res.json(); if(!res.ok) throw new Error(data.error);
+            document.getElementById('shareCommunityModal').style.display = 'none';
+            switchTab('community', document.querySelectorAll('.tab-item')[1]);
+        } catch(e) { alert('发布失败: ' + e.message); } finally { btn.innerText = '🚀 确认发布'; btn.disabled = false; }
+    }
+
+    function getAuthorHtml(name) {
+        if (name && (name.includes('山争') || name.includes('官方') || name.includes('荷包'))) {
+            return `👑 <span style="color:#D97706; font-weight:900;">${name} (特邀品鉴官)</span>`;
+        }
+        return `👨‍🍳 ${name || '匿名大厨'}`;
+    }
+
+    async function loadCommunityFeed() {
+        const feed = document.getElementById('communityFeedList');
+        feed.innerHTML = '<div style="text-align: center; color: #888; margin-top: 50px; grid-column: span 2;"><div class="spinner" style="margin: 0 auto 10px;"></div>正在拉取全网绝世好菜...</div>';
+        try {
+            const res = await fetch('/api/get-community'); const data = await res.json();
+            if (!res.ok) throw new Error(data.error);
+            if (data.posts.length === 0) return feed.innerHTML = '<div style="text-align:center; color:#888; margin-top:40px; grid-column: span 2;">社区还在准备食材，快去首发！</div>';
+            
+            communityPostsData = data.posts;
+            let html = '';
+            communityPostsData.forEach((post, index) => {
+                const img = post.image_url || 'https://images.unsplash.com/photo-1544025162-8315ea07659b?q=80&w=600&auto=format&fit=crop';
+                html += `
+                    <div class="c-card" onclick="openCommunityDetail(${index})">
+                        <img class="c-img" src="${img}" alt="美食图">
+                        <div class="c-body">
+                            <div class="c-title">${post.title}</div>
+                            <div class="c-footer">
+                                <div class="c-user">${getAuthorHtml(post.author_name)}</div>
+                                <div class="c-like-btn" id="feedLikeBtn_${index}"><span style="font-size:12px;">🤤</span> <span class="like-num">${post.likes||0}</span></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            feed.innerHTML = html;
+        } catch (e) { feed.innerHTML = `<div style="text-align:center; margin-top:40px; color:#EF4444; font-weight:bold; line-height:1.6; grid-column: span 2;">拉取失败，真凶是：<br><br>${e.message}</div>`; }
+    }
+
+    function openCommunityDetail(index) {
+        currentDetailPostIndex = index;
+        const post = communityPostsData[index];
+        const img = post.image_url || 'https://images.unsplash.com/photo-1544025162-8315ea07659b?q=80&w=600&auto=format&fit=crop';
+        
+        document.getElementById('cdAuthorName').innerHTML = getAuthorHtml(post.author_name).replace('👨‍🍳 ', '');
+        document.getElementById('cdMainImg').src = img;
+        document.getElementById('cdTitle').innerText = post.title;
+        document.getElementById('cdContent').innerText = post.content;
+        
+        const btn = document.getElementById('cdLikeBigBtn');
+        document.getElementById('cdLikeCountText').innerText = post.likes || 0;
+        if(post.i_voted) { btn.classList.add('voted'); btn.dataset.voted = 'true'; } 
+        else { btn.classList.remove('voted'); btn.dataset.voted = ''; }
+
+        document.getElementById('cdChatHistory').innerHTML = '';
+        document.getElementById('cdAskInput').value = '';
+        document.getElementById('communityDetailModal').style.display = 'flex';
+    }
+
+    function closeCommunityDetail() { document.getElementById('communityDetailModal').style.display = 'none'; }
+
+    function likeDetailPost() {
+        const btn = document.getElementById('cdLikeBigBtn');
+        if(btn.dataset.voted) return; 
+
+        btn.dataset.voted = 'true'; btn.classList.add('voted');
+        const numSpan = document.getElementById('cdLikeCountText');
+        const newLikes = parseInt(numSpan.innerText) + 1;
+        numSpan.innerText = newLikes;
+
+        const rect = btn.getBoundingClientRect(); const plus = document.createElement('div'); plus.className = 'float-plus'; plus.innerText = '+1'; plus.style.color = '#D97706';
+        plus.style.left = rect.left + 30 + 'px'; plus.style.top = rect.top - 20 + 'px'; document.body.appendChild(plus); setTimeout(() => plus.remove(), 800);
+
+        const post = communityPostsData[currentDetailPostIndex];
+        post.likes = newLikes; post.i_voted = true;
+
+        const feedBtn = document.getElementById(`feedLikeBtn_${currentDetailPostIndex}`);
+        if(feedBtn) { feedBtn.classList.add('voted'); feedBtn.querySelector('.like-num').innerText = newLikes; }
+
+        fetch('/api/like-community', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({postId: post.id}) }).catch(()=>{});
+    }
+
+    async function askInCommunity() {
+        const input = document.getElementById('cdAskInput'); const question = input.value.trim(); 
+        if(!question) return;
+
+        const chatBox = document.getElementById('cdChatHistory');
+        const post = communityPostsData[currentDetailPostIndex];
+        
+        chatBox.innerHTML += `<div class="chat-bubble bubble-user">${question}</div>`;
+        input.value = ''; 
+        
+        const scrollArea = document.getElementById('cdScrollArea');
+        scrollArea.scrollTo({ top: scrollArea.scrollHeight, behavior: 'smooth' });
+        
+        const loadingId = 'loading-' + Date.now();
+        chatBox.innerHTML += `<div class="chat-bubble bubble-ai" id="${loadingId}">厨神正在帮你解答...</div>`;
+
+        try {
+            const response = await fetch('/api/ask', { 
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ productName: post.title, insight: post.content, question: question, userId: userUUID }) 
+            });
+            const data = await response.json(); document.getElementById(loadingId).remove();
+            if (response.ok) { chatBox.innerHTML += `<div class="chat-bubble bubble-ai">👨‍🍳 <b>管家替作者说：</b><br>${data.reply}</div>`; } 
+            else { chatBox.innerHTML += `<div class="chat-bubble bubble-ai" style="color:red;">哎呀卡住了：${data.error}</div>`; }
+        } catch (err) { document.getElementById(loadingId).remove(); chatBox.innerHTML += `<div class="chat-bubble bubble-ai" style="color:red;">网络断了...</div>`; }
+        
+        scrollArea.scrollTo({ top: scrollArea.scrollHeight, behavior: 'smooth' });
+    }
+
+    // ==========================================
+    // 足迹、海报、打分
+    // ==========================================
     function renderFootprints() { 
         const listDiv = document.getElementById('footprintList'); 
         let h = JSON.parse(localStorage.getItem('hebao_history') || '[]'); 
-        if (h.length === 0) { listDiv.innerHTML = '<div style="text-align:center; color:#888; margin-top:20px;">暂无足迹，快去扫码吧</div>'; return; } 
+        if (h.length === 0) { listDiv.innerHTML = '<div style="text-align:center; color:#888; margin-top:40px;">空空如也，快去扫码吧</div>'; return; } 
         let html = ''; 
         h.forEach((item, index) => { 
+            const isLike = item.my_vote === 'like'; 
+            const isDislike = item.my_vote === 'dislike'; 
             html += ` 
             <div class="history-card-wrap"> 
                 <div class="hc-top-clickable" onclick="openDetailsFromHistory(${index})"> 
-                    <img src="${item.img_src || ''}" style="width:60px; height:60px; object-fit:cover; border-radius:12px; flex-shrink: 0; background:#F3F4F6;"> 
-                    <div style="flex:1;"> 
-                        <div style="font-weight:900; font-size:15px; color:#111827; margin-bottom:4px;">${item.chinese_name || '未命名'}</div>
-                        <div style="font-size:12px; color:#6B7280; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden;">${item.insight || ''}</div>
+                    <img src="${item.img_src || ''}" style="width:75px; height:75px; object-fit:cover; border-radius:12px; flex-shrink: 0;"> 
+                    <div style="flex:1; display: flex; flex-direction: column; justify-content: space-between;"> 
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                            <div>
+                                <div style="font-weight:900; font-size:16px; color:#111827; line-height: 1.2;">${item.chinese_name || '未命名'}</div>
+                                <div style="font-size:12px; color:#9CA3AF; margin:4px 0;">${item.dutch_name || ''}</div>
+                            </div>
+                            <button onclick="deleteFootprintItem(${index}, event)" style="background:none; border:none; color:#9CA3AF; font-size:16px; cursor:pointer; padding:0 5px;">🗑️</button>
+                        </div> 
+                        <div style="display:flex; gap:8px; margin-top:6px;" onclick="event.stopPropagation()"> 
+                            <div id="btnLike_${index}" class="mini-btn ${isLike ? 'active-like' : ''}" onclick="handleInteraction(${index}, 'like', event)"><span class="emoji">👍</span> 狂赞</div> 
+                            <div id="btnDislike_${index}" class="mini-btn ${isDislike ? 'active-dislike' : ''}" onclick="handleInteraction(${index}, 'dislike', event)"><span class="emoji">💣</span> 狂踩</div> 
+                        </div> 
                     </div> 
                 </div> 
+                <div class="ugc-compact-box" id="ugcBox_${index}"> 
+                    <input type="text" id="recipeInput_${index}" class="ugc-compact-input" placeholder="请先点赞或踩再写点评哦！"> 
+                    <button class="ugc-compact-submit" id="submitBtn_${index}" onclick="submitRecipeFromHistory(${index})">发布</button> 
+                </div> 
+                <div class="share-footer-btn" onclick="generatePoster(${index})"><span class="share-text-chic"><span class="icon">✨</span> 专属海报 · 一键避雷 ↗</span></div> 
             </div>`; 
         }); 
         listDiv.innerHTML = html; 
+        h.forEach((item, index) => { if(item.my_vote) updateUgcStyle(index, item.my_vote); }); 
     }
 
-    // ================= 首页榜单渲染 =================
-    async function loadTrendingToHome() {
-        try {
-            const res = await fetch('/api/trending'); const data = await res.json();
-            if(data.success && data.topLikes && data.topLikes.length > 0) {
-                let html = '';
-                data.topLikes.slice(0, 5).forEach((item, index) => {
-                    let badgeClass = index === 0 ? 'rank-1' : 'rank-other';
-                    html += `
-                    <div class="trending-card" onclick="alert('即将打开榜单详情')">
-                        <div class="rank-badge ${badgeClass}">TOP ${index + 1}</div>
-                        <img src="${item.image_url || ''}" style="width: 50px; height: 50px; border-radius: 10px; object-fit: cover; background: #F3F4F6;">
-                        <div class="t-info">
-                            <div class="t-name">${item.chinese_name || '优质好物'}</div>
-                        </div>
-                        <div class="t-score">👍 ${item.likes}</div>
-                    </div>`;
-                });
-                document.getElementById('homeTrendingList').innerHTML = html;
-            }
-        } catch(e) {
-            document.getElementById('homeTrendingList').innerHTML = '<div style="text-align:center; color:#9CA3AF; font-size: 12px;">榜单加载休息中...</div>';
-        }
+    function deleteFootprintItem(index, event) {
+        event.stopPropagation(); 
+        if(!confirm("确定要把这条记录从足迹里抹除吗？")) return;
+        let h = JSON.parse(localStorage.getItem('hebao_history') || '[]');
+        h.splice(index, 1);
+        localStorage.setItem('hebao_history', JSON.stringify(h));
+        renderFootprints(); 
     }
 
-    // ================= 省钱秘籍渲染逻辑 =================
+    function clearAllFootprints() {
+        if(!confirm("⚠️ 确定要清空所有足迹吗？清空后无法恢复哦！")) return;
+        localStorage.removeItem('hebao_history'); 
+        renderFootprints(); 
+    }
+
+    function handleInteraction(index, action, event) { 
+        const btn = event.currentTarget; const emoji = btn.querySelector('.emoji'); 
+        emoji.style.transform = 'scale(1.8) rotate(' + (action==='like'?'-15deg':'15deg') + ')'; 
+        setTimeout(() => emoji.style.transform = '', 250); 
+        const rect = btn.getBoundingClientRect(); const plus = document.createElement('div'); 
+        plus.className = 'float-plus'; plus.innerText = action === 'like' ? '👍 +1' : '💣 +1'; 
+        plus.style.color = action === 'like' ? '#10B981' : '#EF4444'; 
+        plus.style.left = (event.clientX - 10) + 'px'; plus.style.top = (rect.top - 10) + 'px'; 
+        document.body.appendChild(plus); setTimeout(() => plus.remove(), 800); 
+        document.getElementById(`btnLike_${index}`).className = `mini-btn ${action==='like' ? 'active-like' : ''}`; 
+        document.getElementById(`btnDislike_${index}`).className = `mini-btn ${action==='dislike' ? 'active-dislike' : ''}`; 
+        updateUgcStyle(index, action); 
+        let history = JSON.parse(localStorage.getItem('hebao_history') || '[]'); 
+        history[index].my_vote = action; localStorage.setItem('hebao_history', JSON.stringify(history)); 
+        fetch('/api/vote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dutch_name: history[index].dutch_name, action: action, userId: userUUID }) }).catch(err => {}); 
+    }
+
+    function updateUgcStyle(index, action) { 
+        const box = document.getElementById(`ugcBox_${index}`); const input = document.getElementById(`recipeInput_${index}`); const submitBtn = document.getElementById(`submitBtn_${index}`); 
+        if(action === 'like') { box.style.borderColor = '#A7F3D0'; box.style.background = '#ECFDF5'; input.placeholder = '太好吃了！疯狂安利给大家...'; input.dataset.attitude = '👍 推荐'; submitBtn.style.background = '#10B981'; } 
+        else { box.style.borderColor = '#FECACA'; box.style.background = '#FEF2F2'; input.placeholder = '巨雷！帮大家避坑...'; input.dataset.attitude = '💣 避雷'; submitBtn.style.background = '#EF4444'; } 
+    }
+
+    async function submitRecipeFromHistory(index) { 
+        let history = JSON.parse(localStorage.getItem('hebao_history') || '[]'); 
+        const item = history[index]; const inputElement = document.getElementById(`recipeInput_${index}`); const recipeText = inputElement.value.trim(); 
+        if (!recipeText) return; const attitude = inputElement.dataset.attitude; 
+        if (!attitude) { alert("请先点击『狂赞』或『狂踩』表明你的态度！"); return; } 
+        const finalUgcText = `🧑‍🍳 网友点评 [${attitude}]：${recipeText}`; 
+        const btn = document.getElementById(`submitBtn_${index}`); btn.innerText = "中..."; btn.disabled = true; 
+        try { 
+            await fetch('/api/recipe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dutch_name: item.dutch_name, recipe: finalUgcText, userId: userUUID }) }); 
+            alert("🎉 发布成功！你的评价已收录！"); item.pairing = (item.pairing || '') + '\n\n' + finalUgcText; localStorage.setItem('hebao_history', JSON.stringify(history)); inputElement.value = ""; btn.innerText = "发布"; btn.disabled = false; 
+        } catch(e) { alert("网络开小差了..."); btn.innerText = "发布"; btn.disabled = false; } 
+    }
+
+    // 小红书生成神图海报
+    async function generatePoster(index) { 
+        let history = JSON.parse(localStorage.getItem('hebao_history') || '[]'); 
+        const item = history[index]; 
+        document.getElementById('ptDutch').innerText = item.dutch_name || 'Unknown'; 
+        document.getElementById('ptChinese').innerText = item.chinese_name || '未知商品'; 
+        document.getElementById('ptImage').src = item.img_src || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23eee'/%3E%3C/svg%3E"; 
+        const wrapper = document.getElementById('ptWrapper'); const badge = document.getElementById('ptBadge'); const dutchText = document.getElementById('ptDutch'); const slogan = document.getElementById('ptSlogan'); const divider = document.getElementById('ptDivider'); const reviewBox = document.getElementById('ptUserReviewBox'); const reviewText = document.getElementById('ptUserReview'); 
+        let myLatestReview = ""; 
+        if (item.pairing) { const lines = item.pairing.split('\n\n'); const myLine = lines.reverse().find(l => l.includes('网友点评')); if (myLine) myLatestReview = myLine.replace(/🧑‍🍳 网友点评 \[.*?\]：/, '').trim(); } 
+        if (item.my_vote === 'like') { wrapper.style.background = 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)'; wrapper.style.borderColor = '#A7F3D0'; dutchText.style.color = '#064E3B'; slogan.innerText = '👍 这玩意绝了，疯狂安利！'; slogan.style.color = '#059669'; divider.style.borderTopColor = '#A7F3D0'; badge.style.display = 'block'; badge.style.background = '#10B981'; badge.style.color = '#FFF'; badge.innerText = '👍 闭眼入'; if(myLatestReview) { reviewBox.style.display = 'block'; reviewBox.style.borderLeftColor = '#10B981'; reviewText.innerText = `“${myLatestReview}”`; } else { reviewBox.style.display = 'none'; } } 
+        else if (item.my_vote === 'dislike') { wrapper.style.background = 'linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%)'; wrapper.style.borderColor = '#FECACA'; dutchText.style.color = '#7F1D1D'; slogan.innerText = '💣 纯纯大冤种，快跑！'; slogan.style.color = '#DC2626'; divider.style.borderTopColor = '#FECACA'; badge.style.display = 'block'; badge.style.background = '#EF4444'; badge.style.color = '#FFF'; badge.innerText = '💣 巨雷'; if(myLatestReview) { reviewBox.style.display = 'block'; reviewBox.style.borderLeftColor = '#EF4444'; reviewText.innerText = `“${myLatestReview}”`; } else { reviewBox.style.display = 'none'; } } 
+        else { wrapper.style.background = '#FFF'; wrapper.style.borderColor = 'transparent'; dutchText.style.color = '#111827'; slogan.innerText = '来和大家一起排雷！'; slogan.style.color = '#10B981'; divider.style.borderTopColor = '#E5E7EB'; badge.style.display = 'none'; reviewBox.style.display = 'none'; } 
+        wxLoadingMock("正在渲染专属神图..."); 
+        setTimeout(async () => { 
+            const templateNode = document.getElementById('poster-template'); 
+            try { 
+                const canvas = await html2canvas(templateNode, { scale: 2, backgroundColor: null, logging: false }); 
+                document.getElementById('posterResultImg').src = canvas.toDataURL("image/png"); 
+                document.body.removeChild(document.getElementById('mockLoadingBox')); 
+                document.getElementById('posterModal').classList.add('show'); 
+            } catch (error) { 
+                alert("海报生成失败: " + error.message); 
+                if (document.getElementById('mockLoadingBox')) document.body.removeChild(document.getElementById('mockLoadingBox')); 
+            } 
+        }, 200); 
+    }
+
+    function wxLoadingMock(text) { const div = document.createElement('div'); div.id = 'mockLoadingBox'; div.style.cssText = 'position:fixed; top:45%; left:50%; transform:translate(-50%,-50%); background:rgba(0,0,0,0.8); color:#fff; padding:15px 25px; border-radius:10px; z-index:9999; font-size:14px;'; div.innerText = text; document.body.appendChild(div); }
+    
+    // ==========================================
+    // 榜单渲染与跳转逻辑
+    // ==========================================
+    function switchTrendingTab(type, event) { 
+        document.querySelectorAll('.t-tab').forEach(el => el.classList.remove('active')); 
+        event.currentTarget.classList.add('active'); 
+        document.getElementById('trendingListLikes').style.display = type === 'likes' ? 'block' : 'none'; 
+        document.getElementById('trendingListDislikes').style.display = type === 'dislikes' ? 'block' : 'none'; 
+    }
+
+    async function loadTrendingData() { 
+        try { 
+            const res = await fetch('/api/trending'); const data = await res.json(); 
+            if (data.success) { 
+                trendingLikesData = data.topLikes || [];
+                trendingDislikesData = data.topDislikes || [];
+                
+                const allTrending = [...trendingLikesData, ...trendingDislikesData];
+                localStorage.setItem('hebao_offline_db', JSON.stringify(allTrending));
+                
+                renderTrendingList('trendingListLikes', trendingLikesData, 'like'); 
+                renderTrendingList('trendingListDislikes', trendingDislikesData, 'dislike'); 
+                trendingLoaded = true; 
+            } else { throw new Error(data.error); } 
+        } catch (e) { document.getElementById('trendingListLikes').innerHTML = '<div style="text-align:center; margin-top: 40px; color:#EF4444;">榜单拉取失败，请稍后重试</div>'; } 
+    }
+
+    function renderTrendingList(containerId, list, type) { 
+        const container = document.getElementById(containerId); 
+        if (!list || list.length === 0) { container.innerHTML = '<div style="text-align:center; color:#888; margin-top:40px;">暂无数据，快去扫码贡献第一票吧！</div>'; return; } 
+        let html = ''; 
+        list.forEach((item, index) => { 
+            let badgeClass = 'rank-other'; 
+            if (type === 'like') { if (index === 0) badgeClass = 'rank-1'; else if (index === 1) badgeClass = 'rank-2'; else if (index === 2) badgeClass = 'rank-3'; } else { badgeClass = 'rank-bad'; } 
+            const score = type === 'like' ? item.likes : item.dislikes; const icon = type === 'like' ? '👍' : '💣'; const colorClass = type === 'like' ? 'score-like' : 'score-dislike'; const label = type === 'like' ? '狂赞' : '狂踩'; 
+            
+            html += `<div class="trending-card" style="cursor:pointer;" onclick="openDetailsFromTrending('${type}', ${index})">
+                <div class="rank-badge ${badgeClass}">TOP ${index + 1}</div>
+                <div class="t-info">
+                    <div class="t-name">${item.chinese_name || '未命名商品'}</div>
+                    <div class="t-dutch">${item.dutch_name || ''}</div>
+                    <div class="t-insight">${item.insight || '暂无管家评价'}</div>
+                </div>
+                <div class="t-score ${colorClass}">
+                    <span>${icon} ${score}</span>
+                    <span class="t-score-label">${label}</span>
+                </div>
+            </div>`; 
+        }); 
+        container.innerHTML = html; 
+    }
+
+    function openDetailsFromTrending(type, index) {
+        const targetList = type === 'like' ? trendingLikesData : trendingDislikesData;
+        const item = targetList[index];
+        currentDetailData = {
+            ...item,
+            img_src: item.image_url || "https://images.unsplash.com/photo-1544025162-8315ea07659b?q=80&w=600&auto=format&fit=crop", 
+            item_type: 'product'
+        };
+        setupDetailPage();
+    }
+
+    // ==========================================
+    // 省钱秘籍渲染与交互逻辑
+    // ==========================================
     function renderTipsPage() {
+        let qlHtml = '';
         if (typeof quickLinksData !== 'undefined') {
-            let qlHtml = '';
-            quickLinksData.forEach(link => { qlHtml += `<a href="${link.url}" target="_blank" class="ql-card"><div class="ql-icon">${link.icon}</div><div class="ql-title">${link.title}</div><div class="ql-sub">${link.sub}</div></a>`; });
-            if(document.getElementById('quickLinksContainer')) document.getElementById('quickLinksContainer').innerHTML = qlHtml;
+            quickLinksData.forEach(link => {
+                qlHtml += `
+                <a href="${link.url}" target="_blank" class="ql-card">
+                    <div class="ql-icon">${link.icon}</div>
+                    <div class="ql-title">${link.title}</div>
+                    <div class="ql-sub">${link.sub}</div>
+                </a>`;
+            });
+            document.getElementById('quickLinksContainer').innerHTML = qlHtml;
+        if (typeof tipsMetaData !== 'undefined') {
+            const disclaimerHtml = `
+            <div class="tips-disclaimer">
+                <div class="update-time"><span>⏳</span> 最后由管家更新于：${tipsMetaData.lastUpdated}</div>
+                ⚠️ <b>防杠声明：</b> ${tipsMetaData.disclaimer}
+            </div>`;
+            document.getElementById('tipsDisclaimerContainer').innerHTML = disclaimerHtml;
         }
+    }
 
+        let accHtml = '';
         if (typeof tipsData !== 'undefined') {
-            let accHtml = '';
             tipsData.forEach(cat => {
-                const highlightHtml = cat.highlight ? `<span style="background: #FEF2F2; color: #EF4444; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; margin-left: 5px;">${cat.highlight}</span>` : '';
+                const highlightHtml = cat.highlight ? `<span class="tips-highlight">${cat.highlight}</span>` : '';
+                
                 let storesHtml = '';
                 cat.stores.forEach(store => {
                     let itemsHtml = '';
                     store.tips.forEach(tip => {
-                        const formattedDesc = tip.desc.replace(/\*\*(.*?)\*\*/g, '<span style="color:#D97706; font-weight:bold; background:#FFFBEB; padding:1px 5px; border-radius:6px; margin:0 2px;">$1</span>');
-                        itemsHtml += `<div style="background:#FFF; border-radius:10px; padding:12px; margin-bottom:10px; border:1px solid #E5E7EB; border-left:4px solid #10B981;"><div style="font-size:14px; font-weight:900; margin-bottom:6px;">${tip.title}</div><div style="font-size:13px; color:#4B5563; line-height:1.6;">${formattedDesc}</div></div>`;
+                        const formattedDesc = tip.desc.replace(/\*\*(.*?)\*\*/g, '<span class="tip-kw">$1</span>');
+                        itemsHtml += `
+                        <div class="tip-item">
+                            <div class="tip-title">${tip.title}</div>
+                            <div class="tip-desc">${formattedDesc}</div>
+                        </div>`;
                     });
-                    storesHtml += `<div style="background:#F9FAFB; border-radius:14px; border:1px solid #E5E7EB; margin-bottom:12px; overflow:hidden;"><div onclick="toggleStoreCard(this)" style="padding:14px 15px; display:flex; justify-content:space-between; background:#FFF; font-weight:900; font-size:15px; cursor:pointer;"><div style="display:flex; gap:10px; align-items:center;"><span style="background:#F3F4F6; width:32px; height:32px; display:flex; justify-content:center; align-items:center; border-radius:10px;">${store.storeLogo}</span>${store.storeName}</div><span style="font-size:10px; color:#9CA3AF;">▼</span></div><div style="max-height:0; overflow:hidden; transition:max-height 0.3s ease;"><div style="padding:12px;">${itemsHtml}</div></div></div>`;
-                });
-                accHtml += `<div style="margin:0 16px 15px; background:#FFF; border-radius:16px; border:1px solid #E5E7EB; overflow:hidden;"><div onclick="toggleAccordion(this)" style="padding:18px 20px; display:flex; justify-content:space-between; font-weight:900; font-size:16px; background:#F9FAFB; cursor:pointer;"><div style="display:flex; align-items:center; gap:10px;"><span>${cat.categoryIcon}</span> <span>${cat.categoryName}</span> ${highlightHtml}</div><span style="font-size:12px; color:#9CA3AF;">▼</span></div><div style="max-height:0; overflow:hidden; transition:max-height 0.3s ease;"><div style="padding:15px;">${storesHtml}</div></div></div>`;
-            });
-            if(document.getElementById('tipsAccordionContainer')) document.getElementById('tipsAccordionContainer').innerHTML = accHtml;
-        }
 
-        if (typeof tipsMetaData !== 'undefined' && document.getElementById('tipsDisclaimerContainer')) {
-            document.getElementById('tipsDisclaimerContainer').innerHTML = `<div style="margin:0 16px 20px; padding:15px; background:#FFFBEB; border:1px dashed #FCD34D; border-radius:12px; font-size:11px; color:#B45309; line-height:1.6;"><div style="font-weight:bold; margin-bottom:6px; color:#D97706;"><span>⏳</span> 最后更新于：${tipsMetaData.lastUpdated}</div>⚠️ <b>防杠声明：</b> ${tipsMetaData.disclaimer}</div>`;
+                    storesHtml += `
+                    <div class="store-card">
+                        <div class="store-header" onclick="toggleStoreCard(this)">
+                            <div class="s-icon-name"><div class="s-logo">${store.storeLogo}</div> ${store.storeName}</div>
+                            <div class="store-arrow">▼</div>
+                        </div>
+                        <div class="store-content">
+                            <div class="store-inner">
+                                ${itemsHtml}
+                            </div>
+                        </div>
+                    </div>`;
+                });
+
+                accHtml += `
+                <div class="tips-accordion">
+                    <div class="tips-header" onclick="toggleAccordion(this)">
+                        <div class="tips-title-wrap"><span class="tips-icon">${cat.categoryIcon}</span> <span>${cat.categoryName}</span> ${highlightHtml}</div>
+                        <div class="tips-arrow">▼</div>
+                    </div>
+                    <div class="tips-content">
+                        <div class="tips-inner">
+                            ${storesHtml}
+                        </div>
+                    </div>
+                </div>`;
+            });
+            document.getElementById('tipsAccordionContainer').innerHTML = accHtml;
         }
     }
+
+    // 网页加载时调用渲染函数
+    window.addEventListener('DOMContentLoaded', () => {
+        if (typeof tipsData !== 'undefined') {
+            renderTipsPage();
+        }
+    });
 
     function toggleAccordion(element) {
         const content = element.nextElementSibling;
         if (!element.classList.contains('active')) {
+            document.querySelectorAll('.tips-header.active').forEach(el => {
+                el.classList.remove('active');
+                el.nextElementSibling.style.maxHeight = null;
+            });
             element.classList.add('active');
             content.style.maxHeight = content.scrollHeight + "px";
-            setTimeout(() => { if(element.classList.contains('active')) content.style.maxHeight = 'none'; }, 300);
+            setTimeout(() => { 
+                if(element.classList.contains('active')) content.style.maxHeight = 'none'; 
+            }, 300);
         } else {
             content.style.maxHeight = content.scrollHeight + "px"; 
-            requestAnimationFrame(() => { element.classList.remove('active'); content.style.maxHeight = null; });
+            requestAnimationFrame(() => {
+                element.classList.remove('active');
+                content.style.maxHeight = null; 
+            });
         }
     }
 
     function toggleStoreCard(element) {
         const isActive = element.classList.contains('active');
         const content = element.nextElementSibling;
-        if (!isActive) { element.classList.add('active'); content.style.maxHeight = content.scrollHeight + "px"; } 
-        else { element.classList.remove('active'); content.style.maxHeight = null; }
+        if (!isActive) {
+            element.classList.add('active');
+            content.style.maxHeight = content.scrollHeight + "px";
+        } else {
+            element.classList.remove('active');
+            content.style.maxHeight = null;
+        }
     }
 
-    // 初始化执行
-    window.addEventListener('DOMContentLoaded', () => {
-        renderTipsPage();
-        loadTrendingToHome(); // 加载首页榜单
-    });
+    function openReportModal() {
+        document.getElementById('reportTipTitle').value = '';
+        document.getElementById('reportTipText').value = '';
+        document.getElementById('reportTipModal').style.display = 'flex';
+    }
 
+    function submitReportTip() {
+        const type = document.getElementById('reportTipType').value;
+        const title = document.getElementById('reportTipTitle').value.trim();
+        const text = document.getElementById('reportTipText').value.trim();
+        if(!title || !text) return alert("标题和内容都得写点干货哦！");
+        
+        const btn = document.getElementById('btnSubmitReport');
+        btn.innerText = "提交中...";
+        btn.disabled = true;
+
+        setTimeout(() => {
+            const msg = type === '纠错' 
+                ? "🙏 感谢纠错！管家马上核实修改，避免更多人踩坑！" 
+                : "🎉 爆料成功！管家已收到，审核验证后就会上墙展示！";
+            alert(msg);
+            document.getElementById('reportTipModal').style.display = 'none';
+            btn.innerText = "🚀 提交给管家";
+            btn.disabled = false;
+        }, 800);
+    }
+
+    // ================= HTML5 实景扫码引擎 =================
+    let html5QrcodeScanner = null;
+
+    function startBarcodeScan() {
+        document.getElementById('scannerModal').style.display = 'flex';
+        if (html5QrcodeScanner) {
+            html5QrcodeScanner.clear();
+        }
+        html5QrcodeScanner = new Html5Qrcode("reader");
+        const config = { 
+            fps: 10, 
+            qrbox: { width: 250, height: 150 },
+            aspectRatio: 1.0,
+            formatsToSupport: [
+                Html5QrcodeSupportedFormats.EAN_13, 
+                Html5QrcodeSupportedFormats.EAN_8,
+                Html5QrcodeSupportedFormats.UPC_A,
+                Html5QrcodeSupportedFormats.QR_CODE
+            ]
+        };
+
+        html5QrcodeScanner.start(
+            { facingMode: "environment" }, 
+            config, 
+            onScanSuccess
+        ).catch(err => {
+            alert("调用摄像头失败，请确保给了网页相机权限哦！");
+            closeScanner();
+        });
+    }
+
+    function onScanSuccess(decodedText, decodedResult) {
+        if (navigator.vibrate) navigator.vibrate(100);
+        closeScanner();
+        
+        const barcode = decodedText;
+        document.getElementById('mainSearchInput').value = barcode;
+
+        uiScanState("📡 正在全网检索条形码...");
+
+        const localDB = JSON.parse(localStorage.getItem('hebao_offline_db') || '[]');
+        const historyDB = JSON.parse(localStorage.getItem('hebao_history') || '[]');
+        const combinedDB = [...historyDB, ...localDB];
+
+        const found = combinedDB.find(item => item.barcode === barcode);
+
+        if (found) {
+            setTimeout(() => {
+                currentProductData = found;
+                renderResult(found);
+            }, 300);
+        } else {
+            fetch('/api/scan-barcode', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ barcode: barcode, userId: userUUID })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) throw new Error(data.error);
+                currentProductData = data;
+                renderResult(data);
+                
+                saveToLocalFootprint(data, data.image_url);
+                fetch('/api/save', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ ...data, userId: userUUID }) 
+                }).catch(()=>{});
+            })
+            .catch(err => {
+                alert(err.message);
+                resetApp();
+            });
+        }
+    }
+
+    function closeScanner() {
+        document.getElementById('scannerModal').style.display = 'none';
+        if (html5QrcodeScanner) {
+            html5QrcodeScanner.stop().catch(err => console.error("Failed to stop scanner", err));
+        }
+    }
+
+    // ================= 闪电搜索逻辑 =================
+    async function prefetchLocalDB() {
+        if (sessionStorage.getItem('hebao_synced')) return; 
+        try {
+            const res = await fetch('/api/trending');
+            const data = await res.json();
+            if (data.success) {
+                const allTrending = [...(data.topLikes || []), ...(data.topDislikes || [])];
+                localStorage.setItem('hebao_offline_db', JSON.stringify(allTrending));
+                sessionStorage.setItem('hebao_synced', 'true');
+            }
+        } catch(e) {
+            console.log("后台静默缓存失败，不影响主流程");
+        }
+    }
+    prefetchLocalDB();
+
+    function executeSearch() {
+        const query = document.getElementById('mainSearchInput').value.trim().toLowerCase();
+        if (!query) return;
+
+        uiScanState("🔍 正在本地记忆中光速检索...");
+        
+        const localDB = JSON.parse(localStorage.getItem('hebao_offline_db') || '[]');
+        const historyDB = JSON.parse(localStorage.getItem('hebao_history') || '[]');
+        const combinedDB = [...historyDB, ...localDB];
+
+        const found = combinedDB.find(item => 
+            (item.dutch_name && item.dutch_name.toLowerCase().includes(query)) || 
+            (item.chinese_name && item.chinese_name.toLowerCase().includes(query)) ||
+            (item.barcode && item.barcode === query)
+        );
+
+        if (found) {
+            setTimeout(() => {
+                currentProductData = found;
+                renderResult(found);
+            }, 300); 
+        } else {
+            document.getElementById('scanText').innerText = "本地没搜到，即将上云端求助管家...";
+            setTimeout(() => {
+                alert("本地暂无此商品数据。建议使用拍照排雷！");
+                resetApp();
+            }, 1500);
+        }
+    }
 </script>
 </body>
 </html>
