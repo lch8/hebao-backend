@@ -334,13 +334,7 @@
     </div>
     
     <div class="fm-content">
-        <div class="ai-magic-mini">
-            <button class="voice-btn" id="btnVoiceInput_idle" onclick="toggleVoiceInput('idle')" style="width:32px; height:32px; font-size:16px; border:none; background:#FFF; border-radius:8px;">🎙️</button>
-            <input type="text" id="aiKeywords_idle" class="ai-input" style="border:none; background:transparent; padding:0; font-size:13px; margin:0;" placeholder="按住说：代村自提，明天拿走..." onkeypress="if(event.key==='Enter') generateAICopy('idle')">
-            <button class="voice-btn" style="width:28px; height:28px; font-size:12px; border:none; background:transparent; color:#9CA3AF;" onclick="clearAIInput('idle')">✖</button>
-        </div>
-
-        <div class="upload-img-box" style="flex-direction: column; align-items: flex-start; gap: 8px; background: transparent; border: none; padding: 0;">
+        <div class="upload-img-box" style="flex-direction: column; align-items: flex-start; gap: 8px; background: transparent; border: none; padding: 0; margin-top: 5px;">
             <input type="file" id="idleImgInput" accept="image/*" multiple style="display: none;" onchange="handleMultiImageSelect(event)">
             <div class="multi-img-container-vertical" id="idleImgPreviewContainer">
                 <div class="upload-btn" onclick="document.getElementById('idleImgInput').click()" style="width: 100%; background: #FFF; border: 1px dashed #D1D5DB;">
@@ -348,16 +342,30 @@
                     <span style="font-size: 13px; font-weight: bold; margin-left: 8px; color: #374151;">添加闲置物品照片</span>
                 </div>
             </div>
+            <div style="font-size: 11px; color: #9CA3AF; margin-bottom: 5px;">*可上传多图并分别标价，管家会自动打上价格水印哦</div>
         </div>
 
         <input type="hidden" id="idlePrice" value="">
 
-        <div class="fm-section-title" style="margin-top: 15px;">核心交易条件</div>
-        <div class="fm-row">
-            <div class="fm-label">📍 交易地点</div>
-            <div class="location-input-wrapper">
-                <input type="text" id="idleLocation" placeholder="手动输入或点击定位">
-                <div class="location-icon-btn" onclick="autoLocate('idleLocation')">🧭</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; margin-bottom: 15px; border-top: 1px dashed #E5E7EB; padding-top: 20px;">
+            <div class="fm-section-title" style="margin: 0;">核心交易条件</div>
+            <div class="ai-magic-micro">
+                <input type="text" id="aiKeywords_idle" placeholder="语音填表..." onkeypress="if(event.key==='Enter') generateAICopy('idle')">
+                <button class="voice-btn-micro" id="btnVoiceInput_idle" onclick="toggleVoiceInput('idle')">🎙️</button>
+                <button class="voice-btn-micro" style="color:#D1D5DB; margin-left: 4px;" onclick="clearAIInput('idle')">✖</button>
+            </div>
+        </div>
+
+        <div class="fm-row" style="align-items: flex-start;">
+            <div class="fm-label" style="margin-top: 6px;">📍 交易地点</div>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; flex: 1;">
+                <div class="location-input-wrapper">
+                    <input type="text" id="idleLocation" placeholder="手动输入或点击定位">
+                    <div class="location-icon-btn" onclick="autoLocate('idleLocation')">🧭</div>
+                </div>
+                <div id="postcodeToggleWrapper" style="display: none; align-items: center; gap: 4px; font-size: 11px; color: #6B7280; margin-top: 8px;">
+                    <input type="checkbox" id="showPostcodeCheck" onchange="togglePostcode()"> 显示大概邮编 (<span id="detectedPostcode"></span>)
+                </div>
             </div>
         </div>
 
