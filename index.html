@@ -349,6 +349,7 @@
             <div class="ai-header"><span>✨ 管家一句话帮发</span> <span style="font-size: 11px; font-weight: normal; color: #D97706;">支持多次追加物品</span></div>
             <div class="ai-input-wrapper">
                 <input type="text" id="aiKeywords_idle" class="ai-input" style="margin-bottom: 0;" placeholder="代村出书桌30欧，再加个椅子10欧...">
+                <button class="voice-btn" style="width: 32px; font-size: 12px; border-color: #E5E7EB; color: #9CA3AF;" onclick="clearAIInput('idle')">✖️</button>
                 <button class="voice-btn" id="btnVoiceInput_idle" onclick="toggleVoiceInput('idle')">🎙️</button>
             </div>
             <div style="font-size: 11px; color: #B45309; margin-top: 8px;">💡 <b>连招公式：</b>物品 + 价格 + 地点 + 交易要求</div>
@@ -414,6 +415,7 @@
                 <div class="ai-header"><span>✨ 一句话发悬赏</span></div>
                 <div class="ai-input-wrapper">
                     <input type="text" id="aiKeywords_help" class="ai-input" style="margin-bottom: 0;" placeholder="明天早7点史基浦接机，赏金50欧...">
+                    <button class="voice-btn" style="width: 32px; font-size: 12px; border-color: #E5E7EB; color: #9CA3AF;" onclick="clearAIInput('help')">✖️</button>
                     <button class="voice-btn" id="btnVoiceInput_help" onclick="toggleVoiceInput('help')">🎙️</button>
                 </div>
                 <div style="font-size: 11px; color: #B45309; margin-top: 8px;">💡 <b>连招公式：</b>任务 + 时间地点 + 赏金 (可喊十万火急)</div>
@@ -465,6 +467,7 @@
                 <div class="ai-header" style="color: #6B21A8;"><span>🥂 灵魂搭子召唤术</span></div>
                 <div class="ai-input-wrapper">
                     <input type="text" id="aiKeywords_partner" class="ai-input" style="margin-bottom: 0; border-color: #C084FC;" placeholder="这周末阿姆逛展，只找E人姐妹...">
+                    <button class="voice-btn" style="width: 32px; font-size: 12px; border-color: #D8B4FE; color: #A855F7; background: #FAF5FF;" onclick="clearAIInput('partner')">✖️</button>
                     <button class="voice-btn" id="btnVoiceInput_partner" style="border-color: #C084FC;" onclick="toggleVoiceInput('partner')">🎙️</button>
                 </div>
                 <div style="font-size: 11px; color: #7E22CE; margin-top: 8px;">💡 <b>连招公式：</b>活动 + 时间地点 + MBTI要求</div>
