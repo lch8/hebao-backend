@@ -285,7 +285,7 @@ function renderMarketIdle() {
     mockIdleItems.forEach(item => {
         // 点击商品触发鉴权，不登录不给看详情，逼迫用户注册留存
         html += `
-        <div class="waterfall-item" onclick="requireAuth(() => alert('闲置详情页正在加紧施工中！\\n\\n💡 提示：买卖双方强制私信沟通，平台不碰交易资金。'))">
+        <div class="waterfall-item" onclick="openChat('${item.name}', '${item.avatar}', '${item.title}', '${item.price}', '${item.img}')">
             <div class="wf-img-box"><img class="wf-img" src="${item.img}"></div>
             <div class="wf-info">
                 <div class="wf-title">${item.title}</div>
@@ -439,6 +439,69 @@ function submitIdlePost() {
     alert("🎉 发布成功！你的闲置已经进入集市，等待有缘人。");
     closeIdlePublish();
 }
+// ================= 私信系统交互逻辑 =================
+
+function openChat(sellerName, sellerAvatar, itemTitle, itemPrice, itemImg) {
+    // 强制鉴权：必须登录才能和卖家私聊
+    requireAuth(() => {
+        // 渲染顶部商品信息
+        document.getElementById('chatTargetName').innerText = sellerName;
+        document.getElementById('chatTargetAvatar').innerText = sellerAvatar;
+        document.getElementById('chatProductTitle').innerText = itemTitle;
+        document.getElementById('chatProductPrice').innerText = '€' + itemPrice;
+        document.getElementById('chatProductImg').src = itemImg;
+        
+        // 更新聊天时间
+        const now = new Date();
+        document.getElementById('chatTimeSys').innerText = `今天 ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+        
+        // 显示全屏聊天框
+        document.getElementById('chatModal').style.display = 'flex';
+        
+        // 自动滚动到底部
+        const msgList = document.getElementById('chatMsgList');
+        msgList.scrollTop = msgList.scrollHeight;
+    });
+}
+
+function closeChat() {
+    document.getElementById('chatModal').style.display = 'none';
+}
+
+function sendChatMessage() {
+    const input = document.getElementById('chatInput');
+    const text = input.value.trim();
+    if(!text) return;
+    
+    const msgList = document.getElementById('chatMsgList');
+    
+    // 获取当前登录用户自己的头像
+    const savedAvatar = localStorage.getItem('hebao_avatar') || '';
+    const avatarHtml = savedAvatar ? `<img src="${savedAvatar}">` : `<span>👻</span>`;
+    
+    // 渲染我发出的消息
+    const html = `
+    <div class="chat-row me">
+        <div class="chat-text">${text}</div>
+        <div class="chat-avatar">${avatarHtml}</div>
+    </div>`;
+    
+    msgList.insertAdjacentHTML('beforeend', html);
+    input.value = ''; // 清空输入框
+    msgList.scrollTop = msgList.scrollHeight; // 滚动到底部
+    
+    // 模拟卖家自动回复 (假装对方很忙)
+    setTimeout(() => {
+        const replyHtml = `
+        <div class="chat-row other">
+            <div class="chat-avatar">${document.getElementById('chatTargetAvatar').innerText}</div>
+            <div class="chat-text">系统提示：对方可能正在骑车或上课🚴。如果迟迟未回复，可以点击顶部【发送链接】引起对方注意哦。</div>
+        </div>`;
+        msgList.insertAdjacentHTML('beforeend', replyHtml);
+        msgList.scrollTop = msgList.scrollHeight;
+    }, 1200);
+}
+
 
 // ⚠️ 注意：修改你现有的 DOMContentLoaded 监听器，把 renderMarketIdle() 加进去
 window.addEventListener('DOMContentLoaded', () => { 
