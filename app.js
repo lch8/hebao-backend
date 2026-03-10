@@ -350,6 +350,80 @@ function renderFootprints() {
     }); 
     listDiv.innerHTML = html; 
 }
+// ================= 发布闲置逻辑与 AI 模拟 =================
+
+function openIdlePublish() {
+    closePublishSheet(); // 先关掉底部的半屏菜单
+    setTimeout(() => {
+        document.getElementById('publishIdleModal').style.display = 'flex';
+        // 自动填入当前日期+7天作为默认截止日
+        const d = new Date(); d.setDate(d.getDate() + 7);
+        document.getElementById('idleDeadline').value = d.toISOString().split('T')[0];
+    }, 300);
+}
+
+function closeIdlePublish() {
+    document.getElementById('publishIdleModal').style.display = 'none';
+}
+
+// 通用的胶囊按钮单选切换逻辑
+function selectPill(element, groupName) {
+    document.querySelectorAll(`#${groupName} .pill`).forEach(el => el.classList.remove('active'));
+    element.classList.add('active');
+}
+
+// 模拟请求大模型生成小红书文案
+function generateAICopy() {
+    const keyword = document.getElementById('aiKeywords').value.trim();
+    if (!keyword) return alert("请先输入一些闲置关键词哦，比如：大书桌30欧，明天搬家...");
+    
+    const btn = document.getElementById('btnAiMagic');
+    btn.innerText = "⏳ 魔法施展中，管家正在码字...";
+    btn.disabled = true;
+
+    // 提取当前选择的条件
+    const loc = document.getElementById('idleLocation').value;
+    const deadline = document.getElementById('idleDeadline').value;
+    const bargain = document.querySelector('#bargainGroup .active').innerText;
+    const payment = document.querySelector('#paymentGroup .active').innerText;
+
+    setTimeout(() => {
+        // 模拟 AI 处理后的惊艳结果
+        const aiText = `🌟 【${loc}出】留学生搬家狂甩，骨折价带走！
+哈喽家人们！因为临近搬家/回国，实在带不走啦，忍痛割爱出一批超实用的闲置😭！
+
+🛒 【出物清单与价格】
+根据您的输入：“${keyword}”
+(请在此处补充或修改具体物品状态哦～)
+
+✅ 状态：自用非常爱惜，功能全部完好！
+💰 价格：详见清单，多件打包可骨折！
+📍 坐标：${loc} (可上门自提)
+⏰ 截止日期：务必在 ${deadline} 之前拿走！
+💶 交易方式：支持 ${payment}
+⚠️ 注意：目前是 ${bargain} 的状态，先到先得，手慢无！
+
+带图私信我，看到了就会秒回！
+#荷兰二手 #${loc}闲置 #留学生搬家 #闲置转让 #好物低价出`;
+
+        document.getElementById('idleDesc').value = aiText;
+        document.getElementById('aiKeywords').value = '';
+        btn.innerText = "✅ 生成成功！快去下方修改细节吧";
+        
+        setTimeout(() => {
+            btn.innerText = "🪄 重新生成";
+            btn.disabled = false;
+        }, 3000);
+    }, 1500);
+}
+
+function submitIdlePost() {
+    const desc = document.getElementById('idleDesc').value.trim();
+    if(!desc) return alert("文案还没写呢！快试试 AI 一键生成吧！");
+    
+    alert("🎉 发布成功！你的闲置已经进入集市，等待有缘人。");
+    closeIdlePublish();
+}
 
 // ⚠️ 注意：修改你现有的 DOMContentLoaded 监听器，把 renderMarketIdle() 加进去
 window.addEventListener('DOMContentLoaded', () => { 
