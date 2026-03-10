@@ -33,7 +33,7 @@
     <div class="ps-close" onclick="closePublishSheet()">✕</div>
     <div class="ps-title">你想发点什么？</div>
     <div class="ps-options">
-        <div class="ps-opt ps-opt-1" onclick="alert('📦 闲置发布系统加载中...')">
+        <div class="ps-opt ps-opt-1" onclick="openIdlePublish()">
             <div class="ps-icon">📦</div><div class="ps-text">发闲置</div><div class="ps-sub">AI 帮写文案</div>
         </div>
         <div class="ps-opt ps-opt-2" onclick="alert('🤝 互助悬赏大厅加载中...')">
@@ -264,6 +264,77 @@
         <button onclick="closeScanner()" style="background:none; border:none; color:#FFF; font-size:24px; cursor:pointer;">✕</button>
     </div>
     <div id="reader" style="width:100%; flex:1; background:#000;"></div>
+</div>
+
+
+    <div class="full-modal" id="publishIdleModal" style="display: none;">
+    <div class="fm-header">
+        <div class="fm-close" onclick="closeIdlePublish()">✕</div>
+        <div class="fm-title">发布闲置</div>
+        <div class="fm-submit" onclick="submitIdlePost()">发布</div>
+    </div>
+    
+    <div class="fm-content">
+        <div class="upload-img-box">
+            <div class="upload-btn">
+                <span style="font-size: 24px;">📷</span>
+                <span style="font-size: 11px; color: #9CA3AF; margin-top: 4px;">添加图片</span>
+            </div>
+            <div style="font-size: 12px; color: #9CA3AF; margin-left: 10px;">建议首图传大合照，可批量选图</div>
+        </div>
+
+        <div class="ai-magic-box">
+            <div class="ai-header"><span>✨ AI 一键写神仙文案</span> <span style="font-size: 11px; font-weight: normal; color: #D97706;">小白/多件清仓必用</span></div>
+            <input type="text" id="aiKeywords" class="ai-input" placeholder="输入：宜家桌子30欧，锅碗瓢盆打包10欧，微波炉...">
+            <button class="ai-btn" id="btnAiMagic" onclick="generateAICopy()">🪄 帮我生成小红书体</button>
+        </div>
+
+        <textarea id="idleDesc" class="fm-textarea" placeholder="在这里描述你的闲置。你也可以直接在这里手写..."></textarea>
+
+        <div class="fm-row">
+            <div class="fm-label">总价/打包价 (€)</div>
+            <input type="number" id="idlePrice" class="fm-input-small" placeholder="0.00">
+        </div>
+
+        <div class="fm-section-title">核心交易条件</div>
+        
+        <div class="fm-row">
+            <div class="fm-label">📍 交易地点</div>
+            <select id="idleLocation" class="fm-select">
+                <option value="阿姆斯特丹">阿姆斯特丹 (Amsterdam)</option>
+                <option value="鹿特丹">鹿特丹 (Rotterdam)</option>
+                <option value="代尔夫特">代尔夫特 (Delft)</option>
+                <option value="海牙">海牙 (Den Haag)</option>
+                <option value="乌特勒支">乌特勒支 (Utrecht)</option>
+                <option value="其他地区">全荷邮寄 / 其他</option>
+            </select>
+        </div>
+
+        <div class="fm-row">
+            <div class="fm-label">⏰ 截止日期</div>
+            <input type="date" id="idleDeadline" class="fm-select" style="width: auto;">
+        </div>
+
+        <div class="fm-row">
+            <div class="fm-label">🔪 议价空间</div>
+            <div class="pill-group" id="bargainGroup">
+                <div class="pill active" onclick="selectPill(this, 'bargainGroup')">一口价</div>
+                <div class="pill" onclick="selectPill(this, 'bargainGroup')">可小刀</div>
+                <div class="pill" onclick="selectPill(this, 'bargainGroup')">买多可刀</div>
+            </div>
+        </div>
+
+        <div class="fm-row" style="border-bottom: none;">
+            <div class="fm-label">💶 收款方式</div>
+            <div class="pill-group" id="paymentGroup">
+                <div class="pill active" onclick="selectPill(this, 'paymentGroup')">Tikkie/银行转账</div>
+                <div class="pill" onclick="selectPill(this, 'paymentGroup')">仅限现金</div>
+                <div class="pill" onclick="selectPill(this, 'paymentGroup')">均可</div>
+            </div>
+        </div>
+        
+        <div style="height: 50px;"></div>
+    </div>
 </div>
 
 <script src="./tips-data.js?v=1" defer></script>
