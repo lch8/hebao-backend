@@ -111,13 +111,15 @@ function openEmailVerifyModal() {
     if(localStorage.getItem('hp_email_verified') === 'true') return alert("您的邮箱已经认证通过啦！");
     document.getElementById('emailVerifyModal').style.display = 'flex';
 }
-// 修改后的发送验证码函数
+// 修改后的：发送真实邮件验证码
 async function sendAuthCode() {
-    const email = document.getElementById('authEmailInput').value.trim();
+    const emailInput = document.getElementById('authEmailInput');
+    const email = emailInput.value.trim();
     if(!email || !email.includes('@')) return alert("请输入正确的邮箱格式！");
     
     const btn = document.getElementById('btnSendCode');
     btn.disabled = true;
+    btn.innerText = "发送中...";
     
     try {
         const res = await fetch('/api/send-auth-email', {
@@ -125,20 +127,30 @@ async function sendAuthCode() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email })
         });
+        
         if (res.ok) {
-            alert("验证码已发送至您的邮箱，请检查收件箱（或垃圾箱）");
-            // 开始倒计时...
-        } else throw new Error();
+            alert("✅ 验证码已发出！请检查收件箱。如果是学校邮箱，有时会在垃圾箱哦。");
+            let timeLeft = 60;
+            const timer = setInterval(() => {
+                timeLeft--;
+                btn.innerText = `${timeLeft}s`;
+                if(timeLeft <= 0) { clearInterval(timer); btn.disabled = false; btn.innerText = "获取验证码"; }
+            }, 1000);
+        } else {
+            throw new Error();
+        }
     } catch (e) {
-        alert("邮件发送失败，请稍后重试");
+        alert("❌ 邮件系统繁忙，请稍后再试");
         btn.disabled = false;
+        btn.innerText = "获取验证码";
     }
 }
 
-// 修改后的真实校验函数
+// 修改后的：真实校验验证码
 async function verifyEmailCode() {
     const email = document.getElementById('authEmailInput').value.trim();
     const code = document.getElementById('authCodeInput').value.trim();
+    if(!code) return alert("请输入验证码");
     
     try {
         const res = await fetch('/api/verify-auth-code', {
@@ -147,14 +159,24 @@ async function verifyEmailCode() {
             body: JSON.stringify({ email, code, userId: userUUID })
         });
         const data = await res.json();
+        
         if (data.success) {
             localStorage.setItem('hp_email_verified', 'true');
             localStorage.setItem('hp_email', email);
             document.getElementById('emailVerifyModal').style.display = 'none';
-            alert("🎊 真实身份认证成功！勋章已点亮。");
+            
+            // 撒花特效
+            const plus = document.createElement('div'); plus.className = 'float-plus'; plus.innerText = '🎊 认证成功！勋章已点亮'; plus.style.color = '#3B82F6';
+            plus.style.left = '50%'; plus.style.top = '40%'; plus.style.transform = 'translate(-50%, -50%)'; document.body.appendChild(plus); 
+            setTimeout(() => plus.remove(), 2500);
+            
             renderProfileState();
-        } else alert(data.error);
-    } catch (e) { alert("网络异常"); }
+        } else {
+            alert("❌ " + data.error);
+        }
+    } catch (e) {
+        alert("❌ 网络连接异常");
+    }
 }
 function openWechatBindModal() { document.getElementById('authWechatInput').value = localStorage.getItem('hp_wechat') || ''; document.getElementById('wechatBindModal').style.display = 'flex'; }
 function saveWechatBind() {
