@@ -825,19 +825,37 @@ async function deleteMyPost(postId, btnElement) {
 // ============================================================================
 
 // 1. 本地静态数据源 (Data-Driven)
+// 1. 本地静态数据源 (Data-Driven) 满血扩充版
 const rbTasks = [
-    { id: 't1', title: '去市政厅注册 BSN', desc: '全荷通行证，办卡租房必用。', hook: '不知道在哪看信？买个二手信箱', hookTab: 'market-idle' },
-    { id: 't2', title: '激活 DigiD 账号', desc: '荷兰的数字身份证，税务医疗全靠它。', hook: '买台二手显示器大屏查政策', hookTab: 'market-idle' },
-    { id: 't3', title: '办理本地银行卡', desc: '推荐 ING 或 ABN，绑定 Tikkie 必备。', hook: '找搭子一起去银行排队', hookTab: 'market-partner' },
-    { id: 't4', title: '开通黄实名 OV 卡', desc: '绑定周末免费套餐，交通费省一半。', hook: '去集市看看有没有二手自行车', hookTab: 'market-idle' },
-    { id: 't5', title: '注册家庭医生 GP', desc: '在荷兰生病必须先看 GP，不注册看不了病。', hook: '发个悬赏求帮忙买药', hookTab: 'market-help' }
+    { id: 't1', title: '去市政厅 (Gemeente) 注册 BSN', desc: '荷兰的“身份证号”，没有它办不了银行卡和网网。落地必须立刻预约！', hook: '刚来没被子？去集市低价收一套', hookTab: 'market-idle' },
+    { id: 't2', title: '办理本地银行卡 (ING/ABN)', desc: '推荐 ING (App最好用) 或 Bunq。有了卡才能开通 Tikkie (荷兰版微信支付)。', hook: '找个搭子一起去银行排队', hookTab: 'market-partner' },
+    { id: 't3', title: '激活 DigiD 数字身份', desc: '极其重要！所有的政府网站、退税、查医保全靠它扫码登录。', hook: '买台二手显示器大屏查政策', hookTab: 'market-idle' },
+    { id: 't4', title: '买基础医保 (Zorgverzekering)', desc: '法律规定落地4个月内必须买，否则面临巨额罚款。推荐买最便宜的，把 Eigen risico 拉到最高。', hook: '发个悬赏找学长推荐靠谱保险', hookTab: 'market-help' },
+    { id: 't5', title: '申请医疗补贴 (Zorgtoeslag)', desc: '只要你没收入或收入很低，政府每月白送你 €120+ 帮你交保费！等于免费看病。', hook: '省下的钱去集市淘个好物', hookTab: 'market-idle' },
+    { id: 't6', title: '办理实名黄卡 (OV-chipkaart)', desc: '千万别用匿名蓝卡坐火车！上 NS 官网绑一个“周末免费”或“非高峰期打折”套餐。', hook: '嫌火车贵？去收一辆二手自行车', hookTab: 'market-idle' },
+    { id: 't7', title: '注册家庭医生 (Huisarts)', desc: '在荷兰生病去医院急诊会被赶出来！必须先注册社区的 GP。务必找离家最近的。', hook: '看不懂荷兰语说明书？发悬赏求助', hookTab: 'market-help' }
 ];
 
 const rbWikis = [
-    { id: 'w1', mode: 'advanced', category: '羊毛', icon: '🛒', title: 'AH 超市 35% Off 贴纸规律', tag: '省钱必看', summary: '摸透打折贴纸出没时间，恩格尔系数直线下降。', details: '一般在保质期前一天的下午 16:00 左右，AH 员工会开始贴黄色的 35% 贴纸。如果是肉类，可以直接买回家扔冷冻室。' },
-    { id: 'w2', mode: 'advanced', category: '税务', icon: '🗑️', title: '穷学生如何豁免垃圾税', tag: '省€300+', summary: '水务局寄来的天价账单？用学生身份合法免除。', details: '收到 RbG 的信后，登录 DigiD 申请 Kwijtschelding（豁免）。上传你的银行流水证明余额低于 €1500 即可。荷兰语词汇：<span class="wk-nl-word" onclick="copyText(\'Kwijtschelding\')">Kwijtschelding</span>' },
-    { id: 'w3', mode: 'pro', category: '税务', icon: '💼', title: '30% Ruling 免税法案解析', tag: '高薪必看', summary: '满足条件，你的工资有 30% 是免税的纯收入。', details: '要求你是从海外被招募，且满足特定的薪资门槛。申请周期约 2-3 个月，可追溯。换工作期间允许有最多 3 个月的空窗期。' },
-    { id: 'w4', mode: 'pro', category: '定居', icon: '🏠', title: 'Funda 竞价与看房潜规则', tag: '买房实操', summary: 'Overbidding 是常态，如何用技术条款保护自己？', details: '在出价时，务必加上 Voorbehoud van financiering（财务保留条款）和 Bouwkundige keuring（建筑检测）。荷兰语词汇：<span class="wk-nl-word" onclick="copyText(\'Voorbehoud van financiering\')">Voorbehoud van financiering</span>' }
+    // ================= 进阶模式：薅羊毛 (生活/购物/出行) =================
+    { id: 'w1', mode: 'advanced', category: '羊毛', icon: '🛒', title: 'AH 超市 35% Off 贴纸规律', tag: '恩格尔系数狂降', summary: '摸透打折贴纸出没时间，实现牛排三文鱼自由。', details: 'AH 员工通常在下午 16:00 左右开始贴黄色的 35% 贴纸（临期商品）。重点去盯肉类区和烘焙区，肉类买回来直接扔冷冻室，至少能放一个月！' },
+    { id: 'w2', mode: 'advanced', category: '羊毛', icon: '📦', title: 'Too Good To Go 盲盒抢购', tag: '€4吃三天', summary: '剩菜盲盒？不，这是留学生的生存之光。', details: '下载 Too Good To Go App，每天留意面包店 (如 Bakkerij) 和大超市的魔法盒 (Magic Box)。通常花 €4.99 能拿走原价 €15+ 的羊角包和果蔬，抢到就是赚到。' },
+    { id: 'w3', mode: 'advanced', category: '羊毛', icon: '🚂', title: 'NS 火车终极省钱组合', tag: '交通刺客克星', summary: '荷兰火车票贵到离谱？这么坐直接打骨折。', details: '绝招：买一张 NS Flex Dal Voordeel (非高峰期4折) 套餐，每月只需 €5.6。如果偶尔要全价出行，记得在车站找人“同行打折” (Samenreiskorting)，直接享受 40% off！荷兰语词汇：<span class="wk-nl-word" onclick="copyText(\'Samenreiskorting\')">Samenreiskorting</span>' },
+    { id: 'w4', mode: 'advanced', category: '羊毛', icon: '🚲', title: '自行车防盗与购买指南', tag: '必修课', summary: '在荷兰，没人没丢过自行车。如何打破魔咒？', details: '不要买超过 €100 的二手车！必须买两把锁：一把后轮环形锁 (Ringslot)，一把粗铁链锁 (Kettingslot)。锁车时，铁链**必须**绕过车架和固定柱子。不要只锁前轮！' },
+    { id: 'w5', mode: 'advanced', category: '羊毛', icon: '🛍️', title: '荷兰日用品穷鬼平替店', tag: '别去市中心买', summary: '不要在 Albert Heijn 买洗发水和锅碗瓢盆！', details: '买厨具、收纳、文具、五金：无脑去 Action (荷兰拼多多)；买洗护用品、保健品、零食：去 Kruidvat 或 Trekpleister，永远在搞 1+1 免费。买家具：去宜家或节假日蹲荷包管家二手集市。' },
+
+    // ================= 进阶模式：税务/医保 =================
+    { id: 'w6', mode: 'advanced', category: '税务', icon: '🗑️', title: '穷学生如何豁免垃圾税/水税', tag: '省€300+', summary: '水务局寄来的天价账单？用学生身份合法免除。', details: '收到 RbG 或 Waternet 的信后，登录 DigiD 申请豁免。你需要上传：近三个月的银行流水、租房合同。只要证明你卡里余额低于约 €1500，就能全免！荷兰语词汇：<span class="wk-nl-word" onclick="copyText(\'Kwijtschelding\')">Kwijtschelding</span>' },
+    { id: 'w7', mode: 'advanced', category: '税务', icon: '🏠', title: '租房补贴 (Huurtoeslag) 申请', tag: '每月白领€200+', summary: '住独立 Studio 的同学必看，政府帮你交房租。', details: '要求：满18岁，租的是独立地址 (有自己的大门、厨卫)，且基础房租低于当年上限 (2024年为 €879.66)，且个人存款低于 3.4 万欧。直接去 Toeslagen 官网申请，能省一大笔！荷兰语词汇：<span class="wk-nl-word" onclick="copyText(\'Huurtoeslag\')">Huurtoeslag</span>' },
+    { id: 'w8', mode: 'advanced', category: '税务', icon: '💶', title: '年度报税 (M-Form) 拿回退税', tag: '可能退上千欧', summary: '来荷兰的第一年，无论有没有收入都要报税！', details: '如果你年中才来到荷兰，你需要填纸质的 M-Biljet (M-Form)。由于系统默认你全年都在荷兰拿工资，实际上你只拿了几个月，所以预扣的税会全退给你，有时甚至高达上千欧！' },
+
+    // ================= Pro 模式：定居/签证 (资产与职场) =================
+    { id: 'w9', mode: 'pro', category: '定居', icon: '💼', title: '30% Ruling 免税法案深度解析', tag: '高薪特权', summary: '满足条件，你的工资有 30% 是免税的纯收入。', details: '核心条件：必须是从海外被招募进荷兰 (毕业后如果在本地找工作通常不适用，除非是找工作签证直接转)，且满足特定薪资门槛。最长适用 5 年。如果换工作，空窗期不能超过 3 个月！' },
+    { id: 'w10', mode: 'pro', category: '定居', icon: '🎓', title: 'Search Year (Zoekjaar) 找工作签', tag: '续命一年', summary: '毕业后想留在荷兰？用这个签证获得一年找工作时间。', details: '只要你在全球 Top 200 高校或荷兰本地大学毕业，即可申请 1 年的 Search Year 签证。期间可以无限制打工（无需工签）。最强 Buff：用此签证转 KM (高技术移民) 时的薪资门槛极低！' },
+    { id: 'w11', mode: 'pro', category: '定居', icon: '📈', title: 'KM 高技术移民薪资门槛 (2024)', tag: '雇主担保', summary: '留在荷兰的终极目标，拿永居的入场券。', details: '非欧盟员工需要雇主提供 KM 担保。30岁以下门槛：约 €3,909/月；30岁以上：约 €5,331/月。但如果你是从 Search Year 签证转过来的，门槛直降至：约 €2,801/月！（注：薪资要求每年上调，请查阅 IND 官网）。' },
+    { id: 'w12', mode: 'pro', category: '定居', icon: '🏠', title: 'Funda 全荷看房与竞价潜规则', tag: '买房实操', summary: 'Overbidding (溢价) 是常态，如何用条款保护自己？', details: '在 Randstad (兰斯塔德) 地区，好房子需要加价 10%-20%。出价时，除了写金额，务必附带两个保命条款：财务保留条款（贷款批不下来可无责毁约）和建筑检测条款（查出大问题可毁约）。荷兰语词汇：<span class="wk-nl-word" onclick="copyText(\'Voorbehoud van financiering\')">Voorbehoud van financiering</span>' },
+    { id: 'w13', mode: 'pro', category: '定居', icon: '🚗', title: '中国驾照更换与 CBR 考驾照', tag: '老司机必看', summary: '中国驾照在荷兰只能用 6 个月，之后怎么办？', details: '如果你享有 30% Ruling，你可以**直接免考**用中国驾照换荷兰驾照！如果你没有，对不起，必须去 CBR 重新考理论和路考。荷兰驾考极严，挂科率极高，建议提前准备约 €2000-3000 的学车预算。' },
+    { id: 'w14', mode: 'pro', category: '税务', icon: '💰', title: 'Box 3 财富税防坑指南', tag: '搞钱人必看', summary: '在荷兰存款太多也要交税？了解 Box 3 免税额度。', details: '荷兰不仅收所得税 (Box 1)，还收财富税 (Box 3)。单身免税额度约为 €57,000，伴侣约为 €114,000。超过部分哪怕只是放在银行吃利息，也会被按照“虚拟收益率”狠狠收税。有余钱尽早考虑买房或合理理财！' }
 ];
 
 // 2. Web Audio API：强迫症清脆“叮~”音效
