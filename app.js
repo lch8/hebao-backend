@@ -732,29 +732,62 @@ function hSwipeMove(e, id) {
 
 function hSwipeEnd(e, id) {
     if (!isSwiping || activeSwipeId !== id) return;
-    isSwiping = false; const diffX = swipeCurrentX - swipeStartX;
-    const frontCard = document.getElementById(`front_${id}`); if(!frontCard) return;
+    isSwiping = false;
+    
+    // 获取最终位移
+    const diffX = swipeCurrentX - swipeStartX;
+    const frontCard = document.getElementById(`front_${id}`);
+    if(!frontCard) return;
 
     frontCard.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
-    const threshold = window.innerWidth * 0.35; 
+    const threshold = window.innerWidth * 0.35; // 触发阈值
 
-    if (diffX > threshold) {
-        frontCard.style.transform = `translateX(${window.innerWidth}px)`; // 右滑飞出
-        setTimeout(() => handleWikiAction(id, 'saved'), 300);
-    } else if (diffX < -threshold) {
-        frontCard.style.transform = `translateX(-${window.innerWidth}px)`; // 左滑飞出
-        setTimeout(() => handleWikiAction(id, 'deleted'), 300);
+    // 关键修正：只有当位移绝对值大于 10px 时，才判定为“意图滑动”
+    if (Math.abs(diffX) > 10) {
+        if (diffX > threshold) {
+            // 右滑成功 -> 飞出并收藏
+            frontCard.style.transform = `translateX(${window.innerWidth}px)`;
+            setTimeout(() => handleWikiAction(id, 'saved'), 300);
+        } else if (diffX < -threshold) {
+            // 左滑成功 -> 飞出并删除
+            frontCard.style.transform = `translateX(-${window.innerWidth}px)`;
+            setTimeout(() => handleWikiAction(id, 'deleted'), 300);
+        } else {
+            // 滑动距离不足 -> 弹回
+            frontCard.style.transform = `translateX(0px)`;
+            resetSwipeBg(id);
+        }
     } else {
-        frontCard.style.transform = `translateX(0px)`; // 弹回原位
-        // 恢复背景透明度
-        document.querySelector(`#swipe_${id} .save-bg`).style.opacity = 0;
-        document.querySelector(`#swipe_${id} .delete-bg`).style.opacity = 0;
+        // 位移极小（属于点击行为）-> 强制弹回，确保不消失
+        frontCard.style.transform = `translateX(0px)`;
+        resetSwipeBg(id);
     }
-    setTimeout(() => { isDraggingClickPrevent = false; }, 50); 
+    
+    // 延迟 100ms 释放锁，确保 click 事件能被正确触发
+    setTimeout(() => { isDraggingClickPrevent = false; activeSwipeId = null; }, 100);
 }
 
-function toggleWikiCard(el) { if (isDraggingClickPrevent) return; el.classList.toggle('open'); }
+// 新增一个重置背景透明度的辅助函数
+function resetSwipeBg(id) {
+    const sBg = document.querySelector(`#swipe_${id} .save-bg`);
+    const dBg = document.querySelector(`#swipe_${id} .delete-bg`);
+    if(sBg) sBg.style.opacity = 0;
+    if(dBg) dBg.style.opacity = 0;
+}
 
+function toggleWikiCard(el) {
+    // 如果正在滑动或者位移锁开启，直接拦截点击
+    if (isSwiping || isDraggingClickPrevent) {
+        return;
+    }
+    
+    // 只有在卡片完全归位（transform 为 0 或为空）时才允许展开
+    const transform = window.getComputedStyle(el).transform;
+    const matrix = new WebKitCSSMatrix(transform);
+    if (Math.abs(matrix.m41) < 5) { // 允许 5px 以内的误差
+        el.classList.toggle('open');
+    }
+}
 function handleWikiAction(id, actionStr) {
     let arr = JSON.parse(localStorage.getItem(`hp_wiki_${actionStr}`) || '[]');
     if (!arr.includes(id)) arr.push(id);
