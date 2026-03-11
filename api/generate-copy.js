@@ -29,6 +29,17 @@ export default async function handler(req) {
         } else if (type === 'partner') {
             const format = { "title": "吸引人的标题", "date": "YYYY-MM-DD", "location": "目标地点", "mbti": "all 或 e 或 i", "copy": "找搭子正文" };
             prompt = `你是找搭子社交达人。\n用户需求："${keyword}"\n必须返回纯JSON：\n${JSON.stringify(format, null, 2)}`;
+        } else if (type === 'wiki') {
+            const format = {
+                "icon": "选1个最相关的Emoji表情",
+                "title": "生成10字以内的吸睛标题",
+                "tag": "生成4字以内的利益点标签(如: 省€100)",
+                "summary": "生成20字以内的一句话省流总结",
+                "details": "生成详细的实操步骤"
+            };
+            prompt = `你是一个荷兰留学生存专家。用户输入了一段冗长的攻略或新闻："${keyword}"
+            请提炼核心干货，将其转化为一张生存红宝书卡片。
+            必须返回纯 JSON 格式：\n${JSON.stringify(format, null, 2)}`;
         }
 
         const dsRes = await fetch('https://api.deepseek.com/chat/completions', {
