@@ -473,9 +473,12 @@ body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "S
 .rb-pro-theme .wk-ugc-btn { background: #1F2937; border-color: #374151; }
 
 /* ================= 进阶/Pro Wiki 左右滑动系统 ================= */
-.swipe-wrapper { position: relative; margin-bottom: 12px; border-radius: 16px; overflow: hidden; background: #F3F4F6; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
-.swipe-bg { position: absolute; top: 0; bottom: 0; display: flex; align-items: center; font-weight: 900; color: white; font-size: 15px; width: 100%; box-sizing: border-box; transition: opacity 0.2s; }
-.swipe-bg.delete-bg { background: #EF4444; justify-content: flex-end; right: 0; padding-right: 25px; } /* 左滑漏出删除 */
-.swipe-bg.save-bg { background: #10B981; justify-content: flex-start; left: 0; padding-left: 25px; }   /* 右滑漏出收藏 */
+.swipe-wrapper { position: relative; margin-bottom: 12px; border-radius: 16px; overflow: hidden; background: transparent; }
+.swipe-bg { position: absolute; top: 0; bottom: 0; display: flex; align-items: center; font-weight: 900; color: white; font-size: 15px; width: 50%; box-sizing: border-box; opacity: 0; z-index: 1; transition: opacity 0.1s;}
+.swipe-bg.save-bg { background: linear-gradient(90deg, #10B981, transparent); left: 0; padding-left: 20px; justify-content: flex-start; }
+.swipe-bg.delete-bg { background: linear-gradient(-90deg, #EF4444, transparent); right: 0; padding-right: 20px; justify-content: flex-end; }
+.swipe-front { position: relative; z-index: 2; margin-bottom: 0 !important; width: 100%; box-sizing: border-box; will-change: transform; background: #FFF; } /* 改为实色防止透底 */
+.rb-pro-theme .swipe-front { background: #1F2937; } /* Pro模式深色背景 */
 
-.swipe-front { position: relative; z-index: 2; margin-bottom: 0 !important; width: 100%; box-sizing: border-box; will-change: transform; }
+/* ================= UGC AI 创建卡片按钮 ================= */
+.btn-ai-create { background: linear-gradient(135deg, #111827 0%, #374151 100%); color: #FDE68A; border: none; padding: 14px; width: 100%; border-radius: 16px; font-size: 14px; font-weight: 900; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 8px;}
