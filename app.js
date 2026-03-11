@@ -820,8 +820,233 @@ async function deleteMyPost(postId, btnElement) {
     } catch(e) { alert('网络错误'); btnElement.innerText = originalText; btnElement.style.pointerEvents = "auto"; }
 }
 
-// ================= 14. 页面初始化启动器 =================
+// ============================================================================
+// ================= 生存红宝书：三模动态系统与原生音效引擎 =================
+// ============================================================================
+
+// 1. 本地静态数据源 (Data-Driven)
+const rbTasks = [
+    { id: 't1', title: '去市政厅注册 BSN', desc: '全荷通行证，办卡租房必用。', hook: '不知道在哪看信？买个二手信箱', hookTab: 'market-idle' },
+    { id: 't2', title: '激活 DigiD 账号', desc: '荷兰的数字身份证，税务医疗全靠它。', hook: '买台二手显示器大屏查政策', hookTab: 'market-idle' },
+    { id: 't3', title: '办理本地银行卡', desc: '推荐 ING 或 ABN，绑定 Tikkie 必备。', hook: '找搭子一起去银行排队', hookTab: 'market-partner' },
+    { id: 't4', title: '开通黄实名 OV 卡', desc: '绑定周末免费套餐，交通费省一半。', hook: '去集市看看有没有二手自行车', hookTab: 'market-idle' },
+    { id: 't5', title: '注册家庭医生 GP', desc: '在荷兰生病必须先看 GP，不注册看不了病。', hook: '发个悬赏求帮忙买药', hookTab: 'market-help' }
+];
+
+const rbWikis = [
+    { id: 'w1', mode: 'advanced', category: '羊毛', icon: '🛒', title: 'AH 超市 35% Off 贴纸规律', tag: '省钱必看', summary: '摸透打折贴纸出没时间，恩格尔系数直线下降。', details: '一般在保质期前一天的下午 16:00 左右，AH 员工会开始贴黄色的 35% 贴纸。如果是肉类，可以直接买回家扔冷冻室。' },
+    { id: 'w2', mode: 'advanced', category: '税务', icon: '🗑️', title: '穷学生如何豁免垃圾税', tag: '省€300+', summary: '水务局寄来的天价账单？用学生身份合法免除。', details: '收到 RbG 的信后，登录 DigiD 申请 Kwijtschelding（豁免）。上传你的银行流水证明余额低于 €1500 即可。荷兰语词汇：<span class="wk-nl-word" onclick="copyText(\'Kwijtschelding\')">Kwijtschelding</span>' },
+    { id: 'w3', mode: 'pro', category: '税务', icon: '💼', title: '30% Ruling 免税法案解析', tag: '高薪必看', summary: '满足条件，你的工资有 30% 是免税的纯收入。', details: '要求你是从海外被招募，且满足特定的薪资门槛。申请周期约 2-3 个月，可追溯。换工作期间允许有最多 3 个月的空窗期。' },
+    { id: 'w4', mode: 'pro', category: '定居', icon: '🏠', title: 'Funda 竞价与看房潜规则', tag: '买房实操', summary: 'Overbidding 是常态，如何用技术条款保护自己？', details: '在出价时，务必加上 Voorbehoud van financiering（财务保留条款）和 Bouwkundige keuring（建筑检测）。荷兰语词汇：<span class="wk-nl-word" onclick="copyText(\'Voorbehoud van financiering\')">Voorbehoud van financiering</span>' }
+];
+
+// 2. Web Audio API：强迫症清脆“叮~”音效
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+let audioCtx;
+function playDingSound() {
+    if (!audioCtx) audioCtx = new AudioContext();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 音阶
+    osc.frequency.exponentialRampToValueAtTime(1760, audioCtx.currentTime + 0.1); // 快速拔高增加清脆感
+    
+    gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+    gainNode.gain.linearRampToValueAtTime(1, audioCtx.currentTime + 0.02);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+    
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+}
+
+function copyText(text) { navigator.clipboard.writeText(text); alert(`已复制: ${text}`); }
+
+// 3. 核心视图控制器
+let currentRbMode = localStorage.getItem('hp_survival_mode') || 'starter';
+let currentRbCategory = 'all';
+
+function initRedBook() {
+    // 检查免责声明
+    if(!localStorage.getItem('hp_disclaimer_agreed')) { document.getElementById('disclaimerModal').style.display = 'flex'; }
+    switchRbMode(currentRbMode);
+    checkWidgets();
+}
+
+function agreeDisclaimer() {
+    localStorage.setItem('hp_disclaimer_agreed', 'true');
+    document.getElementById('disclaimerModal').style.display = 'none';
+}
+
+function switchRbMode(mode) {
+    currentRbMode = mode; localStorage.setItem('hp_survival_mode', mode);
+    
+    // 更新按钮状态
+    document.querySelectorAll('.rb-mode-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelector(`.rb-mode-btn[onclick*="${mode}"]`).classList.add('active');
+    
+    // 切换大容器视图
+    const starterView = document.getElementById('rbStarterMode');
+    const wikiView = document.getElementById('rbWikiMode');
+    const mainContainer = document.getElementById('redbookContainer');
+    const fabBtn = document.getElementById('fabGridBtn');
+
+    if (mode === 'starter') {
+        starterView.style.display = 'block'; wikiView.style.display = 'none'; fabBtn.style.display = 'none';
+        mainContainer.classList.remove('rb-pro-theme');
+        renderStarterTasks();
+    } else {
+        starterView.style.display = 'none'; wikiView.style.display = 'block'; fabBtn.style.display = 'flex';
+        // Pro 模式切换暗黑主题，并过滤专属 Tab
+        if(mode === 'pro') {
+            mainContainer.classList.add('rb-pro-theme');
+            document.querySelectorAll('.pro-only').forEach(el => el.style.display = 'block');
+        } else {
+            mainContainer.classList.remove('rb-pro-theme');
+            document.querySelectorAll('.pro-only').forEach(el => el.style.display = 'none');
+        }
+        currentRbCategory = 'all';
+        document.querySelectorAll('.w-tab').forEach(el => el.classList.remove('active'));
+        document.querySelector('.w-tab').classList.add('active');
+        document.getElementById('wikiSearchInput').value = '';
+        renderWikiList();
+    }
+}
+
+// 4. 新手打卡系统引擎
+function renderStarterTasks() {
+    const list = document.getElementById('starterTaskList');
+    const savedProgress = JSON.parse(localStorage.getItem('hp_tasks_done') || '[]');
+    let html = '';
+    let doneCount = 0;
+
+    rbTasks.forEach(task => {
+        const isDone = savedProgress.includes(task.id);
+        if (isDone) doneCount++;
+        html += `
+        <div class="task-card glass-card ${isDone ? 'done' : ''}" id="task_${task.id}">
+            <input type="checkbox" class="task-checkbox" ${isDone ? 'checked' : ''} onchange="toggleTask('${task.id}', this)">
+            <div class="task-content">
+                <div class="task-title">${task.title}</div>
+                <div class="task-desc">${task.desc}</div>
+                <div class="task-hook" onclick="goBack(); setTimeout(()=>switchTab('scan', document.querySelectorAll('.tab-item')[1]), 100); setTimeout(()=>switchMarketTab('${task.hookTab.split('-')[1]}', document.querySelector('.m-tab')), 200);">👉 ${task.hook}</div>
+            </div>
+        </div>`;
+    });
+    list.innerHTML = html;
+    
+    // 更新进度条
+    const progressPercent = (doneCount / rbTasks.length) * 100;
+    document.getElementById('taskProgressBar').style.width = `${progressPercent}%`;
+    document.getElementById('taskProgressText').innerText = `${doneCount}/${rbTasks.length}`;
+
+    // 通关撒花检测
+    if (doneCount === rbTasks.length && !localStorage.getItem('hp_starter_cleared')) {
+        setTimeout(() => {
+            const plus = document.createElement('div'); plus.className = 'float-plus'; plus.innerText = '🎉 新手任务全清！送你前往集市！'; plus.style.color = '#10B981';
+            plus.style.left = '50%'; plus.style.top = '40%'; plus.style.transform = 'translate(-50%, -50%)'; document.body.appendChild(plus); 
+            setTimeout(() => plus.remove(), 2500);
+            localStorage.setItem('hp_starter_cleared', 'true');
+            // 自动晋升模式
+            setTimeout(() => { alert("恭喜你度过新手期！已为您自动开启【进阶模式】"); switchRbMode('advanced'); }, 1500);
+        }, 500);
+    }
+}
+
+function toggleTask(id, checkbox) {
+    let savedProgress = JSON.parse(localStorage.getItem('hp_tasks_done') || '[]');
+    if (checkbox.checked) {
+        playDingSound(); // 触发原生音效
+        if (!savedProgress.includes(id)) savedProgress.push(id);
+    } else {
+        savedProgress = savedProgress.filter(taskId => taskId !== id);
+    }
+    localStorage.setItem('hp_tasks_done', JSON.stringify(savedProgress));
+    
+    // CSS 动画处理
+    const card = document.getElementById(`task_${id}`);
+    if(checkbox.checked) card.classList.add('done'); else card.classList.remove('done');
+    
+    renderStarterTasks(); // 重新计算进度条
+}
+
+// 5. 无限流 Wiki 引擎
+function switchWikiTab(category, el) {
+    document.querySelectorAll('.w-tab').forEach(tab => tab.classList.remove('active'));
+    el.classList.add('active');
+    currentRbCategory = category;
+    renderWikiList();
+}
+
+function filterWiki() {
+    const query = document.getElementById('wikiSearchInput').value.toLowerCase();
+    renderWikiList(query);
+}
+
+function renderWikiList(searchQuery = '') {
+    const list = document.getElementById('wikiListContainer');
+    let html = '';
+    
+    // 根据当前模式 (advanced 包含所有 advanced, pro 包含所有) 和 分类 进行过滤
+    let filteredData = rbWikis.filter(w => {
+        const modeMatch = currentRbMode === 'pro' ? true : w.mode === 'advanced';
+        const catMatch = currentRbCategory === 'all' ? true : w.category === currentRbCategory;
+        const searchMatch = w.title.toLowerCase().includes(searchQuery) || w.summary.toLowerCase().includes(searchQuery);
+        return modeMatch && catMatch && searchMatch;
+    });
+
+    if (filteredData.length === 0) { list.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding: 40px 0;">未找到相关攻略~</div>'; return; }
+
+    filteredData.forEach(w => {
+        html += `
+        <div class="wiki-card glass-card" onclick="this.classList.toggle('open')">
+            <div class="wk-header">
+                <div class="wk-icon">${w.icon}</div>
+                <div class="wk-info">
+                    <div class="wk-title">${w.title} <span class="wk-tag">${w.tag}</span></div>
+                    <div class="wk-summary">${w.summary}</div>
+                </div>
+            </div>
+            <div class="wk-detail" onclick="event.stopPropagation()">
+                <div class="wk-step">${w.details}</div>
+                <div class="wk-ugc-btn" onclick="alert('感谢您的纠错！核实后将为您增加 50 信用分。')">🚨 政策变了？点我疯狂打脸纠错！</div>
+            </div>
+        </div>`;
+    });
+    list.innerHTML = html;
+}
+
+function toggleFabModal() {
+    alert("九宫格大目录正在开发中...\n这里将展示：租房 / 医保 / 签证 / 买车 等全局捷径！");
+}
+
+// 6. 动态保命组件 (时间计算逻辑)
+function checkWidgets() {
+    const now = new Date();
+    const day = now.getDay(); // 0 是周日, 6 是周六
+    const hours = now.getHours();
+    
+    const supermarketWg = document.getElementById('supermarketWidget');
+    
+    // 模拟逻辑：如果今天是周六或周日，且过了下午 16:00
+    if ((day === 0 || day === 6) && hours >= 16 && hours < 22) {
+        if(supermarketWg) {
+            supermarketWg.style.display = 'flex';
+            document.getElementById('supermarketAlertText').innerText = `🚨 距提早关门仅剩 ${22 - hours} 小时！`;
+        }
+    } else {
+        if(supermarketWg) supermarketWg.style.display = 'none';
+    }
+}
+
+// ================= 最后，修改入口初始化 =================
+// 🚨 请确保把 app.js 最底部的 window.addEventListener 改为以下代码，把 initRedBook 加进去：
 window.addEventListener('DOMContentLoaded', () => { 
-    renderTipsPage(); loadTrendingToHome(); renderProfileState(); 
+    renderTipsPage(); // 保持兼容旧的
+    loadTrendingToHome(); renderProfileState(); 
     loadCommunityPosts();
+    initRedBook(); // 💥 启动红宝书引擎！
 });
