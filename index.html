@@ -273,7 +273,7 @@
                 <div class="menu-left"><span class="menu-icon">🛡️</span> 管家信用分规则</div>
                 <div class="menu-arrow">❯</div>
             </div>
-            <div class="menu-item" onclick="requireAuth(() => alert('收藏夹空空如也~'))">
+            <div class="menu-item" onclick="openCollectionsModal()">
                 <div class="menu-left"><span class="menu-icon">💖</span> 我的收藏</div>
                 <div class="menu-arrow">❯</div>
             </div>
@@ -623,6 +623,27 @@
     </div>
     <div class="chat-input-disabled" id="chatInputDisabled" style="display: none;">
         🚫 该闲置已售出，无法继续发送消息
+    </div>
+</div>
+
+<div class="full-modal" id="collectionsModal" style="display: none; background: #F7F8FA; z-index: 3000;">
+    <div class="fm-header">
+        <div class="fm-close" onclick="document.getElementById('collectionsModal').style.display='none'">✕</div>
+        <div class="fm-title">我的收藏库 ⭐</div>
+        <div style="width: 24px;"></div>
+    </div>
+    <div class="fm-content" id="collectionsList" style="padding: 15px; padding-bottom: 80px;"></div>
+</div>
+
+<div class="modal-overlay" id="aiWikiModal" style="z-index: 3100;">
+    <div class="modal-content">
+        <div class="modal-close" onclick="document.getElementById('aiWikiModal').style.display='none'">✕</div>
+        <h3 style="margin-top:0; color: #111827;">✨ AI 自动洗稿录入</h3>
+        <div style="font-size:12px; color:#6B7280; margin-bottom:15px;">在小红书或微信群看到超长攻略？直接复制粘贴到下面，AI会自动提炼成卡片！</div>
+        
+        <textarea id="aiWikiInput" class="modal-textarea" style="height: 140px; border-color: #FCD34D;" placeholder="粘贴长篇大论的攻略原文..."></textarea>
+        
+        <button id="btnGenerateWiki" style="width: 100%; padding: 14px; background: #111827; color: #FDE68A; border: none; border-radius: 12px; font-weight: bold; margin-top: 15px; cursor:pointer;" onclick="generateAICard()">🪄 一键提取为红宝书</button>
     </div>
 </div>
 
