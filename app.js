@@ -578,28 +578,39 @@ const rbTasks = [
 ];
 
 const rbWikis = [
-    // 进阶模式
+    // ================= 进阶模式 (已扩充海量数据) =================
     { id: 'w1', mode: 'advanced', category: '羊毛购物', icon: '🛒', title: 'AH 超市 35% Off 贴纸规律', tag: '恩格尔系数狂降', summary: '摸透打折贴纸出没时间，实现牛排三文鱼自由。', details: 'AH 员工通常在每天下午 15:30 - 16:30 左右开始贴黄色的 35% 贴纸（临期商品）。重点盯肉类区，肉类买回来直接扔冷冻室，至少能放一个月！' },
     { id: 'w2', mode: 'advanced', category: '羊毛购物', icon: '📦', title: 'Too Good To Go 盲盒抢购', tag: '€4吃三天', summary: '剩菜盲盒？不，这是留学生的生存之光。', details: '下载 TGTG App，每天留意面包店 (Bakkerij) 和大超市的魔法盒。通常花 €4.99 能拿走原价 €15+ 的羊角包和果蔬，拼手速抢到就是赚到。' },
     { id: 'w3', mode: 'advanced', category: '羊毛购物', icon: '🛍️', title: '荷兰日用品穷鬼平替店', tag: '别去市中心买', summary: '不要在 Albert Heijn 买洗发水和锅碗瓢盆！', details: '厨具、收纳、五金：无脑去 Action (荷兰拼多多)；洗护用品、保健品：去 Kruidvat 或 Trekpleister，永远在搞 1+1 免费。买廉价家居去 Xenos。' },
+    { id: 'w_new1', mode: 'advanced', category: '羊毛购物', icon: '🧺', title: 'Dirk 与 HEMA 的宝藏家居', tag: '省钱布置', summary: '刚租完房怎么低成本布置出温馨感？', details: '千万别全靠宜家！Dirk 超市的清洁用品极其便宜；HEMA 则是平价无印良品，买毛巾、床品、文具性价比最高。' },
+    
     { id: 'w4', mode: 'advanced', category: '交通出行', icon: '🚂', title: 'NS 火车终极省钱组合', tag: '交通刺客克星', summary: '荷兰火车票贵到离谱？这么坐直接打骨折。', details: '绝招：买一张 NS Flex Dal Voordeel (非高峰期4折) 套餐，每月只需 €5.6。如果偶尔全价出行，记得在车站找人同行打折，直接享受 40% off！荷兰语词汇：<span class="wk-nl-word" onclick="copyText(\'Samenreiskorting\')">Samenreiskorting</span>' },
     { id: 'w5', mode: 'advanced', category: '交通出行', icon: '🚲', title: '自行车防盗与购买指南', tag: '必修课', summary: '在荷兰，没人没丢过自行车。如何打破魔咒？', details: '代步不要买超过 €100 的二手车！必须买两把锁：一把后轮环形锁 (Ringslot)，一把粗铁链锁 (Kettingslot)。锁车时，铁链**必须**绕过车架和固定柱子。' },
-    { id: 'w6', mode: 'advanced', category: '交通出行', icon: '🚌', title: 'OV-pay 直接刷银行卡进站', tag: '防丢卡神器', summary: '忘带 OV 卡怎么办？现在可以直接刷手机/银行卡。', details: '全荷公交系统已支持 OV-pay。你可以直接用绑了 Apple Pay 的手机或荷兰银行卡碰闸机进出站。计费等同于无折扣的原价票，极度适合救急！' },
+    { id: 'w6', mode: 'advanced', category: '交通出行', icon: '🚌', title: 'OV-pay 直接刷银行卡进站', tag: '防丢卡神器', summary: '忘带 OV 卡怎么办？现在可以直接刷手机/银行卡。', details: '全荷公交系统已支持 OV-pay。直接用绑了 Apple Pay 的手机或荷兰银行卡碰闸机进出站。计费等同于无折扣的原价票，极度适合救急！' },
+    { id: 'w_new2', mode: 'advanced', category: '交通出行', icon: '✈️', title: '史基浦机场廉航避坑', tag: 'Ryanair警告', summary: '买欧洲廉航机票，最后反而花了双倍钱？', details: '乘坐 Ryanair 或 EasyJet 务必提前 24 小时在线 Check-in，去柜台值机会被罚款 €50+！随身行李极严，哪怕多 1 厘米也会被罚款，推荐买个标准尺寸的双肩包。' },
+
     { id: 'w7', mode: 'advanced', category: '生活避坑', icon: '🦷', title: '看牙医与附加险计算', tag: '看牙极贵', summary: '基础医保不包看牙，洗牙补牙怎么搞最划算？', details: '如果你今年预感要拔智齿或多次补牙，年底时务必把明年的保险加上 Tandarts 附加险 (约 +€15/月)。如果是普通的洗牙(约 €70)，直接自费比买附加险更省钱。' },
     { id: 'w8', mode: 'advanced', category: '生活避坑', icon: '🌡️', title: '年度能源账单结算陷阱', tag: '防坑几千欧', summary: '年底突然收到几千欧的补缴天然气账单？', details: '荷兰的能源是“先预估扣费，年底多退少补”。如果你冬天狂开暖气，年底的 Eindafrekening 会让你破产。建议平时在 App 里主动调高每月的预付费，年底拿退款当压岁钱。' },
+    { id: 'w_new3', mode: 'advanced', category: '生活避坑', icon: '🔑', title: '锁匠诈骗与忘带钥匙', tag: '血泪教训', summary: '被锁在门外，千万别乱搜谷歌找开锁！', details: '谷歌搜索 Slotenmaker，前排带【Ad/广告】标志的很多是黑帮跨国诈骗。他们会暴力拆锁并漫天要价 €500+。正确做法：白天找正规本地店铺，夜间价格需电话确认封顶。' },
+
     { id: 'w9', mode: 'advanced', category: '税务补贴', icon: '🗑️', title: '穷学生如何豁免垃圾/水税', tag: '省€300+', summary: '水务局寄来的天价账单？用学生身份合法免除。', details: '收到 RbG 或 Waternet 的信后，登录 DigiD 申请 Kwijtschelding (豁免)。需上传：近三个月银行流水、租房合同。只要卡里余额低于约 €1500，就能全免！荷兰语词汇：<span class="wk-nl-word" onclick="copyText(\'Kwijtschelding\')">Kwijtschelding</span>' },
     { id: 'w10', mode: 'advanced', category: '税务补贴', icon: '🏠', title: '租房补贴 (Huurtoeslag) 申请', tag: '每月白领€200+', summary: '住独立 Studio 的同学必看，政府帮你交房租。', details: '要求：满18岁，独立地址 (有自己的大门、厨卫)，基础房租低于当年上限 (2024年为 €879)，个人存款低于 3.4 万欧。去 Toeslagen 官网申请。荷兰语词汇：<span class="wk-nl-word" onclick="copyText(\'Huurtoeslag\')">Huurtoeslag</span>' },
 
-    // Pro 模式
+    // ================= Pro 模式 =================
     { id: 'w11', mode: 'pro', category: '职场签证', icon: '🎓', title: 'Search Year 找工作签', tag: '续命一年', summary: '毕业后想留荷？获得一年无限制打工权。', details: '全球 Top 200 或荷兰本地大学毕业即可申请 1 年的 Search Year。期间可无条件打工。最强 Buff：用此签证转 KM 时，薪资门槛极低！' },
-    { id: 'w12', mode: 'pro', category: '职场签证', icon: '📈', title: 'KM 高技术移民薪资门槛 (2024)', tag: '永居入场券', summary: '留在荷兰的终极目标，由雇主提供担保。', details: '30岁以下门槛：约 €3,909/月；30岁以上：约 €5,331/月。如果是从 Search Year 签证转过来的，门槛直降至：约 €2,801/月！(注：每年1月1日上调，请查阅 IND 官网)' },
-    { id: 'w13', mode: 'pro', category: '职场签证', icon: '🏢', title: 'ZZP 自由职业者注册与避税', tag: '搞钱必看', summary: '不想打工想自己接单？注册 ZZP 享受高额免税。', details: '去 KVK (商会) 注册 Eenmanszaak。如果你一年花在业务上的时间超过 1225 小时，就能享受 Starteraftrek 和 Zelfstandigenaftrek，前三年几乎不用交所得税！' },
-    { id: 'w14', mode: 'pro', category: '买房定居', icon: '🏠', title: 'Funda 全荷看房与竞价潜规则', tag: '实操指南', summary: 'Overbidding (溢价) 是常态，如何保护自己？', details: '在兰斯塔德地区，好房子需加价 10%-20%。出价时除了写金额，务必附带两个保命条款：财务保留条款（贷款批不下来可无责毁约）和建筑检测条款。荷兰语词汇：<span class="wk-nl-word" onclick="copyText(\'Voorbehoud van financiering\')">Voorbehoud van financiering</span>' },
-    { id: 'w15', mode: 'pro', category: '买房定居', icon: '⚡', title: '房屋能源标签 (Energielabel) 陷阱', tag: '贷款额度挂钩', summary: '买老房子便宜？后续加装保温层的钱够买新房了。', details: '荷兰贷款额度严格与能源标签挂钩！买 A 标及以上能比 D 标多贷几万欧。而且 F/G 标的房子冬天天然气费可能高达 €400/月，买房时千万别只看总价！' },
-    { id: 'w16', mode: 'pro', category: '财富税务', icon: '💼', title: '30% Ruling 免税法案深度解析', tag: '高薪特权', summary: '满足条件，你的工资有 30% 是免税的纯收入。', details: '核心条件：必须是从海外被招募进荷兰 (本地毕业找工作不适用)，且满足特定薪资门槛。最长适用 5 年，期间不仅免税，还直接豁免 Box 3 财富税！' },
-    { id: 'w17', mode: 'pro', category: '财富税务', icon: '💰', title: 'Box 3 财富税防坑指南', tag: '中产必看', summary: '在荷兰存款太多也要交税？了解免税额度。', details: '荷兰不仅收所得税 (Box 1)，还收财富税 (Box 3)。单身免税额度约为 €57,000，伴侣约为 €114,000。超过部分哪怕只是放在银行吃利息，也会被狠狠收税。有余钱尽早考虑买房或投资！' }
+    { id: 'w12', mode: 'pro', category: '职场签证', icon: '📈', title: 'KM 高技术移民薪资门槛', tag: '永居入场券', summary: '留在荷兰的终极目标，由雇主提供担保。', details: '30岁以下门槛：约 €3,909/月；30岁以上：约 €5,331/月。如果是从 Search Year 签证转过来的，门槛直降至：约 €2,801/月！(注：每年1月1日上调，请查阅 IND 官网)' },
+    { id: 'w13', mode: 'pro', category: '职场签证', icon: '🏢', title: 'ZZP 自由职业者避税', tag: '搞钱必看', summary: '不想打工想自己接单？注册 ZZP 享受高额免税。', details: '去 KVK (商会) 注册 Eenmanszaak。如果你一年花在业务上的时间超过 1225 小时，就能享受 Starteraftrek 和 Zelfstandigenaftrek，前三年几乎不用交所得税！' },
+    { id: 'w_new4', mode: 'pro', category: '职场签证', icon: '💼', title: '如何优雅地谈薪与假期', tag: '反卷指南', summary: '荷兰职场不加班，拿到Offer后该怎么谈判？', details: '荷兰默认全职是 36-40 小时/周，法定最低假期为 20 天，但多数公司给 25-30 天。拿到 Offer 别急着接，可尝试争取 8% 的 Holiday Allowance 以外的 Bonus 或交通报销。' },
+
+    { id: 'w14', mode: 'pro', category: '买房定居', icon: '🏠', title: 'Funda 看房与竞价潜规则', tag: '实操指南', summary: 'Overbidding (溢价) 是常态，如何保护自己？', details: '在兰斯塔德地区，好房子需加价 10%-20%。出价时除了写金额，务必附带两个保命条款：财务保留条款（贷款批不下来可无责毁约）和建筑检测条款。荷兰语词汇：<span class="wk-nl-word" onclick="copyText(\'Voorbehoud van financiering\')">Voorbehoud van financiering</span>' },
+    { id: 'w15', mode: 'pro', category: '买房定居', icon: '⚡', title: '房屋能源标签 (Energielabel)', tag: '防接盘', summary: '买老房子便宜？后续加装保温层的钱够买新房了。', details: '荷兰贷款额度严格与能源标签挂钩！买 A 标及以上能比 D 标多贷几万欧。而且 F/G 标的房子冬天天然气费可能高达 €400/月，买房时千万别只看总价！' },
+    { id: 'w_new5', mode: 'pro', category: '买房定居', icon: '📝', title: '买房三剑客：中介/评估/公证', tag: '流程扫盲', summary: '买房不要裸奔，必须花钱找专业团队。', details: '买房至少需要三笔硬性额外支出：Aankoopmakelaar (买方中介，约 €3000，帮你抢房)；Taxateur (估价师，约 €500，出具银行认可的报告)；Notaris (公证处，约 €1500，完成过户)。' },
+
+    { id: 'w16', mode: 'pro', category: '财富税务', icon: '📉', title: '30% Ruling 免税法案深度解析', tag: '高薪特权', summary: '满足条件，你的工资有 30% 是免税的纯收入。', details: '核心条件：必须是从海外被招募进荷兰 (本地毕业找工作不适用)，且满足特定薪资门槛。最长适用 5 年，期间不仅免税，还直接豁免 Box 3 财富税！' },
+    { id: 'w17', mode: 'pro', category: '财富税务', icon: '💰', title: 'Box 3 财富税防坑指南', tag: '中产必看', summary: '在荷兰存款太多也要交税？了解免税额度。', details: '荷兰不仅收所得税 (Box 1)，还收财富税 (Box 3)。单身免税额度约为 €57,000，伴侣约为 €114,000。超过部分哪怕只是放在银行吃利息，也会被狠狠收税。有余钱尽早考虑理财！' }
 ];
 
+// --- 音效与剪贴板 ---
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 let audioCtx;
 function playDingSound() {
@@ -611,6 +622,7 @@ function playDingSound() {
 }
 function copyText(text) { navigator.clipboard.writeText(text); alert(`已复制: ${text}`); }
 
+// --- 模式控制器 ---
 let currentRbMode = localStorage.getItem('hp_survival_mode') || 'starter';
 let currentRbCategory = 'all';
 
@@ -654,6 +666,7 @@ function switchRbMode(mode) {
     }
 }
 
+// --- 打卡系统 ---
 function renderStarterTasks() {
     const list = document.getElementById('starterTaskList'); if(!list) return;
     const savedProgress = JSON.parse(localStorage.getItem('hp_tasks_done') || '[]');
@@ -677,7 +690,6 @@ function renderStarterTasks() {
         }, 500);
     }
 }
-
 function toggleTask(id, checkbox) {
     let savedProgress = JSON.parse(localStorage.getItem('hp_tasks_done') || '[]');
     if (checkbox.checked) { playDingSound(); if (!savedProgress.includes(id)) savedProgress.push(id); } 
@@ -688,6 +700,69 @@ function toggleTask(id, checkbox) {
     renderStarterTasks(); 
 }
 
+// --- 物理左/右滑动引擎 ---
+let swipeStartX = 0;
+let swipeCurrentX = 0;
+let isSwiping = false;
+let isDraggingClickPrevent = false; // 用于区分滑动和点击
+let activeSwipeId = null;
+
+function hSwipeStart(e, id) {
+    swipeStartX = e.touches[0].clientX;
+    isSwiping = true;
+    isDraggingClickPrevent = false;
+    activeSwipeId = id;
+    const frontCard = document.getElementById(`front_${id}`);
+    if(frontCard) frontCard.style.transition = 'none';
+}
+
+function hSwipeMove(e, id) {
+    if (!isSwiping || activeSwipeId !== id) return;
+    swipeCurrentX = e.touches[0].clientX;
+    const diffX = swipeCurrentX - swipeStartX;
+    if (Math.abs(diffX) > 10) isDraggingClickPrevent = true; // 超过 10px 判定为滑动，禁用展开点击
+    
+    const frontCard = document.getElementById(`front_${id}`);
+    if(frontCard) frontCard.style.transform = `translateX(${diffX}px)`;
+}
+
+function hSwipeEnd(e, id) {
+    if (!isSwiping || activeSwipeId !== id) return;
+    isSwiping = false;
+    const diffX = swipeCurrentX - swipeStartX;
+    const frontCard = document.getElementById(`front_${id}`);
+    if(!frontCard) return;
+
+    frontCard.style.transition = 'transform 0.3s ease';
+    const threshold = window.innerWidth * 0.35; // 滑动阈值 35% 屏幕宽度
+
+    if (diffX > threshold) {
+        // 右滑 -> 收藏
+        frontCard.style.transform = `translateX(${window.innerWidth}px)`;
+        setTimeout(() => handleWikiAction(id, 'saved'), 300);
+    } else if (diffX < -threshold) {
+        // 左滑 -> 删除(已阅)
+        frontCard.style.transform = `translateX(-${window.innerWidth}px)`;
+        setTimeout(() => handleWikiAction(id, 'deleted'), 300);
+    } else {
+        // 弹回原位
+        frontCard.style.transform = `translateX(0px)`;
+    }
+    setTimeout(() => { isDraggingClickPrevent = false; }, 50); // 延时解除点击锁
+}
+
+function toggleWikiCard(el) {
+    if (isDraggingClickPrevent) return; // 如果刚才在滑动，则不触发展开
+    el.classList.toggle('open');
+}
+
+function handleWikiAction(id, actionStr) {
+    let arr = JSON.parse(localStorage.getItem(`hp_wiki_${actionStr}`) || '[]');
+    if (!arr.includes(id)) arr.push(id);
+    localStorage.setItem(`hp_wiki_${actionStr}`, JSON.stringify(arr));
+    renderWikiList(document.getElementById('wikiSearchInput').value.toLowerCase());
+}
+
 function switchWikiTab(category, el) { document.querySelectorAll('.w-tab').forEach(tab => tab.classList.remove('active')); el.classList.add('active'); currentRbCategory = category; renderWikiList(); }
 function filterWiki() { const query = document.getElementById('wikiSearchInput').value.toLowerCase(); renderWikiList(query); }
 
@@ -695,22 +770,51 @@ function renderWikiList(searchQuery = '') {
     const list = document.getElementById('wikiListContainer'); if(!list) return;
     let html = '';
     
+    // 获取本地删除和收藏记录
+    const deletedData = JSON.parse(localStorage.getItem('hp_wiki_deleted') || '[]');
+    const savedData = JSON.parse(localStorage.getItem('hp_wiki_saved') || '[]');
+
     let filteredData = rbWikis.filter(w => {
-        const modeMatch = w.mode === currentRbMode; 
+        // 🚨 物理过滤：不在当前模式，或者已经被删/收藏，直接剔除！
+        if (w.mode !== currentRbMode) return false;
+        if (deletedData.includes(w.id) || savedData.includes(w.id)) return false;
+        
         const catMatch = currentRbCategory === 'all' ? true : w.category === currentRbCategory;
         const searchMatch = w.title.toLowerCase().includes(searchQuery) || w.summary.toLowerCase().includes(searchQuery);
-        return modeMatch && catMatch && searchMatch;
+        return catMatch && searchMatch;
     });
 
-    if (filteredData.length === 0) { list.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding: 40px 0;">该分类下暂无干货~</div>'; return; }
+    if (filteredData.length === 0) { list.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding: 60px 0;">干货都被你清空啦！<br><br><span style="font-size:12px; cursor:pointer; color:#10B981; text-decoration:underline;" onclick="localStorage.removeItem(\'hp_wiki_deleted\'); localStorage.removeItem(\'hp_wiki_saved\'); renderWikiList();">点我重置所有卡片状态</span></div>'; return; }
 
     filteredData.forEach(w => {
-        html += `<div class="wiki-card glass-card" onclick="this.classList.toggle('open')"><div class="wk-header"><div class="wk-icon">${w.icon}</div><div class="wk-info"><div class="wk-title">${w.title} <span class="wk-tag">${w.tag}</span></div><div class="wk-summary">${w.summary}</div></div></div><div class="wk-detail" onclick="event.stopPropagation()"><div class="wk-step">${w.details}</div><div class="wk-ugc-btn" onclick="alert('感谢纠错！核实后将为您增加 50 信用分。')">🚨 政策变了？点我疯狂打脸纠错！</div></div></div>`;
+        html += `
+        <div class="swipe-wrapper" id="swipe_${w.id}">
+            <div class="swipe-bg save-bg">⭐ 收藏</div>
+            <div class="swipe-bg delete-bg">🗑️ 懂了</div>
+            
+            <div class="wiki-card glass-card swipe-front" id="front_${w.id}"
+                 onclick="toggleWikiCard(this)"
+                 ontouchstart="hSwipeStart(event, '${w.id}')"
+                 ontouchmove="hSwipeMove(event, '${w.id}')"
+                 ontouchend="hSwipeEnd(event, '${w.id}')">
+                <div class="wk-header">
+                    <div class="wk-icon">${w.icon}</div>
+                    <div class="wk-info">
+                        <div class="wk-title">${w.title} <span class="wk-tag">${w.tag}</span></div>
+                        <div class="wk-summary">${w.summary}</div>
+                    </div>
+                </div>
+                <div class="wk-detail" onclick="event.stopPropagation()">
+                    <div class="wk-step">${w.details}</div>
+                    <div class="wk-ugc-btn" onclick="alert('感谢纠错！核实后将为您增加 50 信用分。')">🚨 政策变了？点我疯狂打脸纠错！</div>
+                </div>
+            </div>
+        </div>`;
     });
     list.innerHTML = html;
 }
 
-function toggleFabModal() { alert("九宫格大目录正在开发中..."); }
+function toggleFabModal() { alert("您可以点击页面底部的『重置所有卡片状态』找回已滑走的卡片！"); }
 function checkWidgets() {
     const now = new Date(); const day = now.getDay(); const hours = now.getHours();
     const supermarketWg = document.getElementById('supermarketWidget');
