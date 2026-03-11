@@ -6,7 +6,6 @@
     <title>荷包管家 🇳🇱 - 荷兰生活避雷神器</title>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-    
     <link rel="stylesheet" href="./style.css">
 </head>
 
@@ -19,12 +18,12 @@
         <div class="btn-publish">+</div>
         <span class="tab-text" style="position: absolute; bottom: 8px; color:#9CA3AF;">发布</span>
     </div>
-    <div class="tab-item" onclick="switchTab('tips', this)"><span class="tab-icon">💰</span><span class="tab-text">省钱</span></div>
+    <div class="tab-item" onclick="switchTab('tips', this)"><span class="tab-icon">💰</span><span class="tab-text">红宝书</span></div>
     <div class="tab-item" onclick="switchTab('profile', this)"><span class="tab-icon">👤</span><span class="tab-text">我的</span></div>
 </div>
 
 <div class="sticky-chat-bar" id="stickyChatBar">
-    <input type="text" id="askInput" class="chat-input" placeholder="问管家：这玩意怎么吃？" onkeypress="if(event.key==='Enter') sendQuestion()">
+    <input type="text" id="askInput" class="chat-input" placeholder="问管家：这玩意怎么用？" onkeypress="if(event.key==='Enter') sendQuestion()">
     <button class="chat-send-btn" id="sendBtn" onclick="sendQuestion()">↑</button>
 </div>
 
@@ -33,18 +32,18 @@
     <div class="ps-close" onclick="closePublishSheet()">✕</div>
     <div class="ps-title">你想发点什么？</div>
     <div class="ps-options">
-            <div class="ps-opt ps-opt-1" onclick="openIdlePublish()">
-                <div class="ps-icon">📦</div>
-                <div class="ps-text">卖闲置</div><div class="ps-sub">回血清仓</div>
-            </div>
-            <div class="ps-opt ps-opt-2" onclick="openHelpPublish()">
-                <div class="ps-icon">🤝</div>
-                <div class="ps-text">发悬赏</div><div class="ps-sub">花钱求助</div>
-            </div>
-            <div class="ps-opt ps-opt-3" onclick="openPartnerPublish()">
-                <div class="ps-icon">🥂</div>
-                <div class="ps-text">找搭子</div><div class="ps-sub">灵魂共鸣</div>
-            </div>
+        <div class="ps-opt ps-opt-1" onclick="openIdlePublish()">
+            <div class="ps-icon">📦</div>
+            <div class="ps-text">卖闲置</div><div class="ps-sub">回血清仓</div>
+        </div>
+        <div class="ps-opt ps-opt-2" onclick="openHelpPublish()">
+            <div class="ps-icon">🤝</div>
+            <div class="ps-text">发悬赏</div><div class="ps-sub">花钱求助</div>
+        </div>
+        <div class="ps-opt ps-opt-3" onclick="openPartnerPublish()">
+            <div class="ps-icon">🥂</div>
+            <div class="ps-text">找搭子</div><div class="ps-sub">灵魂共鸣</div>
+        </div>
     </div>
 </div>
 
@@ -55,32 +54,18 @@
             <h1 class="title">荷包管家 🇳🇱</h1>
             <div class="subtitle">留学生专属的避雷与生活神器</div>
         </div>
-        <div class="search-container">
-            <span style="font-size: 18px; padding-left: 5px;">🔍</span>
-            <input type="text" id="mainSearchInput" class="search-input" placeholder="搜商品名或扫条形码..." onkeypress="if(event.key==='Enter') executeSearch()">
-            <button class="barcode-btn" onclick="startBarcodeScan()">|||</button>
-        </div>
+        
         <div id="homeActionBox">
             <input type="file" id="packageImgInput" accept="image/*" capture="environment" style="display: none;" onchange="handlePackageImage(event)">
-            
             <div class="home-action-btn" onclick="document.getElementById('packageImgInput').click()">
                 <span class="action-icon">📸</span>
                 <div class="action-title">拍包装 排雷</div>
                 <div class="action-sub">一键识破荷兰超市“科技狠活”</div>
             </div>
-            
             <div class="search-container">
                 <span style="color:#9CA3AF; font-size:18px;">🔍</span>
                 <input type="text" id="mainSearchInput" class="search-input" placeholder="输入商品名或搜条码..." onkeypress="if(event.key==='Enter') executeSearch()">
                 <button class="barcode-btn" onclick="startBarcodeScan()">⏸️</button>
-            </div>
-        </div>
-
-        <div class="preview-container" id="previewContainer">
-            <img id="previewImg" src="" class="preview-img">
-            <div class="scan-overlay" id="scanOverlay">
-                <div class="scan-line"></div>
-                <div class="scan-text" id="scanText">📡 正在呼叫 AI 双擎解析包装...</div>
             </div>
         </div>
 
@@ -109,7 +94,10 @@
     </div>
 
     <div id="page-market" class="page-section">
-        <div class="header" style="text-align: left; margin-top: 0;"><h1 class="title">管家集市 📦</h1><div class="subtitle" style="margin-bottom: 20px;">闲置交易与互助悬赏，全员实名认证</div></div>
+        <div class="header" style="text-align: left; margin-top: 0;">
+            <h1 class="title">管家集市 📦</h1>
+            <div class="subtitle" style="margin-bottom: 20px;">闲置交易与互助悬赏，全员实名认证</div>
+        </div>
         
         <div class="market-tabs">
             <div class="m-tab active" onclick="switchMarketTab('idle', this)">🏷️ 闲置跳蚤</div>
@@ -158,8 +146,13 @@
         </div>
     </div>
 
-    <div class="redbook-container" id="redbookContainer">
-            
+    <div id="page-tips" class="page-section">
+        <div class="header">
+            <h1 class="title">生存红宝书</h1>
+            <div class="subtitle">全荷留学生保命与搞钱指南</div>
+        </div>
+
+        <div class="redbook-container" id="redbookContainer">
             <div class="rb-mode-switcher">
                 <div class="rb-mode-btn active" onclick="switchRbMode('starter')">🐣 新手</div>
                 <div class="rb-mode-btn" onclick="switchRbMode('advanced')">🥓 进阶</div>
@@ -168,27 +161,24 @@
 
             <div id="rbStarterMode" class="rb-mode-view active">
                 <div class="rb-header-title">落地 7 天生死时速 ⏱️</div>
-                
                 <div class="emergency-grid">
-                    <div class="em-btn" onclick="alert('🚑 夜间/周末突发急病：\n\n千万别直接去医院急诊(会被赶出来)！必须先打电话给所在城市的【Huisartsenpost】(夜间值班医生) 预约。\n\n⚠️ 如果是危及生命的紧急情况，请直接拨打 112！')"><span class="em-icon">🚑</span>夜间急病</div>
-                    <div class="em-btn" onclick="alert('🔑 钥匙锁屋里/丢了：\n\n谷歌搜 Slotenmaker 时【绝对不要点带 Ad/广告 标识】的网站（很多是跨国诈骗团伙）！\n\n正常开锁均价在 €80-€120 之间，上门前一定要在电话里让他承诺【最终总价】！')"><span class="em-icon">🔑</span>忘带钥匙</div>
-                    <div class="em-btn" onclick="alert('✉️ 收到 Incasso(催款)信：\n\n别慌！先确认是不是真账单。如果确实是忘记交的账单产生的天价滞纳金，第一时间给对方发邮件哭穷/说明情况。\n\n通常第一次可以申请免除罚息，或者申请分期付款 (Betalingsregeling)。')"><span class="em-icon">✉️</span>被催款了</div>
-                    <div class="em-btn" onclick="alert('💳 银行卡/居留卡丢失：\n\n1. 银行卡：立刻在手机 App 里操作 Blokkeren (冻结)。\n2. 居留卡：千万别拖！需先去警察局官网报失拿回执，然后立马去 IND 官网花钱预约补办。')"><span class="em-icon">💳</span>证件丢了</div>
+                    <div class="em-btn" onclick="alert('🚑 夜间/周末突发急病：\n\n千万别直接去医院急诊(会被赶出)！必须先打电话给所在城市的【Huisartsenpost】(夜间值班医生) 预约。\n\n⚠️ 危及生命请直接拨打 112！')"><span class="em-icon">🚑</span>夜间急病</div>
+                    <div class="em-btn" onclick="alert('🔑 钥匙锁屋里/丢了：\n\n谷歌搜 Slotenmaker 时【绝对不要点带 Ad/广告 标识】的网站（多为跨国诈骗）！\n\n正常开锁均价 €80-€120，上门前一定要在电话里承诺【最终总价】！')"><span class="em-icon">🔑</span>忘带钥匙</div>
+                    <div class="em-btn" onclick="alert('✉️ 收到 Incasso(催款)信：\n\n别慌！确认是真账单后，第一时间发邮件说明情况/哭穷。\n\n通常第一次可申请免除罚息，或申请分期付款 (Betalingsregeling)。')"><span class="em-icon">✉️</span>被催款了</div>
+                    <div class="em-btn" onclick="alert('💳 银行卡/居留卡丢失：\n\n1. 银行卡：立刻在手机 App 里操作 Blokkeren (冻结)。\n2. 居留卡：先去警察局官网报失拿回执，立马去 IND 官网花钱预约补办。')"><span class="em-icon">💳</span>证件丢了</div>
                 </div>
 
                 <div class="task-progress-box">
                     <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:bold; margin-bottom:6px;">
                         <span>主线任务打卡</span>
-                        <span id="taskProgressText" style="color:#10B981;">0/5</span>
+                        <span id="taskProgressText" style="color:#10B981;">0/7</span>
                     </div>
                     <div class="progress-bar-bg"><div class="progress-bar-fill" id="taskProgressBar"></div></div>
                 </div>
-
                 <div class="task-list" id="starterTaskList"></div>
             </div>
 
             <div id="rbWikiMode" class="rb-mode-view" style="display: none;">
-                
                 <div id="rbWidgetsArea">
                     <div class="widget-card widget-weather glass-card">
                         <div class="wg-left"><span style="font-size:20px;">🌧️</span> 降雨雷达</div>
@@ -196,7 +186,7 @@
                     </div>
                     <div class="widget-card widget-alert glass-card" id="supermarketWidget" style="display: none;">
                         <div class="wg-left"><span style="font-size:20px;">🚨</span> <b style="color:#EF4444;">断粮预警</b></div>
-                        <div class="wg-right" style="color:#EF4444; font-weight:bold;" id="supermarketAlertText">距 AH 提早关门仅剩 X 分钟！</div>
+                        <div class="wg-right" style="color:#EF4444; font-weight:bold;" id="supermarketAlertText">距提早关门仅剩 X 分钟！</div>
                     </div>
                 </div>
 
@@ -205,27 +195,14 @@
                         <span>🔍</span>
                         <input type="text" id="wikiSearchInput" placeholder="搜羊毛、退税、免税法案..." onkeyup="filterWiki()">
                     </div>
-                    <div class="wiki-tabs" id="wikiTabs">
-                    </div>
+                    <div class="wiki-tabs" id="wikiTabs"></div>
                 </div>
-
                 <div class="wiki-list" id="wikiListContainer"></div>
             </div>
 
             <div class="fab-btn" id="fabGridBtn" onclick="toggleFabModal()">🗂️</div>
-
-            <div class="modal-overlay" id="disclaimerModal" style="z-index: 3000;">
-                <div class="modal-content" style="text-align: center;">
-                    <div style="font-size:40px; margin-bottom:10px;">🇳🇱</div>
-                    <div style="font-size:18px; font-weight:900; margin-bottom:10px;">欢迎来到红宝书</div>
-                    <div style="font-size:13px; color:#4B5563; line-height:1.6; margin-bottom:20px; text-align:left;">
-                        荷兰的政策和罢工比天气变得还快🌦️。<br><br>这里的指南和羊毛都是学长学姐们的心血总结，但<b>仅供参考</b>，办事请务必以官网最新规定为准哦！
-                    </div>
-                    <button class="btn-huge-login" style="width:100%; padding:14px; background:#10B981;" onclick="agreeDisclaimer()">我知道了，开始探索</button>
-                </div>
-            </div>
-            
         </div>
+    </div>
 
     <div id="page-profile" class="page-section">
         <div class="profile-header-card">
@@ -266,9 +243,9 @@
             </div>
             <div class="vip-btn">去点亮</div>
         </div>
+
         <div id="authCenterBlock" class="auth-container" style="display: none;">
             <div class="fm-section-title" style="margin-left: 0; margin-bottom: 12px;">盾牌守护 · 提升信任分</div>
-            
             <div class="auth-card" onclick="openEmailVerifyModal()">
                 <div class="auth-info">
                     <div class="auth-icon edu">🎓</div>
@@ -279,7 +256,6 @@
                 </div>
                 <div class="auth-action" id="emailAuthBtn">去认证</div>
             </div>
-
             <div class="auth-card" onclick="openWechatBindModal()">
                 <div class="auth-info">
                     <div class="auth-icon wechat">💬</div>
@@ -352,9 +328,8 @@
             <div style="height: 60px;"></div>
         </div>
     </div>
-</div> 
 
-<div class="modal-overlay" id="loginModal" onclick="this.style.display='none'">
+</div> <div class="modal-overlay" id="loginModal" onclick="this.style.display='none'">
     <div class="modal-content" onclick="event.stopPropagation()">
         <div class="modal-close" onclick="document.getElementById('loginModal').style.display='none'">✕</div>
         <h2 style="margin-top:0; color: #111827; text-align: center; font-size: 24px;">👋 欢迎来到管家</h2>
@@ -387,7 +362,7 @@
         <div style="font-size: 14px; color: #4B5563; line-height: 1.7;">
             <p>为了打造<b>荷兰最安全的留学生互助社区</b>，我们引入了严格的信用体系。</p>
             <p><b>✨ 信用分有什么用？</b><br>• 分数越高，曝光率越高！<br>• 信用极佳的用户将拥有专属徽章，买家更敢先款购买。</p>
-            <p><b>📈 如何获取分数？</b><br>初始 500 分。通过设置头像 (+20)、完善 MBTI (+30)、验证大学邮箱 (+200) 自动上涨。</p>
+            <p><b>📈 如何获取分数？</b><br>初始 500 分。通过设置头像 (+20)、完善 MBTI (+30)、验证大学邮箱 (+50) 自动上涨。</p>
         </div>
         <button style="width: 100%; padding: 14px; background: #111827; color: #FFF; border: none; border-radius: 14px; font-weight: bold; margin-top: 15px; cursor:pointer;" onclick="document.getElementById('creditInfoModal').style.display='none'">我明白了</button>
     </div>
@@ -398,7 +373,7 @@
         <div class="modal-close" onclick="document.getElementById('addReviewModal').style.display='none'">✕</div>
         <h3 style="margin-top:0; color: #111827;">发表你的锐评</h3>
         <select id="reviewAttitude" class="modal-input" style="background:#F9FAFB; margin-bottom:10px;"><option value="👍 推荐">👍 疯狂安利 (种草)</option><option value="💣 拔草">💣 难吃/巨坑 (避雷)</option></select>
-        <textarea id="reviewText" class="modal-textarea" placeholder="这玩意到底好不好吃？写下你的真实评价，帮大家避坑！"></textarea>
+        <textarea id="reviewText" class="modal-textarea" placeholder="这玩意到底好不好用？写下你的真实评价，帮大家避坑！"></textarea>
         <button id="btnSubmitReview" style="width: 100%; padding: 14px; background: #10B981; color: #FFF; border: none; border-radius: 12px; font-weight: bold; margin-top: 15px; cursor:pointer;" onclick="submitDetailReview()">🚀 提交评价</button>
     </div>
 </div>
@@ -411,14 +386,36 @@
     <div id="reader" style="width:100%; flex:1; background:#000;"></div>
 </div>
 
+<div class="modal-overlay" id="emailVerifyModal">
+    <div class="modal-content">
+        <div class="modal-close" onclick="document.getElementById('emailVerifyModal').style.display='none'">✕</div>
+        <div style="font-size:18px; font-weight:900; margin-bottom:10px;">🎓 邮箱认证</div>
+        <div style="font-size:12px; color:#6B7280; margin-bottom:15px; line-height: 1.5;">建议使用 .edu 或 .nl 结尾的学校/工作邮箱，认证后将点亮专属徽章。</div>
+        <input type="email" id="authEmailInput" class="modal-input" placeholder="输入邮箱地址 (如: @tudelft.nl)">
+        <div class="verify-code-row">
+            <input type="number" id="authCodeInput" class="modal-input" style="margin-top:0;" placeholder="输入6位验证码">
+            <button class="btn-send-code" id="btnSendCode" onclick="sendAuthCode()">获取验证码</button>
+        </div>
+        <button class="btn-huge-login" style="width:100%; margin-top:20px; padding:12px;" onclick="verifyEmailCode()">✅ 立即认证</button>
+    </div>
+</div>
 
-    <div class="full-modal" id="publishIdleModal" style="display: none;">
+<div class="modal-overlay" id="wechatBindModal">
+    <div class="modal-content">
+        <div class="modal-close" onclick="document.getElementById('wechatBindModal').style.display='none'">✕</div>
+        <div style="font-size:18px; font-weight:900; margin-bottom:10px;">💬 绑定微信</div>
+        <div style="font-size:12px; color:#6B7280; margin-bottom:15px; line-height: 1.5;">绑定后，买家在与您私信时可以一键复制微信号，大幅提高沟通效率！</div>
+        <input type="text" id="authWechatInput" class="modal-input" placeholder="请输入准确的微信号">
+        <button class="btn-huge-login" style="width:100%; margin-top:20px; padding:12px; background:#10B981;" onclick="saveWechatBind()">✅ 安全绑定</button>
+    </div>
+</div>
+
+<div class="full-modal" id="publishIdleModal" style="display: none;">
     <div class="fm-header">
         <div class="fm-close" onclick="closeIdlePublish()">✕</div>
         <div class="fm-title">发布闲置</div>
         <div class="fm-submit" onclick="submitIdlePost()">发布</div>
     </div>
-    
     <div class="fm-content">
         <div class="upload-img-box" style="flex-direction: column; align-items: flex-start; gap: 8px; background: transparent; border: none; padding: 0; margin-top: 5px;">
             <input type="file" id="idleImgInput" accept="image/*" multiple style="display: none;" onchange="handleMultiImageSelect(event)">
@@ -430,9 +427,7 @@
             </div>
             <div style="font-size: 11px; color: #9CA3AF; margin-bottom: 5px;">*可上传多图并分别标价，管家会自动打上价格水印哦</div>
         </div>
-
         <input type="hidden" id="idlePrice" value="">
-
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; margin-bottom: 15px; border-top: 1px dashed #E5E7EB; padding-top: 20px;">
             <div class="fm-section-title" style="margin: 0;">核心交易条件</div>
             <div class="ai-magic-micro">
@@ -441,7 +436,6 @@
                 <button class="voice-btn-micro" style="color:#D1D5DB; margin-left: 4px;" onclick="clearAIInput('idle')">✖</button>
             </div>
         </div>
-
         <div class="fm-row" style="align-items: flex-start;">
             <div class="fm-label" style="margin-top: 6px;">📍 交易地点</div>
             <div style="display: flex; flex-direction: column; align-items: flex-end; flex: 1;">
@@ -454,12 +448,10 @@
                 </div>
             </div>
         </div>
-
         <div class="fm-row">
             <div class="fm-label">⏰ 截止日期</div>
             <input type="date" id="idleDeadline" class="fm-select" style="width: auto;">
         </div>
-
         <div class="fm-row">
             <div class="fm-label">🔪 议价空间</div>
             <div class="pill-group" id="bargainGroup">
@@ -468,7 +460,6 @@
                 <div class="pill" onclick="selectPill(this, 'bargainGroup')">买多可刀</div>
             </div>
         </div>
-
         <div class="fm-row" style="border-bottom: none;">
             <div class="fm-label">💶 收款方式</div>
             <div class="pill-group" id="paymentGroup">
@@ -477,7 +468,6 @@
                 <div class="pill" onclick="selectPill(this, 'paymentGroup')">均可</div>
             </div>
         </div>
-        
         <div style="height: 50px;"></div>
     </div>
 </div>
@@ -489,16 +479,16 @@
         <div class="fm-submit" onclick="submitHelpPost()">发布</div>
     </div>
     <div class="fm-content">
-            <div class="ai-magic-box" style="margin-bottom: 20px;">
-                <div class="ai-header"><span>✨ 一句话发悬赏</span></div>
-                <div class="ai-input-wrapper">
-                    <input type="text" id="aiKeywords_help" class="ai-input" style="margin-bottom: 0;" placeholder="明天早7点史基浦接机，赏金50欧...">
-                    <button class="voice-btn" style="width: 32px; font-size: 12px; border-color: #E5E7EB; color: #9CA3AF;" onclick="clearAIInput('help')">✖️</button>
-                    <button class="voice-btn" id="btnVoiceInput_help" onclick="toggleVoiceInput('help')">🎙️</button>
-                </div>
-                <div style="font-size: 11px; color: #B45309; margin-top: 8px;">💡 <b>连招公式：</b>任务 + 时间地点 + 赏金 (可喊十万火急)</div>
-                <button class="ai-btn" id="btnAiMagic_help" style="margin-top: 10px;" onclick="generateAICopy('help')">🪄 自动填表</button>
+        <div class="ai-magic-box" style="margin-bottom: 20px;">
+            <div class="ai-header"><span>✨ 一句话发悬赏</span></div>
+            <div class="ai-input-wrapper">
+                <input type="text" id="aiKeywords_help" class="ai-input" style="margin-bottom: 0;" placeholder="明天早7点史基浦接机，赏金50欧...">
+                <button class="voice-btn" style="width: 32px; font-size: 12px; border-color: #E5E7EB; color: #9CA3AF;" onclick="clearAIInput('help')">✖️</button>
+                <button class="voice-btn" id="btnVoiceInput_help" onclick="toggleVoiceInput('help')">🎙️</button>
             </div>
+            <div style="font-size: 11px; color: #B45309; margin-top: 8px;">💡 <b>连招公式：</b>任务 + 时间地点 + 赏金 (可喊十万火急)</div>
+            <button class="ai-btn" id="btnAiMagic_help" style="margin-top: 10px;" onclick="generateAICopy('help')">🪄 自动填表</button>
+        </div>
         <div class="fm-section-title" style="margin-top: 5px;">帮我做点什么？</div>
         <div class="fm-row" style="border-bottom:none;">
             <div class="pill-group" style="justify-content: flex-start; gap: 10px;" id="helpTypeGroup">
@@ -509,7 +499,6 @@
             </div>
         </div>
         <textarea id="helpDesc" class="fm-textarea" style="height: 120px;" placeholder="具体需要帮什么忙？比如：明天早上7点，从海牙带两个大箱子去史基浦机场..."></textarea>
-        
         <div class="fm-section-title">悬赏与时间</div>
         <div class="fm-row">
             <div class="fm-label">💰 赏金 (€)</div>
@@ -541,19 +530,18 @@
         <div class="fm-submit" style="background:#8B5CF6;" onclick="submitPartnerPost()">发布</div>
     </div>
     <div class="fm-content">
-            <div class="ai-magic-box" style="margin-bottom: 20px; background: linear-gradient(135deg, #F3E8FF, #E9D5FF); border-color: #D8B4FE;">
-                <div class="ai-header" style="color: #6B21A8;"><span>🥂 灵魂搭子召唤术</span></div>
-                <div class="ai-input-wrapper">
-                    <input type="text" id="aiKeywords_partner" class="ai-input" style="margin-bottom: 0; border-color: #C084FC;" placeholder="这周末阿姆逛展，只找E人姐妹...">
-                    <button class="voice-btn" style="width: 32px; font-size: 12px; border-color: #D8B4FE; color: #A855F7; background: #FAF5FF;" onclick="clearAIInput('partner')">✖️</button>
-                    <button class="voice-btn" id="btnVoiceInput_partner" style="border-color: #C084FC;" onclick="toggleVoiceInput('partner')">🎙️</button>
-                </div>
-                <div style="font-size: 11px; color: #7E22CE; margin-top: 8px;">💡 <b>连招公式：</b>活动 + 时间地点 + MBTI要求</div>
-                <button class="ai-btn" id="btnAiMagic_partner" style="margin-top: 10px; background: #6B21A8; color: #FFF;" onclick="generateAICopy('partner')">🪄 自动填表</button>
+        <div class="ai-magic-box" style="margin-bottom: 20px; background: linear-gradient(135deg, #F3E8FF, #E9D5FF); border-color: #D8B4FE;">
+            <div class="ai-header" style="color: #6B21A8;"><span>🥂 灵魂搭子召唤术</span></div>
+            <div class="ai-input-wrapper">
+                <input type="text" id="aiKeywords_partner" class="ai-input" style="margin-bottom: 0; border-color: #C084FC;" placeholder="这周末阿姆逛展，只找E人姐妹...">
+                <button class="voice-btn" style="width: 32px; font-size: 12px; border-color: #D8B4FE; color: #A855F7; background: #FAF5FF;" onclick="clearAIInput('partner')">✖️</button>
+                <button class="voice-btn" id="btnVoiceInput_partner" style="border-color: #C084FC;" onclick="toggleVoiceInput('partner')">🎙️</button>
             </div>
+            <div style="font-size: 11px; color: #7E22CE; margin-top: 8px;">💡 <b>连招公式：</b>活动 + 时间地点 + MBTI要求</div>
+            <button class="ai-btn" id="btnAiMagic_partner" style="margin-top: 10px; background: #6B21A8; color: #FFF;" onclick="generateAICopy('partner')">🪄 自动填表</button>
+        </div>
         <input type="text" id="partnerTitle" class="ai-input" style="font-size:16px; font-weight:bold; border-color:#E5E7EB; margin-top:5px;" placeholder="一句话标题 (例如: 周末有人去国王节吗)">
         <textarea id="partnerDesc" class="fm-textarea" style="height: 120px; border-color:#E5E7EB; margin-bottom:10px;" placeholder="介绍一下你的计划，或者希望找个什么样的搭子..."></textarea>
-        
         <div class="fm-row" style="padding: 5px 0 15px; border-bottom:none;">
             <div class="pill-group" style="justify-content: flex-start;" id="partnerTagGroup">
                 <div class="pill active" onclick="selectPill(this, 'partnerTagGroup')">🎨 看展/旅游</div>
@@ -562,7 +550,6 @@
                 <div class="pill" onclick="selectPill(this, 'partnerTagGroup')">🪩 蹦迪/音乐节</div>
             </div>
         </div>
-
         <div class="fm-section-title">匹配条件</div>
         <div class="fm-row">
             <div class="fm-label">⏰ 计划日期</div>
@@ -584,61 +571,17 @@
     </div>
 </div>
 
-<div class="full-modal" id="chatModal" style="display: none; z-index: 3000; background: #F3F4F6;">
-    <div class="chat-header">
-        <div class="ch-back" onclick="closeChat()">‹ 返回</div>
-        <div class="ch-title" id="chatTargetName">正在联系卖家...</div>
-        <div class="ch-more">···</div>
-    </div>
-    
-    <div class="chat-product-snippet">
-        <img id="chatProductImg" src="" class="cps-img">
-        <div class="cps-info">
-            <div class="cps-title" id="chatProductTitle">商品名称加载中...</div>
-            <div class="cps-price" id="chatProductPrice">€0.00</div>
-        </div>
-        <button class="cps-btn" id="cpsActionBtn" onclick="alert('已发送【我想要】给对方！')">发送链接</button>
-        <div class="cps-sold-stamp" id="cpsSoldStamp" style="display: none;">已售出</div>
-    </div>
-
-    <div class="chat-msg-container" id="chatMsgList">
-        <div class="chat-time-sys" id="chatTimeSys">今天 14:30</div>
-        
-        <div class="chat-sys-tip">
-            🛡️ <b>管家提示：</b>在荷兰面交请选择火车站等公共区域。大额付款推荐当面扫 Tikkie 或银行转账，切勿点击不明退款链接！
-        </div>
-
-        <div class="chat-row other">
-            <div class="chat-avatar" id="chatTargetAvatar">😎</div>
-            <div class="chat-text" id="chatDefaultGreeting">你好，请问你是想看这个闲置吗？还在的哦！</div>
-        </div>
-    </div>
-
-    <div class="chat-input-bar" id="chatInputBar">
-        <div class="c-action-btn" onclick="alert('发图片功能开发中')">➕</div>
-        <input type="text" id="chatInput" class="c-input" placeholder="问问成色，或者约个面交地点..." onkeypress="if(event.key==='Enter') sendChatMessage()">
-        <button class="c-send-btn" id="chatSendBtn" onclick="sendChatMessage()">发送</button>
-    </div>
-    
-    <div class="chat-input-disabled" id="chatInputDisabled" style="display: none;">
-        🚫 该闲置已售出，无法继续发送消息
-    </div>
-</div>
-
-    <div class="full-modal" id="postDetailModal" style="display: none; background: #F9FAFB;">
+<div class="full-modal" id="postDetailModal" style="display: none; background: #F9FAFB;">
     <div class="fm-header" style="background: #FFF; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
         <div class="fm-close" onclick="closePostDetail()">✕</div>
         <div class="fm-title">闲置详情</div>
         <div style="width: 24px;"></div>
     </div>
-    
     <div style="padding: 15px; overflow-y: auto; height: calc(100vh - 130px); padding-bottom: 80px;" id="pdContentArea">
         <div id="pdSellerInfo" style="background: #FFF; padding: 15px; border-radius: 16px; margin-bottom: 15px; border: 1px solid #E5E7EB;"></div>
-        
         <div style="font-size: 14px; font-weight: 900; margin-bottom: 10px; color: #111827;">物品清单</div>
-        <div id="pdItemsList" style="display: flex; flex-direction: column; gap: 12px;"></div>
+        <div id="pdItemsList"></div>
     </div>
-
     <div style="position: fixed; bottom: 0; left: 0; right: 0; background: #FFF; padding: 15px 20px; padding-bottom: calc(15px + env(safe-area-inset-bottom)); border-top: 1px solid #E5E7EB; display: flex; justify-content: space-between; align-items: center; z-index: 100;">
         <div style="display: flex; flex-direction: column;">
             <span style="font-size: 11px; color: #6B7280;">已选总计</span>
@@ -648,36 +591,41 @@
     </div>
 </div>
 
-<div class="modal-overlay" id="emailVerifyModal">
-    <div class="modal-content">
-        <div class="modal-close" onclick="document.getElementById('emailVerifyModal').style.display='none'">✕</div>
-        <div style="font-size:18px; font-weight:900; margin-bottom:10px;">🎓 邮箱认证</div>
-        <div style="font-size:12px; color:#6B7280; margin-bottom:15px; line-height: 1.5;">建议使用 .edu 或 .nl 结尾的学校/工作邮箱，认证后将点亮专属徽章。</div>
-        
-        <input type="email" id="authEmailInput" class="modal-input" placeholder="输入邮箱地址 (如: @tudelft.nl)">
-        <div class="verify-code-row">
-            <input type="number" id="authCodeInput" class="modal-input" style="margin-top:0;" placeholder="输入6位验证码">
-            <button class="btn-send-code" id="btnSendCode" onclick="sendAuthCode()">获取验证码</button>
+<div class="full-modal" id="chatModal" style="display: none; z-index: 3000; background: #F3F4F6;">
+    <div class="chat-header">
+        <div class="ch-back" onclick="closeChat()">‹ 返回</div>
+        <div class="ch-title" id="chatTargetName">正在联系卖家...</div>
+        <div class="ch-more">···</div>
+    </div>
+    <div class="chat-product-snippet">
+        <img id="chatProductImg" src="" class="cps-img">
+        <div class="cps-info">
+            <div class="cps-title" id="chatProductTitle">商品名称加载中...</div>
+            <div class="cps-price" id="chatProductPrice">€0.00</div>
         </div>
-        
-        <button class="btn-huge-login" style="width:100%; margin-top:20px; padding:12px;" onclick="verifyEmailCode()">✅ 立即认证</button>
+        <button class="cps-btn" id="cpsActionBtn" onclick="alert('已发送【我想要】给对方！')">发送链接</button>
+        <div class="cps-sold-stamp" id="cpsSoldStamp" style="display: none;">已售出</div>
+    </div>
+    <div class="chat-msg-container" id="chatMsgList">
+        <div class="chat-time-sys" id="chatTimeSys">今天 14:30</div>
+        <div class="chat-sys-tip">
+            🛡️ <b>管家提示：</b>在荷兰面交请选择火车站等公共区域。大额付款推荐当面扫 Tikkie 或银行转账，切勿点击不明退款链接！
+        </div>
+        <div class="chat-row other">
+            <div class="chat-avatar" id="chatTargetAvatar">😎</div>
+            <div class="chat-text" id="chatDefaultGreeting">你好，请问你是想看这个闲置吗？还在的哦！</div>
+        </div>
+    </div>
+    <div class="chat-input-bar" id="chatInputBar">
+        <div class="c-action-btn" onclick="alert('发图片功能开发中')">➕</div>
+        <input type="text" id="chatInput" class="c-input" placeholder="问问成色，或者约个面交地点..." onkeypress="if(event.key==='Enter') sendChatMessage()">
+        <button class="c-send-btn" id="chatSendBtn" onclick="sendChatMessage()">发送</button>
+    </div>
+    <div class="chat-input-disabled" id="chatInputDisabled" style="display: none;">
+        🚫 该闲置已售出，无法继续发送消息
     </div>
 </div>
 
-<div class="modal-overlay" id="wechatBindModal">
-    <div class="modal-content">
-        <div class="modal-close" onclick="document.getElementById('wechatBindModal').style.display='none'">✕</div>
-        <div style="font-size:18px; font-weight:900; margin-bottom:10px;">💬 绑定微信</div>
-        <div style="font-size:12px; color:#6B7280; margin-bottom:15px; line-height: 1.5;">绑定后，买家在与您私信时可以一键复制微信号，大幅提高沟通效率！</div>
-        
-        <input type="text" id="authWechatInput" class="modal-input" placeholder="请输入准确的微信号">
-        
-        <button class="btn-huge-login" style="width:100%; margin-top:20px; padding:12px; background:#10B981;" onclick="saveWechatBind()">✅ 安全绑定</button>
-    </div>
-</div>
-    
-<script src="./tips-data.js?v=1" defer></script>
-<script src="./app.js?v=1" defer></script>
-
+<script src="./app.js?v=2" defer></script>
 </body>
 </html>
