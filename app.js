@@ -700,67 +700,73 @@ function toggleTask(id, checkbox) {
     renderStarterTasks(); 
 }
 
-// --- 物理左/右滑动引擎 ---
-let swipeStartX = 0;
-let swipeCurrentX = 0;
-let isSwiping = false;
-let isDraggingClickPrevent = false; // 用于区分滑动和点击
-let activeSwipeId = null;
+// --- 物理左/右滑动引擎与透明度渐变 ---
+let swipeStartX = 0; let swipeCurrentX = 0; let isSwiping = false; 
+let isDraggingClickPrevent = false; let activeSwipeId = null;
 
 function hSwipeStart(e, id) {
-    swipeStartX = e.touches[0].clientX;
-    isSwiping = true;
-    isDraggingClickPrevent = false;
-    activeSwipeId = id;
+    swipeStartX = e.touches[0].clientX; isSwiping = true; isDraggingClickPrevent = false; activeSwipeId = id;
     const frontCard = document.getElementById(`front_${id}`);
     if(frontCard) frontCard.style.transition = 'none';
 }
 
 function hSwipeMove(e, id) {
     if (!isSwiping || activeSwipeId !== id) return;
-    swipeCurrentX = e.touches[0].clientX;
-    const diffX = swipeCurrentX - swipeStartX;
-    if (Math.abs(diffX) > 10) isDraggingClickPrevent = true; // 超过 10px 判定为滑动，禁用展开点击
+    swipeCurrentX = e.touches[0].clientX; const diffX = swipeCurrentX - swipeStartX;
+    if (Math.abs(diffX) > 10) isDraggingClickPrevent = true; 
     
     const frontCard = document.getElementById(`front_${id}`);
     if(frontCard) frontCard.style.transform = `translateX(${diffX}px)`;
+
+    // 动态透明度渐变：右滑显现绿色(保存)，左滑显现红色(删除)
+    const saveBg = document.querySelector(`#swipe_${id} .save-bg`);
+    const deleteBg = document.querySelector(`#swipe_${id} .delete-bg`);
+    if (diffX > 0) {
+        if(saveBg) saveBg.style.opacity = Math.min(diffX / 80, 1);
+        if(deleteBg) deleteBg.style.opacity = 0;
+    } else {
+        if(saveBg) saveBg.style.opacity = 0;
+        if(deleteBg) deleteBg.style.opacity = Math.min(Math.abs(diffX) / 80, 1);
+    }
 }
 
 function hSwipeEnd(e, id) {
     if (!isSwiping || activeSwipeId !== id) return;
-    isSwiping = false;
-    const diffX = swipeCurrentX - swipeStartX;
-    const frontCard = document.getElementById(`front_${id}`);
-    if(!frontCard) return;
+    isSwiping = false; const diffX = swipeCurrentX - swipeStartX;
+    const frontCard = document.getElementById(`front_${id}`); if(!frontCard) return;
 
-    frontCard.style.transition = 'transform 0.3s ease';
-    const threshold = window.innerWidth * 0.35; // 滑动阈值 35% 屏幕宽度
+    frontCard.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
+    const threshold = window.innerWidth * 0.35; 
 
     if (diffX > threshold) {
-        // 右滑 -> 收藏
-        frontCard.style.transform = `translateX(${window.innerWidth}px)`;
+        frontCard.style.transform = `translateX(${window.innerWidth}px)`; // 右滑飞出
         setTimeout(() => handleWikiAction(id, 'saved'), 300);
     } else if (diffX < -threshold) {
-        // 左滑 -> 删除(已阅)
-        frontCard.style.transform = `translateX(-${window.innerWidth}px)`;
+        frontCard.style.transform = `translateX(-${window.innerWidth}px)`; // 左滑飞出
         setTimeout(() => handleWikiAction(id, 'deleted'), 300);
     } else {
-        // 弹回原位
-        frontCard.style.transform = `translateX(0px)`;
+        frontCard.style.transform = `translateX(0px)`; // 弹回原位
+        // 恢复背景透明度
+        document.querySelector(`#swipe_${id} .save-bg`).style.opacity = 0;
+        document.querySelector(`#swipe_${id} .delete-bg`).style.opacity = 0;
     }
-    setTimeout(() => { isDraggingClickPrevent = false; }, 50); // 延时解除点击锁
+    setTimeout(() => { isDraggingClickPrevent = false; }, 50); 
 }
 
-function toggleWikiCard(el) {
-    if (isDraggingClickPrevent) return; // 如果刚才在滑动，则不触发展开
-    el.classList.toggle('open');
-}
+function toggleWikiCard(el) { if (isDraggingClickPrevent) return; el.classList.toggle('open'); }
 
 function handleWikiAction(id, actionStr) {
     let arr = JSON.parse(localStorage.getItem(`hp_wiki_${actionStr}`) || '[]');
     if (!arr.includes(id)) arr.push(id);
     localStorage.setItem(`hp_wiki_${actionStr}`, JSON.stringify(arr));
-    renderWikiList(document.getElementById('wikiSearchInput').value.toLowerCase());
+    
+    // 如果是收藏，给出视觉反馈
+    if(actionStr === 'saved') {
+        const plus = document.createElement('div'); plus.className = 'float-plus'; plus.innerText = '⭐ 已加入收藏'; plus.style.color = '#10B981';
+        plus.style.left = '50%'; plus.style.top = '40%'; plus.style.transform = 'translate(-50%, -50%)'; document.body.appendChild(plus); 
+        setTimeout(() => plus.remove(), 1500);
+    }
+    renderWikiList(document.getElementById('wikiSearchInput') ? document.getElementById('wikiSearchInput').value.toLowerCase() : '');
 }
 
 function switchWikiTab(category, el) { document.querySelectorAll('.w-tab').forEach(tab => tab.classList.remove('active')); el.classList.add('active'); currentRbCategory = category; renderWikiList(); }
@@ -770,51 +776,133 @@ function renderWikiList(searchQuery = '') {
     const list = document.getElementById('wikiListContainer'); if(!list) return;
     let html = '';
     
-    // 获取本地删除和收藏记录
     const deletedData = JSON.parse(localStorage.getItem('hp_wiki_deleted') || '[]');
     const savedData = JSON.parse(localStorage.getItem('hp_wiki_saved') || '[]');
+    const customWikis = JSON.parse(localStorage.getItem('hp_custom_wikis') || '[]'); // 获取 AI 生成的自定义内容
+    
+    const allWikis = [...rbWikis, ...customWikis];
 
-    let filteredData = rbWikis.filter(w => {
-        // 🚨 物理过滤：不在当前模式，或者已经被删/收藏，直接剔除！
+    let filteredData = allWikis.filter(w => {
         if (w.mode !== currentRbMode) return false;
         if (deletedData.includes(w.id) || savedData.includes(w.id)) return false;
-        
         const catMatch = currentRbCategory === 'all' ? true : w.category === currentRbCategory;
         const searchMatch = w.title.toLowerCase().includes(searchQuery) || w.summary.toLowerCase().includes(searchQuery);
         return catMatch && searchMatch;
     });
 
-    if (filteredData.length === 0) { list.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding: 60px 0;">干货都被你清空啦！<br><br><span style="font-size:12px; cursor:pointer; color:#10B981; text-decoration:underline;" onclick="localStorage.removeItem(\'hp_wiki_deleted\'); localStorage.removeItem(\'hp_wiki_saved\'); renderWikiList();">点我重置所有卡片状态</span></div>'; return; }
+    if (filteredData.length === 0) { 
+        list.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding: 60px 0;">该分类下暂无干货啦！<br><br><span style="font-size:12px; cursor:pointer; color:#10B981; text-decoration:underline;" onclick="localStorage.removeItem(\'hp_wiki_deleted\'); localStorage.removeItem(\'hp_wiki_saved\'); renderWikiList();">点我重置所有卡片状态</span></div>'; 
+    } else {
+        filteredData.forEach(w => {
+            html += `
+            <div class="swipe-wrapper" id="swipe_${w.id}">
+                <div class="swipe-bg save-bg">⭐ 收藏</div>
+                <div class="swipe-bg delete-bg">🗑️ 懂了</div>
+                <div class="wiki-card swipe-front" id="front_${w.id}" onclick="toggleWikiCard(this)" ontouchstart="hSwipeStart(event, '${w.id}')" ontouchmove="hSwipeMove(event, '${w.id}')" ontouchend="hSwipeEnd(event, '${w.id}')">
+                    <div class="wk-header">
+                        <div class="wk-icon">${w.icon}</div>
+                        <div class="wk-info"><div class="wk-title">${w.title} <span class="wk-tag">${w.tag}</span></div><div class="wk-summary">${w.summary}</div></div>
+                    </div>
+                    <div class="wk-detail" onclick="event.stopPropagation()">
+                        <div class="wk-step">${w.details}</div>
+                        <div class="wk-ugc-btn" onclick="alert('政策有变？请加客服反馈，核实后将为您增加 50 信用分。')">🚨 政策变了？点我疯狂打脸纠错！</div>
+                    </div>
+                </div>
+            </div>`;
+        });
+    }
+    
+    // 列表底部永远挂载一个“AI 录入”按钮，允许用户自己扩充数据库
+    html += `<button class="btn-ai-create" onclick="document.getElementById('aiWikiModal').style.display='flex'">✨ AI 自动提取长文并录入</button>`;
+    list.innerHTML = html;
+}
 
-    filteredData.forEach(w => {
-        html += `
-        <div class="swipe-wrapper" id="swipe_${w.id}">
-            <div class="swipe-bg save-bg">⭐ 收藏</div>
-            <div class="swipe-bg delete-bg">🗑️ 懂了</div>
-            
-            <div class="wiki-card glass-card swipe-front" id="front_${w.id}"
-                 onclick="toggleWikiCard(this)"
-                 ontouchstart="hSwipeStart(event, '${w.id}')"
-                 ontouchmove="hSwipeMove(event, '${w.id}')"
-                 ontouchend="hSwipeEnd(event, '${w.id}')">
+// --- 我的收藏渲染逻辑 ---
+function openCollectionsModal() {
+    requireAuth(() => {
+        document.getElementById('collectionsModal').style.display = 'flex';
+        renderCollections();
+    });
+}
+
+function renderCollections() {
+    const list = document.getElementById('collectionsList');
+    const savedIds = JSON.parse(localStorage.getItem('hp_wiki_saved') || '[]');
+    if(savedIds.length === 0) { list.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:40px 0;">收藏夹空空如也，快去红宝书里右滑卡片吧！</div>'; return; }
+
+    const allWikis = [...rbWikis, ...JSON.parse(localStorage.getItem('hp_custom_wikis') || '[]')];
+    let html = '';
+    savedIds.forEach(id => {
+        const w = allWikis.find(x => x.id === id);
+        if(w) {
+            html += `
+            <div class="wiki-card" style="margin-bottom:12px; background:#FFF; border:1px solid #E5E7EB; border-radius:16px;" onclick="this.classList.toggle('open')">
                 <div class="wk-header">
                     <div class="wk-icon">${w.icon}</div>
-                    <div class="wk-info">
-                        <div class="wk-title">${w.title} <span class="wk-tag">${w.tag}</span></div>
-                        <div class="wk-summary">${w.summary}</div>
-                    </div>
+                    <div class="wk-info"><div class="wk-title">${w.title} <span class="wk-tag">${w.tag}</span></div><div class="wk-summary">${w.summary}</div></div>
                 </div>
                 <div class="wk-detail" onclick="event.stopPropagation()">
                     <div class="wk-step">${w.details}</div>
-                    <div class="wk-ugc-btn" onclick="alert('感谢纠错！核实后将为您增加 50 信用分。')">🚨 政策变了？点我疯狂打脸纠错！</div>
+                    <button class="wk-ugc-btn" style="color:#EF4444; border-color:#FECACA;" onclick="removeCollection('${w.id}', event)">❌ 取消收藏</button>
                 </div>
-            </div>
-        </div>`;
+            </div>`;
+        }
     });
     list.innerHTML = html;
 }
 
-function toggleFabModal() { alert("您可以点击页面底部的『重置所有卡片状态』找回已滑走的卡片！"); }
+function removeCollection(id, e) {
+    e.stopPropagation();
+    let savedIds = JSON.parse(localStorage.getItem('hp_wiki_saved') || '[]');
+    savedIds = savedIds.filter(x => x !== id);
+    localStorage.setItem('hp_wiki_saved', JSON.stringify(savedIds));
+    renderCollections();
+    renderWikiList(document.getElementById('wikiSearchInput') ? document.getElementById('wikiSearchInput').value.toLowerCase() : '');
+}
+
+// --- AI 自动洗稿录入卡片引擎 ---
+async function generateAICard() {
+    const inputEl = document.getElementById('aiWikiInput');
+    const btnEl = document.getElementById('btnGenerateWiki');
+    const keyword = inputEl.value.trim();
+    if (!keyword) return alert("请先粘贴你要提取的内容！");
+    
+    btnEl.innerText = "⏳ DeepSeek 正在疯狂提炼..."; btnEl.disabled = true;
+
+    try {
+        const res = await fetch('/api/generate-copy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ keyword, type: 'wiki' }) });
+        const data = await res.json(); if(data.error) throw new Error(data.error);
+
+        // 组装新卡片
+        const newCard = {
+            id: 'cw_' + Date.now(), // 自定义前缀
+            mode: currentRbMode,
+            category: currentRbCategory === 'all' ? '专属干货' : currentRbCategory,
+            icon: data.icon || '📌',
+            title: data.title || '无标题攻略',
+            tag: data.tag || 'AI生成',
+            summary: data.summary || '这是一条自动提取的干货总结。',
+            details: data.details || keyword
+        };
+
+        // 存入本地自定义题库
+        let customWikis = JSON.parse(localStorage.getItem('hp_custom_wikis') || '[]');
+        customWikis.unshift(newCard); // 放在最前面
+        localStorage.setItem('hp_custom_wikis', JSON.stringify(customWikis));
+
+        alert("🎉 录入成功！卡片已生成！");
+        document.getElementById('aiWikiModal').style.display = 'none';
+        inputEl.value = '';
+        renderWikiList(); 
+
+    } catch (err) {
+        alert("提取失败：" + err.message);
+    } finally { 
+        btnEl.innerText = "🪄 一键提取为红宝书"; btnEl.disabled = false; 
+    }
+}
+
+function toggleFabModal() { alert("您可以点击底部的『✨ AI 自动提取长文』来自己制作卡片哦！"); }
 function checkWidgets() {
     const now = new Date(); const day = now.getDay(); const hours = now.getHours();
     const supermarketWg = document.getElementById('supermarketWidget');
