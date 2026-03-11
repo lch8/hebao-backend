@@ -56,6 +56,8 @@ function renderProfileState() {
         const savedMbti = localStorage.getItem('hp_mbti') || '';
         const savedBio = localStorage.getItem('hp_bio') || '这个人很懒，还没写自我介绍~';
         const isEmailVerified = localStorage.getItem('hp_email_verified') === 'true';
+        const isEdu = localStorage.getItem('hp_is_edu') === 'true';
+        const savedName = localStorage.getItem('hp_name') || '管家新人';
         const savedWechat = localStorage.getItem('hp_wechat') || '';
 
         nameText.innerText = savedName; bioText.innerText = savedBio; bioText.style.display = 'block';
@@ -70,6 +72,16 @@ function renderProfileState() {
         let badgeText = '良好'; let badgeColor = '#D97706'; 
         if(score >= 600) { badgeText = '极品守信'; badgeColor = '#059669'; }
         else if(score >= 550) { badgeText = '极佳'; badgeColor = '#10B981'; }
+
+        let nameHtml = savedName;
+        if(isEmailVerified) {
+            if(isEdu) {
+                nameHtml += `<span class="verified-badge">🎓 校友</span>`;
+            } else {
+                nameHtml += `<span class="verified-badge" style="background:#6B7280;">✔️ 实名</span>`;
+            }
+        }
+        nameText.innerHTML = nameHtml;
         
         creditBadge.innerText = `${badgeText} ${score}`; 
         creditBadge.style.background = badgeColor; 
