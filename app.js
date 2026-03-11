@@ -146,12 +146,13 @@ async function sendAuthCode() {
     }
 }
 
-// 修改后的：真实校验验证码
+// 修改后的真实校验函数：加入后缀识别与分级认证
 async function verifyEmailCode() {
-    const email = document.getElementById('authEmailInput').value.trim();
+    const email = document.getElementById('authEmailInput').value.trim().toLowerCase();
     const code = document.getElementById('authCodeInput').value.trim();
-    if(!code) return alert("请输入验证码");
     
+    if(!code) return alert("请输入验证码");
+
     try {
         const res = await fetch('/api/verify-auth-code', {
             method: 'POST',
@@ -161,16 +162,34 @@ async function verifyEmailCode() {
         const data = await res.json();
         
         if (data.success) {
-            localStorage.setItem('hp_email_verified', 'true');
-            localStorage.setItem('hp_email', email);
+            const domain = email.split('@')[1];
+            
+            // 🚨 核心逻辑：判断是否属于“校园/机构”后缀
+            // 你可以根据需要扩充这个白名单，或者用正则匹配 .edu / .nl
+            const isEdu = domain.includes('.edu') || 
+                          domain.includes('tudelft.nl') || 
+                          domain.includes('uva.nl') || 
+                          domain.includes('eur.nl') ||
+                          domain.includes('leidenuniv.nl');
+
+            if (isEdu) {
+                // 🎓 真正的校友认证
+                localStorage.setItem('hp_email_verified', 'true');
+                localStorage.setItem('hp_is_edu', 'true'); // 标记为教育认证
+                localStorage.setItem('hp_email', email);
+                
+                alert(`🎊 认证成功！检测到校友身份：${domain.split('.')[0].toUpperCase()}\n\n专属勋章已点亮，信用分+50`);
+            } else {
+                // 👤 仅作为“普通身份验证”，不给校友勋章
+                localStorage.setItem('hp_email_verified', 'true');
+                localStorage.setItem('hp_is_edu', 'false'); // 非教育认证
+                localStorage.setItem('hp_email', email);
+                
+                alert("✅ 邮箱验证成功！\n\n由于您使用的是普通私人邮箱，已为您点亮【实名认证】勋章，但无法点亮【校友勋章】哦。");
+            }
+
             document.getElementById('emailVerifyModal').style.display = 'none';
-            
-            // 撒花特效
-            const plus = document.createElement('div'); plus.className = 'float-plus'; plus.innerText = '🎊 认证成功！勋章已点亮'; plus.style.color = '#3B82F6';
-            plus.style.left = '50%'; plus.style.top = '40%'; plus.style.transform = 'translate(-50%, -50%)'; document.body.appendChild(plus); 
-            setTimeout(() => plus.remove(), 2500);
-            
-            renderProfileState();
+            renderProfileState(); // 刷新 UI 展示不同的勋章
         } else {
             alert("❌ " + data.error);
         }
