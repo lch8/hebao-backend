@@ -158,13 +158,78 @@
         </div>
     </div>
 
-    <div id="page-tips" class="page-section">
-        <div class="header"><h1 class="title">省钱秘籍 💰</h1><div class="subtitle">留学生必看的全场景薅羊毛终极指南</div></div>
-        <div class="quick-links-wrap" id="quickLinksContainer"></div>
-        <div id="tipsAccordionContainer"></div>
-        <div id="tipsDisclaimerContainer"></div>
-        <button class="btn-report-tip" onclick="requireAuth(() => alert('爆料功能开发中！'))">📢 我要爆料新羊毛 / 疯狂纠错</button>
-    </div>
+    <div class="redbook-container" id="redbookContainer">
+            
+            <div class="rb-mode-switcher">
+                <div class="rb-mode-btn active" onclick="switchRbMode('starter')">🐣 新手</div>
+                <div class="rb-mode-btn" onclick="switchRbMode('advanced')">🥓 进阶</div>
+                <div class="rb-mode-btn" onclick="switchRbMode('pro')">💼 Pro</div>
+            </div>
+
+            <div id="rbStarterMode" class="rb-mode-view active">
+                <div class="rb-header-title">落地 7 天生死时速 ⏱️</div>
+                
+                <div class="emergency-grid">
+                    <div class="em-btn" onclick="alert('即将呼叫 GP/急救电话')"><span class="em-icon">🚑</span>生病了</div>
+                    <div class="em-btn" onclick="switchTab('scan', document.querySelectorAll('.tab-item')[1])"><span class="em-icon">🍳</span>急买锅</div>
+                    <div class="em-btn" onclick="alert('即将调起拍照翻译')"><span class="em-icon">✉️</span>懂信件</div>
+                    <div class="em-btn" onclick="alert('丢车互助群正在接入')"><span class="em-icon">🚲</span>车丢了</div>
+                </div>
+
+                <div class="task-progress-box">
+                    <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:bold; margin-bottom:6px;">
+                        <span>主线任务打卡</span>
+                        <span id="taskProgressText" style="color:#10B981;">0/5</span>
+                    </div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" id="taskProgressBar"></div></div>
+                </div>
+
+                <div class="task-list" id="starterTaskList"></div>
+            </div>
+
+            <div id="rbWikiMode" class="rb-mode-view" style="display: none;">
+                
+                <div id="rbWidgetsArea">
+                    <div class="widget-card widget-weather glass-card">
+                        <div class="wg-left"><span style="font-size:20px;">🌧️</span> 降雨雷达</div>
+                        <div class="wg-right"><span class="wg-status green">🟢 放心骑 (未来2h无雨)</span></div>
+                    </div>
+                    <div class="widget-card widget-alert glass-card" id="supermarketWidget" style="display: none;">
+                        <div class="wg-left"><span style="font-size:20px;">🚨</span> <b style="color:#EF4444;">断粮预警</b></div>
+                        <div class="wg-right" style="color:#EF4444; font-weight:bold;" id="supermarketAlertText">距 AH 提早关门仅剩 X 分钟！</div>
+                    </div>
+                </div>
+
+                <div class="wiki-sticky-header">
+                    <div class="wiki-search-box glass-card">
+                        <span>🔍</span>
+                        <input type="text" id="wikiSearchInput" placeholder="搜羊毛、退税、免税法案..." onkeyup="filterWiki()">
+                    </div>
+                    <div class="wiki-tabs" id="wikiTabs">
+                        <div class="w-tab active" onclick="switchWikiTab('all', this)">全部</div>
+                        <div class="w-tab" onclick="switchWikiTab('羊毛', this)">薅羊毛</div>
+                        <div class="w-tab" onclick="switchWikiTab('税务', this)">税务/医保</div>
+                        <div class="w-tab pro-only" onclick="switchWikiTab('定居', this)">定居/签证</div>
+                    </div>
+                </div>
+
+                <div class="wiki-list" id="wikiListContainer"></div>
+            </div>
+
+            <div class="fab-btn" id="fabGridBtn" onclick="toggleFabModal()">🗂️</div>
+
+            <div class="modal-overlay" id="disclaimerModal" style="z-index: 3000;">
+                <div class="modal-content" style="text-align: center;">
+                    <div style="font-size:40px; margin-bottom:10px;">🇳🇱</div>
+                    <div style="font-size:18px; font-weight:900; margin-bottom:10px;">欢迎来到红宝书</div>
+                    <div style="font-size:13px; color:#4B5563; line-height:1.6; margin-bottom:20px; text-align:left;">
+                        荷兰的政策和罢工比天气变得还快🌦️。<br><br>这里的指南和羊毛都是学长学姐们的心血总结，但<b>仅供参考</b>，办事请务必以官网最新规定为准哦！
+                    </div>
+                    <button class="btn-huge-login" style="width:100%; padding:14px; background:#10B981;" onclick="agreeDisclaimer()">我知道了，开始探索</button>
+                </div>
+            </div>
+            
+        </div>
 
     <div id="page-profile" class="page-section">
         <div class="profile-header-card">
