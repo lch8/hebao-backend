@@ -170,10 +170,10 @@
                 <div class="rb-header-title">落地 7 天生死时速 ⏱️</div>
                 
                 <div class="emergency-grid">
-                    <div class="em-btn" onclick="alert('即将呼叫 GP/急救电话')"><span class="em-icon">🚑</span>生病了</div>
-                    <div class="em-btn" onclick="switchTab('scan', document.querySelectorAll('.tab-item')[1])"><span class="em-icon">🍳</span>急买锅</div>
-                    <div class="em-btn" onclick="alert('即将调起拍照翻译')"><span class="em-icon">✉️</span>懂信件</div>
-                    <div class="em-btn" onclick="alert('丢车互助群正在接入')"><span class="em-icon">🚲</span>车丢了</div>
+                    <div class="em-btn" onclick="alert('🚑 夜间/周末突发急病：\n\n千万别直接去医院急诊(会被赶出来)！必须先打电话给所在城市的【Huisartsenpost】(夜间值班医生) 预约。\n\n⚠️ 如果是危及生命的紧急情况，请直接拨打 112！')"><span class="em-icon">🚑</span>夜间急病</div>
+                    <div class="em-btn" onclick="alert('🔑 钥匙锁屋里/丢了：\n\n谷歌搜 Slotenmaker 时【绝对不要点带 Ad/广告 标识】的网站（很多是跨国诈骗团伙）！\n\n正常开锁均价在 €80-€120 之间，上门前一定要在电话里让他承诺【最终总价】！')"><span class="em-icon">🔑</span>忘带钥匙</div>
+                    <div class="em-btn" onclick="alert('✉️ 收到 Incasso(催款)信：\n\n别慌！先确认是不是真账单。如果确实是忘记交的账单产生的天价滞纳金，第一时间给对方发邮件哭穷/说明情况。\n\n通常第一次可以申请免除罚息，或者申请分期付款 (Betalingsregeling)。')"><span class="em-icon">✉️</span>被催款了</div>
+                    <div class="em-btn" onclick="alert('💳 银行卡/居留卡丢失：\n\n1. 银行卡：立刻在手机 App 里操作 Blokkeren (冻结)。\n2. 居留卡：千万别拖！需先去警察局官网报失拿回执，然后立马去 IND 官网花钱预约补办。')"><span class="em-icon">💳</span>证件丢了</div>
                 </div>
 
                 <div class="task-progress-box">
@@ -206,10 +206,6 @@
                         <input type="text" id="wikiSearchInput" placeholder="搜羊毛、退税、免税法案..." onkeyup="filterWiki()">
                     </div>
                     <div class="wiki-tabs" id="wikiTabs">
-                        <div class="w-tab active" onclick="switchWikiTab('all', this)">全部</div>
-                        <div class="w-tab" onclick="switchWikiTab('羊毛', this)">薅羊毛</div>
-                        <div class="w-tab" onclick="switchWikiTab('税务', this)">税务/医保</div>
-                        <div class="w-tab pro-only" onclick="switchWikiTab('定居', this)">定居/签证</div>
                     </div>
                 </div>
 
