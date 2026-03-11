@@ -14,12 +14,30 @@ function getAuthHeaders() {
 
 function requireAuth(actionFunction) { if (!isLoggedIn) { currentPendingAction = actionFunction; const modal = document.getElementById('loginModal'); if (modal) modal.style.display = 'flex'; else alert("⚠️ 请先登录！"); } else { actionFunction(); } }
 function openLoginModal() { const modal = document.getElementById('loginModal'); if (modal) modal.style.display = 'flex'; }
-// 登录入口：引导用户去邮箱验证，关闭微信mock登录
+// 登录入口：已认证用户直接登录，未认证用户走邮箱验证
 function mockLoginProcess() {
     const modal = document.getElementById('loginModal'); if(modal) modal.style.display = 'none';
+    // 如果用户之前已认证过邮箱，且本地有 token，直接恢复登录（无需再验证）
+    const savedToken = localStorage.getItem('hebao_token');
+    if (localStorage.getItem('hp_email_verified') === 'true' && savedToken) {
+        isLoggedIn = true;
+        localStorage.setItem('hebao_logged_in', 'true');
+        renderProfileState();
+        if (currentPendingAction) { currentPendingAction(); currentPendingAction = null; }
+        else { alert('🎉 欢迎回来！'); }
+        return;
+    }
+    // 否则走邮箱验证流程
     openEmailVerifyModal();
 }
-function handleLogout() { if(confirm('确定要退出登录吗？')) { isLoggedIn = false; localStorage.setItem('hebao_logged_in', 'false'); localStorage.removeItem('hebao_token'); renderProfileState(); } }
+function handleLogout() {
+    if(confirm('确定要退出登录吗？')) {
+        isLoggedIn = false;
+        localStorage.setItem('hebao_logged_in', 'false');
+        // 保留 hebao_token 和 hp_email_verified，下次点登录可以一键恢复
+        renderProfileState();
+    }
+}
 
 // ================= 2. 基础导航 =================
 let lastTab = 'scan'; 
@@ -111,7 +129,14 @@ function renderProfileState() {
 }
 
 function openEmailVerifyModal() {
-    if(localStorage.getItem('hp_email_verified') === 'true') return alert("您的邮箱已经认证通过啦！");
+    // 如果已经认证过邮箱且已登录，不需要再认证
+    if(localStorage.getItem('hp_email_verified') === 'true' && isLoggedIn) return alert("您的邮箱已经认证通过啦！");
+    // 如果已认证过邮箱但未登录（登出后重新登录），预填邮箱
+    const savedEmail = localStorage.getItem('hp_email');
+    if(savedEmail) {
+        const emailInput = document.getElementById('authEmailInput');
+        if(emailInput) emailInput.value = savedEmail;
+    }
     document.getElementById('emailVerifyModal').style.display = 'flex';
 }
 // 修改后的：发送真实邮件验证码

@@ -60,12 +60,15 @@ export default async function handler(req) {
             return new Response(JSON.stringify({ error: '验证码错误或已过期' }), { status: 400, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }});
         }
 
-        // 2. 校验成功：更新用户认证状态 + 删除验证码记录
+        // 2. 校验成功：自动注册/更新用户 + 删除验证码记录
         await fetch(`${dbUrl}/v2/pipeline`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 requests: [
+                    // 如果用户不存在则自动创建（注册+登录合一）
+                    { type: "execute", stmt: { sql: "INSERT OR IGNORE INTO users (id, verified_email, email_verified) VALUES (?, ?, 1)", args: [{type:"text", value:userId}, {type:"text", value:email}] } },
+                    // 如果用户已存在则更新认证状态
                     { type: "execute", stmt: { sql: "UPDATE users SET email_verified = 1, verified_email = ? WHERE id = ?", args: [{type:"text", value:email}, {type:"text", value:userId}] } },
                     { type: "execute", stmt: { sql: "DELETE FROM verification_codes WHERE email = ?", args: [{type:"text", value:email}] } },
                     { type: "close" }
