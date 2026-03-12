@@ -580,3 +580,28 @@ body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "S
 .badge-work { background: #F0FDF4; color: #16A34A; border: 1px solid #BBF7D0; }
 /* 👻 未认证游客（灰色系） */
 .badge-none { background: #F3F4F6; color: #9CA3AF; border: 1px solid #E5E7EB; }
+
+/* ================= 主线任务时间轴 (Timeline Tabs) ================= */
+.timeline-tabs {
+    display: flex;
+    background: #F3F4F6;
+    padding: 4px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+}
+.tt-tab {
+    flex: 1;
+    text-align: center;
+    padding: 8px 0;
+    font-size: 13px;
+    font-weight: bold;
+    color: #6B7280;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+.tt-tab.active {
+    background: #FFF;
+    color: #111827;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
