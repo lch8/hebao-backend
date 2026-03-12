@@ -23,13 +23,24 @@ function requireAuth(actionFunction) {
 }
 
 // 🌟 修复后的发送验证码 (清理了冲突的冗余代码，并统一使用 hebaoAuthEmail)
+// 🌟 带有终极检测的发送验证码函数
 async function sendAuthCode() {
     const emailInputEl = document.getElementById('hebaoAuthEmail');
-    const email = emailInputEl ? emailInputEl.value.trim().toLowerCase() : '';
+    
+    // 🚨 终极防坑检测：如果连输入框都找不到，直接报错弹窗！
+    if (!emailInputEl) {
+        return alert("❌ 致命错误：在网页上找不到 ID 为 'hebaoAuthEmail' 的输入框！请检查 index.html 是否保存！");
+    }
+
+    const email = emailInputEl.value.trim().toLowerCase();
     const btn = document.getElementById('btnSendCode');
 
+    // 极其包容的正则
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    if (!email || !emailRegex.test(email)) return alert("⚠️ 请输入正确的邮箱格式！");
+    
+    if (!email || !emailRegex.test(email)) {
+        return alert(`⚠️ 邮箱格式不正确！您当前输入的是: [${email}]`);
+    }
     
     btn.disabled = true;
     btn.innerText = "发送中...";
