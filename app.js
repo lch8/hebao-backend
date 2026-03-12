@@ -694,15 +694,28 @@ async function deleteMyPost(postId, btnElement) {
 // ============================================================================
 // ================= 14. 生存红宝书：三模动态系统与硬核干货 =================
 // ============================================================================
-const rbTasks = [
-    { id: 't1', title: '去市政厅 (Gemeente) 注册 BSN', desc: '荷兰的“身份证号”，没它办不了银行卡和网网。落地必须立刻预约！', hook: '刚来没被子？去集市低价收一套', hookTab: 'market-idle' },
-    { id: 't2', title: '办理本地银行卡 (ING/ABN)', desc: '推荐 ING (App最好用) 或 Bunq。有了卡才能开通 Tikkie (荷兰版微信支付)。', hook: '找个搭子一起去银行排队', hookTab: 'market-partner' },
-    { id: 't3', title: '激活 DigiD 数字身份', desc: '极其重要！所有的政府网站、退税、查医保全靠它扫码登录。', hook: '买台二手显示器大屏查政策', hookTab: 'market-idle' },
-    { id: 't4', title: '买基础医保 (Zorgverzekering)', desc: '法律规定落地4个月内必须买，否则面临巨额罚款。平时不生病的推荐把 Eigen risico (自付额) 拉到最高 €885 以降低保费。', hook: '发个悬赏找学长推荐靠谱保险', hookTab: 'market-help' },
-    { id: 't5', title: '申请医疗补贴 (Zorgtoeslag)', desc: '只要你没收入或收入很低，政府每月白送你 €120+ 帮你交保费！几乎等于免费看病。', hook: '省下的钱去集市淘个好物', hookTab: 'market-idle' },
-    { id: 't6', title: '办理实名黄卡 (OV-chipkaart)', desc: '别用匿名蓝卡坐火车！上 NS 官网绑一个“周末免费”或“非高峰期打折”套餐。', hook: '嫌火车贵？去收一辆二手自行车', hookTab: 'market-idle' },
-    { id: 't7', title: '注册家庭医生 (Huisarts)', desc: '在荷兰生病去医院急诊会被赶出来！必须先注册社区的 GP。务必找离家最近的。', hook: '看不懂荷兰语说明书？发悬赏求助', hookTab: 'market-help' }
-];
+// 将任务按阶段分组
+const rbTaskData = {
+    'pre': [
+        { id: 'p1', title: '核心文件随身带', desc: '护照、MVV签证信、录取通知书、出生双认证。放随身包，万一行李丢了也能办手续！', hook: '买个好用的防盗护照包', hookTab: 'market-idle' },
+        { id: 'p2', title: '预约市政厅 (Gemeente)', desc: '8-9月号源极度紧张，拿到 BSN 才能办银行卡。务必在国内提前预约落地后的号！', hook: '找学长有偿指导预约', hookTab: 'market-help' },
+        { id: 'p3', title: '办理双币信用卡', desc: '办父母名下的 Visa/Mastercard 副卡。落地没办出当地卡时，全靠它吃饭买票。', hook: '发悬赏问哪家银行汇率好', hookTab: 'market-help' },
+        { id: 'p4', title: '兑换少量欧元零钱', desc: '换 €300 左右现金，要求必须给 €50 及以下面额！荷兰很多店拒收 €100 以上大钞。', hook: '去集市收点学长的二手零钱', hookTab: 'market-idle' }
+    ],
+    'day7': [
+        { id: 't1', title: '去市政厅 (Gemeente) 注册', desc: '带着租房合同和双认证出生证明，去市政厅注册并获取 BSN 号码。', hook: '找个搭子一起去排队', hookTab: 'market-partner' },
+        { id: 't2', title: '办理本地银行卡', desc: '推荐 ING 或 Bunq。有了当地卡才能开通 Tikkie (荷兰版微信支付) 和买火车票。', hook: '不会搞App？求助校友', hookTab: 'market-help' },
+        { id: 't3', title: '激活 DigiD 数字身份', desc: '极其重要！收到信件后立刻激活，以后的政府网站、退税、查医保全靠它扫码登录。', hook: '买台二手显示器大屏查政策', hookTab: 'market-idle' },
+        { id: 't4', title: '买基础医保 (Zorgverzekering)', desc: '法律规定落地4个月内必须买，否则面临巨额罚款。平时不生病的推荐把 Eigen risico (自付额) 拉到最高以降低保费。', hook: '发悬赏找学长推荐靠谱保险', hookTab: 'market-help' },
+        { id: 't5', title: '办理实名黄卡 (OV-chipkaart)', desc: '别用匿名蓝卡坐火车！上 NS 官网绑一个“周末免费”或“非高峰期打折”套餐。', hook: '嫌火车贵？去收一辆二手自行车', hookTab: 'market-idle' }
+    ],
+    'month1': [
+        { id: 'm1', title: '注册家庭医生 (Huisarts)', desc: '在荷兰生病去医院急诊会被赶出来！必须先注册社区的 GP。务必找离家最近的。', hook: '看不懂荷兰语说明书？发悬赏', hookTab: 'market-help' },
+        { id: 'm2', title: '申请医疗补贴 (Zorgtoeslag)', desc: '只要你没收入或收入很低，政府每月白送你 €120+ 帮你交保费！几乎等于免费看病。', hook: '省下的钱去集市淘个好物', hookTab: 'market-idle' },
+        { id: 'm3', title: '办理各大超市会员卡', desc: 'Albert Heijn 的 Bonus 卡、Jumbo 的积分卡。没有卡买东西是不打折的！', hook: '求个群友分享AH打折条码', hookTab: 'market-help' }
+    ]
+};
+
 
 const rbWikis = [
     // ================= 进阶模式 =================
@@ -794,34 +807,61 @@ function switchRbMode(mode) {
 }
 
 // --- 打卡系统 ---
+let currentTaskPhase = 'pre'; // 默认显示启程前
+
+function switchTaskPhase(phase, el) {
+    currentTaskPhase = phase;
+    document.querySelectorAll('.tt-tab').forEach(tab => tab.classList.remove('active'));
+    if(el) el.classList.add('active');
+    renderStarterTasks();
+}
+
 function renderStarterTasks() {
     const list = document.getElementById('starterTaskList'); if(!list) return;
     const savedProgress = JSON.parse(localStorage.getItem('hp_tasks_done') || '[]');
+    const currentTasks = rbTaskData[currentTaskPhase];
+    
     let html = ''; let doneCount = 0;
 
-    rbTasks.forEach(task => {
+    currentTasks.forEach(task => {
         const isDone = savedProgress.includes(task.id); if (isDone) doneCount++;
-        html += `<div class="task-card glass-card ${isDone ? 'done' : ''}" id="task_${task.id}"><input type="checkbox" class="task-checkbox" ${isDone ? 'checked' : ''} onchange="toggleTask('${task.id}', this)"><div class="task-content"><div class="task-title">${task.title}</div><div class="task-desc">${task.desc}</div><div class="task-hook" onclick="goBack(); setTimeout(()=>switchTab('scan', document.querySelectorAll('.tab-item')[1]), 100); setTimeout(()=>switchMarketTab('${task.hookTab.split('-')[1]}', document.querySelector('.m-tab')), 200);">👉 ${task.hook}</div></div></div>`;
+        html += `<div class="task-card glass-card ${isDone ? 'done' : ''}" id="task_${task.id}">
+            <input type="checkbox" class="task-checkbox" ${isDone ? 'checked' : ''} onchange="toggleTask('${task.id}', this)">
+            <div class="task-content">
+                <div class="task-title">${task.title}</div>
+                <div class="task-desc">${task.desc}</div>
+                <div class="task-hook" onclick="goBack(); setTimeout(()=>switchTab('market', document.querySelectorAll('.tab-item')[1]), 100); setTimeout(()=>switchMarketTab('${task.hookTab.split('-')[1]}', document.querySelector('.m-tab')), 200);">👉 ${task.hook}</div>
+            </div>
+        </div>`;
     });
     list.innerHTML = html;
     
-    document.getElementById('taskProgressBar').style.width = `${(doneCount / rbTasks.length) * 100}%`;
-    document.getElementById('taskProgressText').innerText = `${doneCount}/${rbTasks.length}`;
+    // 更新进度条
+    document.getElementById('taskProgressBar').style.width = `${(doneCount / currentTasks.length) * 100}%`;
+    document.getElementById('taskProgressText').innerText = `${doneCount}/${currentTasks.length}`;
 
-    if (doneCount === rbTasks.length && !localStorage.getItem('hp_starter_cleared')) {
+    // 检查是否全部通关 (三个阶段全部完成)
+    const totalTasksCount = Object.values(rbTaskData).flat().length;
+    if (savedProgress.length === totalTasksCount && !localStorage.getItem('hp_starter_cleared')) {
         setTimeout(() => {
-            const plus = document.createElement('div'); plus.className = 'float-plus'; plus.innerText = '🎉 任务全清！'; plus.style.color = '#10B981';
+            const plus = document.createElement('div'); plus.className = 'float-plus'; plus.innerText = '🎉 史诗成就：主线全通关！'; plus.style.color = '#10B981';
             plus.style.left = '50%'; plus.style.top = '40%'; plus.style.transform = 'translate(-50%, -50%)'; document.body.appendChild(plus); 
             setTimeout(() => plus.remove(), 2500); localStorage.setItem('hp_starter_cleared', 'true');
-            setTimeout(() => { alert("已为您开启【进阶模式】！"); switchRbMode('advanced'); }, 1500);
+            setTimeout(() => { alert("你已做好在荷兰生存的全部准备！已为您自动开启【进阶模式】！"); switchRbMode('advanced'); }, 1500);
         }, 500);
     }
 }
+
 function toggleTask(id, checkbox) {
     let savedProgress = JSON.parse(localStorage.getItem('hp_tasks_done') || '[]');
-    if (checkbox.checked) { playDingSound(); if (!savedProgress.includes(id)) savedProgress.push(id); } 
-    else { savedProgress = savedProgress.filter(taskId => taskId !== id); }
+    if (checkbox.checked) { 
+        playDingSound(); 
+        if (!savedProgress.includes(id)) savedProgress.push(id); 
+    } else { 
+        savedProgress = savedProgress.filter(taskId => taskId !== id); 
+    }
     localStorage.setItem('hp_tasks_done', JSON.stringify(savedProgress));
+    
     const card = document.getElementById(`task_${id}`);
     if(checkbox.checked) card.classList.add('done'); else card.classList.remove('done');
     renderStarterTasks(); 
