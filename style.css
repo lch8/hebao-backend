@@ -425,3 +425,103 @@ body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "S
 .wc-content { flex: 1; background: var(--bg-card); padding: 16px; border-radius: 0 var(--radius-lg) var(--radius-lg) var(--radius-lg); border: 1px solid var(--border-light); box-shadow: var(--shadow-sm);}
 .wc-name { font-size: 13px; font-weight: 900; color: var(--text-primary); margin-bottom: 6px; display: flex; justify-content: space-between;}
 .wc-text { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+
+/* ================= 🏆 超市红黑榜专属样式 ================= */
+
+/* 榜单大标题 (如果有的话) */
+.home-section-title { 
+    font-size: 18px; 
+    font-weight: 900; 
+    margin: 30px 0 15px; 
+    display: flex; 
+    align-items: center; 
+    gap: 8px;
+    color: var(--text-primary, #111827);
+}
+
+/* 顶部红黑榜切换 Tabs */
+.trending-tabs { 
+    display: flex; 
+    gap: 15px; 
+    margin-bottom: 15px; 
+}
+.t-tab { 
+    flex: 1; 
+    text-align: center; 
+    padding: 12px 0; 
+    background: var(--bg-card, #FFFFFF); 
+    border-radius: var(--radius-md, 12px); 
+    font-weight: 900; 
+    color: var(--text-muted, #9CA3AF); 
+    font-size: 13px; 
+    cursor: pointer; 
+    transition: all 0.2s ease; 
+    box-shadow: var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.03)); 
+    border: 1px solid var(--border-base, #E5E7EB);
+}
+.t-tab.active { 
+    background: var(--brand-dark, #111827); 
+    color: #FFFFFF; 
+    box-shadow: var(--shadow-md, 0 4px 15px rgba(0,0,0,0.05)); 
+    border-color: var(--brand-dark, #111827); 
+}
+
+/* 榜单商品卡片 */
+.trending-card { 
+    background: var(--bg-card, #FFFFFF); 
+    margin-bottom: 12px; 
+    border-radius: var(--radius-lg, 16px); 
+    padding: 15px; 
+    display: flex; 
+    align-items: center; 
+    gap: 15px; 
+    box-shadow: var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.03)); 
+    position: relative; 
+    overflow: hidden; 
+    border: 1px solid var(--border-base, #E5E7EB); 
+    transition: transform 0.2s ease; 
+    cursor: pointer;
+}
+.trending-card:active { 
+    transform: scale(0.98); 
+    background: var(--bg-hover, #F9FAFB); 
+}
+
+/* 左上角排名角标 (Top 1, 2, 3) */
+.rank-badge { 
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    padding: 4px 10px; 
+    border-bottom-right-radius: var(--radius-md, 12px); 
+    font-size: 11px; 
+    font-weight: 900; 
+    color: #FFFFFF; 
+    z-index: 1; 
+}
+.rank-1 { background: linear-gradient(135deg, #F59E0B, #FBBF24); }
+.rank-2 { background: linear-gradient(135deg, #9CA3AF, #D1D5DB); color: #FFFFFF;}
+.rank-3 { background: linear-gradient(135deg, #B45309, #D97706); }
+.rank-other { background: var(--bg-muted, #F3F4F6); color: var(--text-muted, #9CA3AF); }
+.rank-bad { background: var(--color-danger, #EF4444); } /* 黑榜专属红色角标 */
+
+/* 卡片内部文字信息 */
+.t-info { 
+    flex: 1; 
+    margin-top: 8px; 
+}
+.t-name { 
+    font-size: 15px; 
+    font-weight: 900; 
+    color: var(--text-primary, #111827); 
+    line-height: 1.3; 
+    margin-bottom: 3px; 
+    display: -webkit-box; 
+    -webkit-line-clamp: 2; 
+    -webkit-box-orient: vertical; 
+    overflow: hidden;
+}
+.t-score { 
+    font-size: 16px; 
+    font-weight: 900; 
+}
