@@ -1,74 +1,132 @@
-// api/verify-auth-code.js
-export const config = { runtime: 'edge' };
+// auth.js - 用户身份、登录注册与权限校验
 
-// ========== JWT 工具函数 (保持不变) ==========
-function b64url(obj) { return btoa(JSON.stringify(obj)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_'); }
-async function signJwt(payload, secret) {
-    const header = b64url({ alg: 'HS256', typ: 'JWT' });
-    const body = b64url(payload);
-    const data = `${header}.${body}`;
-    const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-    const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(data));
-    const sigB64 = btoa(String.fromCharCode(...new Uint8Array(sig))).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-    return `${data}.${sigB64}`;
+// 初始化设备 UUID
+let userUUID = localStorage.getItem('hebao_uuid');
+if (!userUUID) { 
+    userUUID = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) { 
+        var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8); 
+        return v.toString(16); 
+    }); 
+    localStorage.setItem('hebao_uuid', userUUID); 
 }
 
-export default async function handler(req) {
-    if (req.method === 'OPTIONS') return new Response(null, { status: 200, headers: { 'Access-Control-Allow-Origin': '*' }});
+let isLoggedIn = localStorage.getItem('hebao_logged_in') === 'true';
+let currentPendingAction = null;
+
+function requireAuth(actionFunction) { 
+    if (!isLoggedIn) { 
+        currentPendingAction = actionFunction; 
+        document.getElementById('loginModal').style.display = 'flex'; 
+    } else { 
+        actionFunction(); 
+    } 
+}
+
+// 🌟 修复后的发送验证码 (清理了冲突的冗余代码，并统一使用 hebaoAuthEmail)
+// 🌟 带有终极检测的发送验证码函数
+async function sendAuthCode() {
+    const emailInputEl = document.getElementById('hebaoAuthEmail');
+    
+    // 🚨 终极防坑检测：如果连输入框都找不到，直接报错弹窗！
+    if (!emailInputEl) {
+        return alert("❌ 致命错误：在网页上找不到 ID 为 'hebaoAuthEmail' 的输入框！请检查 index.html 是否保存！");
+    }
+
+    const email = emailInputEl.value.trim().toLowerCase();
+    const btn = document.getElementById('btnSendCode');
+
+    // 极其包容的正则
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    
+    if (!email || !emailRegex.test(email)) {
+        return alert(`⚠️ 邮箱格式不正确！您当前输入的是: [${email}]`);
+    }
+    
+    btn.disabled = true;
+    btn.innerText = "发送中...";
+    
     try {
-        const { email, code, userId } = await req.json();
-        const dbUrl = process.env.TURSO_DATABASE_URL.replace('libsql://', 'https://');
-        const authToken = process.env.TURSO_AUTH_TOKEN;
-        const jwtSecret = process.env.JWT_SECRET;
-
-        // 1. 验证验证码 (增加报错检查)
-        const vRes = await fetch(`${dbUrl}/v2/pipeline`, {
+        const res = await apiFetch('/api/send-auth-email', {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ requests: [{ type: "execute", stmt: { sql: "SELECT code, expires_at FROM verification_codes WHERE email = ?", args: [{type:"text", value:email}] } }, { type: "close" }] })
+            body: JSON.stringify({ email })
         });
-        const vData = await vRes.json();
         
-        // 🚨 关键修复：检查 Turso 是否报错
-        if (vData.results[0].type === 'error') throw new Error("数据库报错: " + vData.results[0].error.message);
-        
-        const vRows = vData.results[0].response.result.rows;
-        if (!vRows || vRows.length === 0) throw new Error('验证码不存在，请重新获取');
-        if (vRows[0][0].value !== code) throw new Error('验证码错误');
-        if (new Date() > new Date(vRows[0][1].value)) throw new Error('验证码已过期');
-
-        // 2. 检查老用户 (增加报错检查)
-        const uRes = await fetch(`${dbUrl}/v2/pipeline`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ requests: [{ type: "execute", stmt: { sql: "SELECT id FROM users WHERE verified_email = ?", args: [{type:"text", value:email}] } }, { type: "close" }] })
-        });
-        const uData = await uRes.json();
-        if (uData.results[0].type === 'error') throw new Error("数据库查询用户报错: " + uData.results[0].error.message);
-
-        const uRows = uData.results[0].response.result.rows;
-        let finalUserId = (uRows && uRows.length > 0) ? uRows[0][0].value : userId;
-
-        // 3. 写入用户并清理验证码
-        const finalRequests = [];
-        if (!uRows || uRows.length === 0) {
-            finalRequests.push({ type: "execute", stmt: { sql: "INSERT INTO users (id, verified_email, email_verified) VALUES (?, ?, 1)", args: [{type:"text", value:finalUserId}, {type:"text", value:email}] } });
+        if (res.ok) {
+            alert("✅ 验证码已发出！请检查收件箱（包括垃圾箱）。");
+            let timeLeft = 60;
+            const timer = setInterval(() => {
+                timeLeft--;
+                btn.innerText = `${timeLeft}s`;
+                if(timeLeft <= 0) { clearInterval(timer); btn.disabled = false; btn.innerText = "获取验证码"; }
+            }, 1000);
+        } else {
+            const errData = await res.json();
+            throw new Error(errData.error || "发送失败");
         }
-        finalRequests.push({ type: "execute", stmt: { sql: "DELETE FROM verification_codes WHERE email = ?", args: [{type:"text", value:email}] } });
-        finalRequests.push({ type: "close" });
-
-        await fetch(`${dbUrl}/v2/pipeline`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ requests: finalRequests })
-        });
-
-        // 4. 签发 JWT
-        const now = Math.floor(Date.now() / 1000);
-        const token = await signJwt({ userId: finalUserId, email, iat: now, exp: now + 7 * 24 * 3600 }, jwtSecret);
-
-        return new Response(JSON.stringify({ success: true, token }), { status: 200, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
     } catch (e) {
-        return new Response(JSON.stringify({ error: e.message }), { status: 400, headers: { 'Access-Control-Allow-Origin': '*' } });
+        alert("❌ 发送失败: " + e.message);
+        btn.disabled = false;
+        btn.innerText = "获取验证码";
+    }
+}
+
+// 🌟 修复后的校验验证码 (保留了您的校园邮箱判定逻辑)
+async function verifyEmailCode() {
+    const email = document.getElementById('hebaoAuthEmail').value.trim().toLowerCase();
+    const code = document.getElementById('authCode').value.trim();
+    const btnLogin = document.getElementById('btnVerifyLogin');
+    
+    if(!code || !email) return alert("邮箱和验证码不能为空！");
+
+    btnLogin.innerText = '验证中...';
+    btnLogin.disabled = true;
+
+    try {
+        const res = await apiFetch('/api/verify-auth-code', {
+            method: 'POST',
+            body: JSON.stringify({ email, code, userId: userUUID })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            if (data.token) localStorage.setItem('hebao_token', data.token);
+            isLoggedIn = true;
+            localStorage.setItem('hebao_logged_in', 'true');
+            if (!localStorage.getItem('hp_name')) localStorage.setItem('hp_name', '管家新人_' + Math.floor(Math.random() * 1000));
+
+            // 校友判定逻辑
+            const domain = email.split('@')[1];
+            const isEdu = domain.includes('.edu') || domain.includes('tudelft.nl') || domain.includes('uva.nl') || domain.includes('eur.nl') || domain.includes('leidenuniv.nl');
+
+            localStorage.setItem('hp_email_verified', 'true');
+            localStorage.setItem('hp_is_edu', isEdu ? 'true' : 'false');
+            localStorage.setItem('hp_email', email);
+            
+            if (isEdu) {
+                alert(`🎊 认证成功！检测到校友身份：${domain.split('.')[0].toUpperCase()}\n专属勋章已点亮！`);
+            } else {
+                alert("✅ 验证成功！已为您点亮【实名认证】勋章。");
+            }
+
+            document.getElementById('loginModal').style.display = 'none';
+            renderProfileState(); // 调用 ui.js 中的方法刷新头像和名字
+            
+            if (currentPendingAction) { currentPendingAction(); currentPendingAction = null; }
+        } else {
+            throw new Error(data.error);
+        }
+    } catch (e) {
+        alert("❌ 验证失败: " + e.message);
+    } finally {
+        btnLogin.innerText = '立即验证';
+        btnLogin.disabled = false;
+    }
+}
+
+function handleLogout() {
+    if(confirm('确定要退出登录吗？')) {
+        isLoggedIn = false;
+        localStorage.setItem('hebao_logged_in', 'false');
+        renderProfileState();
     }
 }
