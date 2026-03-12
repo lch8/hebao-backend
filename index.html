@@ -97,21 +97,30 @@
             </div>
 
             <div id="rbStarterMode" class="rb-mode-view active">
-                <div class="rb-header-title">落地 7 天生死时速 ⏱️</div>
+                <div class="rb-header-title">🚨 紧急避难所</div>
                 <div class="emergency-grid">
-                    <div class="em-btn" onclick="alert('🚑 夜间/周末突发急病：\n\n千万别直接去医院急诊(会被赶出)！必须先打电话给所在城市的【Huisartsenpost】(夜间值班医生) 预约。\n\n⚠️ 危及生命请直接拨打 112！')"><span class="em-icon">🚑</span>夜间急病</div>
-                    <div class="em-btn" onclick="alert('🔑 钥匙锁屋里/丢了：\n\n谷歌搜 Slotenmaker 时【绝对不要点带 Ad/广告 标识】的网站（多为跨国诈骗）！\n\n正常开锁均价 €80-€120，上门前一定要在电话里承诺【最终总价】！')"><span class="em-icon">🔑</span>忘带钥匙</div>
-                    <div class="em-btn" onclick="alert('✉️ 收到 Incasso(催款)信：\n\n别慌！确认是真账单后，第一时间发邮件说明情况/哭穷。\n\n通常第一次可申请免除罚息，或申请分期付款 (Betalingsregeling)。')"><span class="em-icon">✉️</span>被催款了</div>
-                    <div class="em-btn" onclick="alert('💳 银行卡/居留卡丢失：\n\n1. 银行卡：立刻在手机 App 里操作 Blokkeren (冻结)。\n2. 居留卡：先去警察局官网报失拿回执，立马去 IND 官网花钱预约补办。')"><span class="em-icon">💳</span>证件丢了</div>
+                    <div class="em-btn" onclick="alert('🚑 夜间突发急病：\n千万别直接去急诊！必须先打电话给所在城市的【Huisartsenpost】预约。\n⚠️ 只有危及生命才拨打 112！')"><span class="em-icon">🚑</span>夜间急病</div>
+                    <div class="em-btn" onclick="alert('🚨 租房诈骗血泪警告：\n1. 房东说在国外要邮寄钥匙的，100%是骗子！\n2. 要求用西联汇款交定金的，100%是骗子！\n3. 房子太漂亮且远低于市价的，极度危险！')"><span class="em-icon">🏠</span>租房防骗</div>
+                    <div class="em-btn" onclick="alert('🔑 忘带钥匙：\n谷歌搜 Slotenmaker 时【绝对不要点带 Ad/广告 标识】的网站（多为黑帮诈骗）！\n开锁均价 €80-€120，上门前一定要在电话里确认总价！')"><span class="em-icon">🔑</span>忘带钥匙</div>
+                    <div class="em-btn" onclick="alert('💳 居留卡/银行卡丢失：\n1. 银行卡：立刻在手机 App 里操作 Blokkeren 冻结。\n2. 居留卡：先去警察局官网报失，立马去 IND 官网花钱预约补办。')"><span class="em-icon">💳</span>证件丢失</div>
+                </div>
+
+                <div class="rb-header-title" style="margin-top: 25px;">🗺️ 新手村通关主线</div>
+                
+                <div class="timeline-tabs">
+                    <div class="tt-tab active" onclick="switchTaskPhase('pre', this)">✈️ 启程前</div>
+                    <div class="tt-tab" onclick="switchTaskPhase('day7', this)">🛬 落地7天</div>
+                    <div class="tt-tab" onclick="switchTaskPhase('month1', this)">🏠 首月安顿</div>
                 </div>
 
                 <div class="task-progress-box">
                     <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:bold; margin-bottom:6px;">
-                        <span>主线任务打卡</span>
-                        <span id="taskProgressText" style="color:#10B981;">0/7</span>
+                        <span id="taskPhaseTitle">当前阶段进度</span>
+                        <span id="taskProgressText" style="color:#10B981;">0/0</span>
                     </div>
                     <div class="progress-bar-bg"><div class="progress-bar-fill" id="taskProgressBar"></div></div>
                 </div>
+                
                 <div class="task-list" id="starterTaskList"></div>
             </div>
 
