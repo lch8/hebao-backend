@@ -27,14 +27,6 @@
     <button class="chat-send-btn" id="sendBtn" onclick="sendQuestion()">↑</button>
 </div>
 
-<div class="scan-fab" id="mainScanFab" onclick="toggleScanMenu()">
-    <span class="fab-icon">📸</span>
-    <div class="fab-menu" id="scanFabMenu">
-        <div class="fab-menu-item" onclick="document.getElementById('packageImgInput').click()">📸 拍包装排雷</div>
-        <div class="fab-menu-item" onclick="startBarcodeScan()">⏸️ 扫条码搜素</div>
-    </div>
-</div>
-
 <div class="publish-overlay" id="publishOverlay" onclick="closePublishSheet()"></div>
 <div class="publish-sheet" id="publishSheet">
     <div class="ps-close" onclick="closePublishSheet()">✕</div>
@@ -75,6 +67,23 @@
     </div>
 
     <div id="page-tips" class="page-section active">
+        
+        <div class="top-nav-bar">
+            <div class="top-btn-left" onclick="switchTab('trending')">
+                <span>🏆</span> 超市红黑榜
+            </div>
+            
+            <div class="top-scan-container" id="topScanContainer">
+                <div class="top-scan-btn" onclick="document.getElementById('topScanContainer').classList.toggle('active')">
+                    📸
+                </div>
+                <div class="top-fab-menu">
+                    <div class="fab-menu-item" onclick="document.getElementById('packageImgInput').click(); document.getElementById('topScanContainer').classList.remove('active');">📸 拍包装排雷</div>
+                    <div class="fab-menu-item" onclick="startBarcodeScan(); document.getElementById('topScanContainer').classList.remove('active');">⏸️ 扫条码搜素</div>
+                </div>
+            </div>
+        </div>
+
         <div class="header">
             <h1 class="title">荷包管家 🇳🇱</h1>
             <div class="subtitle">留学生生存指南 & 避雷百科</div>
@@ -130,16 +139,23 @@
 
             <div class="fab-btn" id="fabGridBtn" onclick="toggleFabModal()">🗂️</div>
         </div>
+    </div>
 
-        <div class="home-trending-section" style="margin-top: 30px; padding: 0 5px;">
-            <div class="home-section-title">🔥 超市红黑榜 (Top 20)</div>
-            <div class="trending-tabs">
-                <div class="t-tab active" onclick="switchHomeTrendingTab('likes', this)">🏆 种草红榜</div>
-                <div class="t-tab" onclick="switchHomeTrendingTab('dislikes', this)">💣 避雷黑榜</div>
-            </div>
-            <div id="homeTrendingListLikes" style="display:block;"></div>
-            <div id="homeTrendingListDislikes" style="display:none;"></div>
+    <div id="page-trending" class="page-section" style="display: none; background: #F7F8FA; min-height: 100vh;">
+        <div class="detail-back-btn" onclick="goBack()" style="position: absolute; top: 15px; left: 15px;">‹</div>
+        
+        <div class="header" style="margin-top: 25px; margin-bottom: 30px;">
+            <h1 class="title">超市红黑榜 🛒</h1>
+            <div class="subtitle">靠留学生嘴巴一口口吃出来的榜单</div>
         </div>
+
+        <div class="trending-tabs" style="padding: 0 15px;">
+            <div class="t-tab active" onclick="switchHomeTrendingTab('likes', this)">🏆 种草红榜</div>
+            <div class="t-tab" onclick="switchHomeTrendingTab('dislikes', this)">💣 避雷黑榜</div>
+        </div>
+        
+        <div id="homeTrendingListLikes" style="display:block; padding: 0 15px; margin-top: 15px;"></div>
+        <div id="homeTrendingListDislikes" style="display:none; padding: 0 15px; margin-top: 15px;"></div>
     </div>
 
     <div id="page-market" class="page-section">
