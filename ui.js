@@ -2,9 +2,23 @@
 
 let lastTab = 'scan'; 
 
+function toggleScanMenu() {
+    const fab = document.getElementById('mainScanFab');
+    fab.classList.toggle('active');
+}
+
 function switchTab(tabId, element) {
     document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
-    const target = document.getElementById('page-' + tabId); if(target) target.classList.add('active');
+    const target = document.getElementById('page-' + tabId);
+    if(target) target.classList.add('active');
+
+    // 🌟 逻辑优化：如果是首页（红宝书）或集市，显示悬浮按钮；在个人中心隐藏它
+    const fab = document.getElementById('mainScanFab');
+    if (tabId === 'profile' || tabId === 'details') {
+        fab.style.display = 'none';
+    } else {
+        fab.style.display = 'flex';
+    }
     
     if (element) { 
         document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active')); 
