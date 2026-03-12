@@ -19,11 +19,17 @@ function openLoginModal() { const modal = document.getElementById('loginModal');
 
 // 🌟 新增：请求发送验证码
 async function sendAuthCode() {
-    const emailInput = document.getElementById('authEmail').value.trim();
+    const emailInputEl = document.getElementById('authEmail');
+    const emailInput = emailInputEl ? emailInputEl.value.trim() : '';
     const btnSend = document.getElementById('btnSendCode');
 
-    if (!emailInput || !emailInput.includes('@')) {
-        alert('⚠️ 请输入有效的邮箱地址！');
+    console.log("当前读取到的邮箱是：", emailInput); // 👈 帮您在控制台排错
+
+    // 极其包容的正则：允许大小写、数字、点、横线和下划线
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    
+    if (!emailInput || !emailRegex.test(emailInput)) {
+        alert(`⚠️ 邮箱格式不正确，请检查！(当前输入: ${emailInput || '空'})`);
         return;
     }
 
