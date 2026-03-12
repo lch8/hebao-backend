@@ -1,410 +1,222 @@
-// ================= 1. 全局状态与鉴权 =================
-let userUUID = localStorage.getItem('hebao_uuid');
-if (!userUUID) { userUUID = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) { var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8); return v.toString(16); }); localStorage.setItem('hebao_uuid', userUUID); }
-let isLoggedIn = localStorage.getItem('hebao_logged_in') === 'true';
-let currentPendingAction = null;
+// ============================================================================
+// app.js - 核心业务逻辑中心
+// 依赖文件: api.js, auth.js, ui.js (请确保在 HTML 中按顺序优先引入)
+// ============================================================================
 
-// 获取存储的 JWT token，用于所有需鉴权的 API 请求
-function getAuthHeaders() {
-    const token = localStorage.getItem('hebao_token');
-    const headers = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    return headers;
+// ================= 2. 导航与 Tab 补充 =================
+function switchAssetTab(tabId, element) { 
+    document.querySelectorAll('.a-tab').forEach(el => el.classList.remove('active')); 
+    element.classList.add('active'); 
+    document.querySelectorAll('.asset-content').forEach(el => el.classList.remove('active')); 
+    document.getElementById('asset-' + tabId).classList.add('active'); 
+}
+function switchHomeTrendingTab(type, element) { 
+    document.querySelectorAll('#page-scan .t-tab').forEach(el => el.classList.remove('active')); 
+    if(element) element.classList.add('active'); 
+    document.getElementById('homeTrendingListLikes').style.display = type === 'likes' ? 'block' : 'none'; 
+    document.getElementById('homeTrendingListDislikes').style.display = type === 'dislikes' ? 'block' : 'none'; 
 }
 
-function requireAuth(actionFunction) { if (!isLoggedIn) { currentPendingAction = actionFunction; const modal = document.getElementById('loginModal'); if (modal) modal.style.display = 'flex'; else alert("⚠️ 请先登录！"); } else { actionFunction(); } }
-function openLoginModal() { const modal = document.getElementById('loginModal'); if (modal) modal.style.display = 'flex'; }
-// ================= 1. 全局状态与鉴权 =================
-// (保留原本的 userUUID 和 getAuthHeaders 逻辑...)
-
-// 🌟 新增：请求发送验证码
-async function sendAuthCode() {
-    const emailInputEl = document.getElementById('authEmail');
-    const emailInput = emailInputEl ? emailInputEl.value.trim() : '';
-    const btnSend = document.getElementById('btnSendCode');
-
-    console.log("当前读取到的邮箱是：", emailInput); // 👈 帮您在控制台排错
-
-    // 极其包容的正则：允许大小写、数字、点、横线和下划线
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    
-    if (!emailInput || !emailRegex.test(emailInput)) {
-        alert(`⚠️ 邮箱格式不正确，请检查！(当前输入: ${emailInput || '空'})`);
-        return;
-    }
-
-    btnSend.disabled = true;
-    btnSend.innerText = '发送中...';
-
-    try {
-        const res = await fetch('/api/send-auth-email', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: emailInput })
-        });
-
-        const data = await res.json();
-        
-        // 兼容后端的各种返回格式
-        if (res.ok && (data.success || !data.error)) { 
-            alert('✅ 验证码已发送至您的邮箱，请注意查收（包括垃圾箱）。');
-            
-            // 简单的 60 秒倒计时防刷
-            let countdown = 60;
-            const timer = setInterval(() => {
-                btnSend.innerText = `${countdown}s 后重试`;
-                countdown--;
-                if (countdown < 0) {
-                    clearInterval(timer);
-                    btnSend.innerText = '获取验证码';
-                    btnSend.disabled = false;
-                }
-            }, 1000);
-        } else {
-            throw new Error(data.error || '发送失败，请检查后端配置');
-        }
-    } catch (err) {
-        alert('❌ ' + err.message);
-        btnSend.innerText = '获取验证码';
-        btnSend.disabled = false;
-    }
+// ================= 3. 个人资料编辑与认证展示 =================
+function openEmailVerifyModal() { 
+    // 统一指向新的登录/认证弹窗
+    document.getElementById('loginModal').style.display = 'flex'; 
 }
-
-// 🌟 新增：校验验证码并正式登录
-async function verifyAndLogin() {
-    const emailInput = document.getElementById('authEmail').value.trim();
-    const codeInput = document.getElementById('authCode').value.trim();
-    const btnLogin = document.getElementById('btnVerifyLogin');
-
-    if (!emailInput || !codeInput) {
-        alert('⚠️ 邮箱和验证码不能为空！');
-        return;
-    }
-
-    btnLogin.innerText = '验证中...';
-    btnLogin.disabled = true;
-
-    try {
-        const res = await fetch('/api/verify-auth-code', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                email: emailInput,
-                code: codeInput,
-                userId: userUUID // 直接使用 app.js 最顶部生成的设备 UUID
-            })
-        });
-
-        const data = await res.json();
-
-        if (res.ok && data.success && data.token) {
-            // 🎉 验证成功！将后端的 JWT 存入本地
-            localStorage.setItem('hebao_token', data.token);
-            localStorage.setItem('hebao_logged_in', 'true');
-            isLoggedIn = true;
-
-            document.getElementById('loginModal').style.display = 'none';
-            alert('🎉 认证成功！欢迎来到荷包社区。');
-
-            // 如果用户是点击“发布”按钮触发的登录，登录成功后直接弹出发布表单
-            if (currentPendingAction) {
-                currentPendingAction();
-                currentPendingAction = null;
-            }
-        } else {
-            throw new Error(data.error || '验证码错误或已过期');
-        }
-    } catch (err) {
-        alert('❌ ' + err.message);
-    } finally {
-        btnLogin.innerText = '立即验证';
-        btnLogin.disabled = false;
-    }
+function openWechatBindModal() { 
+    document.getElementById('authWechatInput').value = localStorage.getItem('hp_wechat') || ''; 
+    document.getElementById('wechatBindModal').style.display = 'flex'; 
 }
-function handleLogout() {
-    if(confirm('确定要退出登录吗？')) {
-        isLoggedIn = false;
-        localStorage.setItem('hebao_logged_in', 'false');
-        // 保留 hebao_token 和 hp_email_verified，下次点登录可以一键恢复
-        renderProfileState();
-    }
-}
-
-// ================= 2. 基础导航 =================
-let lastTab = 'scan'; 
-function switchTab(tabId, element) {
-    document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
-    const target = document.getElementById('page-' + tabId); if(target) target.classList.add('active');
-    if (element) { document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active')); element.classList.add('active'); if (tabId !== 'details') lastTab = tabId; }
-    if (tabId === 'details') { const tabBar = document.querySelector('.tab-bar'); if(tabBar) tabBar.style.display = 'none'; const chatBar = document.getElementById('stickyChatBar'); if(chatBar) chatBar.style.display = 'flex'; } 
-    else { const tabBar = document.querySelector('.tab-bar'); if(tabBar) tabBar.style.display = 'flex'; const chatBar = document.getElementById('stickyChatBar'); if(chatBar) chatBar.style.display = 'none'; }
-    if (tabId === 'profile') { renderFootprints(); renderProfileState(); }
-}
-function goBack() { switchTab(lastTab, document.querySelector(`.tab-item[onclick*="${lastTab}"]`)); }
-function switchMarketTab(type, element) { document.querySelectorAll('.market-content').forEach(el => el.classList.remove('active')); document.getElementById('market-' + type).classList.add('active'); document.querySelectorAll('.m-tab').forEach(el => el.classList.remove('active')); if(element) element.classList.add('active'); }
-function switchAssetTab(tabId, element) { document.querySelectorAll('.a-tab').forEach(el => el.classList.remove('active')); element.classList.add('active'); document.querySelectorAll('.asset-content').forEach(el => el.classList.remove('active')); document.getElementById('asset-' + tabId).classList.add('active'); }
-function switchHomeTrendingTab(type, element) { document.querySelectorAll('#page-scan .t-tab').forEach(el => el.classList.remove('active')); if(element) element.classList.add('active'); document.getElementById('homeTrendingListLikes').style.display = type === 'likes' ? 'block' : 'none'; document.getElementById('homeTrendingListDislikes').style.display = type === 'dislikes' ? 'block' : 'none'; }
-
-// ================= 3. 个人主页与安全认证 =================
-function renderProfileState() {
-    const guestBlock = document.getElementById('guestLoginBlock');
-    const actionsBlock = document.getElementById('profileActions');
-    const uidText = document.getElementById('profileUid');
-    const nameText = document.getElementById('profileName');
-    const creditBadge = document.getElementById('profileCreditBadge');
-    const bioText = document.getElementById('profileBio');
-    const tagsBox = document.getElementById('profileTags');
-    const authCenter = document.getElementById('authCenterBlock');
-    
-    if(!guestBlock) return;
-
-    if (isLoggedIn) {
-        guestBlock.style.display = 'none'; actionsBlock.style.display = 'flex';
-        if(authCenter) authCenter.style.display = 'block';
-        uidText.innerText = 'ID: ' + userUUID.substring(0,8).toUpperCase();
-        
-        const savedName = localStorage.getItem('hp_name') || '管家新人';
-        const savedGender = localStorage.getItem('hp_gender') || '';
-        const savedMbti = localStorage.getItem('hp_mbti') || '';
-        const savedBio = localStorage.getItem('hp_bio') || '这个人很懒，还没写自我介绍~';
-        const isEmailVerified = localStorage.getItem('hp_email_verified') === 'true';
-        const savedWechat = localStorage.getItem('hp_wechat') || '';
-
-        nameText.innerText = savedName; bioText.innerText = savedBio; bioText.style.display = 'block';
-
-        let score = 500;
-        if(localStorage.getItem('hebao_avatar')) score += 20; 
-        if(savedMbti) score += 20;
-        if(savedBio && savedBio !== '这个人很懒，还没写自我介绍~') score += 10;
-        if(isEmailVerified) score += 50; 
-        if(savedWechat) score += 30;     
-        
-        let badgeText = '良好'; let badgeColor = '#D97706'; 
-        if(score >= 600) { badgeText = '极品守信'; badgeColor = '#059669'; }
-        else if(score >= 550) { badgeText = '极佳'; badgeColor = '#10B981'; }
-        
-        creditBadge.innerText = `${badgeText} ${score}`; 
-        creditBadge.style.background = badgeColor; 
-        creditBadge.style.display = 'inline-block';
-
-        tagsBox.style.display = 'flex'; tagsBox.innerHTML = '';
-        if(savedGender) tagsBox.innerHTML += `<div class="p-tag">${savedGender}</div>`;
-        if(savedMbti) tagsBox.innerHTML += `<div class="p-tag">${savedMbti}</div>`;
-        if(isEmailVerified) {
-            const emailDomain = localStorage.getItem('hp_email').split('@')[1];
-            const schoolName = emailDomain.includes('tudelft') ? 'TUDelft' : (emailDomain.includes('uva') ? 'UvA' : '校园');
-            tagsBox.innerHTML += `<div class="p-tag verified-edu">🎓 ${schoolName} 认证</div>`;
-        }
-        if(savedWechat) tagsBox.innerHTML += `<div class="p-tag verified-wechat">💬 微信已绑</div>`;
-        if(tagsBox.innerHTML === '') tagsBox.innerHTML = `<div class="p-tag">萌新小白</div>`;
-
-        if(isEmailVerified) {
-            document.getElementById('emailAuthStatusText').innerText = localStorage.getItem('hp_email');
-            const btn = document.getElementById('emailAuthBtn'); btn.innerText = "已认证"; btn.classList.add('done');
-        }
-        if(savedWechat) {
-            document.getElementById('wechatAuthStatusText').innerText = `已绑定: ${savedWechat.substring(0,2)}***`;
-            const btn = document.getElementById('wechatAuthBtn'); btn.innerText = "已绑定"; btn.classList.add('done');
-        }
-        loadAvatar(); loadMyPosts(); 
-    } else {
-        guestBlock.style.display = 'block'; actionsBlock.style.display = 'none';
-        if(authCenter) authCenter.style.display = 'none';
-        uidText.innerText = 'ID: 未登录'; nameText.innerText = '管家游客'; 
-        creditBadge.style.display = 'none'; bioText.style.display = 'none'; tagsBox.style.display = 'none';
-        document.getElementById('profileAvatarImg').style.display = 'none';
-        document.getElementById('profileAvatarBox').style.background = '#E5E7EB';
-        document.getElementById('profileAvatarEmoji').textContent = '👻';
-        const listDiv = document.getElementById('myPostsList'); if(listDiv) listDiv.innerHTML = '';
-    }
-}
-
-function openEmailVerifyModal() {
-    // 如果已经认证过邮箱且已登录，不需要再认证
-    if(localStorage.getItem('hp_email_verified') === 'true' && isLoggedIn) return alert("您的邮箱已经认证通过啦！");
-    // 如果已认证过邮箱但未登录（登出后重新登录），预填邮箱
-    const savedEmail = localStorage.getItem('hp_email');
-    if(savedEmail) {
-        const emailInput = document.getElementById('Input');
-        if(emailInput) emailInput.value = savedEmail;
-    }
-    document.getElementById('emailVerifyModal').style.display = 'flex';
-}
-// 修改后的：发送真实邮件验证码
-async function sendAuthCode() {
-    const emailInput = document.getElementById('Input');
-    const email = emailInput.value.trim();
-    if(!email || !email.includes('@')) return alert("请输入正确的邮箱格式！");
-    
-    const btn = document.getElementById('btnSendCode');
-    btn.disabled = true;
-    btn.innerText = "发送中...";
-    
-    try {
-        const res = await fetch('/api/send-auth-email', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email })
-        });
-        
-        if (res.ok) {
-            alert("✅ 验证码已发出！请检查收件箱。如果是学校邮箱，有时会在垃圾箱哦。");
-            let timeLeft = 60;
-            const timer = setInterval(() => {
-                timeLeft--;
-                btn.innerText = `${timeLeft}s`;
-                if(timeLeft <= 0) { clearInterval(timer); btn.disabled = false; btn.innerText = "获取验证码"; }
-            }, 1000);
-        } else {
-            throw new Error();
-        }
-    } catch (e) {
-        alert("❌ 邮件系统繁忙，请稍后再试");
-        btn.disabled = false;
-        btn.innerText = "获取验证码";
-    }
-}
-
-// 修改后的真实校验函数：加入后缀识别与分级认证
-async function verifyEmailCode() {
-    const email = document.getElementById('authEmailInput').value.trim().toLowerCase();
-    const code = document.getElementById('authCodeInput').value.trim();
-    
-    if(!code) return alert("请输入验证码");
-
-    try {
-        const res = await fetch('/api/verify-auth-code', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, code, userId: userUUID })
-        });
-        const data = await res.json();
-        
-        if (data.success) {
-            // 保存 JWT token，后续所有需鉴权 API 请求使用
-            if (data.token) {
-                localStorage.setItem('hebao_token', data.token);
-            }
-            isLoggedIn = true;
-            localStorage.setItem('hebao_logged_in', 'true');
-            if (!localStorage.getItem('hp_name')) localStorage.setItem('hp_name', '管家新人_' + Math.floor(Math.random() * 1000));
-
-            const domain = email.split('@')[1];
-            
-            // 🚨 核心逻辑：判断是否属于“校园/机构”后缀
-            // 你可以根据需要扩充这个白名单，或者用正则匹配 .edu / .nl
-            const isEdu = domain.includes('.edu') || 
-                          domain.includes('tudelft.nl') || 
-                          domain.includes('uva.nl') || 
-                          domain.includes('eur.nl') ||
-                          domain.includes('leidenuniv.nl');
-
-            if (isEdu) {
-                // 🎓 真正的校友认证
-                localStorage.setItem('hp_email_verified', 'true');
-                localStorage.setItem('hp_is_edu', 'true'); // 标记为教育认证
-                localStorage.setItem('hp_email', email);
-                
-                alert(`🎊 认证成功！检测到校友身份：${domain.split('.')[0].toUpperCase()}\n\n专属勋章已点亮，信用分+50`);
-            } else {
-                // 👤 仅作为“普通身份验证”，不给校友勋章
-                localStorage.setItem('hp_email_verified', 'true');
-                localStorage.setItem('hp_is_edu', 'false'); // 非教育认证
-                localStorage.setItem('hp_email', email);
-                
-                alert("✅ 邮箱验证成功！\n\n由于您使用的是普通私人邮箱，已为您点亮【实名认证】勋章，但无法点亮【校友勋章】哦。");
-            }
-
-            document.getElementById('emailVerifyModal').style.display = 'none';
-            renderProfileState();
-            if (currentPendingAction) { currentPendingAction(); currentPendingAction = null; } else { alert('🎉 登录成功！'); }
-        } else {
-            alert("❌ " + data.error);
-        }
-    } catch (e) {
-        alert("❌ 网络连接异常");
-    }
-}
-function openWechatBindModal() { document.getElementById('authWechatInput').value = localStorage.getItem('hp_wechat') || ''; document.getElementById('wechatBindModal').style.display = 'flex'; }
 function saveWechatBind() {
-    const wx = document.getElementById('authWechatInput').value.trim(); if(!wx) return alert("微信号不能为空哦！");
-    localStorage.setItem('hp_wechat', wx); document.getElementById('wechatBindModal').style.display = 'none';
-    const plus = document.createElement('div'); plus.className = 'float-plus'; plus.innerText = '💬 绑定成功 信用分+30'; plus.style.color = '#10B981';
-    plus.style.left = '50%'; plus.style.top = '40%'; plus.style.transform = 'translate(-50%, -50%)'; document.body.appendChild(plus); setTimeout(() => plus.remove(), 2000);
+    const wx = document.getElementById('authWechatInput').value.trim(); 
+    if(!wx) return alert("微信号不能为空哦！");
+    localStorage.setItem('hp_wechat', wx); 
+    document.getElementById('wechatBindModal').style.display = 'none';
+    const plus = document.createElement('div'); 
+    plus.className = 'float-plus'; plus.innerText = '💬 绑定成功 信用分+30'; plus.style.color = '#10B981';
+    plus.style.left = '50%'; plus.style.top = '40%'; plus.style.transform = 'translate(-50%, -50%)'; 
+    document.body.appendChild(plus); 
+    setTimeout(() => plus.remove(), 2000);
     renderProfileState();
 }
-function openEditProfileModal() { document.getElementById('epName').value = localStorage.getItem('hp_name') || ''; document.getElementById('epGender').value = localStorage.getItem('hp_gender') || '保密'; document.getElementById('epMbti').value = localStorage.getItem('hp_mbti') || ''; document.getElementById('epWechat').value = localStorage.getItem('hp_wechat') || ''; document.getElementById('epBio').value = localStorage.getItem('hp_bio') || ''; document.getElementById('editProfileModal').style.display = 'flex'; }
-function saveProfileData() { const name = document.getElementById('epName').value.trim(); if(!name) return alert('昵称不能为空哦！'); localStorage.setItem('hp_name', name); localStorage.setItem('hp_gender', document.getElementById('epGender').value); localStorage.setItem('hp_mbti', document.getElementById('epMbti').value); localStorage.setItem('hp_wechat', document.getElementById('epWechat').value.trim()); localStorage.setItem('hp_bio', document.getElementById('epBio').value.trim()); document.getElementById('editProfileModal').style.display = 'none'; renderProfileState(); }
-function previewAvatar(event) { const file = event.target.files[0]; if(!file) return; const reader = new FileReader(); reader.onload = function(e) { localStorage.setItem('hebao_avatar', e.target.result); renderProfileState(); }; reader.readAsDataURL(file); }
-function loadAvatar() { const savedAvatar = localStorage.getItem('hebao_avatar'); if(savedAvatar && isLoggedIn) { document.getElementById('profileAvatarImg').src = savedAvatar; document.getElementById('profileAvatarImg').style.display = 'block'; document.getElementById('profileAvatarBox').style.background = '#FFF'; document.getElementById('profileAvatarEmoji').textContent = ''; } }
+function openEditProfileModal() { 
+    document.getElementById('epName').value = localStorage.getItem('hp_name') || ''; 
+    document.getElementById('epGender').value = localStorage.getItem('hp_gender') || '保密'; 
+    document.getElementById('epMbti').value = localStorage.getItem('hp_mbti') || ''; 
+    document.getElementById('epWechat').value = localStorage.getItem('hp_wechat') || ''; 
+    document.getElementById('epBio').value = localStorage.getItem('hp_bio') || ''; 
+    document.getElementById('editProfileModal').style.display = 'flex'; 
+}
+function saveProfileData() { 
+    const name = document.getElementById('epName').value.trim(); 
+    if(!name) return alert('昵称不能为空哦！'); 
+    localStorage.setItem('hp_name', name); 
+    localStorage.setItem('hp_gender', document.getElementById('epGender').value); 
+    localStorage.setItem('hp_mbti', document.getElementById('epMbti').value); 
+    localStorage.setItem('hp_wechat', document.getElementById('epWechat').value.trim()); 
+    localStorage.setItem('hp_bio', document.getElementById('epBio').value.trim()); 
+    document.getElementById('editProfileModal').style.display = 'none'; 
+    renderProfileState(); 
+}
+function previewAvatar(event) { 
+    const file = event.target.files[0]; if(!file) return; 
+    const reader = new FileReader(); 
+    reader.onload = function(e) { 
+        localStorage.setItem('hebao_avatar', e.target.result); 
+        renderProfileState(); 
+        loadAvatar();
+    }; 
+    reader.readAsDataURL(file); 
+}
+function loadAvatar() { 
+    const savedAvatar = localStorage.getItem('hebao_avatar'); 
+    if(savedAvatar && isLoggedIn) { 
+        document.getElementById('profileAvatarImg').src = savedAvatar; 
+        document.getElementById('profileAvatarImg').style.display = 'block'; 
+        document.getElementById('profileAvatarBox').style.background = '#FFF'; 
+        document.getElementById('profileAvatarEmoji').textContent = ''; 
+    } 
+}
 
 // ================= 4. GPS 自动定位 =================
 let currentCity = ""; let currentPostcode = "";
 function autoLocate(inputId) {
-    const inputEl = document.getElementById(inputId); if (!navigator.geolocation) return alert("浏览器不支持定位功能");
-    const oldVal = inputEl.value; inputEl.value = "定位中..."; const toggleWrapper = document.getElementById('postcodeToggleWrapper'); if(toggleWrapper) toggleWrapper.style.display = 'none';
+    const inputEl = document.getElementById(inputId); 
+    if (!navigator.geolocation) return alert("浏览器不支持定位功能");
+    const oldVal = inputEl.value; inputEl.value = "定位中..."; 
+    const toggleWrapper = document.getElementById('postcodeToggleWrapper'); 
+    if(toggleWrapper) toggleWrapper.style.display = 'none';
     navigator.geolocation.getCurrentPosition(async (pos) => {
         try {
-            const { latitude, longitude } = pos.coords; const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1&accept-language=zh`);
-            const data = await res.json(); currentCity = data.address.city || data.address.town || data.address.village || data.address.state || "荷兰";
-            let fullPostcode = data.address.postcode || ""; currentPostcode = fullPostcode.replace(/\s+/g, '').substring(0, 4); 
+            const { latitude, longitude } = pos.coords; 
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1&accept-language=zh`);
+            const data = await res.json(); 
+            currentCity = data.address.city || data.address.town || data.address.village || data.address.state || "荷兰";
+            let fullPostcode = data.address.postcode || ""; 
+            currentPostcode = fullPostcode.replace(/\s+/g, '').substring(0, 4); 
             inputEl.value = currentCity;
-            if (currentPostcode && toggleWrapper) { document.getElementById('detectedPostcode').innerText = currentPostcode; toggleWrapper.style.display = 'flex'; document.getElementById('showPostcodeCheck').checked = false; }
+            if (currentPostcode && toggleWrapper) { 
+                document.getElementById('detectedPostcode').innerText = currentPostcode; 
+                toggleWrapper.style.display = 'flex'; 
+                document.getElementById('showPostcodeCheck').checked = false; 
+            }
         } catch (e) { inputEl.value = oldVal; alert("获取定位失败"); }
     }, (err) => { inputEl.value = oldVal; alert("定位权限被拒绝"); }, { timeout: 10000 });
 }
-function togglePostcode() { const inputEl = document.getElementById('idleLocation'); const isChecked = document.getElementById('showPostcodeCheck').checked; if (isChecked) { inputEl.value = `${currentCity} (${currentPostcode})`; } else { inputEl.value = currentCity; } }
+function togglePostcode() { 
+    const inputEl = document.getElementById('idleLocation'); 
+    const isChecked = document.getElementById('showPostcodeCheck').checked; 
+    if (isChecked) { inputEl.value = `${currentCity} (${currentPostcode})`; } 
+    else { inputEl.value = currentCity; } 
+}
 
 // ================= 5. 首页扫码引擎与榜单 =================
-let currentProductData = null; let currentDetailData = null; let globalTrendingLikes = []; let globalTrendingDislikes = [];
+let currentProductData = null; let currentDetailData = null; 
+let globalTrendingLikes = []; let globalTrendingDislikes = [];
 
 async function handlePackageImage(event) {
     const file = event.target.files[0]; if (!file) return;
-    document.getElementById('homeActionBox').style.display = 'none'; document.getElementById('previewContainer').style.display = 'block'; document.getElementById('scanOverlay').style.display = 'flex'; document.getElementById('scanText').innerText = "📡 正在解析包装..."; document.getElementById('miniResultCard').style.display = 'none';
+    document.getElementById('homeActionBox').style.display = 'none'; 
+    document.getElementById('previewContainer').style.display = 'block'; 
+    document.getElementById('scanOverlay').style.display = 'flex'; 
+    document.getElementById('scanText').innerText = "📡 正在解析包装..."; 
+    document.getElementById('miniResultCard').style.display = 'none';
     const reader = new FileReader();
     reader.onload = async function(e) {
-        const base64Data = e.target.result.split(',')[1]; const previewImg = document.getElementById('previewImg'); if (previewImg) previewImg.src = e.target.result;
+        const base64Data = e.target.result.split(',')[1]; 
+        const previewImg = document.getElementById('previewImg'); 
+        if (previewImg) previewImg.src = e.target.result;
         try {
-            const res = await fetch('/api/scan', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ imageBase64: base64Data }) });
-            const data = await res.json(); if(!res.ok || data.error) throw new Error(data.error || "识别失败");
+            const res = await fetch('/api/scan', { 
+                method: 'POST', 
+                headers: getAuthHeaders(), 
+                body: JSON.stringify({ imageBase64: base64Data }) 
+            });
+            const data = await res.json(); 
+            if(!res.ok || data.error) throw new Error(data.error || "识别失败");
             currentProductData = data; currentProductData.image_url = e.target.result; 
-            document.getElementById('scanOverlay').style.display = 'none'; document.getElementById('previewContainer').style.display = 'none'; document.getElementById('miniResultCard').style.display = 'block'; 
-            const emoji = data.is_recommended === 1 ? '👍' : '💣'; document.getElementById('miniChineseName').innerText = `${emoji} ${data.chinese_name || data.dutch_name || '未知商品'}`; document.getElementById('miniInsight').innerText = data.insight || '管家觉得不错~'; 
+            document.getElementById('scanOverlay').style.display = 'none'; 
+            document.getElementById('previewContainer').style.display = 'none'; 
+            document.getElementById('miniResultCard').style.display = 'block'; 
+            const emoji = data.is_recommended === 1 ? '👍' : '💣'; 
+            document.getElementById('miniChineseName').innerText = `${emoji} ${data.chinese_name || data.dutch_name || '未知商品'}`; 
+            document.getElementById('miniInsight').innerText = data.insight || '管家觉得不错~'; 
             saveToLocalFootprint(data, data.image_url);
-        } catch (err) { alert("识别失败：" + err.message); resetApp(); } finally { document.getElementById('packageImgInput').value = ''; }
-    }; reader.readAsDataURL(file);
+        } catch (err) { alert("识别失败：" + err.message); resetApp(); } 
+        finally { document.getElementById('packageImgInput').value = ''; }
+    }; 
+    reader.readAsDataURL(file);
 }
 
 let html5Scanner = null;
 function startBarcodeScan() {
-    document.getElementById('scannerModal').style.display = 'flex'; html5Scanner = new Html5Qrcode("reader");
+    document.getElementById('scannerModal').style.display = 'flex'; 
+    html5Scanner = new Html5Qrcode("reader");
     const config = { fps: 10, qrbox: { width: 250, height: 150 }, aspectRatio: 1.0, formatsToSupport: [ Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8, Html5QrcodeSupportedFormats.UPC_A ] };
-    html5Scanner.start({ facingMode: "environment" }, config, (decodedText) => { if (navigator.vibrate) navigator.vibrate(100); closeScanner(); document.getElementById('mainSearchInput').value = decodedText; executeSearch(); }).catch(err => { alert("调用摄像头失败"); closeScanner(); });
+    html5Scanner.start({ facingMode: "environment" }, config, (decodedText) => { 
+        if (navigator.vibrate) navigator.vibrate(100); 
+        closeScanner(); 
+        document.getElementById('mainSearchInput').value = decodedText; 
+        executeSearch(); 
+    }).catch(err => { alert("调用摄像头失败"); closeScanner(); });
 }
-function closeScanner() { if(html5Scanner) { html5Scanner.stop().catch(e=>console.log(e)); html5Scanner = null; } document.getElementById('scannerModal').style.display = 'none'; }
+function closeScanner() { 
+    if(html5Scanner) { html5Scanner.stop().catch(e=>console.log(e)); html5Scanner = null; } 
+    document.getElementById('scannerModal').style.display = 'none'; 
+}
 function executeSearch() {
     const query = document.getElementById('mainSearchInput').value.trim(); if (!query) return;
-    document.getElementById('homeActionBox').style.display='none'; document.getElementById('previewContainer').style.display='block'; document.getElementById('scanOverlay').style.display='flex'; document.getElementById('scanText').innerText = "📡 全网检索中..."; document.getElementById('miniResultCard').style.display='none';
-    fetch('/api/scan-barcode', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ barcode: query, userId: userUUID }) })
+    document.getElementById('homeActionBox').style.display='none'; 
+    document.getElementById('previewContainer').style.display='block'; 
+    document.getElementById('scanOverlay').style.display='flex'; 
+    document.getElementById('scanText').innerText = "📡 全网检索中..."; 
+    document.getElementById('miniResultCard').style.display='none';
+    fetch('/api/scan-barcode', { 
+        method: 'POST', 
+        headers: getAuthHeaders(), 
+        body: JSON.stringify({ barcode: query, userId: userUUID }) 
+    })
     .then(res => res.json()).then(data => {
-        currentProductData = data; document.getElementById('scanOverlay').style.display='none'; document.getElementById('previewContainer').style.display='none'; document.getElementById('miniResultCard').style.display='block'; 
-        document.getElementById('miniChineseName').innerText=data.chinese_name||'未知商品'; document.getElementById('miniInsight').innerText=data.insight||'暂无评价'; saveToLocalFootprint(data, data.image_url);
+        currentProductData = data; 
+        document.getElementById('scanOverlay').style.display='none'; 
+        document.getElementById('previewContainer').style.display='none'; 
+        document.getElementById('miniResultCard').style.display='block'; 
+        document.getElementById('miniChineseName').innerText=data.chinese_name||'未知商品'; 
+        document.getElementById('miniInsight').innerText=data.insight||'暂无评价'; 
+        saveToLocalFootprint(data, data.image_url);
     }).catch(err => { alert("未找到"); resetApp(); });
 }
-function resetApp() { document.getElementById('previewContainer').style.display='none'; document.getElementById('scanOverlay').style.display='none'; document.getElementById('miniResultCard').style.display='none'; document.getElementById('homeActionBox').style.display='flex'; document.getElementById('mainSearchInput').value = ''; }
+function resetApp() { 
+    document.getElementById('previewContainer').style.display='none'; 
+    document.getElementById('scanOverlay').style.display='none'; 
+    document.getElementById('miniResultCard').style.display='none'; 
+    document.getElementById('homeActionBox').style.display='flex'; 
+    document.getElementById('mainSearchInput').value = ''; 
+}
 
 async function loadTrendingToHome() {
     try {
         const res = await fetch('/api/trending'); const data = await res.json();
-        if(data.success) { globalTrendingLikes = data.topLikes || []; globalTrendingDislikes = data.topDislikes || []; renderHomeTrending(globalTrendingLikes, 'homeTrendingListLikes', 'like'); renderHomeTrending(globalTrendingDislikes, 'homeTrendingListDislikes', 'dislike'); }
+        if(data.success) { 
+            globalTrendingLikes = data.topLikes || []; 
+            globalTrendingDislikes = data.topDislikes || []; 
+            renderHomeTrending(globalTrendingLikes, 'homeTrendingListLikes', 'like'); 
+            renderHomeTrending(globalTrendingDislikes, 'homeTrendingListDislikes', 'dislike'); 
+        }
     } catch(e) {}
 }
 function renderHomeTrending(list, containerId, type) {
-    const container = document.getElementById(containerId); if (!container || !list || list.length === 0) return; 
-    let html = ''; const fallbackSvg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23F3F4F6'/%3E%3Ctext x='50%25' y='50%25' font-family='sans-serif' font-size='10' fill='%239CA3AF' text-anchor='middle' dominant-baseline='middle'%3E暂无图%3C/text%3E%3C/svg%3E";
+    const container = document.getElementById(containerId); 
+    if (!container || !list || list.length === 0) return; 
+    let html = ''; 
+    const fallbackSvg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23F3F4F6'/%3E%3Ctext x='50%25' y='50%25' font-family='sans-serif' font-size='10' fill='%239CA3AF' text-anchor='middle' dominant-baseline='middle'%3E暂无图%3C/text%3E%3C/svg%3E";
     list.slice(0, 20).forEach((item, index) => {
-        let badgeClass = 'rank-other'; if (index === 0) badgeClass = 'rank-1'; else if (index === 1) badgeClass = 'rank-2'; else if (index === 2) badgeClass = 'rank-3'; if (type === 'dislike') badgeClass = 'rank-bad';
-        const score = type === 'like' ? item.likes : item.dislikes; const icon = type === 'like' ? '👍' : '💣'; const scoreColor = type === 'like' ? '#10B981' : '#EF4444'; const safeImg = item.image_url || fallbackSvg;
+        let badgeClass = 'rank-other'; 
+        if (index === 0) badgeClass = 'rank-1'; else if (index === 1) badgeClass = 'rank-2'; else if (index === 2) badgeClass = 'rank-3'; 
+        if (type === 'dislike') badgeClass = 'rank-bad';
+        const score = type === 'like' ? item.likes : item.dislikes; 
+        const icon = type === 'like' ? '👍' : '💣'; 
+        const scoreColor = type === 'like' ? '#10B981' : '#EF4444'; 
+        const safeImg = item.image_url || fallbackSvg;
         html += `<div class="trending-card" onclick="openDetailsFromHomeTrending('${type}', ${index})"><div class="rank-badge ${badgeClass}">TOP ${index + 1}</div><img src="${safeImg}" onerror="this.onerror=null; this.src='${fallbackSvg}'" style="width: 50px; height: 50px; border-radius: 10px; object-fit: cover; background: #F3F4F6; border: 1px solid #E5E7EB;"><div class="t-info"><div class="t-name">${item.chinese_name || '未命名商品'}</div><div style="font-size: 11px; color: #9CA3AF; margin-top:2px;">${item.dutch_name || ''}</div></div><div class="t-score" style="color: ${scoreColor}">${icon} ${score}</div></div>`;
     });
     container.innerHTML = html;
@@ -772,7 +584,7 @@ const rbTasks = [
 ];
 
 const rbWikis = [
-    // ================= 进阶模式 (已扩充海量数据) =================
+    // ================= 进阶模式 =================
     { id: 'w1', mode: 'advanced', category: '羊毛购物', icon: '🛒', title: 'AH 超市 35% Off 贴纸规律', tag: '恩格尔系数狂降', summary: '摸透打折贴纸出没时间，实现牛排三文鱼自由。', details: 'AH 员工通常在每天下午 15:30 - 16:30 左右开始贴黄色的 35% 贴纸（临期商品）。重点盯肉类区，肉类买回来直接扔冷冻室，至少能放一个月！' },
     { id: 'w2', mode: 'advanced', category: '羊毛购物', icon: '📦', title: 'Too Good To Go 盲盒抢购', tag: '€4吃三天', summary: '剩菜盲盒？不，这是留学生的生存之光。', details: '下载 TGTG App，每天留意面包店 (Bakkerij) 和大超市的魔法盒。通常花 €4.99 能拿走原价 €15+ 的羊角包和果蔬，拼手速抢到就是赚到。' },
     { id: 'w3', mode: 'advanced', category: '羊毛购物', icon: '🛍️', title: '荷兰日用品穷鬼平替店', tag: '别去市中心买', summary: '不要在 Albert Heijn 买洗发水和锅碗瓢盆！', details: '厨具、收纳、五金：无脑去 Action (荷兰拼多多)；洗护用品、保健品：去 Kruidvat 或 Trekpleister，永远在搞 1+1 免费。买廉价家居去 Xenos。' },
@@ -912,7 +724,6 @@ function hSwipeMove(e, id) {
     const frontCard = document.getElementById(`front_${id}`);
     if(frontCard) frontCard.style.transform = `translateX(${diffX}px)`;
 
-    // 动态透明度渐变：右滑显现绿色(保存)，左滑显现红色(删除)
     const saveBg = document.querySelector(`#swipe_${id} .save-bg`);
     const deleteBg = document.querySelector(`#swipe_${id} .delete-bg`);
     if (diffX > 0) {
@@ -927,41 +738,31 @@ function hSwipeMove(e, id) {
 function hSwipeEnd(e, id) {
     if (!isSwiping || activeSwipeId !== id) return;
     isSwiping = false;
-    
-    // 获取最终位移
     const diffX = swipeCurrentX - swipeStartX;
     const frontCard = document.getElementById(`front_${id}`);
     if(!frontCard) return;
 
     frontCard.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
-    const threshold = window.innerWidth * 0.35; // 触发阈值
+    const threshold = window.innerWidth * 0.35;
 
-    // 关键修正：只有当位移绝对值大于 10px 时，才判定为“意图滑动”
     if (Math.abs(diffX) > 10) {
         if (diffX > threshold) {
-            // 右滑成功 -> 飞出并收藏
             frontCard.style.transform = `translateX(${window.innerWidth}px)`;
             setTimeout(() => handleWikiAction(id, 'saved'), 300);
         } else if (diffX < -threshold) {
-            // 左滑成功 -> 飞出并删除
             frontCard.style.transform = `translateX(-${window.innerWidth}px)`;
             setTimeout(() => handleWikiAction(id, 'deleted'), 300);
         } else {
-            // 滑动距离不足 -> 弹回
             frontCard.style.transform = `translateX(0px)`;
             resetSwipeBg(id);
         }
     } else {
-        // 位移极小（属于点击行为）-> 强制弹回，确保不消失
         frontCard.style.transform = `translateX(0px)`;
         resetSwipeBg(id);
     }
-    
-    // 延迟 100ms 释放锁，确保 click 事件能被正确触发
     setTimeout(() => { isDraggingClickPrevent = false; activeSwipeId = null; }, 100);
 }
 
-// 新增一个重置背景透明度的辅助函数
 function resetSwipeBg(id) {
     const sBg = document.querySelector(`#swipe_${id} .save-bg`);
     const dBg = document.querySelector(`#swipe_${id} .delete-bg`);
@@ -970,24 +771,17 @@ function resetSwipeBg(id) {
 }
 
 function toggleWikiCard(el) {
-    // 如果正在滑动或者位移锁开启，直接拦截点击
-    if (isSwiping || isDraggingClickPrevent) {
-        return;
-    }
-    
-    // 只有在卡片完全归位（transform 为 0 或为空）时才允许展开
+    if (isSwiping || isDraggingClickPrevent) return;
     const transform = window.getComputedStyle(el).transform;
     const matrix = new WebKitCSSMatrix(transform);
-    if (Math.abs(matrix.m41) < 5) { // 允许 5px 以内的误差
-        el.classList.toggle('open');
-    }
+    if (Math.abs(matrix.m41) < 5) el.classList.toggle('open');
 }
+
 function handleWikiAction(id, actionStr) {
     let arr = JSON.parse(localStorage.getItem(`hp_wiki_${actionStr}`) || '[]');
     if (!arr.includes(id)) arr.push(id);
     localStorage.setItem(`hp_wiki_${actionStr}`, JSON.stringify(arr));
     
-    // 如果是收藏，给出视觉反馈
     if(actionStr === 'saved') {
         const plus = document.createElement('div'); plus.className = 'float-plus'; plus.innerText = '⭐ 已加入收藏'; plus.style.color = '#10B981';
         plus.style.left = '50%'; plus.style.top = '40%'; plus.style.transform = 'translate(-50%, -50%)'; document.body.appendChild(plus); 
@@ -1005,7 +799,7 @@ function renderWikiList(searchQuery = '') {
     
     const deletedData = JSON.parse(localStorage.getItem('hp_wiki_deleted') || '[]');
     const savedData = JSON.parse(localStorage.getItem('hp_wiki_saved') || '[]');
-    const customWikis = JSON.parse(localStorage.getItem('hp_custom_wikis') || '[]'); // 获取 AI 生成的自定义内容
+    const customWikis = JSON.parse(localStorage.getItem('hp_custom_wikis') || '[]'); 
     
     const allWikis = [...rbWikis, ...customWikis];
 
@@ -1039,7 +833,6 @@ function renderWikiList(searchQuery = '') {
         });
     }
     
-    // 列表底部永远挂载一个“AI 录入”按钮，允许用户自己扩充数据库
     html += `<button class="btn-ai-create" onclick="document.getElementById('aiWikiModal').style.display='flex'">✨ AI 自动提取长文并录入</button>`;
     list.innerHTML = html;
 }
@@ -1100,9 +893,8 @@ async function generateAICard() {
         const res = await fetch('/api/generate-copy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ keyword, type: 'wiki' }) });
         const data = await res.json(); if(data.error) throw new Error(data.error);
 
-        // 组装新卡片
         const newCard = {
-            id: 'cw_' + Date.now(), // 自定义前缀
+            id: 'cw_' + Date.now(), 
             mode: currentRbMode,
             category: currentRbCategory === 'all' ? '专属干货' : currentRbCategory,
             icon: data.icon || '📌',
@@ -1112,9 +904,8 @@ async function generateAICard() {
             details: data.details || keyword
         };
 
-        // 存入本地自定义题库
         let customWikis = JSON.parse(localStorage.getItem('hp_custom_wikis') || '[]');
-        customWikis.unshift(newCard); // 放在最前面
+        customWikis.unshift(newCard); 
         localStorage.setItem('hp_custom_wikis', JSON.stringify(customWikis));
 
         alert("🎉 录入成功！卡片已生成！");
@@ -1140,9 +931,10 @@ function checkWidgets() {
 
 // ================= 最后，初始化引擎 =================
 window.addEventListener('DOMContentLoaded', () => { 
-    renderTipsPage(); 
+    // 注意：renderTipsPage 由于已被红宝书模块取代，保留空函数防报错即可
+    if(typeof renderTipsPage === 'function') renderTipsPage(); 
     loadTrendingToHome(); 
-    renderProfileState(); 
+    if(typeof renderProfileState === 'function') renderProfileState(); // 依赖 ui.js
     loadCommunityPosts();
     initRedBook(); 
 });
