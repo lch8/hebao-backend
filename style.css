@@ -525,3 +525,99 @@ body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "S
     font-size: 16px; 
     font-weight: 900; 
 }
+
+/* ================= 🛡️ 管家安全盾专属样式 ================= */
+
+/* 1. 邮编查治安卡片 */
+.safety-check-card {
+    padding: 16px;
+    margin-bottom: 25px;
+    border: 1px solid rgba(16, 185, 129, 0.3); /* 隐约的绿色安全感边框 */
+    background: linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(236,253,245,0.4) 100%);
+}
+.sc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 12px;
+}
+.sc-title { font-size: 15px; font-weight: 900; color: var(--brand-dark); }
+.sc-sub { font-size: 11px; color: var(--brand-primary-hover); font-weight: bold; }
+.sc-search-box {
+    display: flex;
+    gap: 10px;
+}
+.sc-search-box input {
+    flex: 1;
+    background: var(--bg-card);
+    border: 2px solid var(--border-base);
+    border-radius: var(--radius-md);
+    padding: 10px 15px;
+    font-size: 14px;
+    font-weight: 900;
+    outline: none;
+    color: var(--text-primary);
+    transition: var(--transition-fast);
+}
+.sc-search-box input:focus { border-color: var(--brand-primary); }
+.sc-btn {
+    background: var(--brand-dark);
+    color: #FFF;
+    border: none;
+    padding: 0 16px;
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+}
+.sc-result {
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    line-height: 1.5;
+    animation: fadeIn 0.3s ease;
+}
+
+/* 治安评级颜色 */
+.sc-result.safe { background: var(--brand-primary-light); color: var(--brand-primary-hover); border: 1px dashed #A7F3D0; }
+.sc-result.warn { background: var(--color-warning-light); color: #B45309; border: 1px dashed #FDE68A; }
+.sc-result.danger { background: var(--color-danger-light); color: var(--color-danger); border: 1px dashed #FECACA; }
+
+/* 2. 紧急求助置顶广播 */
+.sos-broadcast-bar {
+    background: linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%);
+    border: 1px solid #FECACA;
+    border-radius: var(--radius-lg);
+    padding: 12px 15px;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.15); /* 红色弥散光晕 */
+    cursor: pointer;
+}
+.sos-pulse {
+    font-size: 24px;
+    animation: sosPulse 1.5s infinite;
+}
+@keyframes sosPulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 1; }
+}
+.sos-text-box { flex: 1; overflow: hidden; }
+.sos-title { font-size: 13px; font-weight: 900; color: var(--color-danger); margin-bottom: 2px; }
+.sos-desc { font-size: 11px; color: #991B1B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: bold;}
+.sos-action-btn {
+    background: var(--color-danger);
+    color: #FFF;
+    border: none;
+    padding: 6px 12px;
+    border-radius: var(--radius-pill);
+    font-size: 12px;
+    font-weight: 900;
+    cursor: pointer;
+    flex-shrink: 0;
+}
