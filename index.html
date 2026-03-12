@@ -139,6 +139,17 @@
                         <div class="wg-right" style="color:#EF4444; font-weight:bold;" id="supermarketAlertText">距提早关门仅剩 X 分钟！</div>
                     </div>
                 </div>
+                <div class="safety-check-card glass-card">
+                    <div class="sc-header">
+                        <span class="sc-title">🛡️ 街区治安避雷针</span>
+                        <span class="sc-sub">租房/夜归必查</span>
+                    </div>
+                    <div class="sc-search-box">
+                        <input type="number" id="postcodeInput" placeholder="输入荷兰4位邮编 (如: 2512)" onkeypress="if(event.key==='Enter') checkSafetyCode()">
+                        <button class="sc-btn" onclick="checkSafetyCode()">查安全</button>
+                    </div>
+                    <div id="safetyResult" class="sc-result" style="display: none;"></div>
+                </div>
 
                 <div class="wiki-sticky-header">
                     <div class="wiki-search-box glass-card">
