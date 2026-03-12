@@ -560,3 +560,23 @@ body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "S
 .top-fab-menu { position: absolute; top: 45px; right: 0; display: none; flex-direction: column; gap: 8px; width: 130px; }
 .top-scan-container.active .top-fab-menu { display: flex; }
 .top-fab-menu .fab-menu-item { background: #FFF; color: #111827; padding: 12px; border-radius: 12px; font-size: 12px; font-weight: 900; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 1px solid #E5E7EB; text-align: center; cursor: pointer; }
+
+/* ================= 信任认证徽章样式 ================= */
+.trust-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 6px;
+    margin-left: 6px;
+    font-weight: 900;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    vertical-align: middle;
+    transform: translateY(-1px);
+}
+/* 🎓 高校校友专属（蓝色系，传递专业与纯粹） */
+.badge-edu { background: #EEF2FF; color: #4F46E5; border: 1px solid #C7D2FE; }
+/* 💼 职场/实名认证专属（绿色系，传递安全靠谱） */
+.badge-work { background: #F0FDF4; color: #16A34A; border: 1px solid #BBF7D0; }
+/* 👻 未认证游客（灰色系） */
+.badge-none { background: #F3F4F6; color: #9CA3AF; border: 1px solid #E5E7EB; }
