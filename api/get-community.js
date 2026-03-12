@@ -14,7 +14,7 @@ export default async function handler(req) {
             headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 requests: [
-{ type: "execute", stmt: { sql: "SELECT p.id, p.author_name, p.image_url, p.title, p.content, p.likes, p.created_at, p.user_id, u.verified_email FROM community_posts p LEFT JOIN users u ON p.user_id = u.id ORDER BY p.created_at DESC LIMIT 50" } }，                    
+{ type: "execute", stmt: { sql: "SELECT p.id, p.author_name, p.image_url, p.title, p.content, p.likes, p.created_at, p.user_id, u.verified_email FROM community_posts p LEFT JOIN users u ON p.user_id = u.id ORDER BY p.created_at DESC LIMIT 50" } },                    
                     { type: "close" }
                 ]
             })
