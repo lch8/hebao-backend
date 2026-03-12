@@ -14,11 +14,10 @@
 <div class="tab-bar">
     <div class="tab-item active" onclick="switchTab('tips', this)"><span class="tab-icon">📖</span><span class="tab-text">红宝书</span></div>
     <div class="tab-item" onclick="switchTab('market', this)"><span class="tab-icon">📦</span><span class="tab-text">集市</span></div>
-    
     <div class="tab-item-publish" onclick="requireAuth(openPublishSheet)">
         <div class="btn-publish">+</div>
+        <span class="tab-text" style="position: absolute; bottom: 8px; color:#9CA3AF;">发布</span>
     </div>
-
     <div class="tab-item" onclick="switchTab('messages', this)"><span class="tab-icon">💬</span><span class="tab-text">消息</span></div>
     <div class="tab-item" onclick="switchTab('profile', this)"><span class="tab-icon">👤</span><span class="tab-text">我的</span></div>
 </div>
@@ -28,30 +27,10 @@
     <div class="fab-menu" id="scanFabMenu">
         <div class="fab-menu-item" onclick="document.getElementById('packageImgInput').click()">📸 拍包装排雷</div>
         <div class="fab-menu-item" onclick="startBarcodeScan()">⏸️ 扫条码搜素</div>
-        <div class="fab-menu-item" onclick="scrollToTrending()">🏆 查看红黑榜</div>
     </div>
 </div>
 
-<div id="page-tips" class="page-section active">
-    <div class="header">
-        <h1 class="title">荷包管家 🇳🇱</h1>
-        <div class="subtitle">留学生生存指南 & 避雷百科</div>
-    </div>
-    <div id="homeTrendingInTips" style="margin-top: 30px; padding-bottom: 20px;">
-        <div class="home-section-title">🔥 超市红黑榜</div>
-        <div id="homeTrendingListLikes"></div>
-    </div>
-</div>
 
-<div id="page-messages" class="page-section">
-    <div class="header"><h1 class="title">消息 💬</h1></div>
-    <div id="messageListContainer" style="padding: 15px;">
-        <div class="empty-state">
-            <div class="empty-state-icon">💬</div>
-            暂时没有新消息
-        </div>
-    </div>
-</div>
 
 <div class="sticky-chat-bar" id="stickyChatBar">
     <input type="text" id="askInput" class="chat-input" placeholder="问管家：这玩意怎么用？" onkeypress="if(event.key==='Enter') sendQuestion()">
@@ -79,6 +58,63 @@
 </div>
 
 <div class="container">
+    <div id="page-tips" class="page-section">
+        <div class="header">
+            <h1 class="title">生存红宝书</h1>
+            <div class="subtitle">全荷留学生保命与搞钱指南</div>
+        </div>
+
+        <div class="redbook-container" id="redbookContainer">
+            <div class="rb-mode-switcher">
+                <div class="rb-mode-btn active" onclick="switchRbMode('starter')">🐣 新手</div>
+                <div class="rb-mode-btn" onclick="switchRbMode('advanced')">🥓 进阶</div>
+                <div class="rb-mode-btn" onclick="switchRbMode('pro')">💼 Pro</div>
+            </div>
+
+            <div id="rbStarterMode" class="rb-mode-view active">
+                <div class="rb-header-title">落地 7 天生死时速 ⏱️</div>
+                <div class="emergency-grid">
+                    <div class="em-btn" onclick="alert('🚑 夜间/周末突发急病：\n\n千万别直接去医院急诊(会被赶出)！必须先打电话给所在城市的【Huisartsenpost】(夜间值班医生) 预约。\n\n⚠️ 危及生命请直接拨打 112！')"><span class="em-icon">🚑</span>夜间急病</div>
+                    <div class="em-btn" onclick="alert('🔑 钥匙锁屋里/丢了：\n\n谷歌搜 Slotenmaker 时【绝对不要点带 Ad/广告 标识】的网站（多为跨国诈骗）！\n\n正常开锁均价 €80-€120，上门前一定要在电话里承诺【最终总价】！')"><span class="em-icon">🔑</span>忘带钥匙</div>
+                    <div class="em-btn" onclick="alert('✉️ 收到 Incasso(催款)信：\n\n别慌！确认是真账单后，第一时间发邮件说明情况/哭穷。\n\n通常第一次可申请免除罚息，或申请分期付款 (Betalingsregeling)。')"><span class="em-icon">✉️</span>被催款了</div>
+                    <div class="em-btn" onclick="alert('💳 银行卡/居留卡丢失：\n\n1. 银行卡：立刻在手机 App 里操作 Blokkeren (冻结)。\n2. 居留卡：先去警察局官网报失拿回执，立马去 IND 官网花钱预约补办。')"><span class="em-icon">💳</span>证件丢了</div>
+                </div>
+
+                <div class="task-progress-box">
+                    <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:bold; margin-bottom:6px;">
+                        <span>主线任务打卡</span>
+                        <span id="taskProgressText" style="color:#10B981;">0/7</span>
+                    </div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" id="taskProgressBar"></div></div>
+                </div>
+                <div class="task-list" id="starterTaskList"></div>
+            </div>
+
+            <div id="rbWikiMode" class="rb-mode-view" style="display: none;">
+                <div id="rbWidgetsArea">
+                    <div class="widget-card widget-weather glass-card">
+                        <div class="wg-left"><span style="font-size:20px;">🌧️</span> 降雨雷达</div>
+                        <div class="wg-right"><span class="wg-status green">🟢 放心骑 (未来2h无雨)</span></div>
+                    </div>
+                    <div class="widget-card widget-alert glass-card" id="supermarketWidget" style="display: none;">
+                        <div class="wg-left"><span style="font-size:20px;">🚨</span> <b style="color:#EF4444;">断粮预警</b></div>
+                        <div class="wg-right" style="color:#EF4444; font-weight:bold;" id="supermarketAlertText">距提早关门仅剩 X 分钟！</div>
+                    </div>
+                </div>
+
+                <div class="wiki-sticky-header">
+                    <div class="wiki-search-box glass-card">
+                        <span>🔍</span>
+                        <input type="text" id="wikiSearchInput" placeholder="搜羊毛、退税、免税法案..." onkeyup="filterWiki()">
+                    </div>
+                    <div class="wiki-tabs" id="wikiTabs"></div>
+                </div>
+                <div class="wiki-list" id="wikiListContainer"></div>
+            </div>
+
+            <div class="fab-btn" id="fabGridBtn" onclick="toggleFabModal()">🗂️</div>
+        </div>
+    </div>
     
     <div id="page-scan" class="page-section active">
         <div class="header">
@@ -177,63 +213,7 @@
         </div>
     </div>
 
-    <div id="page-tips" class="page-section">
-        <div class="header">
-            <h1 class="title">生存红宝书</h1>
-            <div class="subtitle">全荷留学生保命与搞钱指南</div>
-        </div>
-
-        <div class="redbook-container" id="redbookContainer">
-            <div class="rb-mode-switcher">
-                <div class="rb-mode-btn active" onclick="switchRbMode('starter')">🐣 新手</div>
-                <div class="rb-mode-btn" onclick="switchRbMode('advanced')">🥓 进阶</div>
-                <div class="rb-mode-btn" onclick="switchRbMode('pro')">💼 Pro</div>
-            </div>
-
-            <div id="rbStarterMode" class="rb-mode-view active">
-                <div class="rb-header-title">落地 7 天生死时速 ⏱️</div>
-                <div class="emergency-grid">
-                    <div class="em-btn" onclick="alert('🚑 夜间/周末突发急病：\n\n千万别直接去医院急诊(会被赶出)！必须先打电话给所在城市的【Huisartsenpost】(夜间值班医生) 预约。\n\n⚠️ 危及生命请直接拨打 112！')"><span class="em-icon">🚑</span>夜间急病</div>
-                    <div class="em-btn" onclick="alert('🔑 钥匙锁屋里/丢了：\n\n谷歌搜 Slotenmaker 时【绝对不要点带 Ad/广告 标识】的网站（多为跨国诈骗）！\n\n正常开锁均价 €80-€120，上门前一定要在电话里承诺【最终总价】！')"><span class="em-icon">🔑</span>忘带钥匙</div>
-                    <div class="em-btn" onclick="alert('✉️ 收到 Incasso(催款)信：\n\n别慌！确认是真账单后，第一时间发邮件说明情况/哭穷。\n\n通常第一次可申请免除罚息，或申请分期付款 (Betalingsregeling)。')"><span class="em-icon">✉️</span>被催款了</div>
-                    <div class="em-btn" onclick="alert('💳 银行卡/居留卡丢失：\n\n1. 银行卡：立刻在手机 App 里操作 Blokkeren (冻结)。\n2. 居留卡：先去警察局官网报失拿回执，立马去 IND 官网花钱预约补办。')"><span class="em-icon">💳</span>证件丢了</div>
-                </div>
-
-                <div class="task-progress-box">
-                    <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:bold; margin-bottom:6px;">
-                        <span>主线任务打卡</span>
-                        <span id="taskProgressText" style="color:#10B981;">0/7</span>
-                    </div>
-                    <div class="progress-bar-bg"><div class="progress-bar-fill" id="taskProgressBar"></div></div>
-                </div>
-                <div class="task-list" id="starterTaskList"></div>
-            </div>
-
-            <div id="rbWikiMode" class="rb-mode-view" style="display: none;">
-                <div id="rbWidgetsArea">
-                    <div class="widget-card widget-weather glass-card">
-                        <div class="wg-left"><span style="font-size:20px;">🌧️</span> 降雨雷达</div>
-                        <div class="wg-right"><span class="wg-status green">🟢 放心骑 (未来2h无雨)</span></div>
-                    </div>
-                    <div class="widget-card widget-alert glass-card" id="supermarketWidget" style="display: none;">
-                        <div class="wg-left"><span style="font-size:20px;">🚨</span> <b style="color:#EF4444;">断粮预警</b></div>
-                        <div class="wg-right" style="color:#EF4444; font-weight:bold;" id="supermarketAlertText">距提早关门仅剩 X 分钟！</div>
-                    </div>
-                </div>
-
-                <div class="wiki-sticky-header">
-                    <div class="wiki-search-box glass-card">
-                        <span>🔍</span>
-                        <input type="text" id="wikiSearchInput" placeholder="搜羊毛、退税、免税法案..." onkeyup="filterWiki()">
-                    </div>
-                    <div class="wiki-tabs" id="wikiTabs"></div>
-                </div>
-                <div class="wiki-list" id="wikiListContainer"></div>
-            </div>
-
-            <div class="fab-btn" id="fabGridBtn" onclick="toggleFabModal()">🗂️</div>
-        </div>
-    </div>
+    
 
     <div id="page-profile" class="page-section">
         <div class="profile-header-card">
