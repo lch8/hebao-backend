@@ -12,14 +12,45 @@
 <body>
 
 <div class="tab-bar">
-    <div class="tab-item active" onclick="switchTab('scan', this)"><span class="tab-icon">🏠</span><span class="tab-text">首页</span></div>
+    <div class="tab-item active" onclick="switchTab('tips', this)"><span class="tab-icon">📖</span><span class="tab-text">红宝书</span></div>
     <div class="tab-item" onclick="switchTab('market', this)"><span class="tab-icon">📦</span><span class="tab-text">集市</span></div>
+    
     <div class="tab-item-publish" onclick="requireAuth(openPublishSheet)">
         <div class="btn-publish">+</div>
-        <span class="tab-text" style="position: absolute; bottom: 8px; color:#9CA3AF;">发布</span>
     </div>
-    <div class="tab-item" onclick="switchTab('tips', this)"><span class="tab-icon">💰</span><span class="tab-text">红宝书</span></div>
+
+    <div class="tab-item" onclick="switchTab('messages', this)"><span class="tab-icon">💬</span><span class="tab-text">消息</span></div>
     <div class="tab-item" onclick="switchTab('profile', this)"><span class="tab-icon">👤</span><span class="tab-text">我的</span></div>
+</div>
+
+<div class="scan-fab" id="mainScanFab" onclick="toggleScanMenu()">
+    <span class="fab-icon">📸</span>
+    <div class="fab-menu" id="scanFabMenu">
+        <div class="fab-menu-item" onclick="document.getElementById('packageImgInput').click()">📸 拍包装排雷</div>
+        <div class="fab-menu-item" onclick="startBarcodeScan()">⏸️ 扫条码搜素</div>
+        <div class="fab-menu-item" onclick="scrollToTrending()">🏆 查看红黑榜</div>
+    </div>
+</div>
+
+<div id="page-tips" class="page-section active">
+    <div class="header">
+        <h1 class="title">荷包管家 🇳🇱</h1>
+        <div class="subtitle">留学生生存指南 & 避雷百科</div>
+    </div>
+    <div id="homeTrendingInTips" style="margin-top: 30px; padding-bottom: 20px;">
+        <div class="home-section-title">🔥 超市红黑榜</div>
+        <div id="homeTrendingListLikes"></div>
+    </div>
+</div>
+
+<div id="page-messages" class="page-section">
+    <div class="header"><h1 class="title">消息 💬</h1></div>
+    <div id="messageListContainer" style="padding: 15px;">
+        <div class="empty-state">
+            <div class="empty-state-icon">💬</div>
+            暂时没有新消息
+        </div>
+    </div>
 </div>
 
 <div class="sticky-chat-bar" id="stickyChatBar">
