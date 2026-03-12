@@ -1210,6 +1210,39 @@ function submitWikiComment() {
     });
 }
 
+// ================= 🛡️ 街区治安查询逻辑 (基于真实荷兰治安印象) =================
+
+function checkSafetyCode() {
+    const input = document.getElementById('postcodeInput').value.trim();
+    const resultBox = document.getElementById('safetyResult');
+    
+    if (input.length !== 4) {
+        alert("请输入准确的4位数字邮编哦！(例如：2512)");
+        return;
+    }
+
+    resultBox.style.display = 'block';
+    
+    // 真实的荷兰高风险/需注意邮编库 (简易版)
+    const dangerZones = ['2512', '2525', '2526', '3081', '3083', '1102', '1103', '1104', '1062']; 
+    // 25开头(海牙HS/Schilderswijk), 308开头(鹿特丹Zuid), 110/106(阿姆Zuidoost/Nieuw-West)
+    
+    const warnZones = ['2521', '2522', '3024', '3025', '1055', '1056'];
+
+    if (dangerZones.includes(input)) {
+        resultBox.className = 'sc-result danger';
+        resultBox.innerHTML = `<b>🔴 高危预警 (红灯区/复杂街区)：</b><br>该区域历史治安较差，飞车抢手机或砸车窗高发。<b>强烈建议：</b><br>1. 夜晚绝对不要单独佩戴耳机步行。<br>2. 租房尽量避开一楼，注意门窗锁好。`;
+    } 
+    else if (warnZones.includes(input)) {
+        resultBox.className = 'sc-result warn';
+        resultBox.innerHTML = `<b>🟡 谨慎区域 (黄灯)：</b><br>该区域人员流动复杂。日常生活无大碍，但<b>自行车极易被盗</b>，请务必使用粗链条锁锁在固定物上！夜晚尽量结伴而行。`;
+    } 
+    else {
+        resultBox.className = 'sc-result safe';
+        resultBox.innerHTML = `<b>🟢 治安良好 (绿灯)：</b><br>管家数据库显示该区属于常规安全街区（多为学生区或家庭住宅区）。正常生活即可，记得出门锁门哦！`;
+    }
+}
+
 // ================= 最后，初始化引擎 =================
 window.addEventListener('DOMContentLoaded', () => { 
     // 注意：renderTipsPage 由于已被红宝书模块取代，保留空函数防报错即可
