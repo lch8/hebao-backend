@@ -1,6 +1,6 @@
 // ui.js - 视图层控制，包含 Tab 切换和弹窗逻辑
 
-let lastTab = 'scan'; 
+let lastTab = 'tips'; 
 
 function toggleScanMenu() {
     const fab = document.getElementById('mainScanFab');
@@ -38,8 +38,13 @@ function switchTab(tabId, element) {
     if (tabId === 'profile') { renderFootprints(); renderProfileState(); }
 }
 
-function goBack() { switchTab(lastTab, document.querySelector(`.tab-item[onclick*="${lastTab}"]`)); }
-
+function goBack() { 
+    // 防坑机制：如果历史记录是隐藏的 scan，强制退回 tips 首页
+    if (lastTab === 'scan' || !document.getElementById('page-' + lastTab)) {
+        lastTab = 'tips';
+    }
+    switchTab(lastTab, document.querySelector(`.tab-item[onclick*="${lastTab}"]`)); 
+}
 function switchMarketTab(type, element) { 
     document.querySelectorAll('.market-content').forEach(el => el.classList.remove('active')); 
     document.getElementById('market-' + type).classList.add('active'); 
