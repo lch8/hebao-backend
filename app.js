@@ -500,6 +500,8 @@ async function loadCommunityPosts() {
                     mockHelpItems.push({ userId: post.user_id, id: post.id, type: isUrgent ? "🔥 紧急" : "🤝 求助", isUrgent: isUrgent, title: payload.oldText ? payload.oldText.substring(0,40)+'...' : title, reward: reward, rewardNum: parseFloat(reward) || 0, date: "私信沟通", location: "荷兰", avatar: "🐼", name: author, badge: badgeHtml, credit: "新人", creditClass: "new", distKm: 1, timestamp: time, imgIcon: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23EFF6FF'/><text x='50%' y='50%' font-size='20' text-anchor='middle' dominant-baseline='middle'>🤝</text></svg>" });
                 } else if (title.includes('[找搭子]')) {
                     mockPartnerItems.push({ userId: post.user_id, id: post.id, avatar: "👱‍♀️", name: author, badge: badgeHtml, gender: "f", mbti: "未知", mbtiType: "all", title: title.replace('[找搭子] ', ''), desc: payload.oldText || '', tags: ["✨ 新发布"], distKm: 1, daysAway: 1, timestamp: time });
+                }else if (title.includes('[问答]')) { // 👈 加上这一段！
+                    mockQuestionItems.push({ userId: post.user_id, id: post.id, avatar: "🤔", name: author, badge: badgeHtml, title: title.replace('[问答] ', ''), desc: payload.oldText || '', timestamp: time });
                 }
             });
             applyMarketFilters('idle'); applyMarketFilters('help'); applyMarketFilters('partner');
@@ -622,6 +624,7 @@ function applyMarketFilters(type) {
         
         renderMarketPartner(filtered); 
     }
+    else if (type === 'question') { renderMarketQuestion(); }
 }
 
 // ================= 9. 真实私信聊天系统 =================
@@ -987,7 +990,7 @@ function renderWikiList(searchQuery = '') {
                     </div>
                     <div class="wk-detail" onclick="event.stopPropagation()">
                         <div class="wk-step">${w.details}</div>
-                        <div class="wk-ugc-btn" onclick="alert('政策有变？请加客服反馈，核实后将为您增加 50 信用分。')">🚨 政策变了？点我疯狂打脸纠错！</div>
+                        <div class="wk-ugc-btn" onclick="openWikiComments('${w.id}', '${w.title}')">💬 查看网友补充 & 踩坑情报</div>
                     </div>
                 </div>
             </div>`;
@@ -1088,6 +1091,123 @@ function checkWidgets() {
     if ((day === 0 || day === 6) && hours >= 16 && hours < 22) {
         if(supermarketWg) { supermarketWg.style.display = 'flex'; document.getElementById('supermarketAlertText').innerText = `🚨 距提早关门仅剩 ${22 - hours} 小时！`; }
     } else { if(supermarketWg) supermarketWg.style.display = 'none'; }
+}
+
+// ================= 🌟 问答社区与红宝书评论核心逻辑 =================
+
+let mockQuestionItems = [];
+
+// 1. 打开和关闭发提问弹窗
+function openQuestionPublish() { closePublishSheet(); setTimeout(() => { document.getElementById('publishQuestionModal').style.display = 'flex'; }, 300); }
+function closeQuestionPublish() { document.getElementById('publishQuestionModal').style.display = 'none'; }
+
+// 2. 提交问题 (同样写入 community_posts 表)
+async function submitQuestionPost() {
+    const title = document.getElementById('questionTitle').value.trim(); 
+    const desc = document.getElementById('questionDesc').value.trim();
+    const tag = document.querySelector('#questionTagGroup .active').innerText;
+    if(!title) return alert("写个标题吧！"); 
+    const btn = document.querySelector('#publishQuestionModal .fm-submit'); btn.innerText = "发送中..."; btn.style.pointerEvents = 'none';
+    try { 
+        const finalTitle = `[问答] ${tag} - ${title}`; 
+        const authorName = localStorage.getItem('hp_name') || '管家新人'; 
+        const res = await fetch('/api/publish-community', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ userId: userUUID, authorName: authorName, title: finalTitle, text: desc, imageUrl: '' }) }); 
+        if(!res.ok) throw new Error("失败"); 
+        alert("🎉 提问成功！大家很快就会来解答的。"); 
+        closeQuestionPublish(); document.getElementById('questionTitle').value = ''; document.getElementById('questionDesc').value = ''; 
+        loadCommunityPosts(); 
+    } catch(e) { alert(e.message); } finally { btn.innerText = "发布"; btn.style.pointerEvents = 'auto'; }
+}
+
+// 3. 在 loadCommunityPosts 中增加对 [问答] 的解析
+// ⚠️ 注意：这需要你稍微修改 loadCommunityPosts 函数，在最后的 else if 里加上：
+/*
+    else if (title.includes('[问答]')) {
+        mockQuestionItems.push({ userId: post.user_id, id: post.id, avatar: "🤔", name: author, badge: badgeHtml, title: title.replace('[问答] ', ''), desc: payload.oldText || '', timestamp: time });
+    }
+*/
+
+// 4. 渲染问答卡片
+function renderMarketQuestion(data = mockQuestionItems) { 
+    const container = document.getElementById('questionListContainer'); if(!container) return; 
+    if(data.length === 0) { container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:40px 0;">目前还没有问题，来做第一个提问者吧！</div>'; return; } 
+    let html = ''; 
+    data.forEach(item => { 
+        // 提取标签
+        const tagMatch = item.title.match(/^(.*?)\s-/);
+        const tag = tagMatch ? tagMatch[1] : '🙋 综合问答';
+        const cleanTitle = item.title.replace(/^(.*?)\s-\s/, '');
+
+        html += `<div class="question-card" onclick="openChat('${item.userId}', '${item.name}', '${item.avatar}', ${item.id}, '解答你的提问: ${cleanTitle}', '0', '', false, 'question')">
+            <div class="qc-header"><div class="qc-tag">${tag}</div></div>
+            <div class="qc-title">${cleanTitle}</div>
+            <div class="qc-desc">${item.desc}</div>
+            <div class="qc-footer">
+                <div class="qc-user"><span>${item.avatar}</span> ${item.name} ${item.badge}</div>
+                <div class="qc-answer-btn">✍️ 去解答</div>
+            </div>
+        </div>`; 
+    }); 
+    container.innerHTML = html; 
+}
+
+// 5. 红宝书评论区逻辑 (临时存在 LocalStorage，后续可加上后端)
+let currentWikiIdForComment = null;
+function openWikiComments(wikiId, wikiTitle) {
+    currentWikiIdForComment = wikiId;
+    document.getElementById('wikiCommentModal').style.display = 'flex';
+    document.querySelector('#wikiCommentModal .fm-title').innerText = wikiTitle + ' 的评论';
+    renderWikiComments();
+}
+
+function renderWikiComments() {
+    const list = document.getElementById('wikiCommentList');
+    const allComments = JSON.parse(localStorage.getItem('hp_wiki_comments') || '{}');
+    const comments = allComments[currentWikiIdForComment] || [];
+    
+    if (comments.length === 0) {
+        list.innerHTML = `<div style="text-align:center; color:#9CA3AF; padding:40px 0;">还没有人分享踩坑经验，你来抢沙发吧！</div>`;
+        return;
+    }
+
+    let html = '';
+    comments.forEach(c => {
+        html += `<div class="wc-item">
+            <div class="wc-avatar">${c.avatar}</div>
+            <div class="wc-content">
+                <div class="wc-name"><span>${c.name}</span> <span style="color:#9CA3AF; font-weight:normal;">刚刚</span></div>
+                <div class="wc-text">${c.text}</div>
+            </div>
+        </div>`;
+    });
+    list.innerHTML = html;
+    list.scrollTop = list.scrollHeight;
+}
+
+function submitWikiComment() {
+    requireAuth(() => {
+        const input = document.getElementById('wikiCommentInput');
+        const text = input.value.trim();
+        if (!text) return;
+        
+        const allComments = JSON.parse(localStorage.getItem('hp_wiki_comments') || '{}');
+        if (!allComments[currentWikiIdForComment]) allComments[currentWikiIdForComment] = [];
+        
+        allComments[currentWikiIdForComment].push({
+            name: localStorage.getItem('hp_name') || '管家热心用户',
+            avatar: document.getElementById('profileAvatarEmoji')?.innerText || '😎',
+            text: text
+        });
+        
+        localStorage.setItem('hp_wiki_comments', JSON.stringify(allComments));
+        input.value = '';
+        renderWikiComments();
+        
+        // 提示积分增加
+        const plus = document.createElement('div'); plus.className = 'float-plus'; plus.innerText = '💡 分享干货，信用分 +2'; plus.style.color = '#10B981';
+        plus.style.left = '50%'; plus.style.top = '40%'; plus.style.transform = 'translate(-50%, -50%)'; document.body.appendChild(plus); 
+        setTimeout(() => plus.remove(), 2000);
+    });
 }
 
 // ================= 最后，初始化引擎 =================
