@@ -22,19 +22,17 @@
     <div class="tab-item" onclick="switchTab('profile', this)"><span class="tab-icon">👤</span><span class="tab-text">我的</span></div>
 </div>
 
+<div class="sticky-chat-bar" id="stickyChatBar">
+    <input type="text" id="askInput" class="chat-input" placeholder="问管家：这玩意怎么用？" onkeypress="if(event.key==='Enter') sendQuestion()">
+    <button class="chat-send-btn" id="sendBtn" onclick="sendQuestion()">↑</button>
+</div>
+
 <div class="scan-fab" id="mainScanFab" onclick="toggleScanMenu()">
     <span class="fab-icon">📸</span>
     <div class="fab-menu" id="scanFabMenu">
         <div class="fab-menu-item" onclick="document.getElementById('packageImgInput').click()">📸 拍包装排雷</div>
         <div class="fab-menu-item" onclick="startBarcodeScan()">⏸️ 扫条码搜素</div>
     </div>
-</div>
-
-
-
-<div class="sticky-chat-bar" id="stickyChatBar">
-    <input type="text" id="askInput" class="chat-input" placeholder="问管家：这玩意怎么用？" onkeypress="if(event.key==='Enter') sendQuestion()">
-    <button class="chat-send-btn" id="sendBtn" onclick="sendQuestion()">↑</button>
 </div>
 
 <div class="publish-overlay" id="publishOverlay" onclick="closePublishSheet()"></div>
@@ -58,10 +56,28 @@
 </div>
 
 <div class="container">
-    <div id="page-tips" class="page-section">
+    
+    <div id="page-scan" class="page-section" style="display:none;">
+        <input type="file" id="packageImgInput" accept="image/*" capture="environment" style="display: none;" onchange="handlePackageImage(event)">
+        <div class="preview-container" id="previewContainer" style="display:none;">
+            <img id="previewImg" class="preview-img" src="" alt="">
+            <div class="scan-overlay" id="scanOverlay" style="display:none;">
+                <div class="scan-line"></div>
+                <div class="scan-text" id="scanText">管家大脑飞速运转中...</div>
+            </div>
+        </div>
+        <div id="miniResultCard">
+            <div class="name-box"><span class="item-name" id="miniChineseName"></span></div>
+            <div class="mini-insight" id="miniInsight" style="margin: 15px 0; padding: 12px; background: #F3F4F6; border-radius: 12px; text-align:left;"></div>
+            <button class="btn-view-detail" id="btnViewDetail" onclick="openDetailsFromScan()">👉 查看完整报告</button>
+            <button class="btn-secondary" onclick="resetApp()">🔴 测下一个</button>
+        </div>
+    </div>
+
+    <div id="page-tips" class="page-section active">
         <div class="header">
-            <h1 class="title">生存红宝书</h1>
-            <div class="subtitle">全荷留学生保命与搞钱指南</div>
+            <h1 class="title">荷包管家 🇳🇱</h1>
+            <div class="subtitle">留学生生存指南 & 避雷百科</div>
         </div>
 
         <div class="redbook-container" id="redbookContainer">
@@ -114,50 +130,16 @@
 
             <div class="fab-btn" id="fabGridBtn" onclick="toggleFabModal()">🗂️</div>
         </div>
-    </div>
-    
-    <div id="page-scan" class="page-section active">
-        <div class="header">
-            <h1 class="title">荷包管家 🇳🇱</h1>
-            <div class="subtitle">留学生专属的避雷与生活神器</div>
-        </div>
-        
-        <div id="homeActionBox">
-            <input type="file" id="packageImgInput" accept="image/*" capture="environment" style="display: none;" onchange="handlePackageImage(event)">
-            <div class="home-action-btn" onclick="document.getElementById('packageImgInput').click()">
-                <span class="action-icon">📸</span>
-                <div class="action-title">拍包装 排雷</div>
-                <div class="action-sub">一键识破荷兰超市“科技狠活”</div>
-            </div>
-            <div class="search-container">
-                <span style="color:#9CA3AF; font-size:18px;">🔍</span>
-                <input type="text" id="mainSearchInput" class="search-input" placeholder="输入商品名或搜条码..." onkeypress="if(event.key==='Enter') executeSearch()">
-                <button class="barcode-btn" onclick="startBarcodeScan()">⏸️</button>
-            </div>
-        </div>
 
-        <div class="preview-container" id="previewContainer" style="display:none;">
-            <img id="previewImg" class="preview-img" src="" alt="">
-            <div class="scan-overlay" id="scanOverlay" style="display:none;">
-                <div class="scan-line"></div>
-                <div class="scan-text" id="scanText">管家大脑飞速运转中...</div>
+        <div class="home-trending-section" style="margin-top: 30px; padding: 0 5px;">
+            <div class="home-section-title">🔥 超市红黑榜 (Top 20)</div>
+            <div class="trending-tabs">
+                <div class="t-tab active" onclick="switchHomeTrendingTab('likes', this)">🏆 种草红榜</div>
+                <div class="t-tab" onclick="switchHomeTrendingTab('dislikes', this)">💣 避雷黑榜</div>
             </div>
+            <div id="homeTrendingListLikes" style="display:block;"></div>
+            <div id="homeTrendingListDislikes" style="display:none;"></div>
         </div>
-
-        <div id="miniResultCard">
-            <div class="name-box"><span class="item-name" id="miniChineseName"></span></div>
-            <div class="mini-insight" id="miniInsight" style="margin: 15px 0; padding: 12px; background: #F3F4F6; border-radius: 12px; text-align:left;"></div>
-            <button class="btn-view-detail" id="btnViewDetail" onclick="openDetailsFromScan()">👉 查看完整报告</button>
-            <button class="btn-secondary" onclick="resetApp()">🔴 测下一个</button>
-        </div>
-
-        <div class="home-section-title">🔥 留学生公认好物 (Top 20)</div>
-        <div class="trending-tabs">
-            <div class="t-tab active" onclick="switchHomeTrendingTab('likes', this)">🏆 种草红榜</div>
-            <div class="t-tab" onclick="switchHomeTrendingTab('dislikes', this)">💣 避雷黑榜</div>
-        </div>
-        <div id="homeTrendingListLikes" style="display:block;"></div>
-        <div id="homeTrendingListDislikes" style="display:none;"></div>
     </div>
 
     <div id="page-market" class="page-section">
@@ -213,7 +195,18 @@
         </div>
     </div>
 
-    
+    <div id="page-messages" class="page-section">
+        <div class="header" style="text-align: left; margin-top: 0;">
+            <h1 class="title">消息 💬</h1>
+            <div class="subtitle" style="margin-bottom: 20px;">与邻居/校友的安全对话</div>
+        </div>
+        <div id="messageListContainer" style="padding: 15px;">
+            <div class="empty-state">
+                <div class="empty-state-icon">📭</div>
+                暂时没有新消息
+            </div>
+        </div>
+    </div>
 
     <div id="page-profile" class="page-section">
         <div class="profile-header-card">
@@ -243,12 +236,12 @@
         </div>
 
         <div class="guest-login-block" id="guestLoginBlock">
-            <button class="btn-huge-login" onclick="openLoginModal()">一键登录 / 注册</button>
+            <button class="btn-huge-login" onclick="document.getElementById('loginModal').style.display='flex'">一键登录 / 注册</button>
             <div style="font-size: 12px; color: #9CA3AF; margin-top: 10px;">登录后解锁二手交易、评论与信用特权</div>
         </div>
 
-    <div class="vip-banner" onclick="requireAuth(openEmailVerifyModal)">
-    <div class="vip-text">
+        <div class="vip-banner" onclick="requireAuth(openEmailVerifyModal)">
+            <div class="vip-text">
                 <div class="vip-title">🎓 认证大学/职场邮箱</div>
                 <div class="vip-sub">点亮真实身份标签，闲置曝光率 +300%</div>
             </div>
@@ -340,19 +333,18 @@
         </div>
     </div>
 
+</div>
+
 <div class="modal-overlay" id="loginModal" style="display: none; z-index: 4000;">
     <div class="modal-content" style="text-align: center;">
         <div class="modal-close" onclick="document.getElementById('loginModal').style.display='none'">✕</div>
         <h3 style="margin-top:0;">🔐 身份认证</h3>
         <p style="font-size: 13px; color: #6B7280; margin-bottom: 20px;">为了保证社区真实互助，发布前需验证邮箱。</p>
-
         <input type="email" id="hebaoAuthEmail" class="search-input" placeholder="输入您的邮箱地址 (推荐校园或工作邮箱)" style="width: 100%; box-sizing: border-box; margin-bottom: 15px; text-align: center;">
-
         <div style="display: flex; gap: 10px; margin-bottom: 20px;">
             <input type="text" id="authCode" class="search-input" placeholder="6位验证码" style="width: 60%; text-align: center; letter-spacing: 2px;">
             <button id="btnSendCode" class="action-btn" style="width: 40%; background: #F3F4F6; color: #374151; font-size: 13px; border: 1px solid #E5E7EB;" onclick="sendAuthCode()">获取验证码</button>
         </div>
-
         <button id="btnVerifyLogin" class="action-btn" style="width: 100%;" onclick="verifyEmailCode()">立即验证</button>
     </div>
 </div>
@@ -407,13 +399,8 @@
     <div class="modal-content">
         <div class="modal-close" onclick="document.getElementById('emailVerifyModal').style.display='none'">✕</div>
         <div style="font-size:18px; font-weight:900; margin-bottom:10px;">🎓 邮箱认证</div>
-        <div style="font-size:12px; color:#6B7280; margin-bottom:15px; line-height: 1.5;">建议使用 .edu 或 .nl 结尾的学校/工作邮箱，认证后将点亮专属徽章。</div>
-        <input type="email" id="authEmailInput" class="modal-input" placeholder="输入邮箱地址 (如: @tudelft.nl)">
-        <div class="verify-code-row">
-            <input type="number" id="authCodeInput" class="modal-input" style="margin-top:0;" placeholder="输入6位验证码">
-            <button class="btn-send-code" id="btnSendCode" onclick="sendAuthCode()">获取验证码</button>
-        </div>
-        <button class="btn-huge-login" style="width:100%; margin-top:20px; padding:12px;" onclick="verifyEmailCode()">✅ 立即认证</button>
+        <div style="font-size:12px; color:#6B7280; margin-bottom:15px; line-height: 1.5;">如果需要认证大学标签，请在“一键登录/注册”弹窗中使用 .edu/.nl 邮箱登录哦。</div>
+        <button class="btn-huge-login" style="width:100%; margin-top:20px; padding:12px;" onclick="document.getElementById('emailVerifyModal').style.display='none'; document.getElementById('loginModal').style.display='flex'">去登录/重新绑定</button>
     </div>
 </div>
 
@@ -657,16 +644,15 @@
         <div class="modal-close" onclick="document.getElementById('aiWikiModal').style.display='none'">✕</div>
         <h3 style="margin-top:0; color: #111827;">✨ AI 自动洗稿录入</h3>
         <div style="font-size:12px; color:#6B7280; margin-bottom:15px;">在小红书或微信群看到超长攻略？直接复制粘贴到下面，AI会自动提炼成卡片！</div>
-        
         <textarea id="aiWikiInput" class="modal-textarea" style="height: 140px; border-color: #FCD34D;" placeholder="粘贴长篇大论的攻略原文..."></textarea>
-        
         <button id="btnGenerateWiki" style="width: 100%; padding: 14px; background: #111827; color: #FDE68A; border: none; border-radius: 12px; font-weight: bold; margin-top: 15px; cursor:pointer;" onclick="generateAICard()">🪄 一键提取为红宝书</button>
     </div>
 </div>
 
-    <script src="./api.js?v=2" defer></script>
-<script src="./auth.js?v=2" defer></script>
-<script src="./ui.js?v=2" defer></script>
-<script src="./app.js?v=2" defer></script>
+<script src="./api.js" defer></script>
+<script src="./auth.js" defer></script>
+<script src="./ui.js" defer></script>
+<script src="./app.js" defer></script>
+
 </body>
 </html>
