@@ -467,6 +467,7 @@ async function markItemSold(postId, itemId, event) {
     } catch(e) { alert("更新失败"); btn.innerText = "标为售出"; btn.style.pointerEvents = "auto"; }
 }
 
+// ================= 8. 详情页与集市大厅 (带信任徽章版) =================
 async function loadCommunityPosts() {
     try {
         const res = await fetch('/api/get-community'); const data = await res.json();
@@ -476,16 +477,29 @@ async function loadCommunityPosts() {
                 const title = post.title || ''; const time = new Date(post.created_at).getTime() || Date.now(); const author = post.author_name || '匿名管家';
                 let payload; try { payload = JSON.parse(post.content); } catch(e) { payload = { oldText: post.content }; }
 
+                // 🌟 核心逻辑：根据后端传来的 verified_email 生成信任徽章
+                let badgeHtml = `<span class="trust-badge badge-none">游客</span>`;
+                if (post.verified_email) {
+                    const domain = post.verified_email.split('@')[1] || '';
+                    const isEdu = domain.includes('.edu') || domain.includes('tudelft.nl') || domain.includes('uva.nl') || domain.includes('eur.nl') || domain.includes('leidenuniv.nl');
+                    if (isEdu) {
+                        const uniName = domain.split('.')[0].toUpperCase();
+                        badgeHtml = `<span class="trust-badge badge-edu">🎓 ${uniName}校友</span>`;
+                    } else {
+                        badgeHtml = `<span class="trust-badge badge-work">✅ 已实名</span>`;
+                    }
+                }
+
                 if (title.includes('[闲置]')) {
                     const firstImg = (payload.items && payload.items.length > 0) ? payload.items[0].url : 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&auto=format&fit=crop';
                     const priceMatch = title.match(/€(\d+(\.\d+)?)/); const price = priceMatch ? priceMatch[1] : '面议';
                     const isAllSold = payload.items ? payload.items.every(i => i.is_sold) : false; const itemCount = payload.items ? payload.items.length : 0;
-                    mockIdleItems.push({ userId: post.user_id, id: post.id, img: firstImg, title: title.replace('[闲置] ', ''), price: price, priceNum: parseFloat(price) || 0, avatar: "😎", name: author, credit: "极佳", creditClass: "excellent", isSold: isAllSold, itemCount: itemCount, timestamp: time });
+                    mockIdleItems.push({ userId: post.user_id, id: post.id, img: firstImg, title: title.replace('[闲置] ', ''), price: price, priceNum: parseFloat(price) || 0, avatar: "😎", name: author, badge: badgeHtml, credit: "极佳", creditClass: "excellent", isSold: isAllSold, itemCount: itemCount, timestamp: time });
                 } else if (title.includes('[互助')) {
                     const rewardMatch = title.match(/€(\d+(\.\d+)?)/); const reward = rewardMatch ? rewardMatch[1] : '0'; const isUrgent = title.includes('🔥急');
-                    mockHelpItems.push({ userId: post.user_id, id: post.id, type: isUrgent ? "🔥 紧急" : "🤝 求助", isUrgent: isUrgent, title: payload.oldText ? payload.oldText.substring(0,40)+'...' : title, reward: reward, rewardNum: parseFloat(reward) || 0, date: "私信沟通", location: "荷兰", avatar: "🐼", name: author, credit: "新人", creditClass: "new", distKm: 1, timestamp: time, imgIcon: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23EFF6FF'/><text x='50%' y='50%' font-size='20' text-anchor='middle' dominant-baseline='middle'>🤝</text></svg>" });
+                    mockHelpItems.push({ userId: post.user_id, id: post.id, type: isUrgent ? "🔥 紧急" : "🤝 求助", isUrgent: isUrgent, title: payload.oldText ? payload.oldText.substring(0,40)+'...' : title, reward: reward, rewardNum: parseFloat(reward) || 0, date: "私信沟通", location: "荷兰", avatar: "🐼", name: author, badge: badgeHtml, credit: "新人", creditClass: "new", distKm: 1, timestamp: time, imgIcon: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23EFF6FF'/><text x='50%' y='50%' font-size='20' text-anchor='middle' dominant-baseline='middle'>🤝</text></svg>" });
                 } else if (title.includes('[找搭子]')) {
-                    mockPartnerItems.push({ userId: post.user_id, id: post.id, avatar: "👱‍♀️", name: author, gender: "f", mbti: "未知", mbtiType: "all", title: title.replace('[找搭子] ', ''), desc: payload.oldText || '', tags: ["✨ 新发布"], distKm: 1, daysAway: 1, timestamp: time });
+                    mockPartnerItems.push({ userId: post.user_id, id: post.id, avatar: "👱‍♀️", name: author, badge: badgeHtml, gender: "f", mbti: "未知", mbtiType: "all", title: title.replace('[找搭子] ', ''), desc: payload.oldText || '', tags: ["✨ 新发布"], distKm: 1, daysAway: 1, timestamp: time });
                 }
             });
             applyMarketFilters('idle'); applyMarketFilters('help'); applyMarketFilters('partner');
@@ -493,15 +507,122 @@ async function loadCommunityPosts() {
     } catch (err) {}
 }
 
-function toggleFilterPill(element, type) { element.classList.toggle('active'); applyMarketFilters(type); }
-function applyMarketFilters(type) {
-    if (type === 'idle') { const sortMode = document.getElementById('sortIdle') ? document.getElementById('sortIdle').value : 'newest'; const onlyBargain = document.getElementById('pillIdleBargain') && document.getElementById('pillIdleBargain').classList.contains('active'); let filtered = [...mockIdleItems]; if (onlyBargain) filtered = filtered.filter(item => item.isBargain); if (sortMode === 'priceAsc') filtered.sort((a, b) => a.priceNum - b.priceNum); else if (sortMode === 'priceDesc') filtered.sort((a, b) => b.priceNum - a.priceNum); else filtered.sort((a, b) => b.timestamp - a.timestamp); renderMarketIdle(filtered); } 
-    else if (type === 'help') { const sortMode = document.getElementById('sortHelp') ? document.getElementById('sortHelp').value : 'newest'; const onlyUrgent = document.getElementById('pillHelpUrgent') && document.getElementById('pillHelpUrgent').classList.contains('active'); let filtered = [...mockHelpItems]; if (onlyUrgent) filtered = filtered.filter(item => item.isUrgent); if (sortMode === 'rewardDesc') filtered.sort((a, b) => b.rewardNum - a.rewardNum); else if (sortMode === 'distAsc') filtered.sort((a, b) => a.distKm - b.distKm); else filtered.sort((a, b) => b.timestamp - a.timestamp); renderMarketHelp(filtered); } 
-    else if (type === 'partner') { const sortMode = document.getElementById('sortPartner') ? document.getElementById('sortPartner').value : 'newest'; const mbtiMode = document.getElementById('filterMBTI') ? document.getElementById('filterMBTI').value : 'all'; let filtered = [...mockPartnerItems]; if (mbtiMode !== 'all') filtered = filtered.filter(item => item.mbtiType === mbtiMode); if (sortMode === 'timeAsc') filtered.sort((a, b) => a.daysAway - b.daysAway); else if (sortMode === 'distAsc') filtered.sort((a, b) => a.distKm - b.distKm); else filtered.sort((a, b) => b.timestamp - a.timestamp); renderMarketPartner(filtered); }
+function renderMarketIdle(data = mockIdleItems) { 
+    const container = document.getElementById('idleWaterfall'); if(!container) return; 
+    if(data.length === 0) { container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:40px 0; grid-column:span 2;">空空如也，快去发一个吧！</div>'; return; } 
+    let html = ''; 
+    data.forEach(item => { 
+        const soldOverlayHtml = item.isSold ? `<div class="wf-sold-overlay"><div class="wf-sold-text">已售空</div></div>` : ''; 
+        const countBadge = item.itemCount > 1 ? `<div class="waterfall-count-badge">共 ${item.itemCount} 件</div>` : ''; 
+        // 🌟 注入 badge 徽章
+        html += `<div class="waterfall-item" onclick="openCommunityPost(${item.id})"><div class="wf-img-box">${soldOverlayHtml}${countBadge}<img class="wf-img" src="${item.img}"></div><div class="wf-info"><div class="wf-title" style="${item.isSold ? 'color:#9CA3AF;' : ''}">${item.title}</div><div class="wf-price-row"><span class="wf-currency" style="${item.isSold ? 'color:#9CA3AF;' : ''}">€</span><span class="wf-price" style="${item.isSold ? 'color:#9CA3AF;' : ''}">${item.price}</span></div><div class="wf-user-row"><div class="wf-user"><div class="wf-avatar">${item.avatar}</div><div class="wf-name">${item.name}${item.badge}</div></div></div></div></div>`; 
+    }); 
+    container.innerHTML = html; 
 }
-function renderMarketIdle(data = mockIdleItems) { const container = document.getElementById('idleWaterfall'); if(!container) return; if(data.length === 0) { container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:40px 0; grid-column:span 2;">空空如也，快去发一个吧！</div>'; return; } let html = ''; data.forEach(item => { const soldOverlayHtml = item.isSold ? `<div class="wf-sold-overlay"><div class="wf-sold-text">已售空</div></div>` : ''; const countBadge = item.itemCount > 1 ? `<div class="waterfall-count-badge">共 ${item.itemCount} 件</div>` : ''; html += `<div class="waterfall-item" onclick="openCommunityPost(${item.id})"><div class="wf-img-box">${soldOverlayHtml}${countBadge}<img class="wf-img" src="${item.img}"></div><div class="wf-info"><div class="wf-title" style="${item.isSold ? 'color:#9CA3AF;' : ''}">${item.title}</div><div class="wf-price-row"><span class="wf-currency" style="${item.isSold ? 'color:#9CA3AF;' : ''}">€</span><span class="wf-price" style="${item.isSold ? 'color:#9CA3AF;' : ''}">${item.price}</span></div><div class="wf-user-row"><div class="wf-user"><div class="wf-avatar">${item.avatar}</div><div class="wf-name">${item.name}</div></div><div class="wf-credit ${item.creditClass}">${item.credit}</div></div></div></div>`; }); container.innerHTML = html; }
-function renderMarketHelp(data = mockHelpItems) { const container = document.getElementById('helpListContainer'); if(!container) return; if(data.length === 0) { container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:40px 0; grid-column:span 2;">暂时没有符合条件的悬赏单~</div>'; return; } let html = ''; data.forEach(item => { const tagClass = item.isUrgent ? 'hc-type-tag urgent' : 'hc-type-tag'; const tagText = item.isUrgent ? `🔥 急·${item.type.split(' ')[1]}` : item.type.split(' ')[1]; html += `<div class="help-card" onclick="openChat('${item.userId}', '${item.name}', '${item.avatar}', ${item.id}, '${item.title}', '${item.reward}', \`${item.imgIcon}\`, false, 'help')"><div class="hc-top-row"><div class="${tagClass}">${tagText}</div><div class="hc-reward-compact">€${item.reward}</div></div><div class="hc-title">${item.title}</div><div class="hc-details"><div class="hc-detail-item"><span>⏰</span> ${item.date}</div><div class="hc-detail-item"><span>📍</span> ${item.location}</div></div><div class="hc-footer"><div class="hc-user"><div class="hc-avatar">${item.avatar}</div><div class="hc-name">${item.name}</div><div class="wf-credit ${item.creditClass}" style="margin-left:auto; transform:scale(0.9);">${item.credit}</div></div><div class="hc-action-btn">立即私信</div></div></div>`; }); container.innerHTML = html; }
-function renderMarketPartner(data = mockPartnerItems) { const container = document.getElementById('partnerListContainer'); if(!container) return; if(data.length === 0) { container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:40px 0; grid-column:span 2;">没有找到合适的搭子，自己发一个吧！</div>'; return; } let html = ''; data.forEach(item => { const genderIcon = item.gender === 'f' ? '♀' : '♂'; const tagsHtml = item.tags.slice(0, 2).map(t => `<div class="pc-tag">${t}</div>`).join(''); const iconSvg = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23F3E8FF'/><text x='50%' y='50%' font-size='20' text-anchor='middle' dominant-baseline='middle'>🥂</text></svg>`; html += `<div class="partner-card" onclick="openChat('${item.userId}', '${item.name}', '${item.avatar}', ${item.id}, '${item.title}', '0', \`${iconSvg}\`, false, 'partner')"><div class="pc-header"><div class="pc-user"><div class="pc-avatar">${item.avatar}</div><div class="pc-info"><div class="pc-name-row"><span class="pc-name">${item.name}</span><span class="pc-gender ${item.gender}">${genderIcon}</span></div><span class="pc-mbti">${item.mbti}</span></div></div></div><div class="pc-title">${item.title}</div><div class="pc-desc">${item.desc}</div><div class="pc-tags">${tagsHtml}</div><div class="pc-footer"><div class="pc-dist"><span>📍</span> 距你 ${item.distKm} km</div><div class="pc-action">打招呼</div></div></div>`; }); container.innerHTML = html; }
+
+function renderMarketHelp(data = mockHelpItems) { 
+    const container = document.getElementById('helpListContainer'); if(!container) return; 
+    if(data.length === 0) { container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:40px 0; grid-column:span 2;">暂时没有符合条件的悬赏单~</div>'; return; } 
+    let html = ''; 
+    data.forEach(item => { 
+        const tagClass = item.isUrgent ? 'hc-type-tag urgent' : 'hc-type-tag'; const tagText = item.isUrgent ? `🔥 急·${item.type.split(' ')[1]}` : item.type.split(' ')[1]; 
+        // 🌟 注入 badge 徽章
+        html += `<div class="help-card" onclick="openChat('${item.userId}', '${item.name}', '${item.avatar}', ${item.id}, '${item.title}', '${item.reward}', \`${item.imgIcon}\`, false, 'help')"><div class="hc-top-row"><div class="${tagClass}">${tagText}</div><div class="hc-reward-compact">€${item.reward}</div></div><div class="hc-title">${item.title}</div><div class="hc-details"><div class="hc-detail-item"><span>⏰</span> ${item.date}</div><div class="hc-detail-item"><span>📍</span> ${item.location}</div></div><div class="hc-footer"><div class="hc-user"><div class="hc-avatar">${item.avatar}</div><div class="hc-name">${item.name}${item.badge}</div></div><div class="hc-action-btn">立即私信</div></div></div>`; 
+    }); 
+    container.innerHTML = html; 
+}
+
+function renderMarketPartner(data = mockPartnerItems) { 
+    const container = document.getElementById('partnerListContainer'); if(!container) return; 
+    if(data.length === 0) { container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:40px 0; grid-column:span 2;">没有找到合适的搭子，自己发一个吧！</div>'; return; } 
+    let html = ''; 
+    data.forEach(item => { 
+        const genderIcon = item.gender === 'f' ? '♀' : '♂'; const tagsHtml = item.tags.slice(0, 2).map(t => `<div class="pc-tag">${t}</div>`).join(''); const iconSvg = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23F3E8FF'/><text x='50%' y='50%' font-size='20' text-anchor='middle' dominant-baseline='middle'>🥂</text></svg>`; 
+        // 🌟 注入 badge 徽章
+        html += `<div class="partner-card" onclick="openChat('${item.userId}', '${item.name}', '${item.avatar}', ${item.id}, '${item.title}', '0', \`${iconSvg}\`, false, 'partner')"><div class="pc-header"><div class="pc-user"><div class="pc-avatar">${item.avatar}</div><div class="pc-info"><div class="pc-name-row"><span class="pc-name">${item.name}</span>${item.badge}<span class="pc-gender ${item.gender}" style="margin-left:4px;">${genderIcon}</span></div><span class="pc-mbti">${item.mbti}</span></div></div></div><div class="pc-title">${item.title}</div><div class="pc-desc">${item.desc}</div><div class="pc-tags">${tagsHtml}</div><div class="pc-footer"><div class="pc-dist"><span>📍</span> 距你 ${item.distKm} km</div><div class="pc-action">打招呼</div></div></div>`; 
+    }); 
+    container.innerHTML = html; 
+}
+
+// ================= 集市筛选与排序逻辑 =================
+
+// 切换筛选标签 (完美，无需大改)
+function toggleFilterPill(element, type) { 
+    element.classList.toggle('active'); 
+    applyMarketFilters(type); 
+}
+
+// 应用筛选与排序 (展开重构版，极度舒适且防报错)
+function applyMarketFilters(type) {
+    if (type === 'idle') {
+        // 1. 获取条件 (使用 ?. 防止元素不存在时报错)
+        const sortMode = document.getElementById('sortIdle')?.value || 'newest'; 
+        const onlyBargain = document.getElementById('pillIdleBargain')?.classList.contains('active'); 
+        
+        // 2. 拷贝原数据
+        let filtered = [...mockIdleItems]; 
+        
+        // 3. 执行过滤
+        if (onlyBargain) {
+            // 注意：这里需要确保你解析真实数据时，给 item 加上了 isBargain 属性
+            filtered = filtered.filter(item => item.isBargain); 
+        }
+        
+        // 4. 执行排序
+        if (sortMode === 'priceAsc') {
+            filtered.sort((a, b) => a.priceNum - b.priceNum); // 价格最低
+        } else if (sortMode === 'priceDesc') {
+            filtered.sort((a, b) => b.priceNum - a.priceNum); // 价格最高
+        } else {
+            filtered.sort((a, b) => b.timestamp - a.timestamp); // 最新发布
+        }
+        
+        // 5. 渲染
+        renderMarketIdle(filtered); 
+    } 
+    
+    else if (type === 'help') {
+        const sortMode = document.getElementById('sortHelp')?.value || 'newest'; 
+        const onlyUrgent = document.getElementById('pillHelpUrgent')?.classList.contains('active'); 
+        
+        let filtered = [...mockHelpItems]; 
+        
+        if (onlyUrgent) {
+            filtered = filtered.filter(item => item.isUrgent); 
+        }
+        
+        if (sortMode === 'rewardDesc') {
+            filtered.sort((a, b) => b.rewardNum - a.rewardNum); // 赏金最高
+        } else if (sortMode === 'distAsc') {
+            filtered.sort((a, b) => a.distKm - b.distKm); // 离我最近
+        } else {
+            filtered.sort((a, b) => b.timestamp - a.timestamp); // 最新发布
+        }
+        
+        renderMarketHelp(filtered); 
+    } 
+    
+    else if (type === 'partner') {
+        const sortMode = document.getElementById('sortPartner')?.value || 'newest'; 
+        const mbtiMode = document.getElementById('filterMBTI')?.value || 'all'; 
+        
+        let filtered = [...mockPartnerItems]; 
+        
+        if (mbtiMode !== 'all') {
+            filtered = filtered.filter(item => item.mbtiType === mbtiMode); 
+        }
+        
+        if (sortMode === 'timeAsc') {
+            filtered.sort((a, b) => a.daysAway - b.daysAway); // 时间最近
+        } else if (sortMode === 'distAsc') {
+            filtered.sort((a, b) => a.distKm - b.distKm); // 离我最近
+        } else {
+            filtered.sort((a, b) => b.timestamp - a.timestamp); // 最新发布
+        }
+        
+        renderMarketPartner(filtered); 
+    }
+}
 
 // ================= 9. 真实私信聊天系统 =================
 let currentChatPartnerId = null; let currentChatPostId = null; let chatPollingInterval = null;
