@@ -9,32 +9,30 @@ function toggleScanMenu() {
 
 function switchTab(tabId, element) {
     document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
-    const target = document.getElementById('page-' + tabId);
+    const target = document.getElementById('page-' + tabId); 
     if(target) target.classList.add('active');
-
-    // 🌟 逻辑优化：如果是首页（红宝书）或集市，显示悬浮按钮；在个人中心隐藏它
-    const fab = document.getElementById('mainScanFab');
-    if (tabId === 'profile' || tabId === 'details') {
-        fab.style.display = 'none';
-    } else {
-        fab.style.display = 'flex';
-    }
     
+    // 如果是点击了底部的真实 Tab 按钮，记录下来方便 goBack 返回
     if (element) { 
         document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active')); 
         element.classList.add('active'); 
-        if (tabId !== 'details') lastTab = tabId; 
+        if (tabId !== 'details' && tabId !== 'trending') lastTab = tabId; 
     }
     
     const tabBar = document.querySelector('.tab-bar');
     const chatBar = document.getElementById('stickyChatBar');
     
-    if (tabId === 'details') { 
+    // 🌟 核心优化：进入详情页或红黑榜时，隐藏底部导航栏！
+    if (tabId === 'details' || tabId === 'trending') { 
         if(tabBar) tabBar.style.display = 'none'; 
-        if(chatBar) chatBar.style.display = 'flex'; 
     } else { 
         if(tabBar) tabBar.style.display = 'flex'; 
-        if(chatBar) chatBar.style.display = 'none'; 
+    }
+
+    if (tabId === 'details') {
+        if(chatBar) chatBar.style.display = 'flex';
+    } else {
+        if(chatBar) chatBar.style.display = 'none';
     }
     
     if (tabId === 'profile') { renderFootprints(); renderProfileState(); }
