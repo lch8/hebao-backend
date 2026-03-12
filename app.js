@@ -225,14 +225,14 @@ function openEmailVerifyModal() {
     // 如果已认证过邮箱但未登录（登出后重新登录），预填邮箱
     const savedEmail = localStorage.getItem('hp_email');
     if(savedEmail) {
-        const emailInput = document.getElementById('authEmailInput');
+        const emailInput = document.getElementById('Input');
         if(emailInput) emailInput.value = savedEmail;
     }
     document.getElementById('emailVerifyModal').style.display = 'flex';
 }
 // 修改后的：发送真实邮件验证码
 async function sendAuthCode() {
-    const emailInput = document.getElementById('authEmailInput');
+    const emailInput = document.getElementById('Input');
     const email = emailInput.value.trim();
     if(!email || !email.includes('@')) return alert("请输入正确的邮箱格式！");
     
