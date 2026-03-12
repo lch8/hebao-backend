@@ -14,21 +14,106 @@ function getAuthHeaders() {
 
 function requireAuth(actionFunction) { if (!isLoggedIn) { currentPendingAction = actionFunction; const modal = document.getElementById('loginModal'); if (modal) modal.style.display = 'flex'; else alert("⚠️ 请先登录！"); } else { actionFunction(); } }
 function openLoginModal() { const modal = document.getElementById('loginModal'); if (modal) modal.style.display = 'flex'; }
-// 登录入口：已认证用户直接登录，未认证用户走邮箱验证
-function mockLoginProcess() {
-    const modal = document.getElementById('loginModal'); if(modal) modal.style.display = 'none';
-    // 如果用户之前已认证过邮箱，且本地有 token，直接恢复登录（无需再验证）
-    const savedToken = localStorage.getItem('hebao_token');
-    if (localStorage.getItem('hp_email_verified') === 'true' && savedToken) {
-        isLoggedIn = true;
-        localStorage.setItem('hebao_logged_in', 'true');
-        renderProfileState();
-        if (currentPendingAction) { currentPendingAction(); currentPendingAction = null; }
-        else { alert('🎉 欢迎回来！'); }
+// ================= 1. 全局状态与鉴权 =================
+// (保留原本的 userUUID 和 getAuthHeaders 逻辑...)
+
+// 🌟 新增：请求发送验证码
+async function sendAuthCode() {
+    const emailInput = document.getElementById('authEmail').value.trim();
+    const btnSend = document.getElementById('btnSendCode');
+
+    if (!emailInput || !emailInput.includes('@')) {
+        alert('⚠️ 请输入有效的邮箱地址！');
         return;
     }
-    // 否则走邮箱验证流程
-    openEmailVerifyModal();
+
+    btnSend.disabled = true;
+    btnSend.innerText = '发送中...';
+
+    try {
+        const res = await fetch('/api/send-auth-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: emailInput })
+        });
+
+        const data = await res.json();
+        
+        // 兼容后端的各种返回格式
+        if (res.ok && (data.success || !data.error)) { 
+            alert('✅ 验证码已发送至您的邮箱，请注意查收（包括垃圾箱）。');
+            
+            // 简单的 60 秒倒计时防刷
+            let countdown = 60;
+            const timer = setInterval(() => {
+                btnSend.innerText = `${countdown}s 后重试`;
+                countdown--;
+                if (countdown < 0) {
+                    clearInterval(timer);
+                    btnSend.innerText = '获取验证码';
+                    btnSend.disabled = false;
+                }
+            }, 1000);
+        } else {
+            throw new Error(data.error || '发送失败，请检查后端配置');
+        }
+    } catch (err) {
+        alert('❌ ' + err.message);
+        btnSend.innerText = '获取验证码';
+        btnSend.disabled = false;
+    }
+}
+
+// 🌟 新增：校验验证码并正式登录
+async function verifyAndLogin() {
+    const emailInput = document.getElementById('authEmail').value.trim();
+    const codeInput = document.getElementById('authCode').value.trim();
+    const btnLogin = document.getElementById('btnVerifyLogin');
+
+    if (!emailInput || !codeInput) {
+        alert('⚠️ 邮箱和验证码不能为空！');
+        return;
+    }
+
+    btnLogin.innerText = '验证中...';
+    btnLogin.disabled = true;
+
+    try {
+        const res = await fetch('/api/verify-auth-code', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: emailInput,
+                code: codeInput,
+                userId: userUUID // 直接使用 app.js 最顶部生成的设备 UUID
+            })
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success && data.token) {
+            // 🎉 验证成功！将后端的 JWT 存入本地
+            localStorage.setItem('hebao_token', data.token);
+            localStorage.setItem('hebao_logged_in', 'true');
+            isLoggedIn = true;
+
+            document.getElementById('loginModal').style.display = 'none';
+            alert('🎉 认证成功！欢迎来到荷包社区。');
+
+            // 如果用户是点击“发布”按钮触发的登录，登录成功后直接弹出发布表单
+            if (currentPendingAction) {
+                currentPendingAction();
+                currentPendingAction = null;
+            }
+        } else {
+            throw new Error(data.error || '验证码错误或已过期');
+        }
+    } catch (err) {
+        alert('❌ ' + err.message);
+    } finally {
+        btnLogin.innerText = '立即验证';
+        btnLogin.disabled = false;
+    }
 }
 function handleLogout() {
     if(confirm('确定要退出登录吗？')) {
