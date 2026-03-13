@@ -787,48 +787,138 @@ body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "S
 .pd-item-name { font-size: 15px; font-weight: 900; color: var(--text-primary); margin-bottom: 10px; line-height: 1.5; }
 .pd-item-price { font-size: 22px; font-weight: 900; color: var(--color-danger); }
 
-/* ================= 💬 私聊对话 (chatModal) 修复 ================= */
+/* ================= 💬 私信与消息系统 (顶级原生 App 质感) ================= */
+
+/* 1. 消息列表页面重构 */
+.msg-list-item { 
+    display: flex; align-items: center; gap: 15px; padding: 16px; 
+    background: var(--bg-card); border-radius: var(--radius-lg); 
+    margin-bottom: 12px; border: 1px solid var(--border-light); 
+    box-shadow: var(--shadow-sm); cursor: pointer; transition: var(--transition-fast); 
+    position: relative;
+}
+.msg-list-item:active { transform: scale(0.98); background: var(--bg-hover); }
+.msg-avatar { 
+    width: 52px; height: 52px; border-radius: 50%; background: var(--bg-muted); 
+    display: flex; align-items: center; justify-content: center; font-size: 24px; 
+    flex-shrink: 0; border: 2px solid #FFF; box-shadow: var(--shadow-sm);
+}
+.msg-content { flex: 1; overflow: hidden; }
+.msg-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.msg-name { font-size: 16px; font-weight: 900; color: var(--text-primary); }
+.msg-time { font-size: 11px; color: var(--text-muted); font-weight: bold;}
+.msg-text { font-size: 13px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* 2. 聊天详情弹窗大框架 */
 #chatModal { 
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
     z-index: 3600; 
-    background: var(--bg-muted); 
-    /* 必须是 flex，否则头部和底部会重叠乱套 */
+    background: #F0F2F5; /* 类似微信的浅灰护眼背景 */
     display: flex; 
     flex-direction: column; 
+    animation: slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1);
 }
+
+/* 3. 头部导航 (毛玻璃) */
+.chat-header { 
+    display: flex; justify-content: space-between; align-items: center; 
+    background: rgba(255,255,255,0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    padding: 15px 20px; box-shadow: 0 1px 0 rgba(0,0,0,0.05); 
+    z-index: 10; padding-top: calc(15px + env(safe-area-inset-top)); flex-shrink: 0;
+}
+.ch-back { font-size: 16px; font-weight: 900; color: var(--text-primary); cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 4px 8px 4px 0;}
+.ch-back:active { opacity: 0.5; }
+.ch-title-box { display: flex; flex-direction: column; align-items: center; }
+.ch-title { font-size: 16px; font-weight: 900; color: var(--text-primary); }
+.ch-status { font-size: 10px; color: var(--brand-primary); font-weight: bold; margin-top: 2px;}
+.ch-more { font-size: 20px; color: var(--text-primary); cursor: pointer; font-weight: bold; padding: 0 5px;}
+
+/* 4. 悬浮商品小卡片 */
 .chat-product-snippet { 
-    background: var(--bg-card); 
-    margin: 15px; 
-    border-radius: var(--radius-md); 
-    padding: 12px; 
-    display: flex; 
-    align-items: center; 
-    gap: 12px; 
-    box-shadow: var(--shadow-sm); 
-    border: 1px solid var(--border-light); 
-    flex-shrink: 0;
+    background: var(--bg-card); margin: 15px 15px 0; border-radius: var(--radius-lg); 
+    padding: 12px; display: flex; align-items: center; gap: 12px; 
+    box-shadow: 0 6px 16px rgba(0,0,0,0.04); border: 1px solid var(--border-light); 
+    flex-shrink: 0; position: relative; z-index: 5;
 }
-.cps-img { 
-    width: 50px; height: 50px; 
-    border-radius: 8px; 
-    object-fit: cover; /* 强力约束商品小图 */
-    background: var(--bg-muted); 
-    flex-shrink: 0; 
-    border: 1px solid var(--border-base);
-}
+.cps-img { width: 48px; height: 48px; border-radius: 10px; object-fit: cover; border: 1px solid var(--border-base); flex-shrink: 0;}
 .cps-info { flex: 1; min-width: 0; }
 .cps-title { font-size: 13px; font-weight: 900; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
-.cps-price { font-size: 15px; font-weight: 900; color: var(--color-danger); }
-.cps-btn { background: var(--brand-primary-light); color: var(--brand-primary-hover); border: 1px solid #A7F3D0; padding: 6px 14px; border-radius: 12px; font-size: 12px; font-weight: 900; cursor: pointer; white-space: nowrap; }
+.cps-price { font-size: 16px; font-weight: 900; color: var(--color-danger); }
+.cps-btn { background: var(--brand-dark); color: #FFF; padding: 6px 14px; border-radius: 14px; font-size: 12px; font-weight: 900; cursor: pointer; white-space: nowrap; transition: 0.2s; border: none;}
+.cps-btn:active { transform: scale(0.95); }
 
+/* 5. 聊天气泡记录区 (核心重构) */
 .chat-msg-container {
-    flex: 1; /* 撑满中间剩余空间 */
-    overflow-y: auto; /* 让中间内容可滚动 */
-    padding: 15px;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
+    flex: 1; overflow-y: auto; padding: 20px 15px; display: flex; flex-direction: column; gap: 18px;
 }
-.chat-input-bar {
-    flex-shrink: 0; /* 底部输入框绝不缩小 */
-    padding-bottom: calc(15px + env(safe-area-inset-bottom));
+.chat-time-sys { text-align: center; font-size: 11px; color: var(--text-muted); font-weight: bold; margin-bottom: 5px; }
+
+.chat-row { display: flex; gap: 10px; align-items: flex-end; max-width: 82%; }
+.chat-row.other { align-self: flex-start; }
+.chat-row.me { align-self: flex-end; flex-direction: row-reverse; }
+
+.chat-avatar { 
+    width: 36px; height: 36px; border-radius: 50%; background: var(--bg-card); 
+    display: flex; justify-content: center; align-items: center; font-size: 18px; 
+    flex-shrink: 0; box-shadow: var(--shadow-sm); overflow: hidden; border: 1px solid var(--border-light);
 }
+.chat-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.chat-text { 
+    padding: 12px 16px; font-size: 15px; line-height: 1.5; word-wrap: break-word; 
+    box-shadow: 0 2px 6px rgba(0,0,0,0.03); position: relative;
+}
+/* 别人发的消息：白底黑字，左下角直角 */
+.chat-row.other .chat-text { 
+    background: var(--bg-card); color: var(--text-primary); 
+    border-radius: 18px 18px 18px 4px; 
+}
+/* 我发的消息：绿底白字，右下角直角 */
+.chat-row.me .chat-text { 
+    background: var(--brand-primary); color: #FFF; 
+    border-radius: 18px 18px 4px 18px; 
+}
+
+/* 6. 闲鱼同款快捷回复 */
+.chat-quick-replies {
+    display: flex; gap: 8px; padding: 10px 15px 5px; background: transparent; 
+    overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; flex-shrink: 0;
+}
+.chat-quick-replies::-webkit-scrollbar { display: none; }
+.qr-pill {
+    background: var(--bg-card); color: var(--text-regular); font-size: 12px; font-weight: 900; 
+    padding: 8px 14px; border-radius: 99px; border: 1px solid var(--border-base); 
+    white-space: nowrap; cursor: pointer; transition: 0.2s; flex-shrink: 0; box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+}
+.qr-pill:active { background: var(--bg-hover); transform: scale(0.95); }
+.qr-pill:first-child { color: var(--color-danger); background: var(--color-danger-light); border-color: #FECACA; }
+
+/* 7. 现代输入底栏 */
+.chat-input-bar { 
+    background: var(--bg-card); padding: 10px 15px calc(10px + env(safe-area-inset-bottom)); 
+    display: flex; align-items: flex-end; gap: 12px; border-top: 1px solid var(--border-base); flex-shrink: 0;
+}
+.c-action-btn { 
+    width: 34px; height: 34px; border-radius: 50%; background: var(--bg-muted); 
+    display: flex; justify-content: center; align-items: center; color: var(--text-secondary); 
+    font-size: 22px; cursor: pointer; flex-shrink: 0; transition: 0.2s; margin-bottom: 4px;
+}
+.c-action-btn:active { transform: scale(0.9); }
+.c-input-wrapper {
+    flex: 1; background: #F4F5F7; border-radius: 22px; display: flex; align-items: center; 
+    padding: 2px 15px; border: 1px solid transparent; transition: 0.2s;
+}
+.c-input-wrapper:focus-within { border-color: var(--brand-primary); background: #FFF; box-shadow: 0 0 0 3px var(--brand-primary-light);}
+.c-input { 
+    flex: 1; height: 38px; background: transparent; border: none; 
+    font-size: 15px; outline: none; padding: 0; color: var(--text-primary); font-weight: 500;
+}
+.c-send-btn { 
+    background: var(--brand-primary); color: #FFF; border: none; width: 36px; height: 36px; 
+    border-radius: 50%; font-size: 16px; font-weight: bold; cursor: pointer; display: flex; 
+    align-items: center; justify-content: center; flex-shrink: 0; margin-bottom: 3px; 
+    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3); transition: 0.2s;
+}
+.c-send-btn:active { transform: scale(0.9); background: var(--brand-primary-hover); }
+
+.chat-input-disabled { background: var(--bg-muted); padding: 20px 15px calc(20px + env(safe-area-inset-bottom)); text-align: center; color: var(--text-muted); font-size: 13px; font-weight: bold; flex-shrink: 0;}
