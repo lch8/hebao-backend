@@ -757,6 +757,16 @@
     </div>
 </div>
 
+    <div id="globalToast" class="global-toast">
+        <span id="toastIcon">💡</span>
+        <span id="toastMessage">提示信息</span>
+    </div>
+
+    <div id="imageLightbox" class="lightbox-overlay" onclick="closeLightbox()">
+        <img id="lightboxImg" src="" alt="大图预览" onclick="event.stopPropagation()">
+        <div class="lightbox-close" onclick="closeLightbox()">✕</div>
+    </div>
+
 <script src="./api.js" defer></script>
 <script src="./auth.js" defer></script>
 <script src="./ui.js" defer></script>
