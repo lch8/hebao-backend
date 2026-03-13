@@ -1212,6 +1212,8 @@ function submitWikiComment() {
 
 // ================= 🛡️ 街区治安查询逻辑 (基于真实荷兰治安印象) =================
 
+// ================= 🛡️ 街区治安查询逻辑 (带免责声明版) =================
+
 function checkSafetyCode() {
     const input = document.getElementById('postcodeInput').value.trim();
     const resultBox = document.getElementById('safetyResult');
@@ -1225,22 +1227,33 @@ function checkSafetyCode() {
     
     // 真实的荷兰高风险/需注意邮编库 (简易版)
     const dangerZones = ['2512', '2525', '2526', '3081', '3083', '1102', '1103', '1104', '1062']; 
-    // 25开头(海牙HS/Schilderswijk), 308开头(鹿特丹Zuid), 110/106(阿姆Zuidoost/Nieuw-West)
-    
     const warnZones = ['2521', '2522', '3024', '3025', '1055', '1056'];
 
+    let contentHtml = '';
+
+    // 判断逻辑
     if (dangerZones.includes(input)) {
         resultBox.className = 'sc-result danger';
-        resultBox.innerHTML = `<b>🔴 高危预警 (红灯区/复杂街区)：</b><br>该区域历史治安较差，飞车抢手机或砸车窗高发。<b>强烈建议：</b><br>1. 夜晚绝对不要单独佩戴耳机步行。<br>2. 租房尽量避开一楼，注意门窗锁好。`;
+        contentHtml = `<b>🔴 高危预警 (复杂街区)：</b><br>该区域历史治安反馈较差，飞车抢夺或寻衅滋事偶有发生。<b>强烈建议：</b><br>1. 夜晚绝对不要单独佩戴耳机步行。<br>2. 租房尽量避开一楼，注意门窗锁好。`;
     } 
     else if (warnZones.includes(input)) {
         resultBox.className = 'sc-result warn';
-        resultBox.innerHTML = `<b>🟡 谨慎区域 (黄灯)：</b><br>该区域人员流动复杂。日常生活无大碍，但<b>自行车极易被盗</b>，请务必使用粗链条锁锁在固定物上！夜晚尽量结伴而行。`;
+        contentHtml = `<b>🟡 谨慎区域 (黄灯)：</b><br>该区域人员流动较复杂。日常生活无大碍，但<b>自行车极其容易被盗</b>，请务必使用粗链条锁！夜晚尽量结伴而行。`;
     } 
     else {
         resultBox.className = 'sc-result safe';
-        resultBox.innerHTML = `<b>🟢 治安良好 (绿灯)：</b><br>管家数据库显示该区属于常规安全街区（多为学生区或家庭住宅区）。正常生活即可，记得出门锁门哦！`;
+        contentHtml = `<b>🟢 治安良好 (绿灯)：</b><br>管家数据库显示该区暂无高频恶性治安反馈（多为学生区或家庭住宅区）。正常生活即可，但出门仍需锁好自行车哦！`;
     }
+
+    // 🌟 核心：统一追加不可抹除的官方免责声明
+    contentHtml += `
+        <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed rgba(0,0,0,0.15); font-size: 11px; opacity: 0.85; line-height: 1.5;">
+            <b>💡 管家免责声明：</b><br>
+            本评级基于历年留学生真实踩坑反馈及社区印象汇总。街区治安状况会随时间动态变化，<b>查询结果仅供参考，不代表荷兰官方统计数据，亦不能作为租房或出行的唯一绝对依据。</b>遇到紧急危险请立刻拨打 112！
+        </div>
+    `;
+
+    resultBox.innerHTML = contentHtml;
 }
 
 // ================= 最后，初始化引擎 =================
