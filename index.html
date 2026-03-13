@@ -259,17 +259,18 @@
     </div>
 
     <div id="page-messages" class="page-section">
-        <div class="header" style="text-align: left; margin-top: 0;">
-            <h1 class="title">消息 💬</h1>
-            <div class="subtitle" style="margin-bottom: 20px;">与邻居/校友的安全对话</div>
-        </div>
-        <div id="messageListContainer" style="padding: 15px;">
-            <div class="empty-state">
-                <div class="empty-state-icon">📭</div>
+            <div class="header">
+                <h1 class="title">消息 💬</h1>
+                <div class="subtitle">与邻居/校友的安全对话</div>
+            </div>
+            
+            <div id="conversationList" style="margin-top: 15px;"></div>
+
+            <div class="empty-state" id="msgEmptyState" style="display: none;">
+                <div class="empty-state-icon">📫</div>
                 暂时没有新消息
             </div>
         </div>
-    </div>
 
     <div id="page-profile" class="page-section">
         <div class="profile-header-card">
