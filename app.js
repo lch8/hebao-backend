@@ -1,9 +1,8 @@
 // ============================================================================
-// app.js - 核心业务逻辑中心
-// 依赖文件: api.js, auth.js, ui.js (请确保在 HTML 中按顺序优先引入)
+// app.js - 核心业务逻辑中心 (净化去重终极版)
 // ============================================================================
 
-// ================= 2. 导航与 Tab 补充 =================
+// ================= 1. 导航与 Tab =================
 function switchAssetTab(tabId, element) { 
     document.querySelectorAll('.a-tab').forEach(el => el.classList.remove('active')); 
     element.classList.add('active'); 
@@ -17,11 +16,8 @@ function switchHomeTrendingTab(type, element) {
     document.getElementById('homeTrendingListDislikes').style.display = type === 'dislikes' ? 'block' : 'none'; 
 }
 
-// ================= 3. 个人资料编辑与认证展示 =================
-function openEmailVerifyModal() { 
-    // 统一指向新的登录/认证弹窗
-    document.getElementById('loginModal').style.display = 'flex'; 
-}
+// ================= 2. 个人资料编辑与认证 =================
+function openEmailVerifyModal() { document.getElementById('loginModal').style.display = 'flex'; }
 function openWechatBindModal() { 
     document.getElementById('authWechatInput').value = localStorage.getItem('hp_wechat') || ''; 
     document.getElementById('wechatBindModal').style.display = 'flex'; 
@@ -77,7 +73,7 @@ function loadAvatar() {
     } 
 }
 
-// ================= 4. GPS 自动定位 =================
+// ================= 3. GPS 定位 =================
 let currentCity = ""; let currentPostcode = "";
 function autoLocate(inputId) {
     const inputEl = document.getElementById(inputId); 
@@ -109,7 +105,7 @@ function togglePostcode() {
     else { inputEl.value = currentCity; } 
 }
 
-// ================= 5. 首页扫码引擎与榜单 =================
+// ================= 4. 扫码与榜单 =================
 let currentProductData = null; let currentDetailData = null; 
 let globalTrendingLikes = []; let globalTrendingDislikes = [];
 
@@ -126,11 +122,7 @@ async function handlePackageImage(event) {
         const previewImg = document.getElementById('previewImg'); 
         if (previewImg) previewImg.src = e.target.result;
         try {
-            const res = await fetch('/api/scan', { 
-                method: 'POST', 
-                headers: getAuthHeaders(), 
-                body: JSON.stringify({ imageBase64: base64Data }) 
-            });
+            const res = await fetch('/api/scan', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ imageBase64: base64Data }) });
             const data = await res.json(); 
             if(!res.ok || data.error) throw new Error(data.error || "识别失败");
             currentProductData = data; currentProductData.image_url = e.target.result; 
@@ -170,11 +162,7 @@ function executeSearch() {
     document.getElementById('scanOverlay').style.display='flex'; 
     document.getElementById('scanText').innerText = "📡 全网检索中..."; 
     document.getElementById('miniResultCard').style.display='none';
-    fetch('/api/scan-barcode', { 
-        method: 'POST', 
-        headers: getAuthHeaders(), 
-        body: JSON.stringify({ barcode: query, userId: userUUID }) 
-    })
+    fetch('/api/scan-barcode', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ barcode: query, userId: userUUID }) })
     .then(res => res.json()).then(data => {
         currentProductData = data; 
         document.getElementById('scanOverlay').style.display='none'; 
@@ -222,7 +210,7 @@ function renderHomeTrending(list, containerId, type) {
     container.innerHTML = html;
 }
 
-// ================= 6. 详情页与足迹 =================
+// ================= 5. 商品详情页与评价 =================
 function openDetailsFromScan() { currentDetailData = {...currentProductData}; setupDetailPage(); }
 function openDetailsFromHomeTrending(type, index) { currentDetailData = type === 'like' ? globalTrendingLikes[index] : globalTrendingDislikes[index]; setupDetailPage(); }
 function openDetailsFromHistory(index) { let h = JSON.parse(localStorage.getItem('hebao_history')||'[]'); currentDetailData = h[index]; setupDetailPage(); }
@@ -264,18 +252,6 @@ async function submitDetailReview() {
         alert("🎉 发布成功！"); document.getElementById('addReviewModal').style.display = 'none'; setupDetailPage();
     } catch(e) { alert("网络错误"); } finally { btn.innerText = "🚀 提交评价"; btn.disabled = false; }
 }
-async function sendQuestion() {
-    const input = document.getElementById('askInput'); const question = input.value.trim(); if(!question) return;
-    const chatBox = document.getElementById('chatHistory'); const dName = currentDetailData.dutch_name || currentDetailData.chinese_name || "未知商品"; const dInsight = currentDetailData.insight || "";
-    chatBox.innerHTML += `<div class="chat-bubble bubble-user">${question}</div>`; input.value = ''; window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-    const loadingId = 'loading-' + Date.now(); chatBox.innerHTML += `<div class="chat-bubble bubble-ai" id="${loadingId}">管家查阅中...</div>`;
-    try {
-        const response = await fetch('/api/ask', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ productName: dName, insight: dInsight, question: question, userId: userUUID }) });
-        const data = await response.json(); document.getElementById(loadingId).remove();
-        if (response.ok) { chatBox.innerHTML += `<div class="chat-bubble bubble-ai">🤖 ${data.reply}</div>`; } else { chatBox.innerHTML += `<div class="chat-bubble bubble-ai" style="color:red;">卡住了：${data.error}</div>`; }
-    } catch (err) { document.getElementById(loadingId).remove(); chatBox.innerHTML += `<div class="chat-bubble bubble-ai" style="color:red;">网络断了</div>`; }
-    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-}
 function saveToLocalFootprint(data, img) { let h = JSON.parse(localStorage.getItem('hebao_history')||'[]'); if(!h.find(i=>i.dutch_name===data.dutch_name)){ data.img_src=img; h.unshift(data); localStorage.setItem('hebao_history',JSON.stringify(h)); } }
 function renderFootprints() { 
     const listDiv = document.getElementById('footprintList'); let h = JSON.parse(localStorage.getItem('hebao_history') || '[]'); 
@@ -288,17 +264,8 @@ function renderFootprints() {
     listDiv.innerHTML = html; 
 }
 
-// 防崩溃空函数：屏蔽老版 HTML 遗留报错
-function renderTipsPage() {
-    const qlContainer = document.getElementById('quickLinksContainer');
-    if (qlContainer && typeof quickLinksData !== 'undefined') { 
-        let qlHtml = ''; quickLinksData.forEach(link => { qlHtml += `<a href="${link.url}" target="_blank" class="ql-card"><div class="ql-icon">${link.icon}</div><div class="ql-title">${link.title}</div><div class="ql-sub">${link.sub}</div></a>`; }); 
-        qlContainer.innerHTML = qlHtml; 
-    }
-}
-function toggleTipsContent(element) { element.classList.toggle('active'); }
 
-// ================= 7. 发布功能与 AI =================
+// ================= 6. 发布系统与 AI 提取 =================
 function openPublishSheet() { const overlay = document.querySelector('.publish-overlay'); const sheet = document.querySelector('.publish-sheet'); if(overlay) { overlay.style.display = 'block'; setTimeout(()=>overlay.classList.add('show'),10); } if(sheet) { setTimeout(()=>sheet.classList.add('show'),10); } }
 function closePublishSheet() { const overlay = document.querySelector('.publish-overlay'); const sheet = document.querySelector('.publish-sheet'); if(sheet) sheet.classList.remove('show'); if(overlay) { overlay.classList.remove('show'); setTimeout(()=>overlay.style.display='none',300); } }
 function openIdlePublish() { closePublishSheet(); setTimeout(() => { document.getElementById('publishIdleModal').style.display = 'flex'; const d = new Date(); d.setDate(d.getDate() + 7); if(document.getElementById('idleDeadline')) document.getElementById('idleDeadline').value = d.toISOString().split('T')[0]; }, 300); }
@@ -395,51 +362,177 @@ async function submitPartnerPost() {
     try { const finalTitle = `[找搭子] ${title}`; const authorName = localStorage.getItem('hp_name') || '管家新人'; const res = await fetch('/api/publish-community', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ userId: userUUID, authorName: authorName, title: finalTitle, text: desc, imageUrl: '' }) }); if(!res.ok) throw new Error("失败"); alert("🎉 发布成功！"); closePartnerPublish(); if(document.getElementById('partnerTitle')) document.getElementById('partnerTitle').value = ''; if(document.getElementById('partnerDesc')) document.getElementById('partnerDesc').value = ''; loadCommunityPosts(); } catch(e) { alert(e.message); } finally { btn.innerText = "发布"; btn.style.pointerEvents = 'auto'; }
 }
 
-// ================= 8. 详情页与集市大厅 =================
+
+// ================= 7. 社区数据拉取与渲染 =================
 let mockIdleItems = []; let mockHelpItems = []; let mockPartnerItems = []; window.allCommunityPostsCache = [];
+let mockQuestionItems = [];
+
+async function loadCommunityPosts() {
+    try {
+        const res = await fetch('/api/get-community'); const data = await res.json();
+        if (data.success && data.posts) {
+            mockIdleItems = []; mockHelpItems = []; mockPartnerItems = []; mockQuestionItems = []; window.allCommunityPostsCache = data.posts; 
+            data.posts.forEach(post => {
+                const title = post.title || ''; const time = new Date(post.created_at).getTime() || Date.now(); const author = post.author_name || '匿名管家';
+                let payload; try { payload = JSON.parse(post.content); } catch(e) { payload = { oldText: post.content }; }
+
+                let badgeHtml = `<span class="trust-badge badge-none">游客</span>`;
+                if (post.verified_email) {
+                    const domain = post.verified_email.split('@')[1] || '';
+                    const isEdu = domain.includes('.edu') || domain.includes('tudelft.nl') || domain.includes('uva.nl') || domain.includes('eur.nl') || domain.includes('leidenuniv.nl');
+                    if (isEdu) {
+                        const uniName = domain.split('.')[0].toUpperCase();
+                        badgeHtml = `<span class="trust-badge badge-edu">🎓 ${uniName}校友</span>`;
+                    } else {
+                        badgeHtml = `<span class="trust-badge badge-work">✅ 已实名</span>`;
+                    }
+                }
+
+                if (title.includes('[闲置]')) {
+                    const firstImg = (payload.items && payload.items.length > 0) ? payload.items[0].url : 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&auto=format&fit=crop';
+                    const priceMatch = title.match(/€(\d+(\.\d+)?)/); const price = priceMatch ? priceMatch[1] : '面议';
+                    const isAllSold = payload.items ? payload.items.every(i => i.is_sold) : false; const itemCount = payload.items ? payload.items.length : 0;
+                    mockIdleItems.push({ userId: post.user_id, id: post.id, img: firstImg, title: title.replace('[闲置] ', ''), price: price, priceNum: parseFloat(price) || 0, avatar: "😎", name: author, badge: badgeHtml, credit: "极佳", creditClass: "excellent", isSold: isAllSold, itemCount: itemCount, timestamp: time });
+                } else if (title.includes('[互助')) {
+                    const rewardMatch = title.match(/€(\d+(\.\d+)?)/); const reward = rewardMatch ? rewardMatch[1] : '0'; const isUrgent = title.includes('🔥急');
+                    mockHelpItems.push({ userId: post.user_id, id: post.id, type: isUrgent ? "🔥 紧急" : "🤝 求助", isUrgent: isUrgent, title: payload.oldText ? payload.oldText.substring(0,40)+'...' : title, reward: reward, rewardNum: parseFloat(reward) || 0, date: "私信沟通", location: "荷兰", avatar: "🐼", name: author, badge: badgeHtml, credit: "新人", creditClass: "new", distKm: 1, timestamp: time, imgIcon: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23EFF6FF'/><text x='50%' y='50%' font-size='20' text-anchor='middle' dominant-baseline='middle'>🤝</text></svg>" });
+                } else if (title.includes('[找搭子]')) {
+                    mockPartnerItems.push({ userId: post.user_id, id: post.id, avatar: "👱‍♀️", name: author, badge: badgeHtml, gender: "f", mbti: "未知", mbtiType: "all", title: title.replace('[找搭子] ', ''), desc: payload.oldText || '', tags: ["✨ 新发布"], distKm: 1, daysAway: 1, timestamp: time });
+                }else if (title.includes('[问答]')) {
+                    mockQuestionItems.push({ userId: post.user_id, id: post.id, avatar: "🤔", name: author, badge: badgeHtml, title: title.replace('[问答] ', ''), desc: payload.oldText || '', timestamp: time });
+                }
+            });
+            applyMarketFilters('idle'); applyMarketFilters('help'); applyMarketFilters('partner'); applyMarketFilters('question');
+        }
+    } catch (err) {}
+}
+
+function renderMarketIdle(data = mockIdleItems) { 
+    const container = document.getElementById('idleWaterfall'); if(!container) return; 
+    if(data.length === 0) { container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:40px 0; grid-column:span 2;">空空如也，快去发一个吧！</div>'; return; } 
+    let html = ''; 
+    data.forEach(item => { 
+        const soldOverlayHtml = item.isSold ? `<div class="wf-sold-overlay"><div class="wf-sold-text">已售空</div></div>` : ''; 
+        const countBadge = item.itemCount > 1 ? `<div class="waterfall-count-badge">共 ${item.itemCount} 件</div>` : ''; 
+        html += `<div class="waterfall-item" onclick="openCommunityPost(${item.id})"><div class="wf-img-box">${soldOverlayHtml}${countBadge}<img class="wf-img" src="${item.img}"></div><div class="wf-info"><div class="wf-title" style="${item.isSold ? 'color:#9CA3AF;' : ''}">${item.title}</div><div class="wf-price-row"><span class="wf-currency" style="${item.isSold ? 'color:#9CA3AF;' : ''}">€</span><span class="wf-price" style="${item.isSold ? 'color:#9CA3AF;' : ''}">${item.price}</span></div><div class="wf-user-row"><div class="wf-user"><div class="wf-avatar">${item.avatar}</div><div class="wf-name">${item.name}${item.badge}</div></div></div></div></div>`; 
+    }); 
+    container.innerHTML = html; 
+}
+
+function renderMarketHelp(data = mockHelpItems) { 
+    const container = document.getElementById('helpListContainer'); if(!container) return; 
+    if(data.length === 0) { container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:40px 0; grid-column:span 2;">暂时没有符合条件的悬赏单~</div>'; return; } 
+    let html = ''; 
+    data.forEach(item => { 
+        const tagClass = item.isUrgent ? 'hc-type-tag urgent' : 'hc-type-tag'; const tagText = item.isUrgent ? `🔥 急·${item.type.split(' ')[1]}` : item.type.split(' ')[1]; 
+        html += `<div class="help-card" onclick="openChat('${item.userId}', '${item.name}', '${item.avatar}', ${item.id}, '${item.title}', '${item.reward}', \`${item.imgIcon}\`, false, 'help')"><div class="hc-top-row"><div class="${tagClass}">${tagText}</div><div class="hc-reward-compact">€${item.reward}</div></div><div class="hc-title">${item.title}</div><div class="hc-details"><div class="hc-detail-item"><span>⏰</span> ${item.date}</div><div class="hc-detail-item"><span>📍</span> ${item.location}</div></div><div class="hc-footer"><div class="hc-user"><div class="hc-avatar">${item.avatar}</div><div class="hc-name">${item.name}${item.badge}</div></div><div class="hc-action-btn">立即私信</div></div></div>`; 
+    }); 
+    container.innerHTML = html; 
+}
+
+function renderMarketPartner(data = mockPartnerItems) { 
+    const container = document.getElementById('partnerListContainer'); if(!container) return; 
+    if(data.length === 0) { container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:40px 0; grid-column:span 2;">没有找到合适的搭子，自己发一个吧！</div>'; return; } 
+    let html = ''; 
+    data.forEach(item => { 
+        let themeClass = ''; const titleStr = item.title + item.desc;
+        if (titleStr.includes('蹦迪') || titleStr.includes('酒吧') || titleStr.includes('音乐节')) themeClass = 'theme-party';
+        else if (titleStr.includes('看展') || titleStr.includes('旅游') || titleStr.includes('摄影')) themeClass = 'theme-art';
+        else if (titleStr.includes('饭') || titleStr.includes('探店') || titleStr.includes('火锅')) themeClass = 'theme-food';
+        else if (titleStr.includes('自习') || titleStr.includes('图书馆') || titleStr.includes('雅思')) themeClass = 'theme-study';
+
+        const interestedCount = Math.floor(Math.random() * 5) + 2; 
+        const emojis = ['👱‍♀️', '😎', '🐼', '👻', '🐶']; const randomEmojis = emojis.sort(() => 0.5 - Math.random()).slice(0, 3);
+        const avatarsHtml = randomEmojis.map(e => `<div class="pc-mini-avatar">${e}</div>`).join('');
+        const genderIcon = item.gender === 'f' ? '♀' : '♂'; 
+        const tagsHtml = item.tags.slice(0, 2).map(t => `<div class="pc-tag">${t}</div>`).join(''); 
+        const iconSvg = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23F3E8FF'/><text x='50%' y='50%' font-size='20' text-anchor='middle' dominant-baseline='middle'>🥂</text></svg>`; 
+        
+        html += `
+        <div class="partner-card ${themeClass}">
+            <div class="pc-header" onclick="openChat('${item.userId}', '${item.name}', '${item.avatar}', ${item.id}, '${item.title}', '0', \`${iconSvg}\`, false, 'partner')">
+                <div class="pc-user"><div class="pc-avatar">${item.avatar}</div><div class="pc-info"><div class="pc-name-row"><span class="pc-name">${item.name}</span>${item.badge}<span class="pc-gender ${item.gender}" style="margin-left:4px;">${genderIcon}</span></div><span class="pc-mbti">${item.mbti}</span></div></div>
+            </div>
+            <div onclick="openChat('${item.userId}', '${item.name}', '${item.avatar}', ${item.id}, '${item.title}', '0', \`${iconSvg}\`, false, 'partner')">
+                <div class="pc-title">${item.title}</div><div class="pc-desc">${item.desc}</div><div class="pc-tags">${tagsHtml}</div>
+                <div class="pc-social-proof"><div class="pc-social-avatars">${avatarsHtml}</div><span>等 ${interestedCount} 人很感兴趣...</span></div>
+                <div class="pc-footer" style="padding-bottom: 5px;"><div class="pc-dist"><span>🚲</span> 骑车约 ${Math.ceil(item.distKm * 3.5)} 分钟</div></div>
+            </div>
+            <div class="pc-action-row">
+                <div class="pc-action-btn-main" onclick="openChat('${item.userId}', '${item.name}', '${item.avatar}', ${item.id}, '${item.title}', '0', \`${iconSvg}\`, false, 'partner')">👋 滴滴Ta</div>
+                <div class="pc-action-btn-share" onclick="sharePartnerPost('${item.title}')"><span style="font-size: 16px;">💬</span> 捞人</div>
+            </div>
+        </div>`; 
+    }); 
+    container.innerHTML = html; 
+}
+
+function sharePartnerPost(title) {
+    const textToCopy = `✨ 捞个搭子！\n\n【${title}】\n\n有 ${Math.floor(Math.random()*5)+2} 个校友已经感兴趣啦，快来上车！\n👉 点击链接看详情直接私信：\nhttps://hebao.nl/p/${Math.floor(Math.random()*10000)}`;
+    navigator.clipboard.writeText(textToCopy).then(() => {
+        const plus = document.createElement('div'); plus.className = 'float-plus'; plus.innerHTML = '✅ <b>复制成功！</b><br><span style="font-size:12px; font-weight:normal;">快去丢到微信群里捞人吧~</span>'; 
+        plus.style.color = '#10B981'; plus.style.background = '#FFF'; plus.style.border = '1px solid #A7F3D0'; plus.style.textAlign = 'center'; plus.style.left = '50%'; plus.style.top = '40%'; plus.style.transform = 'translate(-50%, -50%)'; 
+        document.body.appendChild(plus); setTimeout(() => plus.remove(), 2500);
+    }).catch(err => { alert("复制失败，请手动转发哦~"); });
+}
+
+function renderMarketQuestion(data = mockQuestionItems) { 
+    const container = document.getElementById('questionListContainer'); if(!container) return; 
+    if(data.length === 0) { container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:40px 0;">目前还没有问题，来做第一个提问者吧！</div>'; return; } 
+    let html = ''; 
+    data.forEach(item => { 
+        const tagMatch = item.title.match(/^(.*?)\s-/); const tag = tagMatch ? tagMatch[1] : '🙋 综合问答'; const cleanTitle = item.title.replace(/^(.*?)\s-\s/, '');
+        html += `<div class="question-card" onclick="openChat('${item.userId}', '${item.name}', '${item.avatar}', ${item.id}, '解答你的提问: ${cleanTitle}', '0', '', false, 'question')"><div class="qc-header"><div class="qc-tag">${tag}</div></div><div class="qc-title">${cleanTitle}</div><div class="qc-desc">${item.desc}</div><div class="qc-footer"><div class="qc-user"><span>${item.avatar}</span> ${item.name} ${item.badge}</div><div class="qc-answer-btn">✍️ 去解答</div></div></div>`; 
+    }); 
+    container.innerHTML = html; 
+}
+
+function toggleFilterPill(element, type) { element.classList.toggle('active'); applyMarketFilters(type); }
+function applyMarketFilters(type) {
+    if (type === 'idle') {
+        const sortMode = document.getElementById('sortIdle')?.value || 'newest'; const onlyBargain = document.getElementById('pillIdleBargain')?.classList.contains('active'); 
+        let filtered = [...mockIdleItems]; 
+        if (onlyBargain) filtered = filtered.filter(item => item.isBargain); 
+        if (sortMode === 'priceAsc') filtered.sort((a, b) => a.priceNum - b.priceNum); 
+        else if (sortMode === 'priceDesc') filtered.sort((a, b) => b.priceNum - a.priceNum); 
+        else filtered.sort((a, b) => b.timestamp - a.timestamp); 
+        renderMarketIdle(filtered); 
+    } else if (type === 'help') {
+        const sortMode = document.getElementById('sortHelp')?.value || 'newest'; const onlyUrgent = document.getElementById('pillHelpUrgent')?.classList.contains('active'); 
+        let filtered = [...mockHelpItems]; 
+        if (onlyUrgent) filtered = filtered.filter(item => item.isUrgent); 
+        if (sortMode === 'rewardDesc') filtered.sort((a, b) => b.rewardNum - a.rewardNum); 
+        else if (sortMode === 'distAsc') filtered.sort((a, b) => a.distKm - b.distKm); 
+        else filtered.sort((a, b) => b.timestamp - a.timestamp); 
+        renderMarketHelp(filtered); 
+    } else if (type === 'partner') {
+        const sortMode = document.getElementById('sortPartner')?.value || 'newest'; const mbtiMode = document.getElementById('filterMBTI')?.value || 'all'; 
+        let filtered = [...mockPartnerItems]; 
+        if (mbtiMode !== 'all') filtered = filtered.filter(item => item.mbtiType === mbtiMode); 
+        if (sortMode === 'timeAsc') filtered.sort((a, b) => a.daysAway - b.daysAway); 
+        else if (sortMode === 'distAsc') filtered.sort((a, b) => a.distKm - b.distKm); 
+        else filtered.sort((a, b) => b.timestamp - a.timestamp); 
+        renderMarketPartner(filtered); 
+    } else if (type === 'question') { renderMarketQuestion(); }
+}
+
+
+// ================= 8. 集市详情页与操作 =================
 let currentCommunityPost = null; let selectedItemIds = new Set(); 
 
-// --- 稳定打开闲置详情页 ---
 function openCommunityPost(postId) {
-    const modal = document.getElementById('postDetailModal');
-    if (!modal) return;
-    
-    modal.style.display = 'flex'; // ⚠️ 必须用 flex
-
+    const modal = document.getElementById('postDetailModal'); if (!modal) return;
+    modal.style.display = 'flex'; // ⚠️ 保证排版正常
     const post = mockIdleItems.find(p => p.id === postId) || window.allCommunityPostsCache?.find(p => p.id === postId);
     if (!post) return;
-    currentCommunityPost = post; // 存入全局供后续使用
-
-    document.getElementById('pdSellerInfo').innerHTML = `
-        <div class="pd-seller-avatar">${post.avatar || '😎'}</div>
-        <div>
-            <div class="pd-seller-name">${post.name || '热心管家用户'} ${post.badge || ''}</div>
-            <div class="pd-seller-time">发布于刚刚</div>
-        </div>
-    `;
-
-    document.getElementById('pdItemsList').innerHTML = `
-        <div class="pd-item-card">
-            <div class="pd-item-img-wrap">
-                <img class="pd-item-img" src="${post.img || 'https://via.placeholder.com/400'}" alt="商品图片">
-            </div>
-            <div class="pd-item-info">
-                <div class="pd-item-name">${post.title || '闲置好物'}</div>
-                <div class="pd-item-price">€${post.price || '0.00'}</div>
-            </div>
-        </div>
-    `;
-
+    currentCommunityPost = post;
+    document.getElementById('pdSellerInfo').innerHTML = `<div class="pd-seller-avatar">${post.avatar || '😎'}</div><div><div class="pd-seller-name">${post.name || '热心管家用户'} ${post.badge || ''}</div><div class="pd-seller-time">发布于刚刚</div></div>`;
+    document.getElementById('pdItemsList').innerHTML = `<div class="pd-item-card"><div class="pd-item-img-wrap"><img class="pd-item-img" src="${post.img || 'https://via.placeholder.com/400'}" alt="商品图片"></div><div class="pd-item-info"><div class="pd-item-name">${post.title || '闲置好物'}</div><div class="pd-item-price">€${post.price || '0.00'}</div></div></div>`;
     document.getElementById('pdTotalPrice').innerText = `€${post.price || '0.00'}`;
-    
-    document.getElementById('pdChatBtn').onclick = function() {
-        openChat(post.userId, post.name, post.avatar, post.id, post.title, post.price, post.img, post.isSold, 'idle');
-    };
+    document.getElementById('pdChatBtn').onclick = function() { openChat(post.userId, post.name, post.avatar, post.id, post.title, post.price, post.img, post.isSold, 'idle'); };
 }
 
-function closePostDetail() {
-    document.getElementById('postDetailModal').style.display = 'none';
-}
+function closePostDetail() { document.getElementById('postDetailModal').style.display = 'none'; }
 
 let currentTotalPrice = 0;
 function toggleItemSelect(price, itemId, checkbox) {
@@ -467,73 +560,43 @@ async function markItemSold(postId, itemId, event) {
 }
 
 
-// ================= 9. 真实私信聊天系统 (终极合并版) =================
+// ================= 9. 真实私信聊天系统 (终极净化版) =================
 let currentChatPartnerId = null; let currentChatPostId = null; let chatPollingInterval = null;
 
 function openChat(targetId, targetName, targetAvatar, postId, postTitle, postPrice, postImg, isSold, postType = 'idle') {
     requireAuth(() => {
         if (targetId === userUUID) return alert("💡 管家提示：不能给自己发私信哦！");
+        currentChatPartnerId = targetId; currentChatPostId = postId;
+        const modal = document.getElementById('chatModal'); if (!modal) return alert("聊天窗口未初始化");
         
-        currentChatPartnerId = targetId; 
-        currentChatPostId = postId;
+        modal.style.display = 'flex'; // ⚠️ 保证排版绝对稳定
 
-        const modal = document.getElementById('chatModal');
-        if (!modal) return alert("聊天窗口未初始化");
-        
-        modal.style.display = 'flex'; // ⚠️ 必须用 flex 保证排版
-
-        // 渲染对方信息
         document.getElementById('chatTargetName').innerText = targetName || '联系卖家';
         document.getElementById('chatTargetAvatar').innerText = targetAvatar || '😎';
-
-        // 渲染商品小卡片 (Snippet)
         document.getElementById('chatProductTitle').innerText = postTitle || '商品信息';
         document.getElementById('chatProductPrice').innerText = '€' + (postPrice || '0.00');
 
-        // 安全加载图片防破图
         const imgEl = document.getElementById('chatProductImg');
         if (imgEl) {
-            if (postImg && (postImg.startsWith('http') || postImg.startsWith('data:image'))) {
-                imgEl.src = postImg;
-            } else {
-                imgEl.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23F3F4F6'/><text x='50%' y='50%' font-size='12' fill='%239CA3AF' text-anchor='middle' dominant-baseline='middle'>暂无图片</text></svg>";
-            }
+            if (postImg && (postImg.startsWith('http') || postImg.startsWith('data:image'))) { imgEl.src = postImg; } 
+            else { imgEl.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23F3F4F6'/><text x='50%' y='50%' font-size='12' fill='%239CA3AF' text-anchor='middle' dominant-baseline='middle'>暂无图片</text></svg>"; }
         }
 
-        // 完美控制售出状态 (合并了隐藏快捷回复的逻辑)
-        const disabledBox = document.getElementById('chatInputDisabled');
-        const inputBar = document.getElementById('chatInputBar');
-        const quickReplies = document.getElementById('chatQuickReplies');
-        const actionBtn = document.getElementById('cpsActionBtn');
-        const soldStamp = document.getElementById('cpsSoldStamp');
+        const disabledBox = document.getElementById('chatInputDisabled'); const inputBar = document.getElementById('chatInputBar');
+        const quickReplies = document.getElementById('chatQuickReplies'); const actionBtn = document.getElementById('cpsActionBtn'); const soldStamp = document.getElementById('cpsSoldStamp');
 
         if (isSold) {
-            if(actionBtn) actionBtn.style.display = 'none';
-            if(soldStamp) soldStamp.style.display = 'block';
-            if(disabledBox) disabledBox.style.display = 'block';
-            if(inputBar) inputBar.style.display = 'none';
-            if(quickReplies) quickReplies.style.display = 'none';
+            if(actionBtn) actionBtn.style.display = 'none'; if(soldStamp) soldStamp.style.display = 'block'; if(disabledBox) disabledBox.style.display = 'block'; if(inputBar) inputBar.style.display = 'none'; if(quickReplies) quickReplies.style.display = 'none';
         } else {
-            if(actionBtn) actionBtn.style.display = 'block';
-            if(soldStamp) soldStamp.style.display = 'none';
-            if(disabledBox) disabledBox.style.display = 'none';
-            if(inputBar) inputBar.style.display = 'flex';
-            if(quickReplies) quickReplies.style.display = 'flex';
+            if(actionBtn) actionBtn.style.display = 'block'; if(soldStamp) soldStamp.style.display = 'none'; if(disabledBox) disabledBox.style.display = 'none'; if(inputBar) inputBar.style.display = 'flex'; if(quickReplies) quickReplies.style.display = 'flex';
         }
 
-        // 加载历史消息并开启轮询
-        const msgList = document.getElementById('chatMsgList'); 
-        msgList.innerHTML = '<div style="text-align:center; color:#9CA3AF; font-size:12px; margin-top:20px;">加载历史消息中...</div>';
-        loadChatHistory(); 
-        if(chatPollingInterval) clearInterval(chatPollingInterval); 
-        chatPollingInterval = setInterval(loadChatHistory, 3000);
+        const msgList = document.getElementById('chatMsgList'); msgList.innerHTML = '<div style="text-align:center; color:#9CA3AF; font-size:12px; margin-top:20px;">加载历史消息中...</div>';
+        loadChatHistory(); if(chatPollingInterval) clearInterval(chatPollingInterval); chatPollingInterval = setInterval(loadChatHistory, 3000);
     });
 }
 
-function closeChat() { 
-    document.getElementById('chatModal').style.display = 'none'; 
-    if(chatPollingInterval) clearInterval(chatPollingInterval); 
-}
+function closeChat() { document.getElementById('chatModal').style.display = 'none'; if(chatPollingInterval) clearInterval(chatPollingInterval); }
 
 async function loadChatHistory() {
     if (!currentChatPartnerId || !currentChatPostId) return;
@@ -561,304 +624,11 @@ async function sendChatMessage() {
     try { await fetch('/api/send-message', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ senderId: userUUID, receiverId: currentChatPartnerId, postId: currentChatPostId, content: text }) }); } catch(e) { alert("消息发送失败"); }
 }
 
-// ================= 🔪 一键快捷发送逻辑 =================
 function sendQuickMessage(text) {
     const input = document.getElementById('chatInput');
     if (input) {
         input.value = text;
         if (typeof sendChatMessage === 'function') sendChatMessage();
-    }
-}
-
-// ================= (注意：这里往下就是 loadCommunityPosts 函数了，原封不动) =================
-// ================= 8. 详情页与集市大厅 (带信任徽章版) =================
-async function loadCommunityPosts() {
-    try {
-        const res = await fetch('/api/get-community'); const data = await res.json();
-        if (data.success && data.posts) {
-            mockIdleItems = []; mockHelpItems = []; mockPartnerItems = []; window.allCommunityPostsCache = data.posts; 
-            data.posts.forEach(post => {
-                const title = post.title || ''; const time = new Date(post.created_at).getTime() || Date.now(); const author = post.author_name || '匿名管家';
-                let payload; try { payload = JSON.parse(post.content); } catch(e) { payload = { oldText: post.content }; }
-
-                // 🌟 核心逻辑：根据后端传来的 verified_email 生成信任徽章
-                let badgeHtml = `<span class="trust-badge badge-none">游客</span>`;
-                if (post.verified_email) {
-                    const domain = post.verified_email.split('@')[1] || '';
-                    const isEdu = domain.includes('.edu') || domain.includes('tudelft.nl') || domain.includes('uva.nl') || domain.includes('eur.nl') || domain.includes('leidenuniv.nl');
-                    if (isEdu) {
-                        const uniName = domain.split('.')[0].toUpperCase();
-                        badgeHtml = `<span class="trust-badge badge-edu">🎓 ${uniName}校友</span>`;
-                    } else {
-                        badgeHtml = `<span class="trust-badge badge-work">✅ 已实名</span>`;
-                    }
-                }
-
-                if (title.includes('[闲置]')) {
-                    const firstImg = (payload.items && payload.items.length > 0) ? payload.items[0].url : 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&auto=format&fit=crop';
-                    const priceMatch = title.match(/€(\d+(\.\d+)?)/); const price = priceMatch ? priceMatch[1] : '面议';
-                    const isAllSold = payload.items ? payload.items.every(i => i.is_sold) : false; const itemCount = payload.items ? payload.items.length : 0;
-                    mockIdleItems.push({ userId: post.user_id, id: post.id, img: firstImg, title: title.replace('[闲置] ', ''), price: price, priceNum: parseFloat(price) || 0, avatar: "😎", name: author, badge: badgeHtml, credit: "极佳", creditClass: "excellent", isSold: isAllSold, itemCount: itemCount, timestamp: time });
-                } else if (title.includes('[互助')) {
-                    const rewardMatch = title.match(/€(\d+(\.\d+)?)/); const reward = rewardMatch ? rewardMatch[1] : '0'; const isUrgent = title.includes('🔥急');
-                    mockHelpItems.push({ userId: post.user_id, id: post.id, type: isUrgent ? "🔥 紧急" : "🤝 求助", isUrgent: isUrgent, title: payload.oldText ? payload.oldText.substring(0,40)+'...' : title, reward: reward, rewardNum: parseFloat(reward) || 0, date: "私信沟通", location: "荷兰", avatar: "🐼", name: author, badge: badgeHtml, credit: "新人", creditClass: "new", distKm: 1, timestamp: time, imgIcon: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23EFF6FF'/><text x='50%' y='50%' font-size='20' text-anchor='middle' dominant-baseline='middle'>🤝</text></svg>" });
-                } else if (title.includes('[找搭子]')) {
-                    mockPartnerItems.push({ userId: post.user_id, id: post.id, avatar: "👱‍♀️", name: author, badge: badgeHtml, gender: "f", mbti: "未知", mbtiType: "all", title: title.replace('[找搭子] ', ''), desc: payload.oldText || '', tags: ["✨ 新发布"], distKm: 1, daysAway: 1, timestamp: time });
-                }else if (title.includes('[问答]')) { // 👈 加上这一段！
-                    mockQuestionItems.push({ userId: post.user_id, id: post.id, avatar: "🤔", name: author, badge: badgeHtml, title: title.replace('[问答] ', ''), desc: payload.oldText || '', timestamp: time });
-                }
-            });
-            applyMarketFilters('idle'); applyMarketFilters('help'); applyMarketFilters('partner');
-        }
-    } catch (err) {}
-}
-
-function renderMarketIdle(data = mockIdleItems) { 
-    const container = document.getElementById('idleWaterfall'); if(!container) return; 
-    if(data.length === 0) { container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:40px 0; grid-column:span 2;">空空如也，快去发一个吧！</div>'; return; } 
-    let html = ''; 
-    data.forEach(item => { 
-        const soldOverlayHtml = item.isSold ? `<div class="wf-sold-overlay"><div class="wf-sold-text">已售空</div></div>` : ''; 
-        const countBadge = item.itemCount > 1 ? `<div class="waterfall-count-badge">共 ${item.itemCount} 件</div>` : ''; 
-        // 🌟 注入 badge 徽章
-        html += `<div class="waterfall-item" onclick="openCommunityPost(${item.id})"><div class="wf-img-box">${soldOverlayHtml}${countBadge}<img class="wf-img" src="${item.img}"></div><div class="wf-info"><div class="wf-title" style="${item.isSold ? 'color:#9CA3AF;' : ''}">${item.title}</div><div class="wf-price-row"><span class="wf-currency" style="${item.isSold ? 'color:#9CA3AF;' : ''}">€</span><span class="wf-price" style="${item.isSold ? 'color:#9CA3AF;' : ''}">${item.price}</span></div><div class="wf-user-row"><div class="wf-user"><div class="wf-avatar">${item.avatar}</div><div class="wf-name">${item.name}${item.badge}</div></div></div></div></div>`; 
-    }); 
-    container.innerHTML = html; 
-}
-
-function renderMarketHelp(data = mockHelpItems) { 
-    const container = document.getElementById('helpListContainer'); if(!container) return; 
-    if(data.length === 0) { container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:40px 0; grid-column:span 2;">暂时没有符合条件的悬赏单~</div>'; return; } 
-    let html = ''; 
-    data.forEach(item => { 
-        const tagClass = item.isUrgent ? 'hc-type-tag urgent' : 'hc-type-tag'; const tagText = item.isUrgent ? `🔥 急·${item.type.split(' ')[1]}` : item.type.split(' ')[1]; 
-        // 🌟 注入 badge 徽章
-        html += `<div class="help-card" onclick="openChat('${item.userId}', '${item.name}', '${item.avatar}', ${item.id}, '${item.title}', '${item.reward}', \`${item.imgIcon}\`, false, 'help')"><div class="hc-top-row"><div class="${tagClass}">${tagText}</div><div class="hc-reward-compact">€${item.reward}</div></div><div class="hc-title">${item.title}</div><div class="hc-details"><div class="hc-detail-item"><span>⏰</span> ${item.date}</div><div class="hc-detail-item"><span>📍</span> ${item.location}</div></div><div class="hc-footer"><div class="hc-user"><div class="hc-avatar">${item.avatar}</div><div class="hc-name">${item.name}${item.badge}</div></div><div class="hc-action-btn">立即私信</div></div></div>`; 
-    }); 
-    container.innerHTML = html; 
-}
-
-// ================= 🏕️ 重构：找搭子卡片 (氛围感与裂变分享版) =================
-function renderMarketPartner(data = mockPartnerItems) { 
-    const container = document.getElementById('partnerListContainer'); if(!container) return; 
-    if(data.length === 0) { container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:40px 0; grid-column:span 2;">没有找到合适的搭子，自己发一个吧！</div>'; return; } 
-    
-    let html = ''; 
-    data.forEach(item => { 
-        // 1. 根据标签智能匹配“氛围感主题”
-        let themeClass = '';
-        const titleStr = item.title + item.desc;
-        if (titleStr.includes('蹦迪') || titleStr.includes('酒吧') || titleStr.includes('音乐节')) themeClass = 'theme-party';
-        else if (titleStr.includes('看展') || titleStr.includes('旅游') || titleStr.includes('摄影')) themeClass = 'theme-art';
-        else if (titleStr.includes('饭') || titleStr.includes('探店') || titleStr.includes('火锅')) themeClass = 'theme-food';
-        else if (titleStr.includes('自习') || titleStr.includes('图书馆') || titleStr.includes('雅思')) themeClass = 'theme-study';
-
-        // 2. 模拟生成“社交筹码” (FOMO 效应)
-        const interestedCount = Math.floor(Math.random() * 5) + 2; // 随机 2-6 人
-        const emojis = ['👱‍♀️', '😎', '🐼', '👻', '🐶'];
-        const randomEmojis = emojis.sort(() => 0.5 - Math.random()).slice(0, 3);
-        const avatarsHtml = randomEmojis.map(e => `<div class="pc-mini-avatar">${e}</div>`).join('');
-
-        const genderIcon = item.gender === 'f' ? '♀' : '♂'; 
-        const tagsHtml = item.tags.slice(0, 2).map(t => `<div class="pc-tag">${t}</div>`).join(''); 
-        const iconSvg = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23F3E8FF'/><text x='50%' y='50%' font-size='20' text-anchor='middle' dominant-baseline='middle'>🥂</text></svg>`; 
-        
-        // 3. 构建超级卡片
-        html += `
-        <div class="partner-card ${themeClass}">
-            <div class="pc-header" onclick="openChat('${item.userId}', '${item.name}', '${item.avatar}', ${item.id}, '${item.title}', '0', \`${iconSvg}\`, false, 'partner')">
-                <div class="pc-user">
-                    <div class="pc-avatar">${item.avatar}</div>
-                    <div class="pc-info">
-                        <div class="pc-name-row">
-                            <span class="pc-name">${item.name}</span>${item.badge}
-                            <span class="pc-gender ${item.gender}" style="margin-left:4px;">${genderIcon}</span>
-                        </div>
-                        <span class="pc-mbti">${item.mbti}</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div onclick="openChat('${item.userId}', '${item.name}', '${item.avatar}', ${item.id}, '${item.title}', '0', \`${iconSvg}\`, false, 'partner')">
-                <div class="pc-title">${item.title}</div>
-                <div class="pc-desc">${item.desc}</div>
-                <div class="pc-tags">${tagsHtml}</div>
-                
-                <div class="pc-social-proof">
-                    <div class="pc-social-avatars">${avatarsHtml}</div>
-                    <span>等 ${interestedCount} 人很感兴趣...</span>
-                </div>
-                
-                <div class="pc-footer" style="padding-bottom: 5px;">
-                    <div class="pc-dist"><span>🚲</span> 骑车约 ${Math.ceil(item.distKm * 3.5)} 分钟</div>
-                </div>
-            </div>
-
-            <div class="pc-action-row">
-                <div class="pc-action-btn-main" onclick="openChat('${item.userId}', '${item.name}', '${item.avatar}', ${item.id}, '${item.title}', '0', \`${iconSvg}\`, false, 'partner')">👋 滴滴Ta</div>
-                <div class="pc-action-btn-share" onclick="sharePartnerPost('${item.title}')">
-                    <span style="font-size: 16px;">💬</span> 捞人
-                </div>
-            </div>
-        </div>`; 
-    }); 
-    container.innerHTML = html; 
-}
-
-// 🌟 一键生成微信转发文案神技
-function sharePartnerPost(title) {
-    const textToCopy = `✨ 捞个搭子！\n\n【${title}】\n\n有 ${Math.floor(Math.random()*5)+2} 个校友已经感兴趣啦，快来上车！\n👉 点击链接看详情直接私信：\nhttps://hebao.nl/p/${Math.floor(Math.random()*10000)}`;
-    
-    // 现代浏览器复制到剪贴板
-    navigator.clipboard.writeText(textToCopy).then(() => {
-        // 弹窗提示成功
-        const plus = document.createElement('div'); 
-        plus.className = 'float-plus'; 
-        plus.innerHTML = '✅ <b>复制成功！</b><br><span style="font-size:12px; font-weight:normal;">快去丢到微信群里捞人吧~</span>'; 
-        plus.style.color = '#10B981';
-        plus.style.background = '#FFF';
-        plus.style.border = '1px solid #A7F3D0';
-        plus.style.textAlign = 'center';
-        plus.style.left = '50%'; plus.style.top = '40%'; 
-        plus.style.transform = 'translate(-50%, -50%)'; 
-        document.body.appendChild(plus); 
-        setTimeout(() => plus.remove(), 2500);
-    }).catch(err => {
-        alert("复制失败，请手动转发哦~");
-    });
-}
-
-// ================= 集市筛选与排序逻辑 =================
-
-// 切换筛选标签 (完美，无需大改)
-function toggleFilterPill(element, type) { 
-    element.classList.toggle('active'); 
-    applyMarketFilters(type); 
-}
-
-// 应用筛选与排序 (展开重构版，极度舒适且防报错)
-function applyMarketFilters(type) {
-    if (type === 'idle') {
-        // 1. 获取条件 (使用 ?. 防止元素不存在时报错)
-        const sortMode = document.getElementById('sortIdle')?.value || 'newest'; 
-        const onlyBargain = document.getElementById('pillIdleBargain')?.classList.contains('active'); 
-        
-        // 2. 拷贝原数据
-        let filtered = [...mockIdleItems]; 
-        
-        // 3. 执行过滤
-        if (onlyBargain) {
-            // 注意：这里需要确保你解析真实数据时，给 item 加上了 isBargain 属性
-            filtered = filtered.filter(item => item.isBargain); 
-        }
-        
-        // 4. 执行排序
-        if (sortMode === 'priceAsc') {
-            filtered.sort((a, b) => a.priceNum - b.priceNum); // 价格最低
-        } else if (sortMode === 'priceDesc') {
-            filtered.sort((a, b) => b.priceNum - a.priceNum); // 价格最高
-        } else {
-            filtered.sort((a, b) => b.timestamp - a.timestamp); // 最新发布
-        }
-        
-        // 5. 渲染
-        renderMarketIdle(filtered); 
-    } 
-    
-    else if (type === 'help') {
-        const sortMode = document.getElementById('sortHelp')?.value || 'newest'; 
-        const onlyUrgent = document.getElementById('pillHelpUrgent')?.classList.contains('active'); 
-        
-        let filtered = [...mockHelpItems]; 
-        
-        if (onlyUrgent) {
-            filtered = filtered.filter(item => item.isUrgent); 
-        }
-        
-        if (sortMode === 'rewardDesc') {
-            filtered.sort((a, b) => b.rewardNum - a.rewardNum); // 赏金最高
-        } else if (sortMode === 'distAsc') {
-            filtered.sort((a, b) => a.distKm - b.distKm); // 离我最近
-        } else {
-            filtered.sort((a, b) => b.timestamp - a.timestamp); // 最新发布
-        }
-        
-        renderMarketHelp(filtered); 
-    } 
-    
-    else if (type === 'partner') {
-        const sortMode = document.getElementById('sortPartner')?.value || 'newest'; 
-        const mbtiMode = document.getElementById('filterMBTI')?.value || 'all'; 
-        
-        let filtered = [...mockPartnerItems]; 
-        
-        if (mbtiMode !== 'all') {
-            filtered = filtered.filter(item => item.mbtiType === mbtiMode); 
-        }
-        
-        if (sortMode === 'timeAsc') {
-            filtered.sort((a, b) => a.daysAway - b.daysAway); // 时间最近
-        } else if (sortMode === 'distAsc') {
-            filtered.sort((a, b) => a.distKm - b.distKm); // 离我最近
-        } else {
-            filtered.sort((a, b) => b.timestamp - a.timestamp); // 最新发布
-        }
-        
-        renderMarketPartner(filtered); 
-    }
-    else if (type === 'question') { renderMarketQuestion(); }
-}
-
-// ================= 9. 真实私信聊天系统 =================
-let currentChatPartnerId = null; let currentChatPostId = null; let chatPollingInterval = null;
-
-function openChat(sellerId, sellerName, sellerAvatar, postId, itemTitle, itemPrice, itemImg, isSold, postType = 'idle') {
-    requireAuth(() => {
-        if (sellerId === userUUID) return alert("💡 管家提示：不能给自己发私信哦！");
-        currentChatPartnerId = sellerId; currentChatPostId = postId;
-        document.getElementById('chatTargetName').innerText = sellerName; document.getElementById('chatTargetAvatar').innerText = sellerAvatar; document.getElementById('chatProductTitle').innerText = itemTitle; document.getElementById('chatProductPrice').innerText = '€' + itemPrice; document.getElementById('chatProductImg').src = itemImg;
-        if (isSold) { document.getElementById('cpsActionBtn').style.display = 'none'; document.getElementById('cpsSoldStamp').style.display = 'block'; document.getElementById('chatInputBar').style.display = 'none'; document.getElementById('chatInputDisabled').style.display = 'block'; } 
-        else { document.getElementById('cpsActionBtn').style.display = 'block'; document.getElementById('cpsSoldStamp').style.display = 'none'; document.getElementById('chatInputBar').style.display = 'flex'; document.getElementById('chatInputDisabled').style.display = 'none'; }
-        document.getElementById('chatModal').style.display = 'flex'; const msgList = document.getElementById('chatMsgList'); msgList.innerHTML = '<div style="text-align:center; color:#9CA3AF; font-size:12px; margin-top:20px;">加载历史消息中...</div>';
-        loadChatHistory(); if(chatPollingInterval) clearInterval(chatPollingInterval); chatPollingInterval = setInterval(loadChatHistory, 3000);
-    });
-}
-function closeChat() { document.getElementById('chatModal').style.display = 'none'; if(chatPollingInterval) clearInterval(chatPollingInterval); }
-async function loadChatHistory() {
-    if (!currentChatPartnerId || !currentChatPostId) return;
-    try {
-        const res = await fetch(`/api/get-messages?u1=${userUUID}&u2=${currentChatPartnerId}&postId=${currentChatPostId}`);
-        const data = await res.json();
-        if (data.success) {
-            const msgList = document.getElementById('chatMsgList');
-            const savedAvatar = localStorage.getItem('hebao_avatar') || ''; const myAvatarHtml = savedAvatar ? `<img src="${savedAvatar}">` : `<span>😎</span>`;
-            const otherAvatarHtml = document.getElementById('chatTargetAvatar').innerText;
-            let html = `<div class="chat-time-sys">聊天已加密端到端保护</div>`;
-            data.messages.forEach(msg => {
-                const isMe = msg.sender_id === userUUID; const avatar = isMe ? myAvatarHtml : `<span>${otherAvatarHtml}</span>`; const rowClass = isMe ? 'me' : 'other';
-                html += `<div class="chat-row ${rowClass}"><div class="chat-text">${msg.content}</div><div class="chat-avatar">${avatar}</div></div>`;
-            });
-            const shouldScroll = msgList.innerHTML.length !== html.length; msgList.innerHTML = html; if (shouldScroll) msgList.scrollTop = msgList.scrollHeight;
-        }
-    } catch(e) {}
-}
-async function sendChatMessage() {
-    const input = document.getElementById('chatInput'); const text = input.value.trim(); if(!text) return;
-    const msgList = document.getElementById('chatMsgList'); const savedAvatar = localStorage.getItem('hebao_avatar') || ''; const avatarHtml = savedAvatar ? `<img src="${savedAvatar}">` : `<span>😎</span>`;
-    msgList.insertAdjacentHTML('beforeend', `<div class="chat-row me"><div class="chat-text">${text}</div><div class="chat-avatar">${avatarHtml}</div></div>`); input.value = ''; msgList.scrollTop = msgList.scrollHeight; 
-    try { await fetch('/api/send-message', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ senderId: userUUID, receiverId: currentChatPartnerId, postId: currentChatPostId, content: text }) }); } catch(e) { alert("消息发送失败"); }
-}
-// ================= 🔪 一键快捷发送逻辑 =================
-function sendQuickMessage(text) {
-    const input = document.getElementById('chatInput');
-    if (input) {
-        input.value = text;
-        // 直接调用你原本发送消息的函数
-        if (typeof sendChatMessage === 'function') {
-            sendChatMessage();
-        } else {
-            console.warn("未找到 sendChatMessage 函数");
-        }
     }
 }
 
@@ -889,10 +659,8 @@ async function deleteMyPost(postId, btnElement) {
     } catch(e) { alert('网络错误'); btnElement.innerText = originalText; btnElement.style.pointerEvents = "auto"; }
 }
 
-// ============================================================================
-// ================= 14. 生存红宝书：三模动态系统与硬核干货 =================
-// ============================================================================
-// 将任务按阶段分组
+
+// ================= 11. 生存红宝书：干货与打卡数据 =================
 const rbTaskData = {
     'pre': [
         { id: 'p1', title: '核心文件随身带', desc: '护照、MVV签证信、录取通知书、出生双认证。放随身包，万一行李丢了也能办手续！', hook: '买个好用的防盗护照包', hookTab: 'market-idle' },
@@ -914,9 +682,7 @@ const rbTaskData = {
     ]
 };
 
-
 const rbWikis = [
-    // ================= 进阶模式 =================
     { id: 'w1', mode: 'advanced', category: '羊毛购物', icon: '🛒', title: 'AH 超市 35% Off 贴纸规律', tag: '恩格尔系数狂降', summary: '摸透打折贴纸出没时间，实现牛排三文鱼自由。', details: 'AH 员工通常在每天下午 15:30 - 16:30 左右开始贴黄色的 35% 贴纸（临期商品）。重点盯肉类区，肉类买回来直接扔冷冻室，至少能放一个月！' },
     { id: 'w2', mode: 'advanced', category: '羊毛购物', icon: '📦', title: 'Too Good To Go 盲盒抢购', tag: '€4吃三天', summary: '剩菜盲盒？不，这是留学生的生存之光。', details: '下载 TGTG App，每天留意面包店 (Bakkerij) 和大超市的魔法盒。通常花 €4.99 能拿走原价 €15+ 的羊角包和果蔬，拼手速抢到就是赚到。' },
     { id: 'w3', mode: 'advanced', category: '羊毛购物', icon: '🛍️', title: '荷兰日用品穷鬼平替店', tag: '别去市中心买', summary: '不要在 Albert Heijn 买洗发水和锅碗瓢盆！', details: '厨具、收纳、五金：无脑去 Action (荷兰拼多多)；洗护用品、保健品：去 Kruidvat 或 Trekpleister，永远在搞 1+1 免费。买廉价家居去 Xenos。' },
@@ -934,7 +700,6 @@ const rbWikis = [
     { id: 'w9', mode: 'advanced', category: '税务补贴', icon: '🗑️', title: '穷学生如何豁免垃圾/水税', tag: '省€300+', summary: '水务局寄来的天价账单？用学生身份合法免除。', details: '收到 RbG 或 Waternet 的信后，登录 DigiD 申请 Kwijtschelding (豁免)。需上传：近三个月银行流水、租房合同。只要卡里余额低于约 €1500，就能全免！荷兰语词汇：<span class="wk-nl-word" onclick="copyText(\'Kwijtschelding\')">Kwijtschelding</span>' },
     { id: 'w10', mode: 'advanced', category: '税务补贴', icon: '🏠', title: '租房补贴 (Huurtoeslag) 申请', tag: '每月白领€200+', summary: '住独立 Studio 的同学必看，政府帮你交房租。', details: '要求：满18岁，独立地址 (有自己的大门、厨卫)，基础房租低于当年上限 (2024年为 €879)，个人存款低于 3.4 万欧。去 Toeslagen 官网申请。荷兰语词汇：<span class="wk-nl-word" onclick="copyText(\'Huurtoeslag\')">Huurtoeslag</span>' },
 
-    // ================= Pro 模式 =================
     { id: 'w11', mode: 'pro', category: '职场签证', icon: '🎓', title: 'Search Year 找工作签', tag: '续命一年', summary: '毕业后想留荷？获得一年无限制打工权。', details: '全球 Top 200 或荷兰本地大学毕业即可申请 1 年的 Search Year。期间可无条件打工。最强 Buff：用此签证转 KM 时，薪资门槛极低！' },
     { id: 'w12', mode: 'pro', category: '职场签证', icon: '📈', title: 'KM 高技术移民薪资门槛', tag: '永居入场券', summary: '留在荷兰的终极目标，由雇主提供担保。', details: '30岁以下门槛：约 €3,909/月；30岁以上：约 €5,331/月。如果是从 Search Year 签证转过来的，门槛直降至：约 €2,801/月！(注：每年1月1日上调，请查阅 IND 官网)' },
     { id: 'w13', mode: 'pro', category: '职场签证', icon: '🏢', title: 'ZZP 自由职业者避税', tag: '搞钱必看', summary: '不想打工想自己接单？注册 ZZP 享受高额免税。', details: '去 KVK (商会) 注册 Eenmanszaak。如果你一年花在业务上的时间超过 1225 小时，就能享受 Starteraftrek 和 Zelfstandigenaftrek，前三年几乎不用交所得税！' },
@@ -948,7 +713,7 @@ const rbWikis = [
     { id: 'w17', mode: 'pro', category: '财富税务', icon: '💰', title: 'Box 3 财富税防坑指南', tag: '中产必看', summary: '在荷兰存款太多也要交税？了解免税额度。', details: '荷兰不仅收所得税 (Box 1)，还收财富税 (Box 3)。单身免税额度约为 €57,000，伴侣约为 €114,000。超过部分哪怕只是放在银行吃利息，也会被狠狠收税。有余钱尽早考虑理财！' }
 ];
 
-// --- 音效与剪贴板 ---
+// --- 音效与辅助 ---
 const AudioContext = window.AudioContext || window.webkitAudioContext;
 let audioCtx;
 function playDingSound() {
@@ -960,10 +725,9 @@ function playDingSound() {
 }
 function copyText(text) { navigator.clipboard.writeText(text); alert(`已复制: ${text}`); }
 
-// --- 模式控制器 ---
+// ================= 12. 红宝书：渲染与滑动逻辑 =================
 let currentRbMode = localStorage.getItem('hp_survival_mode') || 'starter';
 let currentRbCategory = 'all';
-
 const advancedTabs = ['羊毛购物', '交通出行', '生活避坑', '税务补贴'];
 const proTabs = ['职场签证', '买房定居', '财富税务'];
 
@@ -1004,15 +768,9 @@ function switchRbMode(mode) {
     }
 }
 
-// --- 打卡系统 ---
-let currentTaskPhase = 'pre'; // 默认显示启程前
-
-function switchTaskPhase(phase, el) {
-    currentTaskPhase = phase;
-    document.querySelectorAll('.tt-tab').forEach(tab => tab.classList.remove('active'));
-    if(el) el.classList.add('active');
-    renderStarterTasks();
-}
+// --- 打卡任务渲染 ---
+let currentTaskPhase = 'pre'; 
+function switchTaskPhase(phase, el) { currentTaskPhase = phase; document.querySelectorAll('.tt-tab').forEach(tab => tab.classList.remove('active')); if(el) el.classList.add('active'); renderStarterTasks(); }
 
 function renderStarterTasks() {
     const list = document.getElementById('starterTaskList'); if(!list) return;
@@ -1020,25 +778,15 @@ function renderStarterTasks() {
     const currentTasks = rbTaskData[currentTaskPhase];
     
     let html = ''; let doneCount = 0;
-
     currentTasks.forEach(task => {
         const isDone = savedProgress.includes(task.id); if (isDone) doneCount++;
-        html += `<div class="task-card glass-card ${isDone ? 'done' : ''}" id="task_${task.id}">
-            <input type="checkbox" class="task-checkbox" ${isDone ? 'checked' : ''} onchange="toggleTask('${task.id}', this)">
-            <div class="task-content">
-                <div class="task-title">${task.title}</div>
-                <div class="task-desc">${task.desc}</div>
-                <div class="task-hook" onclick="goBack(); setTimeout(()=>switchTab('market', document.querySelectorAll('.tab-item')[1]), 100); setTimeout(()=>switchMarketTab('${task.hookTab.split('-')[1]}', document.querySelector('.m-tab')), 200);">👉 ${task.hook}</div>
-            </div>
-        </div>`;
+        html += `<div class="task-card glass-card ${isDone ? 'done' : ''}" id="task_${task.id}"><input type="checkbox" class="task-checkbox" ${isDone ? 'checked' : ''} onchange="toggleTask('${task.id}', this)"><div class="task-content"><div class="task-title">${task.title}</div><div class="task-desc">${task.desc}</div><div class="task-hook" onclick="goBack(); setTimeout(()=>switchTab('market', document.querySelectorAll('.tab-item')[1]), 100); setTimeout(()=>switchMarketTab('${task.hookTab.split('-')[1]}', document.querySelector('.m-tab')), 200);">👉 ${task.hook}</div></div></div>`;
     });
     list.innerHTML = html;
     
-    // 更新进度条
     document.getElementById('taskProgressBar').style.width = `${(doneCount / currentTasks.length) * 100}%`;
     document.getElementById('taskProgressText').innerText = `${doneCount}/${currentTasks.length}`;
 
-    // 检查是否全部通关 (三个阶段全部完成)
     const totalTasksCount = Object.values(rbTaskData).flat().length;
     if (savedProgress.length === totalTasksCount && !localStorage.getItem('hp_starter_cleared')) {
         setTimeout(() => {
@@ -1052,12 +800,8 @@ function renderStarterTasks() {
 
 function toggleTask(id, checkbox) {
     let savedProgress = JSON.parse(localStorage.getItem('hp_tasks_done') || '[]');
-    if (checkbox.checked) { 
-        playDingSound(); 
-        if (!savedProgress.includes(id)) savedProgress.push(id); 
-    } else { 
-        savedProgress = savedProgress.filter(taskId => taskId !== id); 
-    }
+    if (checkbox.checked) { playDingSound(); if (!savedProgress.includes(id)) savedProgress.push(id); } 
+    else { savedProgress = savedProgress.filter(taskId => taskId !== id); }
     localStorage.setItem('hp_tasks_done', JSON.stringify(savedProgress));
     
     const card = document.getElementById(`task_${id}`);
@@ -1065,80 +809,42 @@ function toggleTask(id, checkbox) {
     renderStarterTasks(); 
 }
 
-// --- 物理左/右滑动引擎与透明度渐变 ---
+// --- 卡片滑动交互 ---
 let swipeStartX = 0; let swipeCurrentX = 0; let isSwiping = false; 
 let isDraggingClickPrevent = false; let activeSwipeId = null;
 
-function hSwipeStart(e, id) {
-    swipeStartX = e.touches[0].clientX; isSwiping = true; isDraggingClickPrevent = false; activeSwipeId = id;
-    const frontCard = document.getElementById(`front_${id}`);
-    if(frontCard) frontCard.style.transition = 'none';
-}
-
+function hSwipeStart(e, id) { swipeStartX = e.touches[0].clientX; isSwiping = true; isDraggingClickPrevent = false; activeSwipeId = id; const frontCard = document.getElementById(`front_${id}`); if(frontCard) frontCard.style.transition = 'none'; }
 function hSwipeMove(e, id) {
     if (!isSwiping || activeSwipeId !== id) return;
     swipeCurrentX = e.touches[0].clientX; const diffX = swipeCurrentX - swipeStartX;
     if (Math.abs(diffX) > 10) isDraggingClickPrevent = true; 
     
-    const frontCard = document.getElementById(`front_${id}`);
-    if(frontCard) frontCard.style.transform = `translateX(${diffX}px)`;
-
-    const saveBg = document.querySelector(`#swipe_${id} .save-bg`);
-    const deleteBg = document.querySelector(`#swipe_${id} .delete-bg`);
-    if (diffX > 0) {
-        if(saveBg) saveBg.style.opacity = Math.min(diffX / 80, 1);
-        if(deleteBg) deleteBg.style.opacity = 0;
-    } else {
-        if(saveBg) saveBg.style.opacity = 0;
-        if(deleteBg) deleteBg.style.opacity = Math.min(Math.abs(diffX) / 80, 1);
-    }
+    const frontCard = document.getElementById(`front_${id}`); if(frontCard) frontCard.style.transform = `translateX(${diffX}px)`;
+    const saveBg = document.querySelector(`#swipe_${id} .save-bg`); const deleteBg = document.querySelector(`#swipe_${id} .delete-bg`);
+    if (diffX > 0) { if(saveBg) saveBg.style.opacity = Math.min(diffX / 80, 1); if(deleteBg) deleteBg.style.opacity = 0; } 
+    else { if(saveBg) saveBg.style.opacity = 0; if(deleteBg) deleteBg.style.opacity = Math.min(Math.abs(diffX) / 80, 1); }
 }
-
 function hSwipeEnd(e, id) {
     if (!isSwiping || activeSwipeId !== id) return;
-    isSwiping = false;
-    const diffX = swipeCurrentX - swipeStartX;
-    const frontCard = document.getElementById(`front_${id}`);
-    if(!frontCard) return;
-
+    isSwiping = false; const diffX = swipeCurrentX - swipeStartX; const frontCard = document.getElementById(`front_${id}`); if(!frontCard) return;
     frontCard.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
     const threshold = window.innerWidth * 0.35;
 
     if (Math.abs(diffX) > 10) {
-        if (diffX > threshold) {
-            frontCard.style.transform = `translateX(${window.innerWidth}px)`;
-            setTimeout(() => handleWikiAction(id, 'saved'), 300);
-        } else if (diffX < -threshold) {
-            frontCard.style.transform = `translateX(-${window.innerWidth}px)`;
-            setTimeout(() => handleWikiAction(id, 'deleted'), 300);
-        } else {
-            frontCard.style.transform = `translateX(0px)`;
-            resetSwipeBg(id);
-        }
-    } else {
-        frontCard.style.transform = `translateX(0px)`;
-        resetSwipeBg(id);
-    }
+        if (diffX > threshold) { frontCard.style.transform = `translateX(${window.innerWidth}px)`; setTimeout(() => handleWikiAction(id, 'saved'), 300); } 
+        else if (diffX < -threshold) { frontCard.style.transform = `translateX(-${window.innerWidth}px)`; setTimeout(() => handleWikiAction(id, 'deleted'), 300); } 
+        else { frontCard.style.transform = `translateX(0px)`; resetSwipeBg(id); }
+    } else { frontCard.style.transform = `translateX(0px)`; resetSwipeBg(id); }
     setTimeout(() => { isDraggingClickPrevent = false; activeSwipeId = null; }, 100);
 }
-
-function resetSwipeBg(id) {
-    const sBg = document.querySelector(`#swipe_${id} .save-bg`);
-    const dBg = document.querySelector(`#swipe_${id} .delete-bg`);
-    if(sBg) sBg.style.opacity = 0;
-    if(dBg) dBg.style.opacity = 0;
-}
-
+function resetSwipeBg(id) { const sBg = document.querySelector(`#swipe_${id} .save-bg`); const dBg = document.querySelector(`#swipe_${id} .delete-bg`); if(sBg) sBg.style.opacity = 0; if(dBg) dBg.style.opacity = 0; }
 function toggleWikiCard(el) {
     if (isSwiping || isDraggingClickPrevent) return;
-    const transform = window.getComputedStyle(el).transform;
-    const matrix = new WebKitCSSMatrix(transform);
+    const transform = window.getComputedStyle(el).transform; const matrix = new WebKitCSSMatrix(transform);
     if (Math.abs(matrix.m41) < 5) el.classList.toggle('open');
 }
-
 function handleWikiAction(id, actionStr) {
-    let arr = JSON.parse(localStorage.getItem(`hp_wiki_${actionStr}`) || '[]');
-    if (!arr.includes(id)) arr.push(id);
+    let arr = JSON.parse(localStorage.getItem(`hp_wiki_${actionStr}`) || '[]'); if (!arr.includes(id)) arr.push(id);
     localStorage.setItem(`hp_wiki_${actionStr}`, JSON.stringify(arr));
     
     if(actionStr === 'saved') {
@@ -1156,10 +862,8 @@ function renderWikiList(searchQuery = '') {
     const list = document.getElementById('wikiListContainer'); if(!list) return;
     let html = '';
     
-    const deletedData = JSON.parse(localStorage.getItem('hp_wiki_deleted') || '[]');
-    const savedData = JSON.parse(localStorage.getItem('hp_wiki_saved') || '[]');
+    const deletedData = JSON.parse(localStorage.getItem('hp_wiki_deleted') || '[]'); const savedData = JSON.parse(localStorage.getItem('hp_wiki_saved') || '[]');
     const customWikis = JSON.parse(localStorage.getItem('hp_custom_wikis') || '[]'); 
-    
     const allWikis = [...rbWikis, ...customWikis];
 
     let filteredData = allWikis.filter(w => {
@@ -1176,13 +880,9 @@ function renderWikiList(searchQuery = '') {
         filteredData.forEach(w => {
             html += `
             <div class="swipe-wrapper" id="swipe_${w.id}">
-                <div class="swipe-bg save-bg">⭐ 收藏</div>
-                <div class="swipe-bg delete-bg">🗑️ 懂了</div>
+                <div class="swipe-bg save-bg">⭐ 收藏</div><div class="swipe-bg delete-bg">🗑️ 懂了</div>
                 <div class="wiki-card swipe-front" id="front_${w.id}" onclick="toggleWikiCard(this)" ontouchstart="hSwipeStart(event, '${w.id}')" ontouchmove="hSwipeMove(event, '${w.id}')" ontouchend="hSwipeEnd(event, '${w.id}')">
-                    <div class="wk-header">
-                        <div class="wk-icon">${w.icon}</div>
-                        <div class="wk-info"><div class="wk-title">${w.title} <span class="wk-tag">${w.tag}</span></div><div class="wk-summary">${w.summary}</div></div>
-                    </div>
+                    <div class="wk-header"><div class="wk-icon">${w.icon}</div><div class="wk-info"><div class="wk-title">${w.title} <span class="wk-tag">${w.tag}</span></div><div class="wk-summary">${w.summary}</div></div></div>
                     <div class="wk-detail" onclick="event.stopPropagation()">
                         <div class="wk-step">${w.details}</div>
                         <div class="wk-ugc-btn" onclick="openWikiComments('${w.id}', '${w.title}')">💬 查看网友补充 & 踩坑情报</div>
@@ -1191,92 +891,48 @@ function renderWikiList(searchQuery = '') {
             </div>`;
         });
     }
-    
     html += `<button class="btn-ai-create" onclick="document.getElementById('aiWikiModal').style.display='flex'">✨ AI 自动提取长文并录入</button>`;
     list.innerHTML = html;
 }
 
 // --- 我的收藏渲染逻辑 ---
-function openCollectionsModal() {
-    requireAuth(() => {
-        document.getElementById('collectionsModal').style.display = 'flex';
-        renderCollections();
-    });
-}
-
+function openCollectionsModal() { requireAuth(() => { document.getElementById('collectionsModal').style.display = 'flex'; renderCollections(); }); }
 function renderCollections() {
-    const list = document.getElementById('collectionsList');
-    const savedIds = JSON.parse(localStorage.getItem('hp_wiki_saved') || '[]');
+    const list = document.getElementById('collectionsList'); const savedIds = JSON.parse(localStorage.getItem('hp_wiki_saved') || '[]');
     if(savedIds.length === 0) { list.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:40px 0;">收藏夹空空如也，快去红宝书里右滑卡片吧！</div>'; return; }
 
-    const allWikis = [...rbWikis, ...JSON.parse(localStorage.getItem('hp_custom_wikis') || '[]')];
-    let html = '';
+    const allWikis = [...rbWikis, ...JSON.parse(localStorage.getItem('hp_custom_wikis') || '[]')]; let html = '';
     savedIds.forEach(id => {
         const w = allWikis.find(x => x.id === id);
         if(w) {
-            html += `
-            <div class="wiki-card" style="margin-bottom:12px; background:#FFF; border:1px solid #E5E7EB; border-radius:16px;" onclick="this.classList.toggle('open')">
-                <div class="wk-header">
-                    <div class="wk-icon">${w.icon}</div>
-                    <div class="wk-info"><div class="wk-title">${w.title} <span class="wk-tag">${w.tag}</span></div><div class="wk-summary">${w.summary}</div></div>
-                </div>
-                <div class="wk-detail" onclick="event.stopPropagation()">
-                    <div class="wk-step">${w.details}</div>
-                    <button class="wk-ugc-btn" style="color:#EF4444; border-color:#FECACA;" onclick="removeCollection('${w.id}', event)">❌ 取消收藏</button>
-                </div>
+            html += `<div class="wiki-card" style="margin-bottom:12px; background:#FFF; border:1px solid #E5E7EB; border-radius:16px;" onclick="this.classList.toggle('open')">
+                <div class="wk-header"><div class="wk-icon">${w.icon}</div><div class="wk-info"><div class="wk-title">${w.title} <span class="wk-tag">${w.tag}</span></div><div class="wk-summary">${w.summary}</div></div></div>
+                <div class="wk-detail" onclick="event.stopPropagation()"><div class="wk-step">${w.details}</div><button class="wk-ugc-btn" style="color:#EF4444; border-color:#FECACA;" onclick="removeCollection('${w.id}', event)">❌ 取消收藏</button></div>
             </div>`;
         }
-    });
-    list.innerHTML = html;
+    }); list.innerHTML = html;
 }
-
 function removeCollection(id, e) {
-    e.stopPropagation();
-    let savedIds = JSON.parse(localStorage.getItem('hp_wiki_saved') || '[]');
-    savedIds = savedIds.filter(x => x !== id);
-    localStorage.setItem('hp_wiki_saved', JSON.stringify(savedIds));
-    renderCollections();
-    renderWikiList(document.getElementById('wikiSearchInput') ? document.getElementById('wikiSearchInput').value.toLowerCase() : '');
+    e.stopPropagation(); let savedIds = JSON.parse(localStorage.getItem('hp_wiki_saved') || '[]');
+    savedIds = savedIds.filter(x => x !== id); localStorage.setItem('hp_wiki_saved', JSON.stringify(savedIds));
+    renderCollections(); renderWikiList(document.getElementById('wikiSearchInput') ? document.getElementById('wikiSearchInput').value.toLowerCase() : '');
 }
 
-// --- AI 自动洗稿录入卡片引擎 ---
+// --- AI 自动提炼攻略 ---
 async function generateAICard() {
-    const inputEl = document.getElementById('aiWikiInput');
-    const btnEl = document.getElementById('btnGenerateWiki');
-    const keyword = inputEl.value.trim();
+    const inputEl = document.getElementById('aiWikiInput'); const btnEl = document.getElementById('btnGenerateWiki'); const keyword = inputEl.value.trim();
     if (!keyword) return alert("请先粘贴你要提取的内容！");
-    
     btnEl.innerText = "⏳ DeepSeek 正在疯狂提炼..."; btnEl.disabled = true;
-
     try {
         const res = await fetch('/api/generate-copy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ keyword, type: 'wiki' }) });
         const data = await res.json(); if(data.error) throw new Error(data.error);
 
-        const newCard = {
-            id: 'cw_' + Date.now(), 
-            mode: currentRbMode,
-            category: currentRbCategory === 'all' ? '专属干货' : currentRbCategory,
-            icon: data.icon || '📌',
-            title: data.title || '无标题攻略',
-            tag: data.tag || 'AI生成',
-            summary: data.summary || '这是一条自动提取的干货总结。',
-            details: data.details || keyword
-        };
-
-        let customWikis = JSON.parse(localStorage.getItem('hp_custom_wikis') || '[]');
-        customWikis.unshift(newCard); 
+        const newCard = { id: 'cw_' + Date.now(), mode: currentRbMode, category: currentRbCategory === 'all' ? '专属干货' : currentRbCategory, icon: data.icon || '📌', title: data.title || '无标题攻略', tag: data.tag || 'AI生成', summary: data.summary || '这是一条自动提取的干货总结。', details: data.details || keyword };
+        let customWikis = JSON.parse(localStorage.getItem('hp_custom_wikis') || '[]'); customWikis.unshift(newCard); 
         localStorage.setItem('hp_custom_wikis', JSON.stringify(customWikis));
 
-        alert("🎉 录入成功！卡片已生成！");
-        document.getElementById('aiWikiModal').style.display = 'none';
-        inputEl.value = '';
-        renderWikiList(); 
-
-    } catch (err) {
-        alert("提取失败：" + err.message);
-    } finally { 
-        btnEl.innerText = "🪄 一键提取为红宝书"; btnEl.disabled = false; 
-    }
+        alert("🎉 录入成功！卡片已生成！"); document.getElementById('aiWikiModal').style.display = 'none'; inputEl.value = ''; renderWikiList(); 
+    } catch (err) { alert("提取失败：" + err.message); } finally { btnEl.innerText = "🪄 一键提取为红宝书"; btnEl.disabled = false; }
 }
 
 function toggleFabModal() { alert("您可以点击底部的『✨ AI 自动提取长文』来自己制作卡片哦！"); }
@@ -1288,24 +944,15 @@ function checkWidgets() {
     } else { if(supermarketWg) supermarketWg.style.display = 'none'; }
 }
 
-// ================= 🌟 问答社区与红宝书评论核心逻辑 =================
-
-let mockQuestionItems = [];
-
-// 1. 打开和关闭发提问弹窗
+// ================= 13. 问答发布与红宝书评论 =================
 function openQuestionPublish() { closePublishSheet(); setTimeout(() => { document.getElementById('publishQuestionModal').style.display = 'flex'; }, 300); }
 function closeQuestionPublish() { document.getElementById('publishQuestionModal').style.display = 'none'; }
-
-// 2. 提交问题 (同样写入 community_posts 表)
 async function submitQuestionPost() {
-    const title = document.getElementById('questionTitle').value.trim(); 
-    const desc = document.getElementById('questionDesc').value.trim();
-    const tag = document.querySelector('#questionTagGroup .active').innerText;
+    const title = document.getElementById('questionTitle').value.trim(); const desc = document.getElementById('questionDesc').value.trim(); const tag = document.querySelector('#questionTagGroup .active').innerText;
     if(!title) return alert("写个标题吧！"); 
     const btn = document.querySelector('#publishQuestionModal .fm-submit'); btn.innerText = "发送中..."; btn.style.pointerEvents = 'none';
     try { 
-        const finalTitle = `[问答] ${tag} - ${title}`; 
-        const authorName = localStorage.getItem('hp_name') || '管家新人'; 
+        const finalTitle = `[问答] ${tag} - ${title}`; const authorName = localStorage.getItem('hp_name') || '管家新人'; 
         const res = await fetch('/api/publish-community', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ userId: userUUID, authorName: authorName, title: finalTitle, text: desc, imageUrl: '' }) }); 
         if(!res.ok) throw new Error("失败"); 
         alert("🎉 提问成功！大家很快就会来解答的。"); 
@@ -1314,149 +961,58 @@ async function submitQuestionPost() {
     } catch(e) { alert(e.message); } finally { btn.innerText = "发布"; btn.style.pointerEvents = 'auto'; }
 }
 
-// 3. 在 loadCommunityPosts 中增加对 [问答] 的解析
-// ⚠️ 注意：这需要你稍微修改 loadCommunityPosts 函数，在最后的 else if 里加上：
-/*
-    else if (title.includes('[问答]')) {
-        mockQuestionItems.push({ userId: post.user_id, id: post.id, avatar: "🤔", name: author, badge: badgeHtml, title: title.replace('[问答] ', ''), desc: payload.oldText || '', timestamp: time });
-    }
-*/
-
-// 4. 渲染问答卡片
-function renderMarketQuestion(data = mockQuestionItems) { 
-    const container = document.getElementById('questionListContainer'); if(!container) return; 
-    if(data.length === 0) { container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:40px 0;">目前还没有问题，来做第一个提问者吧！</div>'; return; } 
-    let html = ''; 
-    data.forEach(item => { 
-        // 提取标签
-        const tagMatch = item.title.match(/^(.*?)\s-/);
-        const tag = tagMatch ? tagMatch[1] : '🙋 综合问答';
-        const cleanTitle = item.title.replace(/^(.*?)\s-\s/, '');
-
-        html += `<div class="question-card" onclick="openChat('${item.userId}', '${item.name}', '${item.avatar}', ${item.id}, '解答你的提问: ${cleanTitle}', '0', '', false, 'question')">
-            <div class="qc-header"><div class="qc-tag">${tag}</div></div>
-            <div class="qc-title">${cleanTitle}</div>
-            <div class="qc-desc">${item.desc}</div>
-            <div class="qc-footer">
-                <div class="qc-user"><span>${item.avatar}</span> ${item.name} ${item.badge}</div>
-                <div class="qc-answer-btn">✍️ 去解答</div>
-            </div>
-        </div>`; 
-    }); 
-    container.innerHTML = html; 
-}
-
-// 5. 红宝书评论区逻辑 (临时存在 LocalStorage，后续可加上后端)
 let currentWikiIdForComment = null;
-function openWikiComments(wikiId, wikiTitle) {
-    currentWikiIdForComment = wikiId;
-    document.getElementById('wikiCommentModal').style.display = 'flex';
-    document.querySelector('#wikiCommentModal .fm-title').innerText = wikiTitle + ' 的评论';
-    renderWikiComments();
-}
-
+function openWikiComments(wikiId, wikiTitle) { currentWikiIdForComment = wikiId; document.getElementById('wikiCommentModal').style.display = 'flex'; document.querySelector('#wikiCommentModal .fm-title').innerText = wikiTitle + ' 的评论'; renderWikiComments(); }
 function renderWikiComments() {
-    const list = document.getElementById('wikiCommentList');
-    const allComments = JSON.parse(localStorage.getItem('hp_wiki_comments') || '{}');
-    const comments = allComments[currentWikiIdForComment] || [];
-    
-    if (comments.length === 0) {
-        list.innerHTML = `<div style="text-align:center; color:#9CA3AF; padding:40px 0;">还没有人分享踩坑经验，你来抢沙发吧！</div>`;
-        return;
-    }
-
+    const list = document.getElementById('wikiCommentList'); const allComments = JSON.parse(localStorage.getItem('hp_wiki_comments') || '{}'); const comments = allComments[currentWikiIdForComment] || [];
+    if (comments.length === 0) { list.innerHTML = `<div style="text-align:center; color:#9CA3AF; padding:40px 0;">还没有人分享踩坑经验，你来抢沙发吧！</div>`; return; }
     let html = '';
-    comments.forEach(c => {
-        html += `<div class="wc-item">
-            <div class="wc-avatar">${c.avatar}</div>
-            <div class="wc-content">
-                <div class="wc-name"><span>${c.name}</span> <span style="color:#9CA3AF; font-weight:normal;">刚刚</span></div>
-                <div class="wc-text">${c.text}</div>
-            </div>
-        </div>`;
-    });
-    list.innerHTML = html;
-    list.scrollTop = list.scrollHeight;
+    comments.forEach(c => { html += `<div class="wc-item"><div class="wc-avatar">${c.avatar}</div><div class="wc-content"><div class="wc-name"><span>${c.name}</span> <span style="color:#9CA3AF; font-weight:normal;">刚刚</span></div><div class="wc-text">${c.text}</div></div></div>`; });
+    list.innerHTML = html; list.scrollTop = list.scrollHeight;
 }
-
 function submitWikiComment() {
     requireAuth(() => {
-        const input = document.getElementById('wikiCommentInput');
-        const text = input.value.trim();
-        if (!text) return;
-        
-        const allComments = JSON.parse(localStorage.getItem('hp_wiki_comments') || '{}');
-        if (!allComments[currentWikiIdForComment]) allComments[currentWikiIdForComment] = [];
-        
-        allComments[currentWikiIdForComment].push({
-            name: localStorage.getItem('hp_name') || '管家热心用户',
-            avatar: document.getElementById('profileAvatarEmoji')?.innerText || '😎',
-            text: text
-        });
-        
-        localStorage.setItem('hp_wiki_comments', JSON.stringify(allComments));
-        input.value = '';
-        renderWikiComments();
-        
-        // 提示积分增加
-        const plus = document.createElement('div'); plus.className = 'float-plus'; plus.innerText = '💡 分享干货，信用分 +2'; plus.style.color = '#10B981';
-        plus.style.left = '50%'; plus.style.top = '40%'; plus.style.transform = 'translate(-50%, -50%)'; document.body.appendChild(plus); 
+        const input = document.getElementById('wikiCommentInput'); const text = input.value.trim(); if (!text) return;
+        const allComments = JSON.parse(localStorage.getItem('hp_wiki_comments') || '{}'); if (!allComments[currentWikiIdForComment]) allComments[currentWikiIdForComment] = [];
+        allComments[currentWikiIdForComment].push({ name: localStorage.getItem('hp_name') || '管家热心用户', avatar: document.getElementById('profileAvatarEmoji')?.innerText || '😎', text: text });
+        localStorage.setItem('hp_wiki_comments', JSON.stringify(allComments)); input.value = ''; renderWikiComments();
+        const plus = document.createElement('div'); plus.className = 'float-plus'; plus.innerText = '💡 分享干货，信用分 +2'; plus.style.color = '#10B981'; plus.style.left = '50%'; plus.style.top = '40%'; plus.style.transform = 'translate(-50%, -50%)'; document.body.appendChild(plus); 
         setTimeout(() => plus.remove(), 2000);
     });
 }
 
-// ================= 🛡️ 街区治安查询逻辑 (基于真实荷兰治安印象) =================
-
-// ================= 🛡️ 街区治安查询逻辑 (带免责声明版) =================
-
+// ================= 14. 🛡️ 街区治安查询 (管家安全盾) =================
 function checkSafetyCode() {
-    const input = document.getElementById('postcodeInput').value.trim();
-    const resultBox = document.getElementById('safetyResult');
-    
-    if (input.length !== 4) {
-        alert("请输入准确的4位数字邮编哦！(例如：2512)");
-        return;
-    }
-
+    const input = document.getElementById('postcodeInput').value.trim(); const resultBox = document.getElementById('safetyResult');
+    if (input.length !== 4) { alert("请输入准确的4位数字邮编哦！(例如：2512)"); return; }
     resultBox.style.display = 'block';
     
-    // 真实的荷兰高风险/需注意邮编库 (简易版)
     const dangerZones = ['2512', '2525', '2526', '3081', '3083', '1102', '1103', '1104', '1062']; 
     const warnZones = ['2521', '2522', '3024', '3025', '1055', '1056'];
 
     let contentHtml = '';
-
-    // 判断逻辑
     if (dangerZones.includes(input)) {
-        resultBox.className = 'sc-result danger';
-        contentHtml = `<b>🔴 高危预警 (复杂街区)：</b><br>该区域历史治安反馈较差，飞车抢夺或寻衅滋事偶有发生。<b>强烈建议：</b><br>1. 夜晚绝对不要单独佩戴耳机步行。<br>2. 租房尽量避开一楼，注意门窗锁好。`;
-    } 
-    else if (warnZones.includes(input)) {
-        resultBox.className = 'sc-result warn';
-        contentHtml = `<b>🟡 谨慎区域 (黄灯)：</b><br>该区域人员流动较复杂。日常生活无大碍，但<b>自行车极其容易被盗</b>，请务必使用粗链条锁！夜晚尽量结伴而行。`;
-    } 
-    else {
-        resultBox.className = 'sc-result safe';
-        contentHtml = `<b>🟢 治安良好 (绿灯)：</b><br>管家数据库显示该区暂无高频恶性治安反馈（多为学生区或家庭住宅区）。正常生活即可，但出门仍需锁好自行车哦！`;
+        resultBox.className = 'sc-result danger'; contentHtml = `<b>🔴 高危预警 (复杂街区)：</b><br>该区域历史治安反馈较差，飞车抢夺或寻衅滋事偶有发生。<b>强烈建议：</b><br>1. 夜晚绝对不要单独佩戴耳机步行。<br>2. 租房尽量避开一楼，注意门窗锁好。`;
+    } else if (warnZones.includes(input)) {
+        resultBox.className = 'sc-result warn'; contentHtml = `<b>🟡 谨慎区域 (黄灯)：</b><br>该区域人员流动较复杂。日常生活无大碍，但<b>自行车极其容易被盗</b>，请务必使用粗链条锁！夜晚尽量结伴而行。`;
+    } else {
+        resultBox.className = 'sc-result safe'; contentHtml = `<b>🟢 治安良好 (绿灯)：</b><br>管家数据库显示该区暂无高频恶性治安反馈（多为学生区或家庭住宅区）。正常生活即可，但出门仍需锁好自行车哦！`;
     }
 
-    // 🌟 核心：统一追加不可抹除的官方免责声明
     contentHtml += `
         <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed rgba(0,0,0,0.15); font-size: 11px; opacity: 0.85; line-height: 1.5;">
-            <b>💡 管家免责声明：</b><br>
-            本评级基于历年留学生真实踩坑反馈及社区印象汇总。街区治安状况会随时间动态变化，<b>查询结果仅供参考，不代表荷兰官方统计数据，亦不能作为租房或出行的唯一绝对依据。</b>遇到紧急危险请立刻拨打 112！
+            <b>💡 管家免责声明：</b><br>本评级基于历年留学生真实踩坑反馈及社区印象汇总。街区治安状况会随时间动态变化，<b>查询结果仅供参考，不代表荷兰官方统计数据，亦不能作为租房或出行的唯一绝对依据。</b>遇到紧急危险请立刻拨打 112！
         </div>
     `;
-
     resultBox.innerHTML = contentHtml;
 }
 
-// ================= 最后，初始化引擎 =================
+// ================= 15. 初始化引擎 =================
 window.addEventListener('DOMContentLoaded', () => { 
-    // 注意：renderTipsPage 由于已被红宝书模块取代，保留空函数防报错即可
+    // 防报错空函数占位
     if(typeof renderTipsPage === 'function') renderTipsPage(); 
     loadTrendingToHome(); 
-    if(typeof renderProfileState === 'function') renderProfileState(); // 依赖 ui.js
+    if(typeof renderProfileState === 'function') renderProfileState(); 
     loadCommunityPosts();
     initRedBook(); 
 });
