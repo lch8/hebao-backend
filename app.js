@@ -399,20 +399,17 @@ async function submitPartnerPost() {
 let mockIdleItems = []; let mockHelpItems = []; let mockPartnerItems = []; window.allCommunityPostsCache = [];
 let currentCommunityPost = null; let selectedItemIds = new Set(); 
 
-// ================= 修复：稳定打开闲置详情页 =================
+// --- 稳定打开闲置详情页 ---
 function openCommunityPost(postId) {
     const modal = document.getElementById('postDetailModal');
     if (!modal) return;
     
-    // ⚠️ 极其关键：必须用 flex，如果是 block，内部排版会全部垮掉
-    modal.style.display = 'flex'; 
+    modal.style.display = 'flex'; // ⚠️ 必须用 flex
 
-    // 这里是渲染逻辑示例（如果有真实数据，请替换为你自己的遍历逻辑）
-    // 找到被点击的帖子
     const post = mockIdleItems.find(p => p.id === postId) || window.allCommunityPostsCache?.find(p => p.id === postId);
     if (!post) return;
+    currentCommunityPost = post; // 存入全局供后续使用
 
-    // 渲染卖家信息
     document.getElementById('pdSellerInfo').innerHTML = `
         <div class="pd-seller-avatar">${post.avatar || '😎'}</div>
         <div>
@@ -421,7 +418,6 @@ function openCommunityPost(postId) {
         </div>
     `;
 
-    // 渲染物品图片（带强力约束）
     document.getElementById('pdItemsList').innerHTML = `
         <div class="pd-item-card">
             <div class="pd-item-img-wrap">
@@ -434,10 +430,8 @@ function openCommunityPost(postId) {
         </div>
     `;
 
-    // 更新底部栏价格
     document.getElementById('pdTotalPrice').innerText = `€${post.price || '0.00'}`;
     
-    // 绑定底部私信按钮事件
     document.getElementById('pdChatBtn').onclick = function() {
         openChat(post.userId, post.name, post.avatar, post.id, post.title, post.price, post.img, post.isSold, 'idle');
     };
@@ -447,62 +441,12 @@ function closePostDetail() {
     document.getElementById('postDetailModal').style.display = 'none';
 }
 
-
-// ================= 修复：稳定打开私聊对话框 =================
-function openChat(targetId, targetName, targetAvatar, postId, postTitle, postPrice, postImg, isSold, type) {
-    const modal = document.getElementById('chatModal');
-    if (!modal) {
-        alert("聊天窗口未初始化");
-        return;
-    }
-    
-    // ⚠️ 极其关键：全屏 Modal 必须是 flex，才能保证 Header 和 Input 停靠在上下！
-    modal.style.display = 'flex'; 
-    
-    // 渲染对方信息
-    document.getElementById('chatTargetName').innerText = targetName || '联系卖家';
-    document.getElementById('chatTargetAvatar').innerText = targetAvatar || '😎';
-    
-    // 渲染商品小卡片 (Snippet)
-    document.getElementById('chatProductTitle').innerText = postTitle || '商品信息';
-    document.getElementById('chatProductPrice').innerText = '€' + (postPrice || '0.00');
-    
-    const imgEl = document.getElementById('chatProductImg');
-    if (imgEl) {
-        // 防止没有图片时破图
-        if (postImg && (postImg.startsWith('http') || postImg.startsWith('data:image'))) {
-            imgEl.src = postImg;
-        } else {
-            // 使用占位 SVG
-            imgEl.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23F3F4F6'/><text x='50%' y='50%' font-size='12' fill='%239CA3AF' text-anchor='middle' dominant-baseline='middle'>暂无图片</text></svg>";
-        }
-    }
-    
-    // 控制是否已售出
-    const disabledBox = document.getElementById('chatInputDisabled');
-    const inputBar = document.getElementById('chatInputBar');
-    const quickReplies = document.getElementById('chatQuickReplies');
-    
-    if (isSold) {
-        if(disabledBox) disabledBox.style.display = 'block';
-        if(inputBar) inputBar.style.display = 'none';
-        if(quickReplies) quickReplies.style.display = 'none';
-    } else {
-        if(disabledBox) disabledBox.style.display = 'none';
-        if(inputBar) inputBar.style.display = 'flex';
-        if(quickReplies) quickReplies.style.display = 'flex';
-    }
-}
-
-function closeChat() {
-    document.getElementById('chatModal').style.display = 'none';
-}
-function closePostDetail() { document.getElementById('postDetailModal').style.display = 'none'; }
 let currentTotalPrice = 0;
 function toggleItemSelect(price, itemId, checkbox) {
     price = parseFloat(price) || 0; if (checkbox.checked) { selectedItemIds.add(itemId); currentTotalPrice += price; } else { selectedItemIds.delete(itemId); currentTotalPrice -= price; }
     document.getElementById('pdTotalPrice').innerText = `€${currentTotalPrice.toFixed(2)}`; document.getElementById('pdChatBtn').innerText = `私信想要 (${selectedItemIds.size}件)`;
 }
+
 function initiateBuyChat() {
     if (selectedItemIds.size === 0) return alert("请先勾选物品！");
     let payload = JSON.parse(currentCommunityPost.content); let wantNames = payload.items.filter(i => selectedItemIds.has(i.id)).map(i => i.name).join('、');
@@ -511,6 +455,7 @@ function initiateBuyChat() {
     const input = document.getElementById('chatInput'); if(input) input.value = `哈喽！我想要你清单里的：${wantNames}，请问还在吗？`;
     closePostDetail();
 }
+
 async function markItemSold(postId, itemId, event) {
     if(!confirm("标记售出后无法恢复，确定吗？")) return;
     const btn = event.target; btn.innerText = "更新中..."; btn.style.pointerEvents = "none";
@@ -521,6 +466,111 @@ async function markItemSold(postId, itemId, event) {
     } catch(e) { alert("更新失败"); btn.innerText = "标为售出"; btn.style.pointerEvents = "auto"; }
 }
 
+
+// ================= 9. 真实私信聊天系统 (终极合并版) =================
+let currentChatPartnerId = null; let currentChatPostId = null; let chatPollingInterval = null;
+
+function openChat(targetId, targetName, targetAvatar, postId, postTitle, postPrice, postImg, isSold, postType = 'idle') {
+    requireAuth(() => {
+        if (targetId === userUUID) return alert("💡 管家提示：不能给自己发私信哦！");
+        
+        currentChatPartnerId = targetId; 
+        currentChatPostId = postId;
+
+        const modal = document.getElementById('chatModal');
+        if (!modal) return alert("聊天窗口未初始化");
+        
+        modal.style.display = 'flex'; // ⚠️ 必须用 flex 保证排版
+
+        // 渲染对方信息
+        document.getElementById('chatTargetName').innerText = targetName || '联系卖家';
+        document.getElementById('chatTargetAvatar').innerText = targetAvatar || '😎';
+
+        // 渲染商品小卡片 (Snippet)
+        document.getElementById('chatProductTitle').innerText = postTitle || '商品信息';
+        document.getElementById('chatProductPrice').innerText = '€' + (postPrice || '0.00');
+
+        // 安全加载图片防破图
+        const imgEl = document.getElementById('chatProductImg');
+        if (imgEl) {
+            if (postImg && (postImg.startsWith('http') || postImg.startsWith('data:image'))) {
+                imgEl.src = postImg;
+            } else {
+                imgEl.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23F3F4F6'/><text x='50%' y='50%' font-size='12' fill='%239CA3AF' text-anchor='middle' dominant-baseline='middle'>暂无图片</text></svg>";
+            }
+        }
+
+        // 完美控制售出状态 (合并了隐藏快捷回复的逻辑)
+        const disabledBox = document.getElementById('chatInputDisabled');
+        const inputBar = document.getElementById('chatInputBar');
+        const quickReplies = document.getElementById('chatQuickReplies');
+        const actionBtn = document.getElementById('cpsActionBtn');
+        const soldStamp = document.getElementById('cpsSoldStamp');
+
+        if (isSold) {
+            if(actionBtn) actionBtn.style.display = 'none';
+            if(soldStamp) soldStamp.style.display = 'block';
+            if(disabledBox) disabledBox.style.display = 'block';
+            if(inputBar) inputBar.style.display = 'none';
+            if(quickReplies) quickReplies.style.display = 'none';
+        } else {
+            if(actionBtn) actionBtn.style.display = 'block';
+            if(soldStamp) soldStamp.style.display = 'none';
+            if(disabledBox) disabledBox.style.display = 'none';
+            if(inputBar) inputBar.style.display = 'flex';
+            if(quickReplies) quickReplies.style.display = 'flex';
+        }
+
+        // 加载历史消息并开启轮询
+        const msgList = document.getElementById('chatMsgList'); 
+        msgList.innerHTML = '<div style="text-align:center; color:#9CA3AF; font-size:12px; margin-top:20px;">加载历史消息中...</div>';
+        loadChatHistory(); 
+        if(chatPollingInterval) clearInterval(chatPollingInterval); 
+        chatPollingInterval = setInterval(loadChatHistory, 3000);
+    });
+}
+
+function closeChat() { 
+    document.getElementById('chatModal').style.display = 'none'; 
+    if(chatPollingInterval) clearInterval(chatPollingInterval); 
+}
+
+async function loadChatHistory() {
+    if (!currentChatPartnerId || !currentChatPostId) return;
+    try {
+        const res = await fetch(`/api/get-messages?u1=${userUUID}&u2=${currentChatPartnerId}&postId=${currentChatPostId}`);
+        const data = await res.json();
+        if (data.success) {
+            const msgList = document.getElementById('chatMsgList');
+            const savedAvatar = localStorage.getItem('hebao_avatar') || ''; const myAvatarHtml = savedAvatar ? `<img src="${savedAvatar}">` : `<span>😎</span>`;
+            const otherAvatarHtml = document.getElementById('chatTargetAvatar').innerText;
+            let html = `<div class="chat-time-sys">聊天已加密端到端保护</div>`;
+            data.messages.forEach(msg => {
+                const isMe = msg.sender_id === userUUID; const avatar = isMe ? myAvatarHtml : `<span>${otherAvatarHtml}</span>`; const rowClass = isMe ? 'me' : 'other';
+                html += `<div class="chat-row ${rowClass}"><div class="chat-text">${msg.content}</div><div class="chat-avatar">${avatar}</div></div>`;
+            });
+            const shouldScroll = msgList.innerHTML.length !== html.length; msgList.innerHTML = html; if (shouldScroll) msgList.scrollTop = msgList.scrollHeight;
+        }
+    } catch(e) {}
+}
+
+async function sendChatMessage() {
+    const input = document.getElementById('chatInput'); const text = input.value.trim(); if(!text) return;
+    const msgList = document.getElementById('chatMsgList'); const savedAvatar = localStorage.getItem('hebao_avatar') || ''; const avatarHtml = savedAvatar ? `<img src="${savedAvatar}">` : `<span>😎</span>`;
+    msgList.insertAdjacentHTML('beforeend', `<div class="chat-row me"><div class="chat-text">${text}</div><div class="chat-avatar">${avatarHtml}</div></div>`); input.value = ''; msgList.scrollTop = msgList.scrollHeight; 
+    try { await fetch('/api/send-message', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ senderId: userUUID, receiverId: currentChatPartnerId, postId: currentChatPostId, content: text }) }); } catch(e) { alert("消息发送失败"); }
+}
+
+// ================= 🔪 一键快捷发送逻辑 =================
+function sendQuickMessage(text) {
+    const input = document.getElementById('chatInput');
+    if (input) {
+        input.value = text;
+        if (typeof sendChatMessage === 'function') sendChatMessage();
+    }
+}
+
+// ================= (注意：这里往下就是 loadCommunityPosts 函数了，原封不动) =================
 // ================= 8. 详情页与集市大厅 (带信任徽章版) =================
 async function loadCommunityPosts() {
     try {
