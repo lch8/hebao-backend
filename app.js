@@ -1,6 +1,45 @@
 // ============================================================================
 // app.js - 核心业务逻辑中心 (净化去重终极版)
 // ============================================================================
+// ================= 🌟 全局高质感 Toast 提示 =================
+let toastTimeout = null;
+function showToast(message, type = 'info') {
+    const toast = document.getElementById('globalToast');
+    const icon = document.getElementById('toastIcon');
+    const msg = document.getElementById('toastMessage');
+    if (!toast) return alert(message); // 防崩溃后备
+
+    // 设定图标和背景色
+    if (type === 'success') { icon.innerText = '✅'; toast.style.background = 'rgba(16, 185, 129, 0.95)'; }
+    else if (type === 'error') { icon.innerText = '🚨'; toast.style.background = 'rgba(239, 68, 68, 0.95)'; }
+    else if (type === 'warning') { icon.innerText = '⚠️'; toast.style.background = 'rgba(245, 158, 11, 0.95)'; }
+    else { icon.innerText = '💡'; toast.style.background = 'rgba(17, 24, 39, 0.95)'; }
+
+    msg.innerText = message;
+    toast.classList.add('show');
+
+    // 清除上一次的定时器，防止连续点击导致闪烁
+    if (toastTimeout) clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3000);
+}
+
+// ================= 🌟 全局朋友圈级大图预览 =================
+function openLightbox(imgSrc) {
+    const lightbox = document.getElementById('imageLightbox');
+    const lightboxImg = document.getElementById('lightboxImg');
+    if (!lightbox || !imgSrc) return;
+    
+    // 如果没有图片（比如是用 SVG 占位的），不放大
+    if(imgSrc.includes('data:image/svg')) return;
+    
+    lightboxImg.src = imgSrc;
+    lightbox.style.display = 'flex';
+}
+function closeLightbox() {
+    document.getElementById('imageLightbox').style.display = 'none';
+}
 
 // ================= 1. 导航与 Tab =================
 function switchAssetTab(tabId, element) { 
