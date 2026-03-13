@@ -399,49 +399,103 @@ async function submitPartnerPost() {
 let mockIdleItems = []; let mockHelpItems = []; let mockPartnerItems = []; window.allCommunityPostsCache = [];
 let currentCommunityPost = null; let selectedItemIds = new Set(); 
 
+// ================= 修复：稳定打开闲置详情页 =================
 function openCommunityPost(postId) {
-    const post = window.allCommunityPostsCache.find(p => p.id === postId); if(!post) return; currentCommunityPost = post; selectedItemIds.clear();
-    let payload; try { payload = JSON.parse(post.content); } catch(e) { payload = { items: [], conditions: {}, oldText: post.content }; }
-    const isMe = (post.user_id === userUUID); 
-    const sellerInfoHtml = `
-        <div style="display:flex; align-items:center; gap:10px; margin-bottom: 10px;">
-            <div style="width:36px; height:36px; border-radius:50%; background:#E5E7EB; display:flex; justify-content:center; align-items:center; font-size:18px;">😎</div>
-            <div>
-                <div style="font-weight:900; font-size:14px;">${post.author_name}</div>
-                <div style="font-size:11px; color:#9CA3AF;">发布于 ${new Date(post.created_at).toLocaleDateString()}</div>
+    const modal = document.getElementById('postDetailModal');
+    if (!modal) return;
+    
+    // ⚠️ 极其关键：必须用 flex，如果是 block，内部排版会全部垮掉
+    modal.style.display = 'flex'; 
+
+    // 这里是渲染逻辑示例（如果有真实数据，请替换为你自己的遍历逻辑）
+    // 找到被点击的帖子
+    const post = mockIdleItems.find(p => p.id === postId) || window.allCommunityPostsCache?.find(p => p.id === postId);
+    if (!post) return;
+
+    // 渲染卖家信息
+    document.getElementById('pdSellerInfo').innerHTML = `
+        <div class="pd-seller-avatar">${post.avatar || '😎'}</div>
+        <div>
+            <div class="pd-seller-name">${post.name || '热心管家用户'} ${post.badge || ''}</div>
+            <div class="pd-seller-time">发布于刚刚</div>
+        </div>
+    `;
+
+    // 渲染物品图片（带强力约束）
+    document.getElementById('pdItemsList').innerHTML = `
+        <div class="pd-item-card">
+            <div class="pd-item-img-wrap">
+                <img class="pd-item-img" src="${post.img || 'https://via.placeholder.com/400'}" alt="商品图片">
+            </div>
+            <div class="pd-item-info">
+                <div class="pd-item-name">${post.title || '闲置好物'}</div>
+                <div class="pd-item-price">€${post.price || '0.00'}</div>
             </div>
         </div>
-        ${payload.conditions ? `
-        <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top: 10px;">
-            <span class="sold-badge" style="position:static;">📍 ${payload.conditions.loc || '未填'}</span>
-            <span class="sold-badge" style="position:static;">⏳ 截止: ${payload.conditions.deadline || '未填'}</span>
-            <span class="sold-badge" style="position:static;">💶 ${payload.conditions.payment || '未填'}</span>
-            <span class="sold-badge" style="position:static;">🔪 ${payload.conditions.bargain || '未填'}</span>
-        </div>` : `<div style="font-size:13px; color:#4B5563; line-height:1.5;">${payload.oldText}</div>`}
-    `; document.getElementById('pdSellerInfo').innerHTML = sellerInfoHtml;
+    `;
 
-    let itemsHtml = '';
-    if(payload.items && payload.items.length > 0) {
-        payload.items.forEach(item => {
-            const soldClass = item.is_sold ? 'sold' : ''; let actionHtml = ''; let clickAction = '';
-            if (isMe) {
-                if (item.is_sold) actionHtml = `<div class="pd-sold-badge" style="position:absolute; top:8px; right:8px; z-index:10;">已出</div>`;
-                else actionHtml = `<button class="mark-sold-btn" style="position:absolute; top:8px; right:8px; z-index:10; font-size:10px; padding:4px 8px; box-shadow:0 2px 4px rgba(0,0,0,0.2); border:none;" onclick="markItemSold(${post.id}, ${item.id}, event)">标为售出</button>`;
-            } else {
-                if (item.is_sold) actionHtml = `<div class="pd-sold-badge" style="position:absolute; top:8px; right:8px; z-index:10;">被抢了</div>`;
-                else {
-                    actionHtml = `<input type="checkbox" class="custom-checkbox" id="chk_${item.id}" style="position:absolute; top:8px; right:8px; z-index:10;" onclick="event.stopPropagation()" onchange="toggleItemSelect(${item.price}, ${item.id}, this)">`;
-                    clickAction = `onclick="document.getElementById('chk_${item.id}').click()"`;
-                }
-            }
-            itemsHtml += `<div class="pd-item-card ${soldClass}" ${clickAction}><img src="${item.url}" class="pd-item-img">${actionHtml}<div class="pd-item-overlay"><div class="pd-item-name">${item.name || '某物品'}</div><div class="pd-item-price">€${item.price || '0'}</div></div></div>`;
-        });
-    } else { itemsHtml = `<div style="text-align:center; color:#9CA3AF; padding:20px;">这是一个老版本的纯文字帖子</div>`; }
-    document.getElementById('pdItemsList').innerHTML = itemsHtml; document.getElementById('pdTotalPrice').innerText = '€0.00';
-    const chatBtn = document.getElementById('pdChatBtn');
-    if (isMe) { chatBtn.innerText = "这是你发布的清单"; chatBtn.style.background = "#E5E7EB"; chatBtn.style.color = "#9CA3AF"; chatBtn.onclick = null; } 
-    else { chatBtn.innerText = "私信想要 (0件)"; chatBtn.style.background = "#111827"; chatBtn.style.color = "#FFF"; chatBtn.onclick = initiateBuyChat; }
-    document.getElementById('postDetailModal').style.display = 'block';
+    // 更新底部栏价格
+    document.getElementById('pdTotalPrice').innerText = `€${post.price || '0.00'}`;
+    
+    // 绑定底部私信按钮事件
+    document.getElementById('pdChatBtn').onclick = function() {
+        openChat(post.userId, post.name, post.avatar, post.id, post.title, post.price, post.img, post.isSold, 'idle');
+    };
+}
+
+function closePostDetail() {
+    document.getElementById('postDetailModal').style.display = 'none';
+}
+
+
+// ================= 修复：稳定打开私聊对话框 =================
+function openChat(targetId, targetName, targetAvatar, postId, postTitle, postPrice, postImg, isSold, type) {
+    const modal = document.getElementById('chatModal');
+    if (!modal) {
+        alert("聊天窗口未初始化");
+        return;
+    }
+    
+    // ⚠️ 极其关键：全屏 Modal 必须是 flex，才能保证 Header 和 Input 停靠在上下！
+    modal.style.display = 'flex'; 
+    
+    // 渲染对方信息
+    document.getElementById('chatTargetName').innerText = targetName || '联系卖家';
+    document.getElementById('chatTargetAvatar').innerText = targetAvatar || '😎';
+    
+    // 渲染商品小卡片 (Snippet)
+    document.getElementById('chatProductTitle').innerText = postTitle || '商品信息';
+    document.getElementById('chatProductPrice').innerText = '€' + (postPrice || '0.00');
+    
+    const imgEl = document.getElementById('chatProductImg');
+    if (imgEl) {
+        // 防止没有图片时破图
+        if (postImg && (postImg.startsWith('http') || postImg.startsWith('data:image'))) {
+            imgEl.src = postImg;
+        } else {
+            // 使用占位 SVG
+            imgEl.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23F3F4F6'/><text x='50%' y='50%' font-size='12' fill='%239CA3AF' text-anchor='middle' dominant-baseline='middle'>暂无图片</text></svg>";
+        }
+    }
+    
+    // 控制是否已售出
+    const disabledBox = document.getElementById('chatInputDisabled');
+    const inputBar = document.getElementById('chatInputBar');
+    const quickReplies = document.getElementById('chatQuickReplies');
+    
+    if (isSold) {
+        if(disabledBox) disabledBox.style.display = 'block';
+        if(inputBar) inputBar.style.display = 'none';
+        if(quickReplies) quickReplies.style.display = 'none';
+    } else {
+        if(disabledBox) disabledBox.style.display = 'none';
+        if(inputBar) inputBar.style.display = 'flex';
+        if(quickReplies) quickReplies.style.display = 'flex';
+    }
+}
+
+function closeChat() {
+    document.getElementById('chatModal').style.display = 'none';
 }
 function closePostDetail() { document.getElementById('postDetailModal').style.display = 'none'; }
 let currentTotalPrice = 0;
