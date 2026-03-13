@@ -610,7 +610,7 @@ function openCommunityPost(postId) {
             // 🌟 高级卡片：背景图 + 底部暗黑渐变蒙层 + 文字与勾选框
             itemsHtml += `
             <div class="${cardClass}" onclick="${isSold ? '' : `toggleItemCard(this, '${item.id}', ${priceNum})`}">
-                <img class="pd-item-img" src="${item.url || 'https://via.placeholder.com/400'}" style="height: 220px;">
+            <img class="pd-item-img" src="${item.url || 'https://via.placeholder.com/400'}" style="height: 220px;" onclick="event.stopPropagation(); openLightbox(this.src)">
                 <div class="pd-item-overlay">
                     <div style="display:flex; justify-content:space-between; align-items:flex-end; width:100%;">
                         <div style="flex:1; overflow:hidden; padding-right:10px;">
@@ -800,6 +800,7 @@ function openChat(targetId, targetName, targetAvatar, postId, postTitle, postPri
             if (postImg && (postImg.startsWith('http') || postImg.startsWith('data:image'))) { imgEl.src = postImg; } 
             else { imgEl.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23F3F4F6'/><text x='50%' y='50%' font-size='12' fill='%239CA3AF' text-anchor='middle' dominant-baseline='middle'>暂无图片</text></svg>"; }
         }
+        imgEl.onclick = function() { openLightbox(this.src); };
 
         const disabledBox = document.getElementById('chatInputDisabled'); const inputBar = document.getElementById('chatInputBar');
         const quickReplies = document.getElementById('chatQuickReplies'); const actionBtn = document.getElementById('cpsActionBtn'); const soldStamp = document.getElementById('cpsSoldStamp');
