@@ -684,6 +684,12 @@
             <div class="chat-text" id="chatDefaultGreeting">你好，请问你是想看这个闲置吗？还在的哦！</div>
         </div>
     </div>
+    <div class="chat-quick-replies" id="chatQuickReplies">
+        <div class="qr-pill" onclick="sendQuickMessage('🔪 你好，我很想要！请问价格还能稍微便宜一点点吗？')">🔪 屠龙刀砍价</div>
+        <div class="qr-pill" onclick="sendQuickMessage('📍 请问平时可以在哪个火车站面交呢？')">📍 问面交地</div>
+        <div class="qr-pill" onclick="sendQuickMessage('📦 请问支持邮寄吗？邮费买家自理。')">📦 问邮寄</div>
+        <div class="qr-pill" onclick="sendQuickMessage('👀 东西还在吗？有没有什么明显的瑕疵呀？')">👀 问成色</div>
+    </div>
     <div class="chat-input-bar" id="chatInputBar">
         <div class="c-action-btn" onclick="alert('发图片功能开发中')">➕</div>
         <input type="text" id="chatInput" class="c-input" placeholder="问问成色，或者约个面交地点..." onkeypress="if(event.key==='Enter') sendChatMessage()">
