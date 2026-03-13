@@ -744,6 +744,19 @@ async function sendChatMessage() {
     msgList.insertAdjacentHTML('beforeend', `<div class="chat-row me"><div class="chat-text">${text}</div><div class="chat-avatar">${avatarHtml}</div></div>`); input.value = ''; msgList.scrollTop = msgList.scrollHeight; 
     try { await fetch('/api/send-message', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ senderId: userUUID, receiverId: currentChatPartnerId, postId: currentChatPostId, content: text }) }); } catch(e) { alert("消息发送失败"); }
 }
+// ================= 🔪 一键快捷发送逻辑 =================
+function sendQuickMessage(text) {
+    const input = document.getElementById('chatInput');
+    if (input) {
+        input.value = text;
+        // 直接调用你原本发送消息的函数
+        if (typeof sendChatMessage === 'function') {
+            sendChatMessage();
+        } else {
+            console.warn("未找到 sendChatMessage 函数");
+        }
+    }
+}
 
 // ================= 10. 我的发布拉取与删除 =================
 async function loadMyPosts() {
