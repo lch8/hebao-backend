@@ -34,7 +34,11 @@ function switchTab(tabId, element) {
     } else {
         if(chatBar) chatBar.style.display = 'none';
     }
-    
+    if (tabId === 'messages') {
+        if (typeof loadConversations === 'function') {
+            loadConversations();
+        }
+    }
     if (tabId === 'profile') { renderFootprints(); renderProfileState(); }
 }
 
