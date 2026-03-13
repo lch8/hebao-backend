@@ -534,16 +534,94 @@ function renderMarketHelp(data = mockHelpItems) {
     container.innerHTML = html; 
 }
 
+// ================= 🏕️ 重构：找搭子卡片 (氛围感与裂变分享版) =================
 function renderMarketPartner(data = mockPartnerItems) { 
     const container = document.getElementById('partnerListContainer'); if(!container) return; 
     if(data.length === 0) { container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:40px 0; grid-column:span 2;">没有找到合适的搭子，自己发一个吧！</div>'; return; } 
+    
     let html = ''; 
     data.forEach(item => { 
-        const genderIcon = item.gender === 'f' ? '♀' : '♂'; const tagsHtml = item.tags.slice(0, 2).map(t => `<div class="pc-tag">${t}</div>`).join(''); const iconSvg = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23F3E8FF'/><text x='50%' y='50%' font-size='20' text-anchor='middle' dominant-baseline='middle'>🥂</text></svg>`; 
-        // 🌟 注入 badge 徽章
-        html += `<div class="partner-card" onclick="openChat('${item.userId}', '${item.name}', '${item.avatar}', ${item.id}, '${item.title}', '0', \`${iconSvg}\`, false, 'partner')"><div class="pc-header"><div class="pc-user"><div class="pc-avatar">${item.avatar}</div><div class="pc-info"><div class="pc-name-row"><span class="pc-name">${item.name}</span>${item.badge}<span class="pc-gender ${item.gender}" style="margin-left:4px;">${genderIcon}</span></div><span class="pc-mbti">${item.mbti}</span></div></div></div><div class="pc-title">${item.title}</div><div class="pc-desc">${item.desc}</div><div class="pc-tags">${tagsHtml}</div><div class="pc-footer"><div class="pc-dist"><span>📍</span> 距你 ${item.distKm} km</div><div class="pc-action">打招呼</div></div></div>`; 
+        // 1. 根据标签智能匹配“氛围感主题”
+        let themeClass = '';
+        const titleStr = item.title + item.desc;
+        if (titleStr.includes('蹦迪') || titleStr.includes('酒吧') || titleStr.includes('音乐节')) themeClass = 'theme-party';
+        else if (titleStr.includes('看展') || titleStr.includes('旅游') || titleStr.includes('摄影')) themeClass = 'theme-art';
+        else if (titleStr.includes('饭') || titleStr.includes('探店') || titleStr.includes('火锅')) themeClass = 'theme-food';
+        else if (titleStr.includes('自习') || titleStr.includes('图书馆') || titleStr.includes('雅思')) themeClass = 'theme-study';
+
+        // 2. 模拟生成“社交筹码” (FOMO 效应)
+        const interestedCount = Math.floor(Math.random() * 5) + 2; // 随机 2-6 人
+        const emojis = ['👱‍♀️', '😎', '🐼', '👻', '🐶'];
+        const randomEmojis = emojis.sort(() => 0.5 - Math.random()).slice(0, 3);
+        const avatarsHtml = randomEmojis.map(e => `<div class="pc-mini-avatar">${e}</div>`).join('');
+
+        const genderIcon = item.gender === 'f' ? '♀' : '♂'; 
+        const tagsHtml = item.tags.slice(0, 2).map(t => `<div class="pc-tag">${t}</div>`).join(''); 
+        const iconSvg = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23F3E8FF'/><text x='50%' y='50%' font-size='20' text-anchor='middle' dominant-baseline='middle'>🥂</text></svg>`; 
+        
+        // 3. 构建超级卡片
+        html += `
+        <div class="partner-card ${themeClass}">
+            <div class="pc-header" onclick="openChat('${item.userId}', '${item.name}', '${item.avatar}', ${item.id}, '${item.title}', '0', \`${iconSvg}\`, false, 'partner')">
+                <div class="pc-user">
+                    <div class="pc-avatar">${item.avatar}</div>
+                    <div class="pc-info">
+                        <div class="pc-name-row">
+                            <span class="pc-name">${item.name}</span>${item.badge}
+                            <span class="pc-gender ${item.gender}" style="margin-left:4px;">${genderIcon}</span>
+                        </div>
+                        <span class="pc-mbti">${item.mbti}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div onclick="openChat('${item.userId}', '${item.name}', '${item.avatar}', ${item.id}, '${item.title}', '0', \`${iconSvg}\`, false, 'partner')">
+                <div class="pc-title">${item.title}</div>
+                <div class="pc-desc">${item.desc}</div>
+                <div class="pc-tags">${tagsHtml}</div>
+                
+                <div class="pc-social-proof">
+                    <div class="pc-social-avatars">${avatarsHtml}</div>
+                    <span>等 ${interestedCount} 人很感兴趣...</span>
+                </div>
+                
+                <div class="pc-footer" style="padding-bottom: 5px;">
+                    <div class="pc-dist"><span>🚲</span> 骑车约 ${Math.ceil(item.distKm * 3.5)} 分钟</div>
+                </div>
+            </div>
+
+            <div class="pc-action-row">
+                <div class="pc-action-btn-main" onclick="openChat('${item.userId}', '${item.name}', '${item.avatar}', ${item.id}, '${item.title}', '0', \`${iconSvg}\`, false, 'partner')">👋 滴滴Ta</div>
+                <div class="pc-action-btn-share" onclick="sharePartnerPost('${item.title}')">
+                    <span style="font-size: 16px;">💬</span> 捞人
+                </div>
+            </div>
+        </div>`; 
     }); 
     container.innerHTML = html; 
+}
+
+// 🌟 一键生成微信转发文案神技
+function sharePartnerPost(title) {
+    const textToCopy = `✨ 捞个搭子！\n\n【${title}】\n\n有 ${Math.floor(Math.random()*5)+2} 个校友已经感兴趣啦，快来上车！\n👉 点击链接看详情直接私信：\nhttps://hebao.nl/p/${Math.floor(Math.random()*10000)}`;
+    
+    // 现代浏览器复制到剪贴板
+    navigator.clipboard.writeText(textToCopy).then(() => {
+        // 弹窗提示成功
+        const plus = document.createElement('div'); 
+        plus.className = 'float-plus'; 
+        plus.innerHTML = '✅ <b>复制成功！</b><br><span style="font-size:12px; font-weight:normal;">快去丢到微信群里捞人吧~</span>'; 
+        plus.style.color = '#10B981';
+        plus.style.background = '#FFF';
+        plus.style.border = '1px solid #A7F3D0';
+        plus.style.textAlign = 'center';
+        plus.style.left = '50%'; plus.style.top = '40%'; 
+        plus.style.transform = 'translate(-50%, -50%)'; 
+        document.body.appendChild(plus); 
+        setTimeout(() => plus.remove(), 2500);
+    }).catch(err => {
+        alert("复制失败，请手动转发哦~");
+    });
 }
 
 // ================= 集市筛选与排序逻辑 =================
