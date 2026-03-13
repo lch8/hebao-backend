@@ -518,35 +518,120 @@ function applyMarketFilters(type) {
 
 
 // ================= 8. 集市详情页与操作 =================
-let currentCommunityPost = null; let selectedItemIds = new Set(); 
+// ================= 8. 闲置详情页与交互 (高级重构版) =================
+let currentCommunityPost = null; 
+let selectedItemIds = new Set(); 
+let currentTotalPrice = 0;
 
 function openCommunityPost(postId) {
-    const modal = document.getElementById('postDetailModal'); if (!modal) return;
-    modal.style.display = 'flex'; // ⚠️ 保证排版正常
+    const modal = document.getElementById('postDetailModal');
+    if (!modal) return;
+    
+    // 1. 初始化重置状态
+    selectedItemIds = new Set();
+    currentTotalPrice = 0;
+    document.getElementById('pdTotalPrice').innerText = `€0.00`;
+    document.getElementById('pdChatBtn').innerText = `私信想要 (0件)`;
+    modal.style.display = 'flex'; 
+
+    // 2. 查找数据
     const post = mockIdleItems.find(p => p.id === postId) || window.allCommunityPostsCache?.find(p => p.id === postId);
     if (!post) return;
     currentCommunityPost = post;
-    document.getElementById('pdSellerInfo').innerHTML = `<div class="pd-seller-avatar">${post.avatar || '😎'}</div><div><div class="pd-seller-name">${post.name || '热心管家用户'} ${post.badge || ''}</div><div class="pd-seller-time">发布于刚刚</div></div>`;
-    document.getElementById('pdItemsList').innerHTML = `<div class="pd-item-card"><div class="pd-item-img-wrap"><img class="pd-item-img" src="${post.img || 'https://via.placeholder.com/400'}" alt="商品图片"></div><div class="pd-item-info"><div class="pd-item-name">${post.title || '闲置好物'}</div><div class="pd-item-price">€${post.price || '0.00'}</div></div></div>`;
-    document.getElementById('pdTotalPrice').innerText = `€${post.price || '0.00'}`;
-    document.getElementById('pdChatBtn').onclick = function() { openChat(post.userId, post.name, post.avatar, post.id, post.title, post.price, post.img, post.isSold, 'idle'); };
+
+    // 3. 渲染顶部卖家信息 (高级微拟物排版)
+    document.getElementById('pdSellerInfo').innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div class="pd-seller-avatar">${post.avatar || '😎'}</div>
+                <div style="display:flex; flex-direction:column; gap:2px;">
+                    <div class="pd-seller-name">${post.name || '热心校友'} ${post.badge || ''}</div>
+                    <div class="pd-seller-time">发布于近期</div>
+                </div>
+            </div>
+            <div style="background:#F3F4F6; color:#6B7280; padding:6px 12px; border-radius:14px; font-size:12px; font-weight:bold;">
+                信用 ${post.credit || '良好'}
+            </div>
+        </div>
+    `;
+
+    // 4. 核心：解析多物品数据并渲染沉浸式瀑布流
+    let payload;
+    try { payload = JSON.parse(post.content); } catch(e) { payload = { items: [{ id: 'item1', name: post.title, price: post.priceNum, url: post.img, is_sold: post.isSold }] }; }
+    
+    const listContainer = document.getElementById('pdItemsList');
+    let itemsHtml = '';
+
+    if (payload.items && payload.items.length > 0) {
+        payload.items.forEach(item => {
+            const isSold = item.is_sold;
+            const priceNum = parseFloat(item.price) || 0;
+            const cardClass = isSold ? 'pd-item-card sold' : 'pd-item-card';
+            
+            // 🌟 高级卡片：背景图 + 底部暗黑渐变蒙层 + 文字与勾选框
+            itemsHtml += `
+            <div class="${cardClass}" onclick="${isSold ? '' : `toggleItemCard(this, '${item.id}', ${priceNum})`}">
+                <img class="pd-item-img" src="${item.url || 'https://via.placeholder.com/400'}" style="height: 220px;">
+                <div class="pd-item-overlay">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-end; width:100%;">
+                        <div style="flex:1; overflow:hidden; padding-right:10px;">
+                            <div class="pd-item-name">${item.name || '闲置好物'}</div>
+                            <div class="pd-item-price">€${item.price}</div>
+                        </div>
+                        ${isSold ? '<div class="pd-sold-badge">已售出</div>' : `<input type="checkbox" class="custom-checkbox" id="chk_${item.id}" onclick="event.stopPropagation(); toggleItemCheckbox(this, '${item.id}', ${priceNum})">`}
+                    </div>
+                </div>
+            </div>`;
+        });
+    }
+    listContainer.innerHTML = itemsHtml;
 }
 
-function closePostDetail() { document.getElementById('postDetailModal').style.display = 'none'; }
-
-let currentTotalPrice = 0;
-function toggleItemSelect(price, itemId, checkbox) {
-    price = parseFloat(price) || 0; if (checkbox.checked) { selectedItemIds.add(itemId); currentTotalPrice += price; } else { selectedItemIds.delete(itemId); currentTotalPrice -= price; }
-    document.getElementById('pdTotalPrice').innerText = `€${currentTotalPrice.toFixed(2)}`; document.getElementById('pdChatBtn').innerText = `私信想要 (${selectedItemIds.size}件)`;
+// 5. 卡片点击穿透选择逻辑
+function toggleItemCard(cardEl, itemId, price) {
+    const chk = document.getElementById(`chk_${itemId}`);
+    if (!chk) return;
+    chk.checked = !chk.checked; // 切换复选框
+    toggleItemCheckbox(chk, itemId, price);
 }
 
+// 6. 核心价格与数量计算
+function toggleItemCheckbox(checkbox, itemId, price) {
+    if (checkbox.checked) {
+        selectedItemIds.add(itemId);
+        currentTotalPrice += price;
+    } else {
+        selectedItemIds.delete(itemId);
+        currentTotalPrice -= price;
+    }
+    // 防止浮点数精度问题 (如 0.300000000004)
+    currentTotalPrice = Math.max(0, currentTotalPrice);
+    document.getElementById('pdTotalPrice').innerText = `€${currentTotalPrice.toFixed(2)}`;
+    document.getElementById('pdChatBtn').innerText = `私信想要 (${selectedItemIds.size}件)`;
+}
+
+// 7. 发起聊天闭环
 function initiateBuyChat() {
-    if (selectedItemIds.size === 0) return alert("请先勾选物品！");
-    let payload = JSON.parse(currentCommunityPost.content); let wantNames = payload.items.filter(i => selectedItemIds.has(i.id)).map(i => i.name).join('、');
-    const firstItemImg = payload.items[0].url;
-    openChat(currentCommunityPost.user_id, currentCommunityPost.author_name, '😎', currentCommunityPost.id, `想要这几件 (€${currentTotalPrice})`, currentTotalPrice, firstItemImg, false, 'idle');
-    const input = document.getElementById('chatInput'); if(input) input.value = `哈喽！我想要你清单里的：${wantNames}，请问还在吗？`;
+    if (selectedItemIds.size === 0) return alert("👉 请先点击图片，勾选您想要的物品哦！");
+    
+    let payload;
+    try { payload = JSON.parse(currentCommunityPost.content); } catch(e) { payload = { items: [{ id: 'item1', name: currentCommunityPost.title, url: currentCommunityPost.img }] }; }
+    
+    // 找出买家选中的所有商品名称
+    let wantNames = payload.items.filter(i => selectedItemIds.has(i.id)).map(i => i.name).join('、');
+    const firstItemImg = payload.items.find(i => selectedItemIds.has(i.id))?.url || currentCommunityPost.img;
+    
+    openChat(currentCommunityPost.user_id, currentCommunityPost.author_name, '😎', currentCommunityPost.id, `想要这几件 (€${currentTotalPrice.toFixed(2)})`, currentTotalPrice.toFixed(2), firstItemImg, false, 'idle');
+    
+    // 自动在输入框里填入打招呼话术
+    const input = document.getElementById('chatInput'); 
+    if(input) input.value = `哈喽！我想要你清单里的：【${wantNames}】，请问还在吗？`;
+    
     closePostDetail();
+}
+
+function closePostDetail() { 
+    document.getElementById('postDetailModal').style.display = 'none'; 
 }
 
 async function markItemSold(postId, itemId, event) {
