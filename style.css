@@ -681,3 +681,45 @@ body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "S
     gap: 4px;
     box-shadow: var(--shadow-sm);
 }
+
+
+/* ================= 🔪 闲鱼同款：聊天快捷回复 ================= */
+.chat-quick-replies {
+    display: flex;
+    gap: 10px;
+    padding: 10px 15px 5px 15px;
+    background: var(--bg-card, #FFFFFF);
+    overflow-x: auto;
+    border-top: 1px solid var(--border-light, #F3F4F6);
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    flex-shrink: 0;
+}
+.chat-quick-replies::-webkit-scrollbar { display: none; }
+
+.qr-pill {
+    background: var(--bg-card, #FFFFFF);
+    color: var(--text-regular, #374151);
+    font-size: 12px;
+    font-weight: 900;
+    padding: 8px 14px;
+    border-radius: var(--radius-pill, 99px);
+    border: 1px solid var(--border-base, #E5E7EB);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: var(--transition-fast, 0.2s);
+    flex-shrink: 0;
+    box-shadow: var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.03));
+}
+
+.qr-pill:active { 
+    background: var(--bg-muted, #F3F4F6); 
+    transform: scale(0.95); 
+}
+
+/* 砍价按钮做特殊高亮 */
+.qr-pill:first-child {
+    color: var(--color-danger, #EF4444);
+    background: var(--color-danger-light, #FEF2F2);
+    border-color: #FECACA;
+}
