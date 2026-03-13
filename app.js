@@ -644,7 +644,102 @@ async function markItemSold(postId, itemId, event) {
     } catch(e) { alert("更新失败"); btn.innerText = "标为售出"; btn.style.pointerEvents = "auto"; }
 }
 
+// ================= 💬 全局消息会话列表逻辑 =================
 
+// 当用户点击底部的“消息”Tab时，拉取会话列表
+function loadConversations() {
+    // 每次进入消息页面，先显示加载中
+    const container = document.getElementById('conversationList');
+    const emptyState = document.getElementById('msgEmptyState');
+    if (!container) return;
+
+    if (!userUUID) {
+        if(emptyState) emptyState.style.display = 'block';
+        container.innerHTML = '<div style="text-align:center; color:#9CA3AF; font-size:12px; padding:20px;">请先登录查看消息</div>';
+        return;
+    }
+
+    // 尝试从后端拉取真实会话列表 (需要你后端提供 /api/get-conversations 接口)
+    fetch(`/api/get-conversations?userId=${userUUID}`, { headers: getAuthHeaders() })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success && data.conversations && data.conversations.length > 0) {
+                renderConversationList(data.conversations);
+            } else {
+                // 如果后端没数据，尝试渲染本地缓存，或者显示空状态
+                renderFallbackConversations();
+            }
+        })
+        .catch(err => {
+            console.log("拉取会话列表失败，使用本地回退方案");
+            renderFallbackConversations();
+        });
+}
+
+// 渲染列表的 UI 函数
+function renderConversationList(conversations) {
+    const container = document.getElementById('conversationList');
+    const emptyState = document.getElementById('msgEmptyState');
+    
+    if (conversations.length === 0) {
+        if(emptyState) emptyState.style.display = 'block';
+        container.innerHTML = '';
+        return;
+    }
+
+    if(emptyState) emptyState.style.display = 'none';
+    let html = '';
+    
+    conversations.forEach(conv => {
+        // 格式化时间 (例如：10:30 或 昨天)
+        const timeStr = new Date(conv.last_time || Date.now()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        
+        // 🌟 点击某一行，直接把参数传给 openChat 恢复聊天！
+        html += `
+        <div class="msg-list-item" onclick="openChat('${conv.partner_id}', '${conv.partner_name}', '${conv.partner_avatar}', '${conv.post_id}', '${conv.post_title}', '${conv.post_price || '0'}', '${conv.post_img}', false)">
+            <div class="msg-avatar">${conv.partner_avatar || '😎'}</div>
+            <div class="msg-content">
+                <div class="msg-header">
+                    <div class="msg-name">${conv.partner_name || '热心校友'}</div>
+                    <div class="msg-time">${timeStr}</div>
+                </div>
+                <div class="msg-text">${conv.last_message || '[图片/商品链接]'}</div>
+            </div>
+        </div>`;
+    });
+    
+    container.innerHTML = html;
+}
+
+// （测试用）当你后端没写好时，让你能看到效果的假数据
+function renderFallbackConversations() {
+    // 假设你刚才给一个叫“张三”的人发了消息
+    const mockData = [
+        {
+            partner_id: "mock_user_001",
+            partner_name: "代村卖车学长",
+            partner_avatar: "🚲",
+            post_id: "1",
+            post_title: "九成新自行车",
+            post_price: "45",
+            post_img: "https://via.placeholder.com/100",
+            last_message: "你好，请问自行车还能再便宜点吗？",
+            last_time: Date.now()
+        },
+        {
+            partner_id: "mock_user_002",
+            partner_name: "阿姆拼车群主",
+            partner_avatar: "🚗",
+            post_id: "2",
+            post_title: "周末去鲁尔蒙德看展",
+            post_price: "0",
+            post_img: "",
+            last_message: "我刚才发了我的微信给你，你加我一下~",
+            last_time: Date.now() - 3600000 // 一小时前
+        }
+    ];
+    renderConversationList(mockData);
+}
 // ================= 9. 真实私信聊天系统 (终极净化版) =================
 let currentChatPartnerId = null; let currentChatPostId = null; let chatPollingInterval = null;
 
