@@ -7,7 +7,7 @@ function showToast(message, type = 'info') {
     const toast = document.getElementById('globalToast');
     const icon = document.getElementById('toastIcon');
     const msg = document.getElementById('toastMessage');
-    if (!toast) return alert(message); // 防崩溃后备
+    if (!toast) return showToast(message); // 防崩溃后备
 
     // 设定图标和背景色
     if (type === 'success') { icon.innerText = '✅'; toast.style.background = 'rgba(16, 185, 129, 0.95)'; }
@@ -63,7 +63,7 @@ function openWechatBindModal() {
 }
 function saveWechatBind() {
     const wx = document.getElementById('authWechatInput').value.trim(); 
-    if(!wx) return alert("微信号不能为空哦！");
+    if(!wx) return showToast("微信号不能为空哦！");
     localStorage.setItem('hp_wechat', wx); 
     document.getElementById('wechatBindModal').style.display = 'none';
     const plus = document.createElement('div'); 
@@ -83,7 +83,7 @@ function openEditProfileModal() {
 }
 function saveProfileData() { 
     const name = document.getElementById('epName').value.trim(); 
-    if(!name) return alert('昵称不能为空哦！'); 
+    if(!name) return showToast('昵称不能为空哦！'); 
     localStorage.setItem('hp_name', name); 
     localStorage.setItem('hp_gender', document.getElementById('epGender').value); 
     localStorage.setItem('hp_mbti', document.getElementById('epMbti').value); 
@@ -116,7 +116,7 @@ function loadAvatar() {
 let currentCity = ""; let currentPostcode = "";
 function autoLocate(inputId) {
     const inputEl = document.getElementById(inputId); 
-    if (!navigator.geolocation) return alert("浏览器不支持定位功能");
+    if (!navigator.geolocation) return showToast("浏览器不支持定位功能");
     const oldVal = inputEl.value; inputEl.value = "定位中..."; 
     const toggleWrapper = document.getElementById('postcodeToggleWrapper'); 
     if(toggleWrapper) toggleWrapper.style.display = 'none';
@@ -134,8 +134,8 @@ function autoLocate(inputId) {
                 toggleWrapper.style.display = 'flex'; 
                 document.getElementById('showPostcodeCheck').checked = false; 
             }
-        } catch (e) { inputEl.value = oldVal; alert("获取定位失败"); }
-    }, (err) => { inputEl.value = oldVal; alert("定位权限被拒绝"); }, { timeout: 10000 });
+        } catch (e) { inputEl.value = oldVal; showToast("获取定位失败"); }
+    }, (err) => { inputEl.value = oldVal; showToast("定位权限被拒绝"); }, { timeout: 10000 });
 }
 function togglePostcode() { 
     const inputEl = document.getElementById('idleLocation'); 
@@ -172,7 +172,7 @@ async function handlePackageImage(event) {
             document.getElementById('miniChineseName').innerText = `${emoji} ${data.chinese_name || data.dutch_name || '未知商品'}`; 
             document.getElementById('miniInsight').innerText = data.insight || '管家觉得不错~'; 
             saveToLocalFootprint(data, data.image_url);
-        } catch (err) { alert("识别失败：" + err.message); resetApp(); } 
+        } catch (err) { showToast("识别失败：" + err.message); resetApp(); } 
         finally { document.getElementById('packageImgInput').value = ''; }
     }; 
     reader.readAsDataURL(file);
@@ -188,7 +188,7 @@ function startBarcodeScan() {
         closeScanner(); 
         document.getElementById('mainSearchInput').value = decodedText; 
         executeSearch(); 
-    }).catch(err => { alert("调用摄像头失败"); closeScanner(); });
+    }).catch(err => { showToast("调用摄像头失败"); closeScanner(); });
 }
 function closeScanner() { 
     if(html5Scanner) { html5Scanner.stop().catch(e=>console.log(e)); html5Scanner = null; } 
@@ -210,7 +210,7 @@ function executeSearch() {
         document.getElementById('miniChineseName').innerText=data.chinese_name||'未知商品'; 
         document.getElementById('miniInsight').innerText=data.insight||'暂无评价'; 
         saveToLocalFootprint(data, data.image_url);
-    }).catch(err => { alert("未找到"); resetApp(); });
+    }).catch(err => { showToast("未找到"); resetApp(); });
 }
 function resetApp() { 
     document.getElementById('previewContainer').style.display='none'; 
@@ -280,7 +280,7 @@ function renderReviewCards(pairingString) {
 function likeReviewCard(btn) { if(btn.classList.contains('voted')) return; btn.classList.add('voted'); const span = btn.querySelector('span:last-child'); span.innerText = parseInt(span.innerText) + 1; }
 function openAddReviewModal() { document.getElementById('reviewText').value = ''; document.getElementById('addReviewModal').style.display = 'flex'; }
 async function submitDetailReview() {
-    const text = document.getElementById('reviewText').value.trim(); if(!text) return alert("写点内容吧！");
+    const text = document.getElementById('reviewText').value.trim(); if(!text) return showToast("写点内容吧！");
     const attitude = document.getElementById('reviewAttitude').value; const finalUgcText = `🧑‍🍳 网友点评 [${attitude}]：${text}`;
     const btn = document.getElementById('btnSubmitReview'); btn.innerText = "提交中..."; btn.disabled = true;
     try {
@@ -288,8 +288,8 @@ async function submitDetailReview() {
         let history = JSON.parse(localStorage.getItem('hebao_history') || '[]'); let index = history.findIndex(i => i.dutch_name === currentDetailData.dutch_name);
         if(index !== -1) { history[index].pairing = currentDetailData.pairing; localStorage.setItem('hebao_history', JSON.stringify(history)); }
         await fetch('/api/vote', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ dutch_name: currentDetailData.dutch_name, action: attitude.includes('推荐') ? 'like' : 'dislike' }) });
-        alert("🎉 发布成功！"); document.getElementById('addReviewModal').style.display = 'none'; setupDetailPage();
-    } catch(e) { alert("网络错误"); } finally { btn.innerText = "🚀 提交评价"; btn.disabled = false; }
+        showToast("🎉 发布成功！"); document.getElementById('addReviewModal').style.display = 'none'; setupDetailPage();
+    } catch(e) { showToast("网络错误"); } finally { btn.innerText = "🚀 提交评价"; btn.disabled = false; }
 }
 function saveToLocalFootprint(data, img) { let h = JSON.parse(localStorage.getItem('hebao_history')||'[]'); if(!h.find(i=>i.dutch_name===data.dutch_name)){ data.img_src=img; h.unshift(data); localStorage.setItem('hebao_history',JSON.stringify(h)); } }
 function renderFootprints() { 
@@ -356,7 +356,7 @@ const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecogni
 if (SpeechRecognition) { recognition = new SpeechRecognition(); recognition.lang = 'zh-CN'; recognition.continuous = false; recognition.interimResults = false; }
 function toggleVoiceInput(type) {
     const btn = document.getElementById(`btnVoiceInput_${type}`); const input = document.getElementById(`aiKeywords_${type}`);
-    if (!recognition) return alert('请使用自带语音输入法');
+    if (!recognition) return showToast('请使用自带语音输入法');
     if (btn.classList.contains('recording')) { recognition.stop(); return; }
     btn.classList.add('recording'); btn.innerText = '🔴'; const oldPlaceholder = input.placeholder; input.placeholder = '听着呢...';
     try { recognition.start(); } catch(e) {}
@@ -366,7 +366,7 @@ function toggleVoiceInput(type) {
 }
 
 async function generateAICopy(type) {
-    const inputEl = document.getElementById(`aiKeywords_${type}`); const keyword = inputEl.value.trim(); if (!keyword && type !== 'idle') return alert("说点什么吧！");
+    const inputEl = document.getElementById(`aiKeywords_${type}`); const keyword = inputEl.value.trim(); if (!keyword && type !== 'idle') return showToast("说点什么吧！");
     const oldVal = inputEl.value; inputEl.value = "⏳ AI提取中..."; inputEl.disabled = true;
     try {
         const payload = { keyword, type };
@@ -375,30 +375,30 @@ async function generateAICopy(type) {
         const data = await res.json(); if(data.error) throw new Error(data.error);
         if (type === 'idle') { if(data.deadline && document.getElementById('idleDeadline')) document.getElementById('idleDeadline').value = data.deadline; if(data.location && document.getElementById('idleLocation')) document.getElementById('idleLocation').value = data.location; if(data.bargain) matchPills('bargainGroup', data.bargain); if(data.payment) matchPills('paymentGroup', data.payment); } else if (type === 'help') { if(data.copy && document.getElementById('helpDesc')) document.getElementById('helpDesc').value = data.copy; if(data.reward && document.getElementById('helpReward')) document.getElementById('helpReward').value = data.reward; if(data.location && document.getElementById('helpLocation')) document.getElementById('helpLocation').value = data.location; if(data.urgent) matchPills('helpUrgentGroup', data.urgent); } else if (type === 'partner') { if(data.title && document.getElementById('partnerTitle')) document.getElementById('partnerTitle').value = data.title; if(data.copy && document.getElementById('partnerDesc')) document.getElementById('partnerDesc').value = data.copy; if(data.location && document.getElementById('partnerLocation')) document.getElementById('partnerLocation').value = data.location; if(data.mbti) matchSelect('partnerMbti', data.mbti); }
         inputEl.value = "✨ 提取成功！";
-    } catch (err) { alert("失败：" + err.message); inputEl.value = oldVal; } finally { setTimeout(() => { inputEl.value = ''; inputEl.disabled = false; inputEl.placeholder="按住说：代村自提，明天拿走..."; }, 2000); }
+    } catch (err) { showToast("失败：" + err.message); inputEl.value = oldVal; } finally { setTimeout(() => { inputEl.value = ''; inputEl.disabled = false; inputEl.placeholder="按住说：代村自提，明天拿走..."; }, 2000); }
 }
 
 async function submitIdlePost() {
     const loc = document.getElementById('idleLocation') ? document.getElementById('idleLocation').value : ''; const deadline = document.getElementById('idleDeadline') ? document.getElementById('idleDeadline').value : ''; const bargain = document.querySelector('#bargainGroup .active') ? document.querySelector('#bargainGroup .active').innerText : ''; const payment = document.querySelector('#paymentGroup .active') ? document.querySelector('#paymentGroup .active').innerText : ''; const totalPriceBox = document.getElementById('idlePrice'); const totalPrice = totalPriceBox ? totalPriceBox.value.trim() || '0' : '0';
-    if(selectedImagesArray.length === 0) return alert("请至少传一张照片！");
+    if(selectedImagesArray.length === 0) return showToast("请至少传一张照片！");
     const btn = document.querySelector('#publishIdleModal .fm-submit'); btn.innerText = "打水印中..."; btn.style.pointerEvents = 'none';
     try {
         let finalItemsData = [];
         for (let img of selectedImagesArray) { const taggedBase64 = await addTagToImage(img.preview, img.name, img.price); const res = await fetch('/api/upload', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ imageBase64: taggedBase64 }) }); const data = await res.json(); if(data.success) { finalItemsData.push({ id: img.id, url: data.url, name: img.name, price: img.price, is_sold: false }); } }
         const contentJson = JSON.stringify({ items: finalItemsData, conditions: { loc, deadline, bargain, payment } }); const finalTitle = `[闲置] €${totalPrice} · ${loc.split(' (')[0]}`; const authorName = localStorage.getItem('hp_name') || '管家新人';
         const resDb = await fetch('/api/publish-community', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ userId: userUUID, authorName: authorName, title: finalTitle, text: contentJson, imageUrl: '' }) }); const resData = await resDb.json(); if(!resData.success) throw new Error(resData.error);
-        alert("🎉 发布成功！"); closeIdlePublish(); selectedImagesArray = []; renderIdleItemCards(); if(totalPriceBox) totalPriceBox.value = ''; loadCommunityPosts(); 
-    } catch(e) { alert("失败：" + e.message); } finally { btn.innerText = "发布"; btn.style.pointerEvents = 'auto'; }
+        showToast("🎉 发布成功！"); closeIdlePublish(); selectedImagesArray = []; renderIdleItemCards(); if(totalPriceBox) totalPriceBox.value = ''; loadCommunityPosts(); 
+    } catch(e) { showToast("失败：" + e.message); } finally { btn.innerText = "发布"; btn.style.pointerEvents = 'auto'; }
 }
 async function submitHelpPost() {
     const desc = document.getElementById('helpDesc') ? document.getElementById('helpDesc').value.trim() : ''; const reward = document.getElementById('helpReward') ? document.getElementById('helpReward').value.trim() : '0'; const urgentGroup = document.querySelector('#helpUrgentGroup .active'); const urgent = urgentGroup && urgentGroup.innerText.includes('十万火急') ? '🔥急' : '普通';
-    if(!desc) return alert("写点什么哦！"); const btn = document.querySelector('#publishHelpModal .fm-submit'); btn.innerText = "发送中..."; btn.style.pointerEvents = 'none';
-    try { const finalTitle = `[互助-${urgent}] 赏金 €${reward || '0'}`; const authorName = localStorage.getItem('hp_name') || '管家新人'; const res = await fetch('/api/publish-community', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ userId: userUUID, authorName: authorName, title: finalTitle, text: desc, imageUrl: '' }) }); if(!res.ok) throw new Error("失败"); alert("🎉 发布成功！"); closeHelpPublish(); if(document.getElementById('helpDesc')) document.getElementById('helpDesc').value = ''; loadCommunityPosts(); } catch(e) { alert(e.message); } finally { btn.innerText = "发布"; btn.style.pointerEvents = 'auto'; }
+    if(!desc) return showToast("写点什么哦！"); const btn = document.querySelector('#publishHelpModal .fm-submit'); btn.innerText = "发送中..."; btn.style.pointerEvents = 'none';
+    try { const finalTitle = `[互助-${urgent}] 赏金 €${reward || '0'}`; const authorName = localStorage.getItem('hp_name') || '管家新人'; const res = await fetch('/api/publish-community', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ userId: userUUID, authorName: authorName, title: finalTitle, text: desc, imageUrl: '' }) }); if(!res.ok) throw new Error("失败"); showToast("🎉 发布成功！"); closeHelpPublish(); if(document.getElementById('helpDesc')) document.getElementById('helpDesc').value = ''; loadCommunityPosts(); } catch(e) { showToast(e.message); } finally { btn.innerText = "发布"; btn.style.pointerEvents = 'auto'; }
 }
 async function submitPartnerPost() {
     const title = document.getElementById('partnerTitle') ? document.getElementById('partnerTitle').value.trim() : ''; const desc = document.getElementById('partnerDesc') ? document.getElementById('partnerDesc').value.trim() : '';
-    if(!title) return alert("写个标题吧！"); const btn = document.querySelector('#publishPartnerModal .fm-submit'); btn.innerText = "发送中..."; btn.style.pointerEvents = 'none';
-    try { const finalTitle = `[找搭子] ${title}`; const authorName = localStorage.getItem('hp_name') || '管家新人'; const res = await fetch('/api/publish-community', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ userId: userUUID, authorName: authorName, title: finalTitle, text: desc, imageUrl: '' }) }); if(!res.ok) throw new Error("失败"); alert("🎉 发布成功！"); closePartnerPublish(); if(document.getElementById('partnerTitle')) document.getElementById('partnerTitle').value = ''; if(document.getElementById('partnerDesc')) document.getElementById('partnerDesc').value = ''; loadCommunityPosts(); } catch(e) { alert(e.message); } finally { btn.innerText = "发布"; btn.style.pointerEvents = 'auto'; }
+    if(!title) return showToast("写个标题吧！"); const btn = document.querySelector('#publishPartnerModal .fm-submit'); btn.innerText = "发送中..."; btn.style.pointerEvents = 'none';
+    try { const finalTitle = `[找搭子] ${title}`; const authorName = localStorage.getItem('hp_name') || '管家新人'; const res = await fetch('/api/publish-community', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ userId: userUUID, authorName: authorName, title: finalTitle, text: desc, imageUrl: '' }) }); if(!res.ok) throw new Error("失败"); showToast("🎉 发布成功！"); closePartnerPublish(); if(document.getElementById('partnerTitle')) document.getElementById('partnerTitle').value = ''; if(document.getElementById('partnerDesc')) document.getElementById('partnerDesc').value = ''; loadCommunityPosts(); } catch(e) { showToast(e.message); } finally { btn.innerText = "发布"; btn.style.pointerEvents = 'auto'; }
 }
 
 
@@ -512,7 +512,7 @@ function sharePartnerPost(title) {
         const plus = document.createElement('div'); plus.className = 'float-plus'; plus.innerHTML = '✅ <b>复制成功！</b><br><span style="font-size:12px; font-weight:normal;">快去丢到微信群里捞人吧~</span>'; 
         plus.style.color = '#10B981'; plus.style.background = '#FFF'; plus.style.border = '1px solid #A7F3D0'; plus.style.textAlign = 'center'; plus.style.left = '50%'; plus.style.top = '40%'; plus.style.transform = 'translate(-50%, -50%)'; 
         document.body.appendChild(plus); setTimeout(() => plus.remove(), 2500);
-    }).catch(err => { alert("复制失败，请手动转发哦~"); });
+    }).catch(err => { showToast("复制失败，请手动转发哦~"); });
 }
 
 function renderMarketQuestion(data = mockQuestionItems) { 
@@ -651,7 +651,7 @@ function toggleItemCheckbox(checkbox, itemId, price) {
 
 // 7. 发起聊天闭环
 function initiateBuyChat() {
-    if (selectedItemIds.size === 0) return alert("👉 请先点击图片，勾选您想要的物品哦！");
+    if (selectedItemIds.size === 0) return showToast("👉 请先点击图片，勾选您想要的物品哦！");
     
     let payload;
     try { payload = JSON.parse(currentCommunityPost.content); } catch(e) { payload = { items: [{ id: 'item1', name: currentCommunityPost.title, url: currentCommunityPost.img }] }; }
@@ -680,7 +680,7 @@ async function markItemSold(postId, itemId, event) {
     try {
         const res = await fetch('/api/update-post', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ postId: postId, userId: userUUID, newContent: JSON.stringify(payload) }) });
         const data = await res.json(); if(!data.success) throw new Error(data.error); loadCommunityPosts(); openCommunityPost(postId);
-    } catch(e) { alert("更新失败"); btn.innerText = "标为售出"; btn.style.pointerEvents = "auto"; }
+    } catch(e) { showToast("更新失败"); btn.innerText = "标为售出"; btn.style.pointerEvents = "auto"; }
 }
 
 // ================= 💬 全局消息会话列表逻辑 =================
@@ -784,9 +784,9 @@ let currentChatPartnerId = null; let currentChatPostId = null; let chatPollingIn
 
 function openChat(targetId, targetName, targetAvatar, postId, postTitle, postPrice, postImg, isSold, postType = 'idle') {
     requireAuth(() => {
-        if (targetId === userUUID) return alert("💡 管家提示：不能给自己发私信哦！");
+        if (targetId === userUUID) return showToast("💡 管家提示：不能给自己发私信哦！");
         currentChatPartnerId = targetId; currentChatPostId = postId;
-        const modal = document.getElementById('chatModal'); if (!modal) return alert("聊天窗口未初始化");
+        const modal = document.getElementById('chatModal'); if (!modal) return showToast("聊天窗口未初始化");
         
         modal.style.display = 'flex'; // ⚠️ 保证排版绝对稳定
 
@@ -841,7 +841,7 @@ async function sendChatMessage() {
     const input = document.getElementById('chatInput'); const text = input.value.trim(); if(!text) return;
     const msgList = document.getElementById('chatMsgList'); const savedAvatar = localStorage.getItem('hebao_avatar') || ''; const avatarHtml = savedAvatar ? `<img src="${savedAvatar}">` : `<span>😎</span>`;
     msgList.insertAdjacentHTML('beforeend', `<div class="chat-row me"><div class="chat-text">${text}</div><div class="chat-avatar">${avatarHtml}</div></div>`); input.value = ''; msgList.scrollTop = msgList.scrollHeight; 
-    try { await fetch('/api/send-message', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ senderId: userUUID, receiverId: currentChatPartnerId, postId: currentChatPostId, content: text }) }); } catch(e) { alert("消息发送失败"); }
+    try { await fetch('/api/send-message', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ senderId: userUUID, receiverId: currentChatPartnerId, postId: currentChatPostId, content: text }) }); } catch(e) { showToast("消息发送失败"); }
 }
 
 function sendQuickMessage(text) {
@@ -875,8 +875,8 @@ async function deleteMyPost(postId, btnElement) {
     try {
         const res = await fetch('/api/delete-post', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ postId: postId, userId: userUUID }) });
         const data = await res.json();
-        if(data.success) { loadMyPosts(); loadCommunityPosts(); } else { alert('删除失败'); btnElement.innerText = originalText; btnElement.style.pointerEvents = "auto"; }
-    } catch(e) { alert('网络错误'); btnElement.innerText = originalText; btnElement.style.pointerEvents = "auto"; }
+        if(data.success) { loadMyPosts(); loadCommunityPosts(); } else { showToast('删除失败'); btnElement.innerText = originalText; btnElement.style.pointerEvents = "auto"; }
+    } catch(e) { showToast('网络错误'); btnElement.innerText = originalText; btnElement.style.pointerEvents = "auto"; }
 }
 
 
@@ -943,7 +943,7 @@ function playDingSound() {
     gainNode.gain.setValueAtTime(0, audioCtx.currentTime); gainNode.gain.linearRampToValueAtTime(1, audioCtx.currentTime + 0.02); gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
     osc.connect(gainNode); gainNode.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.3);
 }
-function copyText(text) { navigator.clipboard.writeText(text); alert(`已复制: ${text}`); }
+function copyText(text) { navigator.clipboard.writeText(text); showToast(`已复制: ${text}`); }
 
 // ================= 12. 红宝书：渲染与滑动逻辑 =================
 let currentRbMode = localStorage.getItem('hp_survival_mode') || 'starter';
@@ -1013,7 +1013,7 @@ function renderStarterTasks() {
             const plus = document.createElement('div'); plus.className = 'float-plus'; plus.innerText = '🎉 史诗成就：主线全通关！'; plus.style.color = '#10B981';
             plus.style.left = '50%'; plus.style.top = '40%'; plus.style.transform = 'translate(-50%, -50%)'; document.body.appendChild(plus); 
             setTimeout(() => plus.remove(), 2500); localStorage.setItem('hp_starter_cleared', 'true');
-            setTimeout(() => { alert("你已做好在荷兰生存的全部准备！已为您自动开启【进阶模式】！"); switchRbMode('advanced'); }, 1500);
+            setTimeout(() => { showToast("你已做好在荷兰生存的全部准备！已为您自动开启【进阶模式】！"); switchRbMode('advanced'); }, 1500);
         }, 500);
     }
 }
@@ -1141,7 +1141,7 @@ function removeCollection(id, e) {
 // --- AI 自动提炼攻略 ---
 async function generateAICard() {
     const inputEl = document.getElementById('aiWikiInput'); const btnEl = document.getElementById('btnGenerateWiki'); const keyword = inputEl.value.trim();
-    if (!keyword) return alert("请先粘贴你要提取的内容！");
+    if (!keyword) return showToast("请先粘贴你要提取的内容！");
     btnEl.innerText = "⏳ DeepSeek 正在疯狂提炼..."; btnEl.disabled = true;
     try {
         const res = await fetch('/api/generate-copy', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ keyword, type: 'wiki' }) });
@@ -1151,11 +1151,11 @@ async function generateAICard() {
         let customWikis = JSON.parse(localStorage.getItem('hp_custom_wikis') || '[]'); customWikis.unshift(newCard); 
         localStorage.setItem('hp_custom_wikis', JSON.stringify(customWikis));
 
-        alert("🎉 录入成功！卡片已生成！"); document.getElementById('aiWikiModal').style.display = 'none'; inputEl.value = ''; renderWikiList(); 
-    } catch (err) { alert("提取失败：" + err.message); } finally { btnEl.innerText = "🪄 一键提取为红宝书"; btnEl.disabled = false; }
+        showToast("🎉 录入成功！卡片已生成！"); document.getElementById('aiWikiModal').style.display = 'none'; inputEl.value = ''; renderWikiList(); 
+    } catch (err) { showToast("提取失败：" + err.message); } finally { btnEl.innerText = "🪄 一键提取为红宝书"; btnEl.disabled = false; }
 }
 
-function toggleFabModal() { alert("您可以点击底部的『✨ AI 自动提取长文』来自己制作卡片哦！"); }
+function toggleFabModal() { showToast("您可以点击底部的『✨ AI 自动提取长文』来自己制作卡片哦！"); }
 function checkWidgets() {
     const now = new Date(); const day = now.getDay(); const hours = now.getHours();
     const supermarketWg = document.getElementById('supermarketWidget');
@@ -1169,16 +1169,16 @@ function openQuestionPublish() { closePublishSheet(); setTimeout(() => { documen
 function closeQuestionPublish() { document.getElementById('publishQuestionModal').style.display = 'none'; }
 async function submitQuestionPost() {
     const title = document.getElementById('questionTitle').value.trim(); const desc = document.getElementById('questionDesc').value.trim(); const tag = document.querySelector('#questionTagGroup .active').innerText;
-    if(!title) return alert("写个标题吧！"); 
+    if(!title) return showToast("写个标题吧！"); 
     const btn = document.querySelector('#publishQuestionModal .fm-submit'); btn.innerText = "发送中..."; btn.style.pointerEvents = 'none';
     try { 
         const finalTitle = `[问答] ${tag} - ${title}`; const authorName = localStorage.getItem('hp_name') || '管家新人'; 
         const res = await fetch('/api/publish-community', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ userId: userUUID, authorName: authorName, title: finalTitle, text: desc, imageUrl: '' }) }); 
         if(!res.ok) throw new Error("失败"); 
-        alert("🎉 提问成功！大家很快就会来解答的。"); 
+        showToast("🎉 提问成功！大家很快就会来解答的。"); 
         closeQuestionPublish(); document.getElementById('questionTitle').value = ''; document.getElementById('questionDesc').value = ''; 
         loadCommunityPosts(); 
-    } catch(e) { alert(e.message); } finally { btn.innerText = "发布"; btn.style.pointerEvents = 'auto'; }
+    } catch(e) { showToast(e.message); } finally { btn.innerText = "发布"; btn.style.pointerEvents = 'auto'; }
 }
 
 let currentWikiIdForComment = null;
@@ -1204,7 +1204,7 @@ function submitWikiComment() {
 // ================= 14. 🛡️ 街区治安查询 (管家安全盾) =================
 function checkSafetyCode() {
     const input = document.getElementById('postcodeInput').value.trim(); const resultBox = document.getElementById('safetyResult');
-    if (input.length !== 4) { alert("请输入准确的4位数字邮编哦！(例如：2512)"); return; }
+    if (input.length !== 4) { showToast("请输入准确的4位数字邮编哦！(例如：2512)"); return; }
     resultBox.style.display = 'block';
     
     const dangerZones = ['2512', '2525', '2526', '3081', '3083', '1102', '1103', '1104', '1062']; 
