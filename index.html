@@ -154,14 +154,30 @@
             </div>
         </div>
 
-        <div id="proWidgetsArea" style="display: none; padding: 0 20px; margin-bottom: 15px; flex-direction: column; gap: 10px;">
-            <div class="widget-card glass-card" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: linear-gradient(135deg, #111827, #374151); color: #FFF; border-radius: 16px; box-shadow: 0 8px 20px rgba(17,24,39,0.2);">
-                <div class="wg-left" style="font-weight: 900; font-size: 15px;"><span style="font-size:18px; margin-right: 6px;">📈</span>全荷平均房贷利率</div>
-                <div class="wg-right" style="color: #FCD34D; font-weight: 900; font-size: 14px;">3.85% <span style="font-size:10px; color:#9CA3AF;">(10年期固定)</span></div>
+        <div id="proWidgetsArea" style="display: none; padding: 0 20px; margin-bottom: 20px; flex-direction: column; gap: 15px;">
+            
+            <div class="pro-metrics-grid">
+                <div class="pro-metric-card glass-card">
+                    <div class="pm-title">💶 欧元/人民币</div>
+                    <div class="pm-value up">7.82 <span class="pm-trend">↑0.03</span></div>
+                </div>
+                <div class="pro-metric-card glass-card">
+                    <div class="pm-title">⚡ 今日均电价</div>
+                    <div class="pm-value down">€0.12<span class="pm-unit">/kWh</span></div>
+                </div>
+                <div class="pro-metric-card glass-card">
+                    <div class="pm-title">🏠 10年期房贷</div>
+                    <div class="pm-value">3.85<span class="pm-unit">%</span></div>
+                </div>
             </div>
-            <div class="widget-card glass-card" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: linear-gradient(135deg, #B45309, #D97706); color: #FFF; border-radius: 16px; box-shadow: 0 8px 20px rgba(180,83,9,0.2); cursor: pointer;" onclick="showToast('税务计算器即将上线！', 'success')">
-                <div class="wg-left" style="font-weight: 900; font-size: 15px;"><span style="font-size:18px; margin-right: 6px;">💼</span>30% Ruling 免税计算器</div>
-                <div class="wg-right" style="font-weight: 900; font-size: 12px; background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 8px;">去测算 👉</div>
+
+            <div class="pro-news-board glass-card">
+                <div class="news-board-header">
+                    <div class="nbh-left"><span class="pulse-dot"></span> 🇳🇱 荷兰 24h 速报 <span style="font-size:10px; color:#9CA3AF; margin-left:6px; border:1px solid #4B5563; padding:1px 4px; border-radius:4px;">AI译</span></div>
+                    <div class="nbh-right">更多 ›</div>
+                </div>
+                <div class="news-list" id="proNewsList">
+                    </div>
             </div>
         </div>
 
