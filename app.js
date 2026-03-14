@@ -532,6 +532,7 @@ async function loadCommunityPosts() {
 }
 
 // ================= 📰 Pro 模式新闻引擎 (真实 API 异步拉取版) =================
+// ================= 📈 Pro 模式：打开数据趋势图 =================
 function openTrend(type) {
     const modal = document.getElementById('trendModal');
     const titleEl = document.getElementById('trendTitle');
@@ -1189,82 +1190,60 @@ function initRedBook() {
         const modal = document.getElementById('disclaimerModal');
         if(modal) modal.style.display = 'flex'; 
     }
-    switchRbMode(currentRbMode); 
-    if(typeof checkWidgets === 'function') checkWidgets(); // 安全调用
+    switchRbMode(currentRbMode); checkWidgets();
 }
-
-// 🚨 补上导致你全盘崩溃的致命缺失函数：
-function checkWidgets() {
-    const now = new Date(); const day = now.getDay(); const hours = now.getHours();
-    const supermarketWg = document.getElementById('supermarketWidget');
-    if ((day === 0 || day === 6) && hours >= 16 && hours < 22) {
-        if(supermarketWg) { supermarketWg.style.display = 'flex'; document.getElementById('supermarketAlertText').innerText = `🚨 距提早关门仅剩 ${22 - hours} 小时！`; }
-    } else { if(supermarketWg) supermarketWg.style.display = 'none'; }
-}
-
-function agreeDisclaimer() { localStorage.setItem('hp_disclaimer_agreed', 'true'); const md = document.getElementById('disclaimerModal'); if(md) md.style.display = 'none'; }
 function agreeDisclaimer() { localStorage.setItem('hp_disclaimer_agreed', 'true'); document.getElementById('disclaimerModal').style.display = 'none'; }
 
 function switchRbMode(mode) {
     currentRbMode = mode; localStorage.setItem('hp_survival_mode', mode);
     document.querySelectorAll('.rb-mode-btn').forEach(btn => btn.classList.remove('active'));
-    
-    // 🚨 增加防崩溃：找不到按钮时跳过，而不是卡死
-    const targetBtn = document.querySelector(`.rb-mode-btn[onclick*="${mode}"]`);
-    if(targetBtn) targetBtn.classList.add('active');
+    document.querySelector(`.rb-mode-btn[onclick*="${mode}"]`).classList.add('active');
     
     const starterView = document.getElementById('rbStarterMode'); 
     const wikiView = document.getElementById('rbWikiMode');
     const mainContainer = document.getElementById('redbookContainer'); 
     const fabBtn = document.getElementById('fabGridBtn');
 
+    // 获取各个区块容器
     const advWidgets = document.getElementById('rbWidgetsArea');
     const proWidgets = document.getElementById('proWidgetsArea');
     const safetyWidget = document.getElementById('safetyCheckWidget');
-    const wikiSection = document.getElementById('wikiSectionArea'); 
+    const wikiSection = document.getElementById('wikiSectionArea'); // 🌟 新增的百科容器
 
-    // 🚨 增加防崩溃：对所有容器加上 if 判断，即使 HTML 结构缺失也能保证运行
     if (mode === 'starter') {
-        if(starterView) starterView.style.display = 'block'; 
-        if(wikiView) wikiView.style.display = 'none'; 
+        starterView.style.display = 'block'; wikiView.style.display = 'none'; 
         if(fabBtn) fabBtn.style.display = 'none';
-        if(mainContainer) mainContainer.classList.remove('rb-pro-theme'); 
-        if(typeof renderStarterTasks === 'function') renderStarterTasks();
+        mainContainer.classList.remove('rb-pro-theme'); renderStarterTasks();
     } else {
-        if(starterView) starterView.style.display = 'none'; 
-        if(wikiView) wikiView.style.display = 'block'; 
+        starterView.style.display = 'none'; wikiView.style.display = 'block'; 
         
         if (mode === 'advanced') {
             if(advWidgets) advWidgets.style.display = 'flex';
             if(proWidgets) proWidgets.style.display = 'none';
             if(safetyWidget) safetyWidget.style.display = 'block';
-            if(wikiSection) wikiSection.style.display = 'block'; 
-            if(fabBtn) fabBtn.style.display = 'flex'; 
+            if(wikiSection) wikiSection.style.display = 'block'; // 🌟 进阶篇：显示百科！
+            if(fabBtn) fabBtn.style.display = 'flex'; // 显示悬浮按钮
 
+            // 渲染所有 Tabs
             const tabContainer = document.getElementById('wikiTabs');
             if (tabContainer) {
                 let tabHtml = `<div class="w-tab active" onclick="switchWikiTab('all', this)">全部干货</div>`;
-                if(typeof advancedTabs !== 'undefined') {
-                    advancedTabs.forEach(cat => { tabHtml += `<div class="w-tab" onclick="switchWikiTab('${cat}', this)">${cat}</div>`; });
-                }
+                advancedTabs.forEach(cat => { tabHtml += `<div class="w-tab" onclick="switchWikiTab('${cat}', this)">${cat}</div>`; });
                 tabContainer.innerHTML = tabHtml;
             }
             currentRbCategory = 'all'; 
             if(document.getElementById('wikiSearchInput')) document.getElementById('wikiSearchInput').value = '';
-            if(typeof renderWikiList === 'function') renderWikiList(); 
+            renderWikiList(); 
 
         } else if (mode === 'pro') {
             if(advWidgets) advWidgets.style.display = 'none';
             if(proWidgets) proWidgets.style.display = 'flex';
             if(safetyWidget) safetyWidget.style.display = 'none';
-            if(wikiSection) wikiSection.style.display = 'none';  
-            if(fabBtn) fabBtn.style.display = 'none'; 
+            if(wikiSection) wikiSection.style.display = 'none';  // 🌟 Pro模式：隐藏百科，只留看板！
+            if(fabBtn) fabBtn.style.display = 'none'; // Pro 模式不需要录入卡片
         }
         
-        if(mainContainer) {
-            if(mode === 'pro') mainContainer.classList.add('rb-pro-theme'); 
-            else mainContainer.classList.remove('rb-pro-theme');
-        }
+        if(mode === 'pro') mainContainer.classList.add('rb-pro-theme'); else mainContainer.classList.remove('rb-pro-theme');
     }
 }
 
@@ -1309,12 +1288,9 @@ function renderStarterTasks() {
         </div>`;
     });
     list.innerHTML = html;
-    // 🚨 增加防空保护，防止找不到元素而卡死整个渲染进程
-    const pBar = document.getElementById('taskProgressBar');
-    if (pBar) pBar.style.width = `${(doneCount / currentTasks.length) * 100}%`;
     
-    const pText = document.getElementById('taskProgressText');
-    if (pText) pText.innerText = `${doneCount}/${currentTasks.length}`;
+    document.getElementById('taskProgressBar').style.width = `${(doneCount / currentTasks.length) * 100}%`;
+    document.getElementById('taskProgressText').innerText = `${doneCount}/${currentTasks.length}`;
 
     const totalTasksCount = Object.values(rbTaskData).flat().length;
     if (savedProgress.length === totalTasksCount && !localStorage.getItem('hp_starter_cleared')) {
