@@ -998,9 +998,22 @@ function renderStarterTasks() {
     const currentTasks = rbTaskData[currentTaskPhase];
     
     let html = ''; let doneCount = 0;
+    // 在 renderStarterTasks() 函数内部，替换 html 拼接部分：
     currentTasks.forEach(task => {
         const isDone = savedProgress.includes(task.id); if (isDone) doneCount++;
-        html += `<div class="task-card glass-card ${isDone ? 'done' : ''}" id="task_${task.id}"><input type="checkbox" class="task-checkbox" ${isDone ? 'checked' : ''} onchange="toggleTask('${task.id}', this)"><div class="task-content"><div class="task-title">${task.title}</div><div class="task-desc">${task.desc}</div><div class="task-hook" onclick="goBack(); setTimeout(()=>switchTab('market', document.querySelectorAll('.tab-item')[1]), 100); setTimeout(()=>switchMarketTab('${task.hookTab.split('-')[1]}', document.querySelector('.m-tab')), 200);">👉 ${task.hook}</div></div></div>`;
+        
+        // 🌟 全新高级卡片结构
+        html += `
+        <div class="task-card ${isDone ? 'done' : ''}" id="task_${task.id}">
+            <input type="checkbox" class="custom-checkbox-task" ${isDone ? 'checked' : ''} onchange="toggleTask('${task.id}', this)">
+            <div class="task-content">
+                <div class="task-title">${task.title}</div>
+                <div class="task-desc">${task.desc}</div>
+                <div class="task-hook-action" onclick="goBack(); setTimeout(()=>switchTab('market', document.querySelectorAll('.tab-item')[1]), 100); setTimeout(()=>switchMarketTab('${task.hookTab.split('-')[1]}', document.querySelector('.m-tab')), 200);">
+                    <span>👉</span> ${task.hook}
+                </div>
+            </div>
+        </div>`;
     });
     list.innerHTML = html;
     
