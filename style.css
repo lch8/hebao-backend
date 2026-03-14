@@ -1137,3 +1137,179 @@ body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "S
     transition: 0.2s;
 }
 .lightbox-close:active { background: rgba(255,255,255,0.4); transform: scale(0.9); }
+
+
+/* ================= 💎 进阶 & Pro 模式专属高级 UI ================= */
+
+/* 1. 原生感搜索栏 */
+.wiki-search-box {
+    margin: 10px 20px 15px;
+    position: relative;
+}
+.wiki-search-box input {
+    width: 100%;
+    padding: 12px 15px 12px 38px;
+    border-radius: 16px;
+    border: 1px solid transparent;
+    background: #F3F4F6;
+    font-size: 14px;
+    font-weight: bold;
+    color: #111827;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+}
+.wiki-search-box input:focus {
+    background: #FFF;
+    border-color: #10B981;
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+    outline: none;
+}
+.wiki-search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+    filter: grayscale(1) opacity(0.5);
+}
+
+/* 2. 横向滑动胶囊 Tabs */
+#wikiTabs {
+    display: flex;
+    overflow-x: auto;
+    gap: 10px;
+    padding: 0 20px 15px;
+    scrollbar-width: none;
+}
+#wikiTabs::-webkit-scrollbar { display: none; }
+.w-tab {
+    white-space: nowrap;
+    padding: 8px 18px;
+    border-radius: 99px;
+    background: #FFF;
+    border: 1px solid #E5E7EB;
+    color: #4B5563;
+    font-size: 13px;
+    font-weight: 900;
+    cursor: pointer;
+    transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+}
+.w-tab.active {
+    background: #111827;
+    color: #FFF;
+    border-color: #111827;
+    box-shadow: 0 4px 12px rgba(17, 24, 39, 0.2);
+}
+
+/* 3. Tinder 级滑动卡片底层 (收藏与懂了) */
+.swipe-wrapper {
+    position: relative;
+    margin: 0 20px 16px;
+    border-radius: 20px;
+    background: #F3F4F6;
+    overflow: hidden;
+}
+.swipe-bg {
+    position: absolute;
+    top: 0; bottom: 0; width: 50%;
+    display: flex; align-items: center;
+    padding: 0 24px;
+    font-weight: 900; color: #FFF; font-size: 15px;
+    z-index: 1; opacity: 0;
+}
+.swipe-bg.save-bg { left: 0; background: linear-gradient(90deg, #10B981, #34D399); justify-content: flex-start; }
+.swipe-bg.delete-bg { right: 0; background: linear-gradient(270deg, #EF4444, #F87171); justify-content: flex-end; }
+
+/* 4. 折叠卡片主体 (极简微拟物) */
+.wiki-card {
+    background: #FFF;
+    padding: 18px;
+    border-radius: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+    border: 1px solid #F9FAFB;
+    position: relative;
+    z-index: 2;
+    cursor: pointer;
+    /* 卡片回弹动画 */
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+}
+.wk-header { display: flex; gap: 14px; align-items: flex-start; }
+.wk-icon {
+    font-size: 26px;
+    background: #F9FAFB;
+    width: 50px; height: 50px;
+    border-radius: 14px;
+    display: flex; justify-content: center; align-items: center;
+    flex-shrink: 0; border: 1px solid #F3F4F6;
+}
+.wk-info { flex: 1; }
+.wk-title {
+    font-size: 16px; font-weight: 900; color: #111827;
+    margin-bottom: 6px; display: flex; align-items: center;
+    flex-wrap: wrap; gap: 8px; line-height: 1.3;
+}
+.wk-tag {
+    font-size: 10px; background: #ECFDF5; color: #059669;
+    padding: 2px 8px; border-radius: 6px; font-weight: 900;
+    border: 1px solid #A7F3D0;
+}
+.wk-summary { font-size: 13px; color: #6B7280; line-height: 1.5; font-weight: 500;}
+
+/* 5. 优雅的展开动画 */
+.wk-detail {
+    max-height: 0; opacity: 0; overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-top: 0;
+}
+.wiki-card.open .wk-detail {
+    max-height: 800px; opacity: 1;
+    margin-top: 16px; padding-top: 16px;
+    border-top: 1px dashed #E5E7EB;
+}
+.wk-step {
+    font-size: 14px; color: #374151; line-height: 1.6;
+    background: #F9FAFB; padding: 14px; border-radius: 14px;
+    margin-bottom: 15px; border: 1px solid #F3F4F6;
+}
+.wk-nl-word {
+    color: #4F46E5; background: #EEF2FF; padding: 2px 6px;
+    border-radius: 6px; cursor: pointer; text-decoration: underline; font-weight: bold;
+}
+
+/* UGC 评论互动按钮 */
+.wk-ugc-btn {
+    width: 100%; padding: 12px; background: #FFF;
+    border: 1px solid #E5E7EB; color: #4B5563; font-size: 13px; font-weight: 900;
+    border-radius: 12px; display: flex; justify-content: center; align-items: center;
+    gap: 6px; cursor: pointer; transition: 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+.wk-ugc-btn:active { background: #F3F4F6; transform: scale(0.98); }
+
+/* 底部 AI 提取按钮 */
+.btn-ai-create {
+    margin: 10px 20px 30px; width: calc(100% - 40px); padding: 16px;
+    background: linear-gradient(135deg, #6366F1, #8B5CF6);
+    color: #FFF; border: none; border-radius: 16px; font-size: 15px; font-weight: 900;
+    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.35); cursor: pointer; transition: 0.2s;
+}
+.btn-ai-create:active { transform: scale(0.95); box-shadow: 0 4px 10px rgba(99, 102, 241, 0.2); }
+
+/* ================= 💼 Pro 模式专属黑金/黑紫主题覆写 ================= */
+/* 当最外层拥有 .rb-pro-theme 时，内部颜色瞬间变得尊贵 */
+.rb-pro-theme .w-tab.active {
+    background: linear-gradient(135deg, #B45309, #D97706); /* 琥珀金 */
+    border-color: #D97706;
+    box-shadow: 0 4px 12px rgba(180, 83, 9, 0.25);
+}
+.rb-pro-theme .wk-tag {
+    background: #FFFBEB; color: #B45309; border-color: #FDE68A;
+}
+.rb-pro-theme .swipe-bg.save-bg {
+    background: linear-gradient(90deg, #F59E0B, #FBBF24); /* 收藏变成金色 */
+}
+.rb-pro-theme .btn-ai-create {
+    background: linear-gradient(135deg, #111827, #374151); /* AI 按钮变成曜石黑 */
+    box-shadow: 0 8px 25px rgba(17, 24, 39, 0.3);
+}
