@@ -446,6 +446,36 @@ async function loadCommunityPosts() {
     } catch (err) {}
 }
 
+// ================= 📰 Pro 模式新闻渲染引擎 =================
+function renderProNews() {
+    const newsContainer = document.getElementById('proNewsList');
+    if (!newsContainer) return;
+
+    // 模拟来自 Nu.nl 或 NOS 的最新重大新闻
+    const newsData = [
+        { time: "10:30", title: "NS 宣布周五早高峰全线停运，工会要求加薪8%", source: "源自 NU.nl", views: "1.2k" },
+        { time: "09:15", title: "荷兰议会通过新规：Box 3 财富税计算方式将于明年大改", source: "源自 RTL Nieuws", views: "3.5k" },
+        { time: "昨夜", title: "鹿特丹 Zuid 区域发生汽车焚烧事件，警方已介入调查", source: "源自 AD.nl", views: "980" },
+    ];
+
+    let html = '';
+    newsData.forEach(item => {
+        html += `
+        <div class="news-item" onclick="showToast('正文翻译页即将上线！', 'success')">
+            <div class="news-time">${item.time}</div>
+            <div class="news-content">
+                <div class="news-title">${item.title}</div>
+                <div class="news-source"><span>🔗 ${item.source}</span> <span>👀 ${item.views} 阅</span></div>
+            </div>
+        </div>`;
+    });
+    newsContainer.innerHTML = html;
+}
+
+// 找到现有的 window.addEventListener('DOMContentLoaded', ...)
+// 确保在里面加上 renderProNews(); 以便网页一加载就准备好新闻。
+
+
 function renderMarketIdle(data = mockIdleItems) { 
     const container = document.getElementById('idleWaterfall'); if(!container) return; 
     if(data.length === 0) { container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:40px 0; grid-column:span 2;">空空如也，快去发一个吧！</div>'; return; } 
@@ -1279,4 +1309,5 @@ window.addEventListener('DOMContentLoaded', () => {
     if(typeof renderProfileState === 'function') renderProfileState(); 
     loadCommunityPosts();
     initRedBook(); 
+    renderProNews();
 });
