@@ -532,105 +532,148 @@ async function loadCommunityPosts() {
 }
 
 // ================= 📰 Pro 模式新闻引擎 (真实 API 异步拉取版) =================
+// ================= 📈 Pro 模式：打开数据趋势图 =================
+function openTrend(type) {
+    const modal = document.getElementById('trendModal');
+    const titleEl = document.getElementById('trendTitle');
+    const valEl = document.getElementById('trendCurrentValue');
+    const chartBox = document.getElementById('trendChartBox');
+    if (!modal) return;
+
+    let title = "", currentVal = "", colorClass = "", data = [];
+    
+    // 构造高级假数据
+    if (type === 'exchange') {
+        title = "💶 欧元/人民币走势"; currentVal = "7.82"; colorClass = "up";
+        data = [{label: '周一', val: 50, num: '7.75'}, {label: '周二', val: 60, num: '7.78'}, {label: '周三', val: 40, num: '7.72'}, {label: '周四', val: 80, num: '7.80'}, {label: '今日', val: 90, num: '7.82'}];
+    } else if (type === 'energy') {
+        title = "⚡ 今日动态均电价"; currentVal = "€0.12"; colorClass = "down";
+        data = [{label: '08:00', val: 80, num: '0.18'}, {label: '11:00', val: 40, num: '0.08'}, {label: '14:00', val: 10, num: '-0.02'}, {label: '17:00', val: 50, num: '0.12'}, {label: '20:00', val: 90, num: '0.22'}];
+    } else if (type === 'mortgage') {
+        title = "🏠 10年期固定房贷利率"; currentVal = "3.85%"; colorClass = "up";
+        data = [{label: 'Oct', val: 90, num: '4.10'}, {label: 'Nov', val: 70, num: '3.95'}, {label: 'Dec', val: 50, num: '3.80'}, {label: 'Jan', val: 60, num: '3.82'}, {label: 'Feb', val: 65, num: '3.85'}];
+    }
+
+    titleEl.innerText = title;
+    valEl.innerText = currentVal;
+    
+    // 动态生成极具科技感的 CSS 柱状图
+    let chartHtml = '';
+    data.forEach((item, index) => {
+        // 加一点延迟让柱子有生长动画
+        chartHtml += `
+        <div class="trend-bar-wrapper">
+            <span style="font-size:10px; color:#D1D5DB; margin-bottom:2px; font-weight:bold;">${item.num}</span>
+            <div class="trend-bar ${colorClass}" style="height: 0px;" id="tb_${index}"></div>
+            <span class="trend-label">${item.label}</span>
+        </div>`;
+    });
+    chartBox.innerHTML = chartHtml;
+    modal.style.display = 'block';
+
+    // 触发柱状图生长动画
+    setTimeout(() => {
+        data.forEach((item, index) => {
+            const bar = document.getElementById(`tb_${index}`);
+            if(bar) bar.style.height = `${item.val}%`;
+        });
+    }, 50);
+}
+
+// ================= 📰 Pro 模式新闻引擎 (去狗皮膏药 + 多语言版) =================
+window.proNewsCache = []; // 全局缓存，方便详情页调用
+
 async function renderProNews() {
     const newsContainer = document.getElementById('proNewsList');
     if (!newsContainer) return;
 
-    // 1. 优先展示高级骨架加载状态 (消除等待焦虑)
-    newsContainer.innerHTML = `
-        <div style="text-align:center; padding: 30px 0; color:#9CA3AF; font-size: 13px;">
-            <span class="pulse-dot" style="display:inline-block; background:#6366F1;"></span> 
-            全自动 AI 爬虫正在提炼今日荷兰大事件...
-        </div>
-    `;
+    newsContainer.innerHTML = `<div style="text-align:center; padding: 30px 0; color:#9CA3AF; font-size: 13px;"><span class="pulse-dot" style="display:inline-block; background:#6366F1;"></span> 全自动 AI 爬虫正在提炼今日荷兰大事件...</div>`;
 
     try {
-        // 2. 尝试向我们即将编写的后端请求真实新闻
         const res = await fetch('/api/get-news');
         const data = await res.json();
-
-        // 如果后端报错或数据库为空，主动抛出错误，进入本地回退逻辑
-        if (!data.success || !data.news || data.news.length === 0) {
-            throw new Error("数据库暂无新闻");
-        }
-
-        // 3. 渲染真实新闻
-        let html = '';
-        data.news.forEach(item => {
-            html += `
-            <div class="news-item" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 18px 16px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.2s;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div style="display:flex; gap:8px; align-items:center;">
-                        <span style="font-size:11px; background:${item.tagColor}25; color:${item.tagColor}; padding:3px 8px; border-radius:6px; border:1px solid ${item.tagColor}50; font-weight:900;">${item.tag}</span>
-                        <span style="font-size:12px; color:#9CA3AF; font-weight:bold;">${item.time}</span>
-                    </div>
-                    <span style="font-size:11px; color:#6B7280; font-weight:bold;">源自 ${item.source}</span>
-                </div>
-                <div style="font-size:15px; font-weight:900; color:#F9FAFB; line-height:1.5; letter-spacing: 0.5px;">
-                    ${item.title}
-                </div>
-                <div style="background: rgba(0,0,0,0.3); padding:12px 14px; border-radius:10px; border-left:4px solid #6366F1; font-size:13px; color:#D1D5DB; line-height:1.6;">
-                    <span style="font-weight:900; color:#818CF8;">🤖 AI省流：</span>${item.aiSummary}
-                </div>
-                <div style="display:flex; justify-content:flex-end; margin-top:2px;">
-                    <div onclick="showToast('正在为您跳转...', 'success')" style="font-size:12px; color:#10B981; font-weight:900; cursor:pointer; display:flex; align-items:center; background:rgba(16,185,129,0.15); padding:6px 14px; border-radius:14px;">
-                        ${item.actionText} <span style="margin-left:4px; font-size:14px;">›</span>
-                    </div>
-                </div>
-            </div>`;
-        });
-        newsContainer.innerHTML = html;
-
+        if (!data.success || !data.news || data.news.length === 0) throw new Error("数据库暂无新闻");
+        window.proNewsCache = data.news;
     } catch (error) {
-        // 4. 🛡️ 绝对防崩溃机制：如果接口还没写好，平滑回退到本地高质量模拟数据
-        console.log("云端新闻拉取失败，切入备用模拟数据：", error.message);
-        
-        const fallbackData = [
+        // 回退数据，加入了多语言全文本
+        window.proNewsCache = [
             { 
-                time: "10:30", tag: "🚨 突发", tagColor: "#EF4444",
+                time: "10:30", tag: "🚨 突发", tagColor: "#EF4444", source: "RTL Nieuws",
                 title: "荷兰央行紧急预警：建议备足现金防支付系统瘫痪", 
                 aiSummary: "因近期网络攻击频发，央行建议每家储备约 €50 现金以备 PIN 机故障。日常无需恐慌取款。", 
-                source: "RTL Nieuws", actionText: "二手市场淘个保险箱"
+                content: {
+                    zh: "荷兰中央银行 (DNB) 今日发布预警，强烈建议民众在家中存放适量现金（约 50 欧元），以应对可能发生的全国性支付系统瘫痪。近期欧洲频发针对金融机构的网络黑客攻击，导致 PIN 刷卡机断网风险激增。央行强调此举纯为防御性建议，目前系统运行安全，民众切勿前往 ATM 大量囤积现金引发挤兑。",
+                    en: "The Dutch Central Bank (DNB) issued a warning today, strongly advising citizens to keep a small amount of cash at home (around 50 euros) to cope with potential national payment system outages. Recent cyberattacks targeting European financial institutions have significantly increased the risk of PIN machine network failures. The central bank emphasized this is a purely defensive recommendation.",
+                    nl: "De Nederlandsche Bank (DNB) heeft vandaag een waarschuwing afgegeven en adviseert burgers ten zeerste om een klein bedrag aan contant geld in huis te hebben (ongeveer 50 euro) om mogelijke landelijke storingen in het betalingssysteem op te vangen. Recente cyberaanvallen op Europese financiële instellingen hebben het risico op netwerkstoringen bij pinautomaten aanzienlijk vergroot."
+                }
             },
             { 
-                time: "昨夜", tag: "📈 资产", tagColor: "#B45309",
-                title: "议会初步同意：明年起 Box 3 财富税将按实际收益征收", 
-                aiSummary: "抛弃过去的虚拟收益率，未来只有你炒股/存款真正赚到的钱才需交税。利好低风险储蓄者。", 
-                source: "FD.nl", actionText: "测算免税额度"
-            },
-            { 
-                time: "14:00", tag: "💼 职场", tagColor: "#10B981",
+                time: "14:00", tag: "💼 职场", tagColor: "#10B981", source: "NU.nl",
                 title: "ASML 大动作！埃因霍温扩建计划获批，提供2万个新岗位", 
                 aiSummary: "政府斥资 25 亿欧元改善周边基建以留住 ASML，未来三年技术与供应链岗位将迎来爆发。", 
-                source: "NU.nl", actionText: "找校友内推"
+                content: {
+                    zh: "经过长达半年的博弈，荷兰政府正式批准了名为 'Project Beethoven' 的 25 亿欧元基建改善计划，成功留住了科技巨头 ASML。ASML 随即宣布将在埃因霍温北部的 Brainport 园区进行大规模扩建。预计该项目将在未来三年内为荷兰创造超过 20,000 个直接技术岗位及供应链周边岗位。此举对当地的高技术移民 (KM) 将产生重大利好。",
+                    en: "After six months of negotiations, the Dutch government officially approved the €2.5 billion infrastructure improvement plan named 'Project Beethoven', successfully keeping tech giant ASML in the Netherlands. ASML immediately announced a massive expansion in the Brainport campus north of Eindhoven. The project is expected to create over 20,000 tech jobs.",
+                    nl: "Na een half jaar van onderhandelingen heeft de Nederlandse regering officieel het infrastructuurverbeteringsplan 'Project Beethoven' ter waarde van 2,5 miljard euro goedgekeurd, waarmee techgigant ASML succesvol in Nederland behouden blijft. ASML kondigde direct een grootschalige uitbreiding aan op de Brainport campus."
+                }
             }
         ];
+    }
 
-        let html = '';
-        fallbackData.forEach(item => {
-            html += `
-            <div class="news-item" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 18px 16px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.2s;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div style="display:flex; gap:8px; align-items:center;">
-                        <span style="font-size:11px; background:${item.tagColor}25; color:${item.tagColor}; padding:3px 8px; border-radius:6px; border:1px solid ${item.tagColor}50; font-weight:900;">${item.tag}</span>
-                        <span style="font-size:12px; color:#9CA3AF; font-weight:bold;">${item.time}</span>
-                    </div>
-                    <span style="font-size:11px; color:#6B7280; font-weight:bold;">源自 ${item.source}</span>
+    let html = '';
+    window.proNewsCache.forEach((item, index) => {
+        // 🌟 移除了底部的狗皮膏药，并将整个卡片变为可点击的区域！
+        html += `
+        <div class="news-item" onclick="openNewsDetail(${index})" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 18px 16px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); cursor: pointer; transition: transform 0.2s;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <span style="font-size:11px; background:${item.tagColor}25; color:${item.tagColor}; padding:3px 8px; border-radius:6px; border:1px solid ${item.tagColor}50; font-weight:900;">${item.tag}</span>
+                    <span style="font-size:12px; color:#9CA3AF; font-weight:bold;">${item.time}</span>
                 </div>
-                <div style="font-size:15px; font-weight:900; color:#F9FAFB; line-height:1.5; letter-spacing: 0.5px;">
-                    ${item.title}
-                </div>
-                <div style="background: rgba(0,0,0,0.3); padding:12px 14px; border-radius:10px; border-left:4px solid #6366F1; font-size:13px; color:#D1D5DB; line-height:1.6;">
-                    <span style="font-weight:900; color:#818CF8;">🤖 AI省流：</span>${item.aiSummary}
-                </div>
-                <div style="display:flex; justify-content:flex-end; margin-top:2px;">
-                    <div onclick="showToast('正在为您跳转...', 'success')" style="font-size:12px; color:#10B981; font-weight:900; cursor:pointer; display:flex; align-items:center; background:rgba(16,185,129,0.15); padding:6px 14px; border-radius:14px;">
-                        ${item.actionText} <span style="margin-left:4px; font-size:14px;">›</span>
-                    </div>
-                </div>
-            </div>`;
-        });
-        newsContainer.innerHTML = html;
+                <span style="font-size:11px; color:#6B7280; font-weight:bold;">源自 ${item.source}</span>
+            </div>
+            <div style="font-size:15px; font-weight:900; color:#F9FAFB; line-height:1.5; letter-spacing: 0.5px;">
+                ${item.title}
+            </div>
+            <div style="background: rgba(0,0,0,0.3); padding:12px 14px; border-radius:10px; border-left:4px solid #6366F1; font-size:13px; color:#D1D5DB; line-height:1.6;">
+                <span style="font-weight:900; color:#818CF8;">🤖 AI省流：</span>${item.aiSummary}
+            </div>
+        </div>`;
+    });
+    const newsContainer = document.getElementById('proNewsList');
+    if(newsContainer) newsContainer.innerHTML = html;
+}
+
+// 打开新闻详情
+let currentNewsIndex = 0;
+function openNewsDetail(index) {
+    const modal = document.getElementById('newsDetailModal');
+    if (!modal || !window.proNewsCache[index]) return;
+    
+    currentNewsIndex = index;
+    const news = window.proNewsCache[index];
+    
+    document.getElementById('ndTitle').innerText = news.title;
+    document.getElementById('ndTime').innerText = news.time;
+    document.getElementById('ndSource').innerText = `新闻来源: ${news.source}`;
+    
+    // 默认切到中文
+    switchNewsLang('zh', document.querySelector('.nl-btn:first-child'));
+    modal.style.display = 'block';
+}
+
+// 切换新闻语言
+function switchNewsLang(lang, element) {
+    document.querySelectorAll('.nl-btn').forEach(btn => btn.classList.remove('active'));
+    if(element) element.classList.add('active');
+    
+    const news = window.proNewsCache[currentNewsIndex];
+    const contentEl = document.getElementById('ndContent');
+    
+    if (news && news.content && news.content[lang]) {
+        contentEl.innerText = news.content[lang];
+    } else {
+        contentEl.innerText = "此语言暂无翻译版本...";
     }
 }
 
