@@ -72,26 +72,18 @@
         <div class="neth-hero-overlay"></div>
         
         <div class="neth-hero-nav">
-            
-            <div class="hero-btn" onclick="switchTab('trending')">
-                🏆 查榜单
-            </div>
-            
+            <div class="hero-btn" onclick="switchTab('trending')">🏆 查榜单</div>
             <div class="hero-title-box">
                 <h1>荷包管家 🇳🇱</h1>
                 <p>生存指南 & 避雷百科</p>
             </div>
-            
             <div class="top-scan-container" id="topScanContainer" style="position: relative;">
-                <div class="hero-icon-btn" onclick="document.getElementById('topScanContainer').classList.toggle('active')">
-                    📸
-                </div>
+                <div class="hero-icon-btn" onclick="document.getElementById('topScanContainer').classList.toggle('active')">📸</div>
                 <div class="top-fab-menu">
                     <div class="fab-menu-item" onclick="document.getElementById('packageImgInput').click(); document.getElementById('topScanContainer').classList.remove('active');">📸 拍包装排雷</div>
                     <div class="fab-menu-item" onclick="startBarcodeScan(); document.getElementById('topScanContainer').classList.remove('active');">⏸️ 扫条码搜素</div>
                 </div>
             </div>
-            
         </div>
 
         <div class="neth-hero-content">
@@ -103,121 +95,94 @@
         </div>
     </div>
 
-<div id="redbookContainer" class="page-content" style="padding-top: 5px;">
-    
-    <div id="rbStarterMode">
+    <div id="redbookContainer" class="page-content" style="padding-top: 5px;">
         
-        <div class="section-title-row">
-            <span class="st-icon">🚨</span>
-            <span class="st-text">紧急避难所</span>
-        </div>
-        <div class="emergency-grid">
-            <div class="em-card pulse-red" onclick="showEmergency('medical')"><div class="em-icon">🚑</div><div class="em-text">夜间急病</div></div>
-            <div class="em-card pulse-orange" onclick="showEmergency('fraud')"><div class="em-icon">🏠</div><div class="em-text">租房防骗</div></div>
-            <div class="em-card pulse-yellow" onclick="showEmergency('key')"><div class="em-icon">🔑</div><div class="em-text">忘带钥匙</div></div>
-            <div class="em-card pulse-blue" onclick="showEmergency('passport')"><div class="em-icon">💳</div><div class="em-text">证件丢失</div></div>
-        </div>
-
-        <div class="section-title-row" style="margin-top: 25px;">
-            <span class="st-icon">🗺️</span>
-            <span class="st-text">主线通关任务</span>
-        </div>
-        
-        <div class="task-tabs-scroll">
-            <div class="tt-tab active" onclick="switchTaskPhase('pre', this)">✈️ 启程前</div>
-            <div class="tt-tab" onclick="switchTaskPhase('day7', this)">🛬 落地7天</div>
-            <div class="tt-tab" onclick="switchTaskPhase('month1', this)">🏠 首月安顿</div>
-        </div>
-
-        <div class="premium-progress-box">
-            <div class="pp-info">
-                <span class="pp-title">当前阶段进度</span>
-                <span class="pp-count" id="taskProgressText">0/4</span>
+        <div id="rbStarterMode">
+            <div class="section-title-row"><span class="st-icon">🚨</span><span class="st-text">紧急避难所</span></div>
+            <div class="emergency-grid">
+                <div class="em-card pulse-red" onclick="showEmergency('medical')"><div class="em-icon">🚑</div><div class="em-text">夜间急病</div></div>
+                <div class="em-card pulse-orange" onclick="showEmergency('fraud')"><div class="em-icon">🏠</div><div class="em-text">租房防骗</div></div>
+                <div class="em-card pulse-yellow" onclick="showEmergency('key')"><div class="em-icon">🔑</div><div class="em-text">忘带钥匙</div></div>
+                <div class="em-card pulse-blue" onclick="showEmergency('passport')"><div class="em-icon">💳</div><div class="em-text">证件丢失</div></div>
             </div>
-            <div class="pp-bar-bg">
-                <div class="pp-bar-fill" id="taskProgressBar" style="width: 0%;"></div>
+
+            <div class="section-title-row" style="margin-top: 25px;"><span class="st-icon">🗺️</span><span class="st-text">主线通关任务</span></div>
+            <div class="task-tabs-scroll">
+                <div class="tt-tab active" onclick="switchTaskPhase('pre', this)">✈️ 启程前</div>
+                <div class="tt-tab" onclick="switchTaskPhase('day7', this)">🛬 落地7天</div>
+                <div class="tt-tab" onclick="switchTaskPhase('month1', this)">🏠 首月安顿</div>
             </div>
+            <div class="premium-progress-box">
+                <div class="pp-info"><span class="pp-title">当前阶段进度</span><span class="pp-count" id="taskProgressText">0/4</span></div>
+                <div class="pp-bar-bg"><div class="pp-bar-fill" id="taskProgressBar" style="width: 0%;"></div></div>
+            </div>
+
+            <div class="rb-list" id="starterTaskList"></div>
+            <div style="height: 100px;"></div>
         </div>
 
-        <div class="rb-list" id="starterTaskList"></div>
-        <div style="height: 100px;"></div>
-    </div>
-
-
-    <div id="rbWikiMode" style="display: none;">
-        
-        <div id="rbWidgetsArea" style="padding: 0 20px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px;">
-            <div class="widget-card widget-weather glass-card" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: #FFF; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #F3F4F6;">
-                <div class="wg-left" style="font-weight: 900; color: #111827; font-size: 15px;"><span style="font-size:18px; margin-right: 6px;">🌧️</span>降雨雷达</div>
-                <div class="wg-right"><span class="wg-status green" style="color: #10B981; font-weight: 900; font-size: 13px; background: #ECFDF5; padding: 4px 10px; border-radius: 8px;">🟢 放心骑 (未来2h无雨)</span></div>
-            </div>
-            <div class="widget-card widget-alert glass-card" id="supermarketWidget" style="display: none; justify-content: space-between; align-items: center; padding: 14px 16px; background: #FEF2F2; border-radius: 16px; border: 1px solid #FECACA;">
-                <div class="wg-left" style="font-weight: 900; color: #EF4444; font-size: 15px;"><span style="font-size:18px; margin-right: 6px;">🚨</span>断粮预警</div>
-                <div class="wg-right" style="color:#EF4444; font-weight:900; font-size: 13px;" id="supermarketAlertText">距提早关门仅剩 X 分钟</div>
-            </div>
-        </div>
-
-        <div id="proWidgetsArea" style="display: none; padding: 0 20px; margin-bottom: 20px; flex-direction: column; gap: 15px;">
+        <div id="rbWikiMode" style="display: none;">
             
-            <div class="pro-metrics-grid">
-                <div class="pro-metric-card glass-card">
-                    <div class="pm-title">💶 欧元/人民币</div>
-                    <div class="pm-value up">7.82 <span class="pm-trend">↑0.03</span></div>
+            <div id="rbWidgetsArea" style="padding: 0 20px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px;">
+                <div class="widget-card widget-weather glass-card" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: #FFF; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #F3F4F6;">
+                    <div class="wg-left" style="font-weight: 900; color: #111827; font-size: 15px;"><span style="font-size:18px; margin-right: 6px;">🌧️</span>降雨雷达</div>
+                    <div class="wg-right"><span class="wg-status green" style="color: #10B981; font-weight: 900; font-size: 13px; background: #ECFDF5; padding: 4px 10px; border-radius: 8px;">🟢 放心骑 (未来2h无雨)</span></div>
                 </div>
-                <div class="pro-metric-card glass-card">
-                    <div class="pm-title">⚡ 今日均电价</div>
-                    <div class="pm-value down">€0.12<span class="pm-unit">/kWh</span></div>
-                </div>
-                <div class="pro-metric-card glass-card">
-                    <div class="pm-title">🏠 10年期房贷</div>
-                    <div class="pm-value">3.85<span class="pm-unit">%</span></div>
+                <div class="widget-card widget-alert glass-card" id="supermarketWidget" style="display: none; justify-content: space-between; align-items: center; padding: 14px 16px; background: #FEF2F2; border-radius: 16px; border: 1px solid #FECACA;">
+                    <div class="wg-left" style="font-weight: 900; color: #EF4444; font-size: 15px;"><span style="font-size:18px; margin-right: 6px;">🚨</span>断粮预警</div>
+                    <div class="wg-right" style="color:#EF4444; font-weight:900; font-size: 13px;" id="supermarketAlertText">距提早关门仅剩 X 分钟</div>
                 </div>
             </div>
 
-            <div class="pro-news-board glass-card">
-                <div class="news-board-header">
-                    <div class="nbh-left"><span class="pulse-dot"></span> 🇳🇱 荷兰 24h 速报 <span style="font-size:10px; color:#9CA3AF; margin-left:6px; border:1px solid #4B5563; padding:1px 4px; border-radius:4px;">AI译</span></div>
-                    <div class="nbh-right">更多 ›</div>
-                </div>
-                <div class="news-list" id="proNewsList">
+            <div id="proWidgetsArea" style="display: none; padding: 0 20px; margin-bottom: 20px; flex-direction: column; gap: 15px;">
+                <div class="pro-metrics-grid">
+                    <div class="pro-metric-card glass-card">
+                        <div class="pm-title">💶 欧元/人民币</div>
+                        <div class="pm-value up">7.82 <span class="pm-trend">↑0.03</span></div>
                     </div>
-            </div>
-        </div>
-
-        <div class="safety-check-card glass-card" id="safetyCheckWidget" style="margin: 0 20px 20px;">
-            <div class="sc-header">
-                <span class="sc-title">🛡️ 街区治安避雷针</span>
-                <span class="sc-sub">租房/夜归必查</span>
-            </div>
-            <div class="sc-search-box">
-                <input type="number" id="postcodeInput" placeholder="输入荷兰4位邮编 (如: 2512)" onkeypress="if(event.key==='Enter') checkSafetyCode()">
-                <button class="sc-btn" onclick="checkSafetyCode()">查安全</button>
-            </div>
-            <div style="font-size: 10px; color: #9CA3AF; margin-top: 8px; text-align: right; font-weight: bold;">
-                * 评级基于历史社区反馈，仅供参考
-            </div>
-            <div id="safetyResult" class="sc-result" style="display: none;"></div>
-        </div>
-
-        <div id="wikiSectionArea">
-            <div class="wiki-search-box">
-                <span class="wiki-search-icon">🔍</span>
-                <input type="text" id="wikiSearchInput" placeholder="搜羊毛、避坑、买房、税务..." oninput="filterWiki()">
+                    <div class="pro-metric-card glass-card">
+                        <div class="pm-title">⚡ 今日均电价</div>
+                        <div class="pm-value down">€0.12<span class="pm-unit">/kWh</span></div>
+                    </div>
+                    <div class="pro-metric-card glass-card">
+                        <div class="pm-title">🏠 10年期房贷</div>
+                        <div class="pm-value">3.85<span class="pm-unit">%</span></div>
+                    </div>
+                </div>
+                <div class="pro-news-board glass-card">
+                    <div class="news-board-header">
+                        <div class="nbh-left"><span class="pulse-dot"></span> 🇳🇱 荷兰 24h 速报 <span style="font-size:10px; color:#9CA3AF; margin-left:6px; border:1px solid #4B5563; padding:1px 4px; border-radius:4px;">AI译</span></div>
+                        <div class="nbh-right">更多 ›</div>
+                    </div>
+                    <div class="news-list" id="proNewsList"></div>
+                </div>
             </div>
 
-            <div id="wikiTabs"></div>
+            <div class="safety-check-card glass-card" id="safetyCheckWidget" style="margin: 0 20px 20px;">
+                <div class="sc-header"><span class="sc-title">🛡️ 街区治安避雷针</span><span class="sc-sub">租房/夜归必查</span></div>
+                <div class="sc-search-box">
+                    <input type="number" id="postcodeInput" placeholder="输入荷兰4位邮编 (如: 2512)" onkeypress="if(event.key==='Enter') checkSafetyCode()">
+                    <button class="sc-btn" onclick="checkSafetyCode()">查安全</button>
+                </div>
+                <div style="font-size: 10px; color: #9CA3AF; margin-top: 8px; text-align: right; font-weight: bold;">* 评级基于历史社区反馈，仅供参考</div>
+                <div id="safetyResult" class="sc-result" style="display: none;"></div>
+            </div>
 
-            <div id="wikiListContainer" style="padding-bottom: 100px; margin-top: 5px;"></div>
+            <div id="wikiSectionArea">
+                <div class="wiki-search-box">
+                    <span class="wiki-search-icon">🔍</span>
+                    <input type="text" id="wikiSearchInput" placeholder="搜羊毛、避坑、买房、税务..." oninput="filterWiki()">
+                </div>
+                <div id="wikiTabs"></div>
+                <div id="wikiListContainer" style="padding-bottom: 100px; margin-top: 5px;"></div>
+            </div>
         </div>
     </div>
 
-<div class="fab-btn" id="fabGridBtn" onclick="toggleFabModal()" style="display: 
-    none; position: fixed; bottom: 90px; right: 20px; width: 50px; height: 50px; 
-    background: linear-gradient(135deg, #111827, #374151); color: white; 
-    border-radius: 25px; align-items: center; justify-content: center; 
-    font-size: 20px; box-shadow: 0 8px 20px rgba(17,24,39,0.3); 
-    z-index: 100; transition: transform 0.2s;">🗂️
+    <div class="fab-btn" id="fabGridBtn" onclick="toggleFabModal()" style="display: none; position: fixed; bottom: 90px; right: 20px; width: 50px; height: 50px; background: linear-gradient(135deg, #111827, #374151); color: white; border-radius: 25px; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 8px 20px rgba(17,24,39,0.3); z-index: 100; transition: transform 0.2s;">🗂️</div>
+
 </div>
+
 
 <div id="page-trending" class="page-section" style="background: #F7F8FA; min-height: 100vh; padding-bottom: 0;">
     <div class="detail-back-btn" onclick="goBack()" style="position: absolute; top: 15px; left: 15px;">‹</div>
