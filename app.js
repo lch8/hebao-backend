@@ -446,64 +446,57 @@ async function loadCommunityPosts() {
     } catch (err) {}
 }
 
-// ================= 📰 Pro 模式新闻渲染引擎 =================
-// ================= 📰 Pro 模式新闻引擎 (AI 省流与闭环版) =================
+// ================= 📰 Pro 模式新闻引擎 (独立卡片高级排版) =================
 function renderProNews() {
     const newsContainer = document.getElementById('proNewsList');
     if (!newsContainer) return;
 
-    // 模拟抓取全网数据，并通过 AI 提炼结构化
     const newsData = [
         { 
-            time: "10:30", 
-            tag: "🚨 突发", tagColor: "#EF4444",
+            time: "10:30", tag: "🚨 突发", tagColor: "#EF4444",
             title: "荷兰央行紧急预警：建议备足现金防支付系统瘫痪", 
             aiSummary: "因近期网络攻击频发，央行建议每家储备约 €50 现金以备 PIN 机故障。日常无需恐慌取款。", 
-            source: "RTL Nieuws",
-            actionText: "二手市场淘个保险箱", actionTab: "market"
+            source: "RTL Nieuws", actionText: "二手市场淘个保险箱", actionTab: "market"
         },
         { 
-            time: "昨夜", 
-            tag: "📈 资产", tagColor: "#B45309",
+            time: "昨夜", tag: "📈 资产", tagColor: "#B45309",
             title: "议会初步同意：明年起 Box 3 财富税将按实际收益征收", 
             aiSummary: "抛弃过去的虚拟收益率，未来只有你炒股/存款真正赚到的钱才需交税。利好低风险储蓄者。", 
-            source: "FD.nl",
-            actionText: "测算我的免税额度", actionTab: "wiki"
+            source: "FD.nl", actionText: "测算免税额度", actionTab: "wiki"
         },
         { 
-            time: "14:00", 
-            tag: "💼 职场", tagColor: "#10B981",
+            time: "14:00", tag: "💼 职场", tagColor: "#10B981",
             title: "ASML 大动作！埃因霍温扩建计划获批，提供2万个新岗位", 
             aiSummary: "政府斥资 25 亿欧元改善周边基建以留住 ASML，未来三年技术与供应链岗位将迎来爆发。", 
-            source: "NU.nl",
-            actionText: "找校友内推", actionTab: "help"
+            source: "NU.nl", actionText: "找校友内推", actionTab: "help"
         }
     ];
 
     let html = '';
     newsData.forEach(item => {
+        // 🌟 核心：外层加上独立包裹的深色透明背景，加上阴影和边框，形成“卡片中的卡片”
         html += `
-        <div class="news-item" style="display:flex; flex-direction:column; gap:8px; padding-bottom:16px; border-bottom:1px dashed #374151; margin-bottom:16px; cursor:default;">
+        <div class="news-item" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 18px 16px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.2s;">
             
-            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
                 <div style="display:flex; gap:8px; align-items:center;">
-                    <span style="font-size:11px; background:${item.tagColor}20; color:${item.tagColor}; padding:2px 6px; border-radius:4px; border:1px solid ${item.tagColor}40; font-weight:bold;">${item.tag}</span>
-                    <span style="font-size:11px; color:#9CA3AF; font-weight:bold;">${item.time}</span>
+                    <span style="font-size:11px; background:${item.tagColor}25; color:${item.tagColor}; padding:3px 8px; border-radius:6px; border:1px solid ${item.tagColor}50; font-weight:900;">${item.tag}</span>
+                    <span style="font-size:12px; color:#9CA3AF; font-weight:bold;">${item.time}</span>
                 </div>
-                <span style="font-size:10px; color:#6B7280;">源自 ${item.source}</span>
+                <span style="font-size:11px; color:#6B7280; font-weight:bold;">${item.source}</span>
             </div>
 
-            <div style="font-size:14px; font-weight:900; color:#F3F4F6; line-height:1.4;">
+            <div style="font-size:15px; font-weight:900; color:#F9FAFB; line-height:1.5; letter-spacing: 0.5px;">
                 ${item.title}
             </div>
 
-            <div style="background:rgba(255,255,255,0.05); padding:10px 12px; border-radius:8px; border-left:3px solid #6366F1; font-size:12px; color:#D1D5DB; line-height:1.5;">
-                <span style="font-weight:bold; color:#818CF8;">🤖 AI省流：</span>${item.aiSummary}
+            <div style="background: rgba(0,0,0,0.3); padding:12px 14px; border-radius:10px; border-left:4px solid #6366F1; font-size:13px; color:#D1D5DB; line-height:1.6;">
+                <span style="font-weight:900; color:#818CF8;">🤖 AI省流：</span>${item.aiSummary}
             </div>
 
-            <div style="display:flex; justify-content:flex-end; margin-top:4px;">
-                <div onclick="showToast('正在为您跳转至相关工具...', 'success')" style="font-size:11px; color:#10B981; font-weight:bold; cursor:pointer; display:flex; align-items:center; gap:4px; padding:4px 8px; background:rgba(16,185,129,0.1); border-radius:12px; transition:0.2s;">
-                    ${item.actionText} ›
+            <div style="display:flex; justify-content:flex-end; margin-top:2px;">
+                <div onclick="showToast('正在为您跳转...', 'success')" style="font-size:12px; color:#10B981; font-weight:900; cursor:pointer; display:flex; align-items:center; background:rgba(16,185,129,0.15); padding:6px 14px; border-radius:14px;">
+                    ${item.actionText} <span style="margin-left:4px; font-size:14px;">›</span>
                 </div>
             </div>
 
@@ -990,17 +983,17 @@ const rbWikis = [
     { id: 'w9', mode: 'advanced', category: '税务补贴', icon: '🗑️', title: '穷学生如何豁免垃圾/水税', tag: '省€300+', summary: '水务局寄来的天价账单？用学生身份合法免除。', details: '收到 RbG 或 Waternet 的信后，登录 DigiD 申请 Kwijtschelding (豁免)。需上传：近三个月银行流水、租房合同。只要卡里余额低于约 €1500，就能全免！荷兰语词汇：<span class="wk-nl-word" onclick="copyText(\'Kwijtschelding\')">Kwijtschelding</span>' },
     { id: 'w10', mode: 'advanced', category: '税务补贴', icon: '🏠', title: '租房补贴 (Huurtoeslag) 申请', tag: '每月白领€200+', summary: '住独立 Studio 的同学必看，政府帮你交房租。', details: '要求：满18岁，独立地址 (有自己的大门、厨卫)，基础房租低于当年上限 (2024年为 €879)，个人存款低于 3.4 万欧。去 Toeslagen 官网申请。荷兰语词汇：<span class="wk-nl-word" onclick="copyText(\'Huurtoeslag\')">Huurtoeslag</span>' },
 
-    { id: 'w11', mode: 'pro', category: '职场签证', icon: '🎓', title: 'Search Year 找工作签', tag: '续命一年', summary: '毕业后想留荷？获得一年无限制打工权。', details: '全球 Top 200 或荷兰本地大学毕业即可申请 1 年的 Search Year。期间可无条件打工。最强 Buff：用此签证转 KM 时，薪资门槛极低！' },
-    { id: 'w12', mode: 'pro', category: '职场签证', icon: '📈', title: 'KM 高技术移民薪资门槛', tag: '永居入场券', summary: '留在荷兰的终极目标，由雇主提供担保。', details: '30岁以下门槛：约 €3,909/月；30岁以上：约 €5,331/月。如果是从 Search Year 签证转过来的，门槛直降至：约 €2,801/月！(注：每年1月1日上调，请查阅 IND 官网)' },
-    { id: 'w13', mode: 'pro', category: '职场签证', icon: '🏢', title: 'ZZP 自由职业者避税', tag: '搞钱必看', summary: '不想打工想自己接单？注册 ZZP 享受高额免税。', details: '去 KVK (商会) 注册 Eenmanszaak。如果你一年花在业务上的时间超过 1225 小时，就能享受 Starteraftrek 和 Zelfstandigenaftrek，前三年几乎不用交所得税！' },
-    { id: 'w_new4', mode: 'pro', category: '职场签证', icon: '💼', title: '如何优雅地谈薪与假期', tag: '反卷指南', summary: '荷兰职场不加班，拿到Offer后该怎么谈判？', details: '荷兰默认全职是 36-40 小时/周，法定最低假期为 20 天，但多数公司给 25-30 天。拿到 Offer 别急着接，可尝试争取 8% 的 Holiday Allowance 以外的 Bonus 或交通报销。' },
+    { id: 'w11', mode: 'advanced', category: '职场签证', icon: '🎓', title: 'Search Year 找工作签', tag: '续命一年', summary: '毕业后想留荷？获得一年无限制打工权。', details: '全球 Top 200 或荷兰本地大学毕业即可申请 1 年的 Search Year。期间可无条件打工。最强 Buff：用此签证转 KM 时，薪资门槛极低！' },
+    { id: 'w12', mode: 'advanced', category: '职场签证', icon: '📈', title: 'KM 高技术移民薪资门槛', tag: '永居入场券', summary: '留在荷兰的终极目标，由雇主提供担保。', details: '30岁以下门槛：约 €3,909/月；30岁以上：约 €5,331/月。如果是从 Search Year 签证转过来的，门槛直降至：约 €2,801/月！(注：每年1月1日上调，请查阅 IND 官网)' },
+    { id: 'w13', mode: 'advanced', category: '职场签证', icon: '🏢', title: 'ZZP 自由职业者避税', tag: '搞钱必看', summary: '不想打工想自己接单？注册 ZZP 享受高额免税。', details: '去 KVK (商会) 注册 Eenmanszaak。如果你一年花在业务上的时间超过 1225 小时，就能享受 Starteraftrek 和 Zelfstandigenaftrek，前三年几乎不用交所得税！' },
+    { id: 'w_new4', mode: 'advanced', category: '职场签证', icon: '💼', title: '如何优雅地谈薪与假期', tag: '反卷指南', summary: '荷兰职场不加班，拿到Offer后该怎么谈判？', details: '荷兰默认全职是 36-40 小时/周，法定最低假期为 20 天，但多数公司给 25-30 天。拿到 Offer 别急着接，可尝试争取 8% 的 Holiday Allowance 以外的 Bonus 或交通报销。' },
 
-    { id: 'w14', mode: 'pro', category: '买房定居', icon: '🏠', title: 'Funda 看房与竞价潜规则', tag: '实操指南', summary: 'Overbidding (溢价) 是常态，如何保护自己？', details: '在兰斯塔德地区，好房子需加价 10%-20%。出价时除了写金额，务必附带两个保命条款：财务保留条款（贷款批不下来可无责毁约）和建筑检测条款。荷兰语词汇：<span class="wk-nl-word" onclick="copyText(\'Voorbehoud van financiering\')">Voorbehoud van financiering</span>' },
-    { id: 'w15', mode: 'pro', category: '买房定居', icon: '⚡', title: '房屋能源标签 (Energielabel)', tag: '防接盘', summary: '买老房子便宜？后续加装保温层的钱够买新房了。', details: '荷兰贷款额度严格与能源标签挂钩！买 A 标及以上能比 D 标多贷几万欧。而且 F/G 标的房子冬天天然气费可能高达 €400/月，买房时千万别只看总价！' },
-    { id: 'w_new5', mode: 'pro', category: '买房定居', icon: '📝', title: '买房三剑客：中介/评估/公证', tag: '流程扫盲', summary: '买房不要裸奔，必须花钱找专业团队。', details: '买房至少需要三笔硬性额外支出：Aankoopmakelaar (买方中介，约 €3000，帮你抢房)；Taxateur (估价师，约 €500，出具银行认可的报告)；Notaris (公证处，约 €1500，完成过户)。' },
+    { id: 'w14', mode: 'advanced', category: '买房定居', icon: '🏠', title: 'Funda 看房与竞价潜规则', tag: '实操指南', summary: 'Overbidding (溢价) 是常态，如何保护自己？', details: '在兰斯塔德地区，好房子需加价 10%-20%。出价时除了写金额，务必附带两个保命条款：财务保留条款（贷款批不下来可无责毁约）和建筑检测条款。荷兰语词汇：<span class="wk-nl-word" onclick="copyText(\'Voorbehoud van financiering\')">Voorbehoud van financiering</span>' },
+    { id: 'w15', mode: 'advanced', category: '买房定居', icon: '⚡', title: '房屋能源标签 (Energielabel)', tag: '防接盘', summary: '买老房子便宜？后续加装保温层的钱够买新房了。', details: '荷兰贷款额度严格与能源标签挂钩！买 A 标及以上能比 D 标多贷几万欧。而且 F/G 标的房子冬天天然气费可能高达 €400/月，买房时千万别只看总价！' },
+    { id: 'w_new5', mode: 'advanced', category: '买房定居', icon: '📝', title: '买房三剑客：中介/评估/公证', tag: '流程扫盲', summary: '买房不要裸奔，必须花钱找专业团队。', details: '买房至少需要三笔硬性额外支出：Aankoopmakelaar (买方中介，约 €3000，帮你抢房)；Taxateur (估价师，约 €500，出具银行认可的报告)；Notaris (公证处，约 €1500，完成过户)。' },
 
-    { id: 'w16', mode: 'pro', category: '财富税务', icon: '📉', title: '30% Ruling 免税法案深度解析', tag: '高薪特权', summary: '满足条件，你的工资有 30% 是免税的纯收入。', details: '核心条件：必须是从海外被招募进荷兰 (本地毕业找工作不适用)，且满足特定薪资门槛。最长适用 5 年，期间不仅免税，还直接豁免 Box 3 财富税！' },
-    { id: 'w17', mode: 'pro', category: '财富税务', icon: '💰', title: 'Box 3 财富税防坑指南', tag: '中产必看', summary: '在荷兰存款太多也要交税？了解免税额度。', details: '荷兰不仅收所得税 (Box 1)，还收财富税 (Box 3)。单身免税额度约为 €57,000，伴侣约为 €114,000。超过部分哪怕只是放在银行吃利息，也会被狠狠收税。有余钱尽早考虑理财！' }
+    { id: 'w16', mode: 'advanced', category: '财富税务', icon: '📉', title: '30% Ruling 免税法案深度解析', tag: '高薪特权', summary: '满足条件，你的工资有 30% 是免税的纯收入。', details: '核心条件：必须是从海外被招募进荷兰 (本地毕业找工作不适用)，且满足特定薪资门槛。最长适用 5 年，期间不仅免税，还直接豁免 Box 3 财富税！' },
+    { id: 'w17', mode: 'advanced', category: '财富税务', icon: '💰', title: 'Box 3 财富税防坑指南', tag: '中产必看', summary: '在荷兰存款太多也要交税？了解免税额度。', details: '荷兰不仅收所得税 (Box 1)，还收财富税 (Box 3)。单身免税额度约为 €57,000，伴侣约为 €114,000。超过部分哪怕只是放在银行吃利息，也会被狠狠收税。有余钱尽早考虑理财！' }
 ];
 
 // --- 音效与辅助 ---
@@ -1018,8 +1011,7 @@ function copyText(text) { navigator.clipboard.writeText(text); showToast(`已复
 // ================= 12. 红宝书：渲染与滑动逻辑 =================
 let currentRbMode = localStorage.getItem('hp_survival_mode') || 'starter';
 let currentRbCategory = 'all';
-const advancedTabs = ['羊毛购物', '交通出行', '生活避坑', '税务补贴'];
-const proTabs = ['职场签证', '买房定居', '财富税务'];
+const advancedTabs = ['羊毛购物', '交通出行', '生活避坑', '税务补贴', '职场签证', '买房定居', '财富税务'];
 
 function initRedBook() {
     if(!localStorage.getItem('hp_disclaimer_agreed')) { 
@@ -1040,39 +1032,46 @@ function switchRbMode(mode) {
     const mainContainer = document.getElementById('redbookContainer'); 
     const fabBtn = document.getElementById('fabGridBtn');
 
-    // 🌟 控制不同模式的专属小组件
+    // 获取各个区块容器
     const advWidgets = document.getElementById('rbWidgetsArea');
     const proWidgets = document.getElementById('proWidgetsArea');
     const safetyWidget = document.getElementById('safetyCheckWidget');
+    const wikiSection = document.getElementById('wikiSectionArea'); // 🌟 新增的百科容器
 
     if (mode === 'starter') {
-        starterView.style.display = 'block'; wikiView.style.display = 'none'; fabBtn.style.display = 'none';
+        starterView.style.display = 'block'; wikiView.style.display = 'none'; 
+        if(fabBtn) fabBtn.style.display = 'none';
         mainContainer.classList.remove('rb-pro-theme'); renderStarterTasks();
     } else {
-        starterView.style.display = 'none'; wikiView.style.display = 'block'; fabBtn.style.display = 'flex';
+        starterView.style.display = 'none'; wikiView.style.display = 'block'; 
         
-        // 组件显隐逻辑
         if (mode === 'advanced') {
             if(advWidgets) advWidgets.style.display = 'flex';
             if(proWidgets) proWidgets.style.display = 'none';
             if(safetyWidget) safetyWidget.style.display = 'block';
+            if(wikiSection) wikiSection.style.display = 'block'; // 🌟 进阶篇：显示百科！
+            if(fabBtn) fabBtn.style.display = 'flex'; // 显示悬浮按钮
+
+            // 渲染所有 Tabs
+            const tabContainer = document.getElementById('wikiTabs');
+            if (tabContainer) {
+                let tabHtml = `<div class="w-tab active" onclick="switchWikiTab('all', this)">全部干货</div>`;
+                advancedTabs.forEach(cat => { tabHtml += `<div class="w-tab" onclick="switchWikiTab('${cat}', this)">${cat}</div>`; });
+                tabContainer.innerHTML = tabHtml;
+            }
+            currentRbCategory = 'all'; 
+            if(document.getElementById('wikiSearchInput')) document.getElementById('wikiSearchInput').value = '';
+            renderWikiList(); 
+
         } else if (mode === 'pro') {
             if(advWidgets) advWidgets.style.display = 'none';
-            if(proWidgets) proWidgets.style.display = 'flex'; // 显示 Pro 专属面板
-            if(safetyWidget) safetyWidget.style.display = 'none'; // Pro 玩家不需要查治安
+            if(proWidgets) proWidgets.style.display = 'flex';
+            if(safetyWidget) safetyWidget.style.display = 'none';
+            if(wikiSection) wikiSection.style.display = 'none';  // 🌟 Pro模式：隐藏百科，只留看板！
+            if(fabBtn) fabBtn.style.display = 'none'; // Pro 模式不需要录入卡片
         }
-
-        const tabContainer = document.getElementById('wikiTabs');
-        if (tabContainer) {
-            const targetTabsArray = mode === 'pro' ? proTabs : advancedTabs;
-            let tabHtml = `<div class="w-tab active" onclick="switchWikiTab('all', this)">全部干货</div>`;
-            targetTabsArray.forEach(cat => { tabHtml += `<div class="w-tab" onclick="switchWikiTab('${cat}', this)">${cat}</div>`; });
-            tabContainer.innerHTML = tabHtml;
-        }
-        if(mode === 'pro') mainContainer.classList.add('rb-pro-theme'); else mainContainer.classList.remove('rb-pro-theme');
         
-        currentRbCategory = 'all'; const searchInput = document.getElementById('wikiSearchInput'); if(searchInput) searchInput.value = '';
-        renderWikiList(); 
+        if(mode === 'pro') mainContainer.classList.add('rb-pro-theme'); else mainContainer.classList.remove('rb-pro-theme');
     }
 }
 
