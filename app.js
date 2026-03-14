@@ -446,63 +446,107 @@ async function loadCommunityPosts() {
     } catch (err) {}
 }
 
-// ================= 📰 Pro 模式新闻引擎 (独立卡片高级排版) =================
-function renderProNews() {
+// ================= 📰 Pro 模式新闻引擎 (真实 API 异步拉取版) =================
+async function renderProNews() {
     const newsContainer = document.getElementById('proNewsList');
     if (!newsContainer) return;
 
-    const newsData = [
-        { 
-            time: "10:30", tag: "🚨 突发", tagColor: "#EF4444",
-            title: "荷兰央行紧急预警：建议备足现金防支付系统瘫痪", 
-            aiSummary: "因近期网络攻击频发，央行建议每家储备约 €50 现金以备 PIN 机故障。日常无需恐慌取款。", 
-            source: "RTL Nieuws", actionText: "二手市场淘个保险箱", actionTab: "market"
-        },
-        { 
-            time: "昨夜", tag: "📈 资产", tagColor: "#B45309",
-            title: "议会初步同意：明年起 Box 3 财富税将按实际收益征收", 
-            aiSummary: "抛弃过去的虚拟收益率，未来只有你炒股/存款真正赚到的钱才需交税。利好低风险储蓄者。", 
-            source: "FD.nl", actionText: "测算免税额度", actionTab: "wiki"
-        },
-        { 
-            time: "14:00", tag: "💼 职场", tagColor: "#10B981",
-            title: "ASML 大动作！埃因霍温扩建计划获批，提供2万个新岗位", 
-            aiSummary: "政府斥资 25 亿欧元改善周边基建以留住 ASML，未来三年技术与供应链岗位将迎来爆发。", 
-            source: "NU.nl", actionText: "找校友内推", actionTab: "help"
+    // 1. 优先展示高级骨架加载状态 (消除等待焦虑)
+    newsContainer.innerHTML = `
+        <div style="text-align:center; padding: 30px 0; color:#9CA3AF; font-size: 13px;">
+            <span class="pulse-dot" style="display:inline-block; background:#6366F1;"></span> 
+            全自动 AI 爬虫正在提炼今日荷兰大事件...
+        </div>
+    `;
+
+    try {
+        // 2. 尝试向我们即将编写的后端请求真实新闻
+        const res = await fetch('/api/get-news');
+        const data = await res.json();
+
+        // 如果后端报错或数据库为空，主动抛出错误，进入本地回退逻辑
+        if (!data.success || !data.news || data.news.length === 0) {
+            throw new Error("数据库暂无新闻");
         }
-    ];
 
-    let html = '';
-    newsData.forEach(item => {
-        // 🌟 核心：外层加上独立包裹的深色透明背景，加上阴影和边框，形成“卡片中的卡片”
-        html += `
-        <div class="news-item" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 18px 16px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.2s;">
-            
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <div style="display:flex; gap:8px; align-items:center;">
-                    <span style="font-size:11px; background:${item.tagColor}25; color:${item.tagColor}; padding:3px 8px; border-radius:6px; border:1px solid ${item.tagColor}50; font-weight:900;">${item.tag}</span>
-                    <span style="font-size:12px; color:#9CA3AF; font-weight:bold;">${item.time}</span>
+        // 3. 渲染真实新闻
+        let html = '';
+        data.news.forEach(item => {
+            html += `
+            <div class="news-item" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 18px 16px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.2s;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <span style="font-size:11px; background:${item.tagColor}25; color:${item.tagColor}; padding:3px 8px; border-radius:6px; border:1px solid ${item.tagColor}50; font-weight:900;">${item.tag}</span>
+                        <span style="font-size:12px; color:#9CA3AF; font-weight:bold;">${item.time}</span>
+                    </div>
+                    <span style="font-size:11px; color:#6B7280; font-weight:bold;">源自 ${item.source}</span>
                 </div>
-                <span style="font-size:11px; color:#6B7280; font-weight:bold;">${item.source}</span>
-            </div>
-
-            <div style="font-size:15px; font-weight:900; color:#F9FAFB; line-height:1.5; letter-spacing: 0.5px;">
-                ${item.title}
-            </div>
-
-            <div style="background: rgba(0,0,0,0.3); padding:12px 14px; border-radius:10px; border-left:4px solid #6366F1; font-size:13px; color:#D1D5DB; line-height:1.6;">
-                <span style="font-weight:900; color:#818CF8;">🤖 AI省流：</span>${item.aiSummary}
-            </div>
-
-            <div style="display:flex; justify-content:flex-end; margin-top:2px;">
-                <div onclick="showToast('正在为您跳转...', 'success')" style="font-size:12px; color:#10B981; font-weight:900; cursor:pointer; display:flex; align-items:center; background:rgba(16,185,129,0.15); padding:6px 14px; border-radius:14px;">
-                    ${item.actionText} <span style="margin-left:4px; font-size:14px;">›</span>
+                <div style="font-size:15px; font-weight:900; color:#F9FAFB; line-height:1.5; letter-spacing: 0.5px;">
+                    ${item.title}
                 </div>
-            </div>
+                <div style="background: rgba(0,0,0,0.3); padding:12px 14px; border-radius:10px; border-left:4px solid #6366F1; font-size:13px; color:#D1D5DB; line-height:1.6;">
+                    <span style="font-weight:900; color:#818CF8;">🤖 AI省流：</span>${item.aiSummary}
+                </div>
+                <div style="display:flex; justify-content:flex-end; margin-top:2px;">
+                    <div onclick="showToast('正在为您跳转...', 'success')" style="font-size:12px; color:#10B981; font-weight:900; cursor:pointer; display:flex; align-items:center; background:rgba(16,185,129,0.15); padding:6px 14px; border-radius:14px;">
+                        ${item.actionText} <span style="margin-left:4px; font-size:14px;">›</span>
+                    </div>
+                </div>
+            </div>`;
+        });
+        newsContainer.innerHTML = html;
 
-        </div>`;
-    });
-    newsContainer.innerHTML = html;
+    } catch (error) {
+        // 4. 🛡️ 绝对防崩溃机制：如果接口还没写好，平滑回退到本地高质量模拟数据
+        console.log("云端新闻拉取失败，切入备用模拟数据：", error.message);
+        
+        const fallbackData = [
+            { 
+                time: "10:30", tag: "🚨 突发", tagColor: "#EF4444",
+                title: "荷兰央行紧急预警：建议备足现金防支付系统瘫痪", 
+                aiSummary: "因近期网络攻击频发，央行建议每家储备约 €50 现金以备 PIN 机故障。日常无需恐慌取款。", 
+                source: "RTL Nieuws", actionText: "二手市场淘个保险箱"
+            },
+            { 
+                time: "昨夜", tag: "📈 资产", tagColor: "#B45309",
+                title: "议会初步同意：明年起 Box 3 财富税将按实际收益征收", 
+                aiSummary: "抛弃过去的虚拟收益率，未来只有你炒股/存款真正赚到的钱才需交税。利好低风险储蓄者。", 
+                source: "FD.nl", actionText: "测算免税额度"
+            },
+            { 
+                time: "14:00", tag: "💼 职场", tagColor: "#10B981",
+                title: "ASML 大动作！埃因霍温扩建计划获批，提供2万个新岗位", 
+                aiSummary: "政府斥资 25 亿欧元改善周边基建以留住 ASML，未来三年技术与供应链岗位将迎来爆发。", 
+                source: "NU.nl", actionText: "找校友内推"
+            }
+        ];
+
+        let html = '';
+        fallbackData.forEach(item => {
+            html += `
+            <div class="news-item" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 18px 16px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.2s;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <span style="font-size:11px; background:${item.tagColor}25; color:${item.tagColor}; padding:3px 8px; border-radius:6px; border:1px solid ${item.tagColor}50; font-weight:900;">${item.tag}</span>
+                        <span style="font-size:12px; color:#9CA3AF; font-weight:bold;">${item.time}</span>
+                    </div>
+                    <span style="font-size:11px; color:#6B7280; font-weight:bold;">源自 ${item.source}</span>
+                </div>
+                <div style="font-size:15px; font-weight:900; color:#F9FAFB; line-height:1.5; letter-spacing: 0.5px;">
+                    ${item.title}
+                </div>
+                <div style="background: rgba(0,0,0,0.3); padding:12px 14px; border-radius:10px; border-left:4px solid #6366F1; font-size:13px; color:#D1D5DB; line-height:1.6;">
+                    <span style="font-weight:900; color:#818CF8;">🤖 AI省流：</span>${item.aiSummary}
+                </div>
+                <div style="display:flex; justify-content:flex-end; margin-top:2px;">
+                    <div onclick="showToast('正在为您跳转...', 'success')" style="font-size:12px; color:#10B981; font-weight:900; cursor:pointer; display:flex; align-items:center; background:rgba(16,185,129,0.15); padding:6px 14px; border-radius:14px;">
+                        ${item.actionText} <span style="margin-left:4px; font-size:14px;">›</span>
+                    </div>
+                </div>
+            </div>`;
+        });
+        newsContainer.innerHTML = html;
+    }
 }
 
 // 找到现有的 window.addEventListener('DOMContentLoaded', ...)
