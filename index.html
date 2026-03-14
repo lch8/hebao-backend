@@ -89,13 +89,18 @@
             </div>
         </div>
 
+       <div class="neth-hero-bg">
+    <div class="neth-hero-overlay"></div>
+    <div class="neth-hero-content">
         <div class="rb-mode-switcher">
-    <div class="rb-mode-btn active" onclick="switchRbMode('starter')">🐣 新手村</div>
-    <div class="rb-mode-btn" onclick="switchRbMode('advanced')">🥓 进阶篇</div>
-    <div class="rb-mode-btn" onclick="switchRbMode('pro')">💼 Pro玩家</div>
+            <div class="rb-mode-btn active" onclick="switchRbMode('starter')">🐣 新手村</div>
+            <div class="rb-mode-btn" onclick="switchRbMode('advanced')">🥓 进阶篇</div>
+            <div class="rb-mode-btn" onclick="switchRbMode('pro')">💼 Pro玩家</div>
+        </div>
+    </div>
 </div>
 
-<div id="redbookContainer" class="page-content" style="padding-top: 15px;">
+<div id="redbookContainer" class="page-content" style="padding-top: 5px;">
     
     <div id="rbStarterMode">
         
@@ -104,10 +109,10 @@
             <span class="st-text">紧急避难所</span>
         </div>
         <div class="emergency-grid">
-            <div class="em-card pulse-red"><div class="em-icon">🚑</div><div class="em-text">夜间急病</div></div>
-            <div class="em-card pulse-orange"><div class="em-icon">🏠</div><div class="em-text">租房防骗</div></div>
-            <div class="em-card pulse-yellow"><div class="em-icon">🔑</div><div class="em-text">忘带钥匙</div></div>
-            <div class="em-card pulse-blue"><div class="em-icon">💳</div><div class="em-text">证件丢失</div></div>
+            <div class="em-card pulse-red" onclick="showEmergency('medical')"><div class="em-icon">🚑</div><div class="em-text">夜间急病</div></div>
+            <div class="em-card pulse-orange" onclick="showEmergency('fraud')"><div class="em-icon">🏠</div><div class="em-text">租房防骗</div></div>
+            <div class="em-card pulse-yellow" onclick="showEmergency('key')"><div class="em-icon">🔑</div><div class="em-text">忘带钥匙</div></div>
+            <div class="em-card pulse-blue" onclick="showEmergency('passport')"><div class="em-icon">💳</div><div class="em-text">证件丢失</div></div>
         </div>
 
         <div class="section-title-row" style="margin-top: 25px;">
@@ -149,7 +154,18 @@
             </div>
         </div>
 
-        <div class="safety-check-card glass-card" style="margin: 0 20px 20px;">
+        <div id="proWidgetsArea" style="display: none; padding: 0 20px; margin-bottom: 15px; flex-direction: column; gap: 10px;">
+            <div class="widget-card glass-card" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: linear-gradient(135deg, #111827, #374151); color: #FFF; border-radius: 16px; box-shadow: 0 8px 20px rgba(17,24,39,0.2);">
+                <div class="wg-left" style="font-weight: 900; font-size: 15px;"><span style="font-size:18px; margin-right: 6px;">📈</span>全荷平均房贷利率</div>
+                <div class="wg-right" style="color: #FCD34D; font-weight: 900; font-size: 14px;">3.85% <span style="font-size:10px; color:#9CA3AF;">(10年期固定)</span></div>
+            </div>
+            <div class="widget-card glass-card" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: linear-gradient(135deg, #B45309, #D97706); color: #FFF; border-radius: 16px; box-shadow: 0 8px 20px rgba(180,83,9,0.2); cursor: pointer;" onclick="showToast('税务计算器即将上线！', 'success')">
+                <div class="wg-left" style="font-weight: 900; font-size: 15px;"><span style="font-size:18px; margin-right: 6px;">💼</span>30% Ruling 免税计算器</div>
+                <div class="wg-right" style="font-weight: 900; font-size: 12px; background: rgba(255,255,255,0.2); padding: 4px 10px; border-radius: 8px;">去测算 👉</div>
+            </div>
+        </div>
+
+        <div class="safety-check-card glass-card" id="safetyCheckWidget" style="margin: 0 20px 20px;">
             <div class="sc-header">
                 <span class="sc-title">🛡️ 街区治安避雷针</span>
                 <span class="sc-sub">租房/夜归必查</span>
@@ -170,11 +186,8 @@
         </div>
 
         <div id="wikiTabs"></div>
-
         <div id="wikiListContainer" style="padding-bottom: 100px; margin-top: 5px;"></div>
-        
     </div>
-</div>
 
 <div class="fab-btn" id="fabGridBtn" onclick="toggleFabModal()" style="display: 
     none; position: fixed; bottom: 90px; right: 20px; width: 50px; height: 50px; 
