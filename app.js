@@ -447,26 +447,66 @@ async function loadCommunityPosts() {
 }
 
 // ================= 📰 Pro 模式新闻渲染引擎 =================
+// ================= 📰 Pro 模式新闻引擎 (AI 省流与闭环版) =================
 function renderProNews() {
     const newsContainer = document.getElementById('proNewsList');
     if (!newsContainer) return;
 
-    // 模拟来自 Nu.nl 或 NOS 的最新重大新闻
+    // 模拟抓取全网数据，并通过 AI 提炼结构化
     const newsData = [
-        { time: "10:30", title: "NS 宣布周五早高峰全线停运，工会要求加薪8%", source: "源自 NU.nl", views: "1.2k" },
-        { time: "09:15", title: "荷兰议会通过新规：Box 3 财富税计算方式将于明年大改", source: "源自 RTL Nieuws", views: "3.5k" },
-        { time: "昨夜", title: "鹿特丹 Zuid 区域发生汽车焚烧事件，警方已介入调查", source: "源自 AD.nl", views: "980" },
+        { 
+            time: "10:30", 
+            tag: "🚨 突发", tagColor: "#EF4444",
+            title: "荷兰央行紧急预警：建议备足现金防支付系统瘫痪", 
+            aiSummary: "因近期网络攻击频发，央行建议每家储备约 €50 现金以备 PIN 机故障。日常无需恐慌取款。", 
+            source: "RTL Nieuws",
+            actionText: "二手市场淘个保险箱", actionTab: "market"
+        },
+        { 
+            time: "昨夜", 
+            tag: "📈 资产", tagColor: "#B45309",
+            title: "议会初步同意：明年起 Box 3 财富税将按实际收益征收", 
+            aiSummary: "抛弃过去的虚拟收益率，未来只有你炒股/存款真正赚到的钱才需交税。利好低风险储蓄者。", 
+            source: "FD.nl",
+            actionText: "测算我的免税额度", actionTab: "wiki"
+        },
+        { 
+            time: "14:00", 
+            tag: "💼 职场", tagColor: "#10B981",
+            title: "ASML 大动作！埃因霍温扩建计划获批，提供2万个新岗位", 
+            aiSummary: "政府斥资 25 亿欧元改善周边基建以留住 ASML，未来三年技术与供应链岗位将迎来爆发。", 
+            source: "NU.nl",
+            actionText: "找校友内推", actionTab: "help"
+        }
     ];
 
     let html = '';
     newsData.forEach(item => {
         html += `
-        <div class="news-item" onclick="showToast('正文翻译页即将上线！', 'success')">
-            <div class="news-time">${item.time}</div>
-            <div class="news-content">
-                <div class="news-title">${item.title}</div>
-                <div class="news-source"><span>🔗 ${item.source}</span> <span>👀 ${item.views} 阅</span></div>
+        <div class="news-item" style="display:flex; flex-direction:column; gap:8px; padding-bottom:16px; border-bottom:1px dashed #374151; margin-bottom:16px; cursor:default;">
+            
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <span style="font-size:11px; background:${item.tagColor}20; color:${item.tagColor}; padding:2px 6px; border-radius:4px; border:1px solid ${item.tagColor}40; font-weight:bold;">${item.tag}</span>
+                    <span style="font-size:11px; color:#9CA3AF; font-weight:bold;">${item.time}</span>
+                </div>
+                <span style="font-size:10px; color:#6B7280;">源自 ${item.source}</span>
             </div>
+
+            <div style="font-size:14px; font-weight:900; color:#F3F4F6; line-height:1.4;">
+                ${item.title}
+            </div>
+
+            <div style="background:rgba(255,255,255,0.05); padding:10px 12px; border-radius:8px; border-left:3px solid #6366F1; font-size:12px; color:#D1D5DB; line-height:1.5;">
+                <span style="font-weight:bold; color:#818CF8;">🤖 AI省流：</span>${item.aiSummary}
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; margin-top:4px;">
+                <div onclick="showToast('正在为您跳转至相关工具...', 'success')" style="font-size:11px; color:#10B981; font-weight:bold; cursor:pointer; display:flex; align-items:center; gap:4px; padding:4px 8px; background:rgba(16,185,129,0.1); border-radius:12px; transition:0.2s;">
+                    ${item.actionText} ›
+                </div>
+            </div>
+
         </div>`;
     });
     newsContainer.innerHTML = html;
