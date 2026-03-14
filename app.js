@@ -965,8 +965,15 @@ function switchRbMode(mode) {
     document.querySelectorAll('.rb-mode-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelector(`.rb-mode-btn[onclick*="${mode}"]`).classList.add('active');
     
-    const starterView = document.getElementById('rbStarterMode'); const wikiView = document.getElementById('rbWikiMode');
-    const mainContainer = document.getElementById('redbookContainer'); const fabBtn = document.getElementById('fabGridBtn');
+    const starterView = document.getElementById('rbStarterMode'); 
+    const wikiView = document.getElementById('rbWikiMode');
+    const mainContainer = document.getElementById('redbookContainer'); 
+    const fabBtn = document.getElementById('fabGridBtn');
+
+    // 🌟 控制不同模式的专属小组件
+    const advWidgets = document.getElementById('rbWidgetsArea');
+    const proWidgets = document.getElementById('proWidgetsArea');
+    const safetyWidget = document.getElementById('safetyCheckWidget');
 
     if (mode === 'starter') {
         starterView.style.display = 'block'; wikiView.style.display = 'none'; fabBtn.style.display = 'none';
@@ -974,6 +981,17 @@ function switchRbMode(mode) {
     } else {
         starterView.style.display = 'none'; wikiView.style.display = 'block'; fabBtn.style.display = 'flex';
         
+        // 组件显隐逻辑
+        if (mode === 'advanced') {
+            if(advWidgets) advWidgets.style.display = 'flex';
+            if(proWidgets) proWidgets.style.display = 'none';
+            if(safetyWidget) safetyWidget.style.display = 'block';
+        } else if (mode === 'pro') {
+            if(advWidgets) advWidgets.style.display = 'none';
+            if(proWidgets) proWidgets.style.display = 'flex'; // 显示 Pro 专属面板
+            if(safetyWidget) safetyWidget.style.display = 'none'; // Pro 玩家不需要查治安
+        }
+
         const tabContainer = document.getElementById('wikiTabs');
         if (tabContainer) {
             const targetTabsArray = mode === 'pro' ? proTabs : advancedTabs;
@@ -985,6 +1003,19 @@ function switchRbMode(mode) {
         
         currentRbCategory = 'all'; const searchInput = document.getElementById('wikiSearchInput'); if(searchInput) searchInput.value = '';
         renderWikiList(); 
+    }
+}
+
+// ================= 🚨 紧急避难所响应逻辑 =================
+function showEmergency(type) {
+    if (type === 'medical') {
+        showToast('夜间急病请先拨打 Huisartsenpost (家庭医生夜间部)，生命危险直拨 112！', 'error');
+    } else if (type === 'fraud') {
+        showToast('切勿提前转账定金！请通过官方途径核实房东 KVK 或房产证。', 'warning');
+    } else if (type === 'key') {
+        showToast('千万别在谷歌搜带 [Ad] 的开锁匠 (极贵)！请找本地正规店铺。', 'warning');
+    } else if (type === 'passport') {
+        showToast('护照丢失请立刻报警获取挂失单，并联系中国驻荷大使馆补办！', 'error');
     }
 }
 
