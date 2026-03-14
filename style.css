@@ -1313,33 +1313,104 @@ body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "S
     background: linear-gradient(135deg, #111827, #374151); /* AI 按钮变成曜石黑 */
     box-shadow: 0 8px 25px rgba(17, 24, 39, 0.3);
 }
-/* ================= 🌷 荷兰风情沉浸式头部 ================= */
+/* ================= 🌷 荷兰风情沉浸式头部 (终极融合版) ================= */
 .neth-hero-bg {
     position: relative;
     width: 100%;
-    height: 180px;
-    background-image: url('https://images.unsplash.com/photo-1512470876302-972faa2aa9a4?q=80&w=800&auto=format&fit=crop'); /* 阿姆斯特丹运河绝美网图 */
+    /* 高度调小一点，让它不会太占屏幕 */
+    height: 190px; 
+    background-image: url('https://images.unsplash.com/photo-1512470876302-972faa2aa9a4?q=80&w=800&auto=format&fit=crop');
     background-size: cover;
     background-position: center 30%;
-    margin-top: -15px; /* 向上吸顶 */
+    /* 底部增加高级圆角，平滑过渡到内容区 */
+    border-bottom-left-radius: 24px;
+    border-bottom-right-radius: 24px;
+    overflow: hidden;
+    margin-bottom: 10px;
 }
+
 .neth-hero-overlay {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    /* 从上到下的黑透渐变，到底部完全变白融入页面 */
-    background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(255,255,255,0.2) 60%, rgba(247,248,250,1) 100%);
+    /* 上半部加深黑色确保白色标题清晰，下半部变白融入背景 */
+    background: linear-gradient(to bottom, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.2) 40%, rgba(247,248,250,1) 100%);
+    z-index: 1;
 }
-.neth-hero-content {
-    position: absolute;
-    bottom: 15px; left: 0; right: 0;
+
+/* 🌟 新增：透明质感导航栏 */
+.neth-hero-nav {
+    position: relative;
     z-index: 2;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: calc(15px + env(safe-area-inset-top)) 20px 10px;
 }
-/* 微调模式切换器，让它在背景上更好看 */
-.neth-hero-bg .rb-mode-switcher {
-    background: rgba(255,255,255,0.6);
+
+.hero-title-box {
+    text-align: center;
+    color: #FFF;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.5); /* 文字发光，防看不清 */
+}
+.hero-title-box h1 {
+    font-size: 18px;
+    font-weight: 900;
+    margin: 0 0 2px;
+    letter-spacing: 0.5px;
+}
+.hero-title-box p {
+    font-size: 10px;
+    margin: 0;
+    font-weight: bold;
+    opacity: 0.9;
+}
+
+/* 毛玻璃按钮：查榜单 */
+.hero-btn {
+    background: rgba(255, 255, 255, 0.2);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.5);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #FFF;
+    padding: 6px 12px;
+    border-radius: 99px;
+    font-size: 12px;
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+/* 毛玻璃圆形按钮：相机 */
+.hero-icon-btn {
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #FFF;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; justify-content: center; align-items: center;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+/* 模式切换器紧贴导航栏下方 */
+.neth-hero-content {
+    position: absolute;
+    bottom: 15px; /* 控制它距离背景底部的距离 */
+    left: 0; right: 0;
+    z-index: 2;
+}
+
+/* 高级玻璃态的分段控制器 */
+.neth-hero-bg .rb-mode-switcher {
+    background: rgba(255,255,255,0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.6);
+    margin: 0 20px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.08);
 }
 
 /* ================= 💼 Pro 模式专属：精英仪表盘 ================= */
