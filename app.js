@@ -144,131 +144,180 @@ function togglePostcode() {
     else { inputEl.value = currentCity; } 
 }
 
-// ================= 4. 扫码与榜单 =================
+// ================= 4. 核心引擎：扫码与解析 =================
 let currentProductData = null; let currentDetailData = null; 
 let globalTrendingLikes = []; let globalTrendingDislikes = [];
 
+// 📸 拍照解析
 async function handlePackageImage(event) {
     const file = event.target.files[0]; if (!file) return;
-    document.getElementById('homeActionBox').style.display = 'none'; 
+    
+    // 安全移除不需要的旧容器，避免报错
     document.getElementById('previewContainer').style.display = 'block'; 
     document.getElementById('scanOverlay').style.display = 'flex'; 
-    document.getElementById('scanText').innerText = "📡 正在解析包装..."; 
+    document.getElementById('scanText').innerText = "📡 视觉大脑正在解析..."; 
     document.getElementById('miniResultCard').style.display = 'none';
+    
     const reader = new FileReader();
     reader.onload = async function(e) {
         const base64Data = e.target.result.split(',')[1]; 
         const previewImg = document.getElementById('previewImg'); 
         if (previewImg) previewImg.src = e.target.result;
+        
         try {
-            const res = await fetch('/api/scan', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ imageBase64: base64Data }) });
+            // 调用后端的 scan-2.js (注意你的路由配置，如果是 /api/scan-2 请自行修改)
+            const res = await fetch('/api/scan', { 
+                method: 'POST', 
+                headers: getAuthHeaders(), 
+                body: JSON.stringify({ imageBase64: base64Data }) 
+            });
             const data = await res.json(); 
             if(!res.ok || data.error) throw new Error(data.error || "识别失败");
-            currentProductData = data; currentProductData.image_url = e.target.result; 
-            document.getElementById('scanOverlay').style.display = 'none'; 
-            document.getElementById('previewContainer').style.display = 'none'; 
-            document.getElementById('miniResultCard').style.display = 'block'; 
-            const emoji = data.is_recommended === 1 ? '👍' : '💣'; 
-            document.getElementById('miniChineseName').innerText = `${emoji} ${data.chinese_name || data.dutch_name || '未知商品'}`; 
-            document.getElementById('miniInsight').innerText = data.insight || '管家觉得不错~'; 
-            saveToLocalFootprint(data, data.image_url);
-        } catch (err) { showToast("识别失败：" + err.message); resetApp(); } 
-        finally { document.getElementById('packageImgInput').value = ''; }
+            
+            processScanResult(data, e.target.result);
+        } catch (err) { 
+            showToast(err.message, 'error'); 
+            resetApp(); 
+        } finally { 
+            document.getElementById('packageImgInput').value = ''; 
+        }
     }; 
     reader.readAsDataURL(file);
 }
 
-let html5Scanner = null;
-function startBarcodeScan() {
-    document.getElementById('scannerModal').style.display = 'flex'; 
-    html5Scanner = new Html5Qrcode("reader");
-    const config = { fps: 10, qrbox: { width: 250, height: 150 }, aspectRatio: 1.0, formatsToSupport: [ Html5QrcodeSupportedFormats.EAN_13, Html5QrcodeSupportedFormats.EAN_8, Html5QrcodeSupportedFormats.UPC_A ] };
-    html5Scanner.start({ facingMode: "environment" }, config, (decodedText) => { 
-        if (navigator.vibrate) navigator.vibrate(100); 
-        closeScanner(); 
-        document.getElementById('mainSearchInput').value = decodedText; 
-        executeSearch(); 
-    }).catch(err => { showToast("调用摄像头失败"); closeScanner(); });
-}
-function closeScanner() { 
-    if(html5Scanner) { html5Scanner.stop().catch(e=>console.log(e)); html5Scanner = null; } 
-    document.getElementById('scannerModal').style.display = 'none'; 
-}
+// 🔍 条码搜索
 function executeSearch() {
     const query = document.getElementById('mainSearchInput').value.trim(); if (!query) return;
-    document.getElementById('homeActionBox').style.display='none'; 
+    
     document.getElementById('previewContainer').style.display='block'; 
     document.getElementById('scanOverlay').style.display='flex'; 
-    document.getElementById('scanText').innerText = "📡 全网检索中..."; 
+    document.getElementById('scanText').innerText = "📡 全球条码库比对中..."; 
     document.getElementById('miniResultCard').style.display='none';
-    fetch('/api/scan-barcode', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ barcode: query, userId: userUUID }) })
-    .then(res => res.json()).then(data => {
-        currentProductData = data; 
-        document.getElementById('scanOverlay').style.display='none'; 
-        document.getElementById('previewContainer').style.display='none'; 
-        document.getElementById('miniResultCard').style.display='block'; 
-        document.getElementById('miniChineseName').innerText=data.chinese_name||'未知商品'; 
-        document.getElementById('miniInsight').innerText=data.insight||'暂无评价'; 
-        saveToLocalFootprint(data, data.image_url);
-    }).catch(err => { showToast("未找到"); resetApp(); });
+    
+    // 调用后端的 scan-barcode.js
+    fetch('/api/scan-barcode', { 
+        method: 'POST', 
+        headers: getAuthHeaders(), 
+        body: JSON.stringify({ barcode: query, userId: userUUID }) 
+    })
+    .then(res => { if(!res.ok) throw new Error("条码库未录入"); return res.json(); })
+    .then(data => {
+        processScanResult(data, data.image_url);
+    }).catch(err => { 
+        showToast(err.message, 'error'); 
+        resetApp(); 
+    });
 }
+
+// 📦 统一处理解析结果
+function processScanResult(data, imgUrl) {
+    currentProductData = data; currentProductData.image_url = imgUrl; 
+    document.getElementById('scanOverlay').style.display = 'none'; 
+    document.getElementById('previewContainer').style.display = 'none'; 
+    
+    // 弹出底部精美小卡片
+    const miniCard = document.getElementById('miniResultCard');
+    miniCard.style.display = 'block'; 
+    // 强制给小卡片加上点击事件，跳转详情页
+    miniCard.onclick = openDetailsFromScan;
+
+    const emoji = data.is_recommended ? '👍' : '💣'; 
+    document.getElementById('miniChineseName').innerText = `${emoji} ${data.chinese_name || data.dutch_name || '未知商品'}`; 
+    document.getElementById('miniInsight').innerText = data.insight || '管家觉得不错~'; 
+    
+    saveToLocalFootprint(data, imgUrl);
+}
+
 function resetApp() { 
     document.getElementById('previewContainer').style.display='none'; 
     document.getElementById('scanOverlay').style.display='none'; 
     document.getElementById('miniResultCard').style.display='none'; 
-    document.getElementById('homeActionBox').style.display='flex'; 
     document.getElementById('mainSearchInput').value = ''; 
 }
 
-async function loadTrendingToHome() {
-    try {
-        const res = await fetch('/api/trending'); const data = await res.json();
-        if(data.success) { 
-            globalTrendingLikes = data.topLikes || []; 
-            globalTrendingDislikes = data.topDislikes || []; 
-            renderHomeTrending(globalTrendingLikes, 'homeTrendingListLikes', 'like'); 
-            renderHomeTrending(globalTrendingDislikes, 'homeTrendingListDislikes', 'dislike'); 
+// ================= 5. 商品详情页与异步深度加载 =================
+function openDetailsFromScan() { currentDetailData = {...currentProductData}; setupDetailPage(); }
+function openDetailsFromHistory(index) { let h = JSON.parse(localStorage.getItem('hebao_history')||'[]'); currentDetailData = h[index]; setupDetailPage(); }
+
+async function setupDetailPage() {
+    const d = currentDetailData; if (!d) return;
+    
+    // 1. 瞬间渲染基础信息 (无延迟)
+    const imgEl = document.getElementById('detailImg'); 
+    imgEl.src = d.image_url || d.img_src || 'https://images.unsplash.com/photo-1544025162-8315ea07659b?q=80&w=600&auto=format&fit=crop'; 
+    imgEl.onclick = function() { openLightbox(this.src); }; // 支持大图预览
+
+    document.getElementById('detailChineseName').innerText = d.chinese_name || d.dutch_name || '未知商品'; 
+    document.getElementById('detailDutchName').innerText = d.dutch_name || ''; 
+    
+    document.getElementById('detailInsightBox').style.display = d.insight ? 'block' : 'none'; 
+    document.getElementById('detailInsight').innerText = d.insight || '';
+    document.getElementById('detailWarningBox').style.display = d.warning ? 'block' : 'none'; 
+    document.getElementById('detailWarning').innerText = d.warning || '';
+    
+    document.getElementById('chatHistory').innerHTML = ''; 
+    document.getElementById('askInput').value = ''; 
+    switchTab('details', null);
+
+    // 2. 🌟 异步触发深度报告 (对接 detail.js)
+    const altBox = document.getElementById('detailAltBox');
+    const altContent = document.getElementById('detailAlternatives');
+    const recipeBox = document.getElementById('detailRecipeBox');
+    const recipeList = document.getElementById('recipeCardList');
+    
+    recipeBox.style.display = 'block';
+
+    if (d.alternatives && d.pairing) {
+        // 如果数据库缓存里有，直接渲染
+        if(d.alternatives) { altBox.style.display='block'; altContent.innerHTML = d.alternatives.split('|').map(p=>`<div class="alt-tag">${p}</div>`).join(''); }
+        renderReviewCards(d.pairing);
+    } else {
+        // 渲染骨架屏加载状态
+        altBox.style.display = 'none';
+        recipeList.innerHTML = '<div style="text-align:center; color:#6366F1; padding:30px 0; font-weight:bold;"><span class="pulse-dot" style="display:inline-block; background:#6366F1;"></span> DeepSeek 正在深度评测平替与口味...</div>';
+        
+        try {
+            const res = await fetch('/api/detail', {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ dutchName: d.dutch_name, chineseName: d.chinese_name || '' })
+            });
+            const deepData = await res.json();
+            
+            // 渲染平替
+            if(deepData.alternatives) { 
+                d.alternatives = deepData.alternatives;
+                altBox.style.display='block'; 
+                altContent.innerHTML = deepData.alternatives.split('|').map(p=>`<div class="alt-tag">${p}</div>`).join(''); 
+            }
+            // 渲染点评
+            if(deepData.pairing) {
+                d.pairing = deepData.pairing; 
+                renderReviewCards(deepData.pairing);
+            } else {
+                recipeList.innerHTML = '<div style="text-align:center;color:#9CA3AF;font-size:13px;padding:20px 0;">暂无评价</div>';
+            }
+
+            // 更新到本地足迹缓存
+            let history = JSON.parse(localStorage.getItem('hebao_history') || '[]'); 
+            let index = history.findIndex(i => i.dutch_name === d.dutch_name);
+            if(index !== -1) { 
+                history[index].alternatives = d.alternatives;
+                history[index].pairing = d.pairing; 
+                localStorage.setItem('hebao_history', JSON.stringify(history)); 
+            }
+        } catch(e) {
+            recipeList.innerHTML = '<div style="text-align:center;color:#EF4444;font-size:13px;padding:20px 0;">深度报告生成失败，请重试</div>';
         }
-    } catch(e) {}
-}
-function renderHomeTrending(list, containerId, type) {
-    const container = document.getElementById(containerId); 
-    if (!container || !list || list.length === 0) return; 
-    let html = ''; 
-    const fallbackSvg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23F3F4F6'/%3E%3Ctext x='50%25' y='50%25' font-family='sans-serif' font-size='10' fill='%239CA3AF' text-anchor='middle' dominant-baseline='middle'%3E暂无图%3C/text%3E%3C/svg%3E";
-    list.slice(0, 20).forEach((item, index) => {
-        let badgeClass = 'rank-other'; 
-        if (index === 0) badgeClass = 'rank-1'; else if (index === 1) badgeClass = 'rank-2'; else if (index === 2) badgeClass = 'rank-3'; 
-        if (type === 'dislike') badgeClass = 'rank-bad';
-        const score = type === 'like' ? item.likes : item.dislikes; 
-        const icon = type === 'like' ? '👍' : '💣'; 
-        const scoreColor = type === 'like' ? '#10B981' : '#EF4444'; 
-        const safeImg = item.image_url || fallbackSvg;
-        html += `<div class="trending-card" onclick="openDetailsFromHomeTrending('${type}', ${index})"><div class="rank-badge ${badgeClass}">TOP ${index + 1}</div><img src="${safeImg}" onerror="this.onerror=null; this.src='${fallbackSvg}'" style="width: 50px; height: 50px; border-radius: 10px; object-fit: cover; background: #F3F4F6; border: 1px solid #E5E7EB;"><div class="t-info"><div class="t-name">${item.chinese_name || '未命名商品'}</div><div style="font-size: 11px; color: #9CA3AF; margin-top:2px;">${item.dutch_name || ''}</div></div><div class="t-score" style="color: ${scoreColor}">${icon} ${score}</div></div>`;
-    });
-    container.innerHTML = html;
+    }
 }
 
-// ================= 5. 商品详情页与评价 =================
-function openDetailsFromScan() { currentDetailData = {...currentProductData}; setupDetailPage(); }
-function openDetailsFromHomeTrending(type, index) { currentDetailData = type === 'like' ? globalTrendingLikes[index] : globalTrendingDislikes[index]; setupDetailPage(); }
-function openDetailsFromHistory(index) { let h = JSON.parse(localStorage.getItem('hebao_history')||'[]'); currentDetailData = h[index]; setupDetailPage(); }
-function setupDetailPage() {
-    const d = currentDetailData; if (!d) return;
-    const imgEl = document.getElementById('detailImg'); imgEl.src = d.image_url || d.img_src || ''; 
-    document.getElementById('detailChineseName').innerText = d.chinese_name || '未命名商品'; document.getElementById('detailDutchName').innerText = d.dutch_name || ''; 
-    document.getElementById('detailInsightBox').style.display = d.insight ? 'block' : 'none'; document.getElementById('detailInsight').innerText = d.insight || '';
-    document.getElementById('detailWarningBox').style.display = d.warning ? 'block' : 'none'; document.getElementById('detailWarning').innerText = d.warning || '';
-    document.getElementById('detailAltBox').style.display = 'none';
-    if(d.alternatives) { document.getElementById('detailAltBox').style.display='block'; document.getElementById('detailAlternatives').innerHTML = d.alternatives.split('|').map(p=>`<div class="alt-tag">${p}</div>`).join(''); }
-    if (d.pairing) { document.getElementById('detailRecipeBox').style.display = 'block'; renderReviewCards(d.pairing); } 
-    else { document.getElementById('detailRecipeBox').style.display = 'block'; document.getElementById('recipeCardList').innerHTML = '<div style="text-align:center;color:#9CA3AF;font-size:13px;padding:20px 0;">暂无评价</div>'; }
-    document.getElementById('chatHistory').innerHTML = ''; document.getElementById('askInput').value = ''; switchTab('details', null);
-}
+// 渲染点评卡片
 function renderReviewCards(pairingString) {
     const list = document.getElementById('recipeCardList'); list.innerHTML = '';
     let reviews = pairingString.split('\n\n').filter(l => l.trim()).map((line, idx) => {
-        const isLike = line.includes('👍'); const isRealUser = line.includes('🧑‍🍳'); const cleanText = line.replace(/🧑‍🍳 网友点评 \[.*?\]：|🤖 AI预测口味 \[.*?\]：/, '').trim();
+        const isLike = line.includes('👍'); const isRealUser = line.includes('🧑‍🍳'); 
+        const cleanText = line.replace(/🧑‍🍳 网友点评 \[.*?\]：|🤖 AI预测口味 \[.*?\]：/, '').trim();
         return { id: idx, text: cleanText, isLike, isRealUser, likes: isRealUser ? Math.floor(Math.random() * 50) + 5 : 0, avatar: isRealUser ? ['🐼','😎','👻','👩‍💻','🐱'][idx % 5] : '🤖', name: isRealUser ? '热心网友_' + Math.floor(Math.random()*900+100) : 'AI 预测' };
     });
     reviews.sort((a, b) => b.likes - a.likes);
@@ -278,31 +327,77 @@ function renderReviewCards(pairingString) {
     });
 }
 function likeReviewCard(btn) { if(btn.classList.contains('voted')) return; btn.classList.add('voted'); const span = btn.querySelector('span:last-child'); span.innerText = parseInt(span.innerText) + 1; }
-function openAddReviewModal() { document.getElementById('reviewText').value = ''; document.getElementById('addReviewModal').style.display = 'flex'; }
+
+// ================= 后端交互：投票与追加提问 =================
+
+// 🚀 对接 vote.js
 async function submitDetailReview() {
-    const text = document.getElementById('reviewText').value.trim(); if(!text) return showToast("写点内容吧！");
-    const attitude = document.getElementById('reviewAttitude').value; const finalUgcText = `🧑‍🍳 网友点评 [${attitude}]：${text}`;
+    const text = document.getElementById('reviewText').value.trim(); if(!text) return showToast("写点内容吧！", "warning");
+    const attitude = document.getElementById('reviewAttitude').value; 
+    const finalUgcText = `🧑‍🍳 网友点评 [${attitude}]：${text}`;
+    
     const btn = document.getElementById('btnSubmitReview'); btn.innerText = "提交中..."; btn.disabled = true;
     try {
+        // 调用真实的后端写库
+        const res = await fetch('/api/vote', { 
+            method: 'POST', 
+            headers: getAuthHeaders(), 
+            body: JSON.stringify({ dutch_name: currentDetailData.dutch_name, action: attitude.includes('推荐') ? 'like' : 'dislike' }) 
+        });
+        if(!res.ok) throw new Error("投票记录失败");
+
+        // 更新本地状态
         currentDetailData.pairing = currentDetailData.pairing ? currentDetailData.pairing + '\n\n' + finalUgcText : finalUgcText;
         let history = JSON.parse(localStorage.getItem('hebao_history') || '[]'); let index = history.findIndex(i => i.dutch_name === currentDetailData.dutch_name);
         if(index !== -1) { history[index].pairing = currentDetailData.pairing; localStorage.setItem('hebao_history', JSON.stringify(history)); }
-        await fetch('/api/vote', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ dutch_name: currentDetailData.dutch_name, action: attitude.includes('推荐') ? 'like' : 'dislike' }) });
-        showToast("🎉 发布成功！"); document.getElementById('addReviewModal').style.display = 'none'; setupDetailPage();
-    } catch(e) { showToast("网络错误"); } finally { btn.innerText = "🚀 提交评价"; btn.disabled = false; }
-}
-function saveToLocalFootprint(data, img) { let h = JSON.parse(localStorage.getItem('hebao_history')||'[]'); if(!h.find(i=>i.dutch_name===data.dutch_name)){ data.img_src=img; h.unshift(data); localStorage.setItem('hebao_history',JSON.stringify(h)); } }
-function renderFootprints() { 
-    const listDiv = document.getElementById('footprintList'); let h = JSON.parse(localStorage.getItem('hebao_history') || '[]'); 
-    if (h.length === 0) { listDiv.innerHTML = '<div style="text-align:center; color:#9CA3AF; margin-top:20px; font-size:13px; border: 1px dashed #E5E7EB; padding: 30px; border-radius: 16px;">暂无足迹</div>'; return; } 
-    let html = ''; const fallbackSvg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23F3F4F6'/%3E%3Ctext x='50%25' y='50%25' font-family='sans-serif' font-size='10' fill='%239CA3AF' text-anchor='middle' dominant-baseline='middle'%3E暂无图%3C/text%3E%3C/svg%3E";
-    h.forEach((item, index) => { 
-        const safeImg = item.img_src || item.image_url || fallbackSvg;
-        html += `<div style="background:#FFF; border-radius:16px; margin-bottom:12px; border:1px solid #E5E7EB; overflow:hidden; display:flex; align-items:center; padding:12px; box-shadow:0 2px 8px rgba(0,0,0,0.02); cursor:pointer;" onclick="openDetailsFromHistory(${index})"><img src="${safeImg}" onerror="this.onerror=null; this.src='${fallbackSvg}'" style="width:50px; height:50px; object-fit:cover; border-radius:10px; flex-shrink:0; background:#F3F4F6;"><div style="flex:1; margin-left:12px;"><div style="font-weight:900; font-size:15px; color:#111827; margin-bottom:2px;">${item.chinese_name || '未命名'}</div><div style="font-size:12px; color:#9CA3AF; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden;">${item.insight || ''}</div></div></div>`; 
-    }); 
-    listDiv.innerHTML = html; 
+        
+        showToast("发布成功！经验值+2", "success"); 
+        document.getElementById('addReviewModal').style.display = 'none'; 
+        setupDetailPage(); // 重新渲染页面
+    } catch(e) { 
+        showToast("网络错误", "error"); 
+    } finally { 
+        btn.innerText = "🚀 提交评价"; btn.disabled = false; 
+    }
 }
 
+// 🚀 对接 ask.js
+async function sendQuestion() {
+    const input = document.getElementById('askInput'); const question = input.value.trim(); if(!question) return;
+    const chatBox = document.getElementById('chatHistory'); 
+    
+    // 获取所需参数
+    const dName = currentDetailData.dutch_name || currentDetailData.chinese_name || "未知商品"; 
+    const dInsight = currentDetailData.insight || "";
+    
+    chatBox.innerHTML += `<div class="chat-bubble bubble-user">${question}</div>`; input.value = ''; 
+    const loadingId = 'loading-' + Date.now(); 
+    chatBox.innerHTML += `<div class="chat-bubble bubble-ai" id="${loadingId}"><span class="pulse-dot" style="display:inline-block;"></span> 管家思考中...</div>`;
+    
+    // 自动滚动到底部
+    const scrollContainer = document.getElementById('page-details');
+    if(scrollContainer) scrollContainer.scrollTop = scrollContainer.scrollHeight;
+
+    try {
+        const response = await fetch('/api/ask', { 
+            method: 'POST', 
+            headers: getAuthHeaders(), 
+            body: JSON.stringify({ productName: dName, insight: dInsight, question: question }) 
+        });
+        const data = await response.json(); 
+        document.getElementById(loadingId).remove();
+        
+        if (response.ok && data.reply) { 
+            chatBox.innerHTML += `<div class="chat-bubble bubble-ai">🤖 ${data.reply}</div>`; 
+        } else { 
+            chatBox.innerHTML += `<div class="chat-bubble bubble-ai" style="color:red;">卡住了：${data.error || '未知错误'}</div>`; 
+        }
+    } catch (err) { 
+        document.getElementById(loadingId).remove(); 
+        chatBox.innerHTML += `<div class="chat-bubble bubble-ai" style="color:red;">网络断了</div>`; 
+    }
+    if(scrollContainer) scrollContainer.scrollTop = scrollContainer.scrollHeight;
+}
 
 // ================= 6. 发布系统与 AI 提取 =================
 function openPublishSheet() { const overlay = document.querySelector('.publish-overlay'); const sheet = document.querySelector('.publish-sheet'); if(overlay) { overlay.style.display = 'block'; setTimeout(()=>overlay.classList.add('show'),10); } if(sheet) { setTimeout(()=>sheet.classList.add('show'),10); } }
