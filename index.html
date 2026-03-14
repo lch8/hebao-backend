@@ -782,7 +782,47 @@
         <img id="lightboxImg" src="" alt="大图预览" onclick="event.stopPropagation()">
         <div class="lightbox-close" onclick="closeLightbox()">✕</div>
     </div>
+<div id="trendModal" class="full-modal" style="display: none; background: rgba(17, 24, 39, 0.95); backdrop-filter: blur(20px);">
+        <div class="chat-header" style="background: transparent; box-shadow: none; border-bottom: 1px solid rgba(255,255,255,0.1);">
+            <div class="ch-back" onclick="document.getElementById('trendModal').style.display='none'" style="color: #9CA3AF;">‹ 关闭</div>
+            <div class="ch-title" id="trendTitle" style="color: #F3F4F6;">趋势</div>
+            <div class="ch-more" style="opacity: 0;">···</div>
+        </div>
+        <div style="padding: 20px;">
+            <div id="trendCurrentValue" style="font-size: 36px; font-weight: 900; color: #FFF; margin-bottom: 5px;">0.00</div>
+            <div id="trendSubtitle" style="font-size: 13px; color: #9CA3AF; margin-bottom: 30px;">近 7 天走势</div>
+            <div class="trend-chart-box" id="trendChartBox"></div>
+        </div>
+    </div>
 
+    <div id="newsDetailModal" class="full-modal" style="display: none; background: #111827; z-index: 4000;">
+        <div class="chat-header" style="background: rgba(17, 24, 39, 0.85); border-bottom: 1px solid rgba(255,255,255,0.05);">
+            <div class="ch-back" onclick="document.getElementById('newsDetailModal').style.display='none'" style="color: #9CA3AF;">‹ 返回</div>
+            <div class="ch-title" style="color: #F3F4F6; font-size: 14px;">24h 速报</div>
+            <div class="ch-more" style="opacity: 0;">···</div>
+        </div>
+        <div style="padding: 20px; overflow-y: auto; height: calc(100vh - 80px);">
+            <div class="news-lang-switcher">
+                <div class="nl-btn active" onclick="switchNewsLang('zh', this)">中文</div>
+                <div class="nl-btn" onclick="switchNewsLang('en', this)">English</div>
+                <div class="nl-btn" onclick="switchNewsLang('nl', this)">Nederlands</div>
+            </div>
+            
+            <h1 id="ndTitle" style="color: #F9FAFB; font-size: 22px; font-weight: 900; line-height: 1.4; margin-top: 20px; margin-bottom: 10px;">新闻标题</h1>
+            <div style="font-size: 12px; color: #6B7280; margin-bottom: 25px; display: flex; justify-content: space-between;">
+                <span id="ndTime">今天 10:30</span>
+                <span id="ndSource">来源: NOS</span>
+            </div>
+            
+            <div id="ndContent" style="color: #D1D5DB; font-size: 15px; line-height: 1.8; letter-spacing: 0.5px;">
+                新闻正文加载中...
+            </div>
+
+            <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); text-align: center;">
+                <button onclick="showToast('即将跳往原网站', 'success')" style="background: rgba(255,255,255,0.1); color: #FFF; border: none; padding: 10px 24px; border-radius: 99px; font-size: 13px; font-weight: bold; cursor: pointer;">阅读原文 (Lees het origineel)</button>
+            </div>
+        </div>
+    </div>
 <script src="./api.js" defer></script>
 <script src="./auth.js" defer></script>
 <script src="./ui.js" defer></script>
