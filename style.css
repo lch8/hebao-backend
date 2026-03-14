@@ -1341,3 +1341,65 @@ body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "S
     -webkit-backdrop-filter: blur(10px);
     border: 1px solid rgba(255,255,255,0.5);
 }
+
+/* ================= 💼 Pro 模式专属：精英仪表盘 ================= */
+.pro-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+.pro-metric-card {
+    background: linear-gradient(145deg, #1F2937, #111827);
+    border: 1px solid #374151;
+    border-radius: 14px;
+    padding: 12px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+}
+.pm-title { font-size: 11px; color: #9CA3AF; font-weight: bold; white-space: nowrap;}
+.pm-value { font-size: 16px; font-weight: 900; color: #F3F4F6; display: flex; align-items: baseline;}
+.pm-unit { font-size: 10px; font-weight: normal; margin-left: 2px; color: #9CA3AF;}
+/* 红涨绿跌 (依据国内习惯，或者汇率上涨对留学生算跌，这里仅做样式) */
+.pm-value.up { color: #EF4444; }
+.pm-trend { font-size: 10px; margin-left: 4px; font-weight: bold; }
+.pm-value.down { color: #10B981; }
+
+/* ================= 📰 AI 新闻速递看板 ================= */
+.pro-news-board {
+    background: linear-gradient(180deg, #1F2937 0%, #111827 100%);
+    border: 1px solid #374151;
+    border-radius: 16px;
+    padding: 15px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+}
+.news-board-header {
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid #374151; padding-bottom: 12px; margin-bottom: 12px;
+}
+.nbh-left { font-size: 14px; font-weight: 900; color: #F3F4F6; display: flex; align-items: center; }
+.pulse-dot {
+    width: 8px; height: 8px; background: #EF4444; border-radius: 50%;
+    margin-right: 8px; box-shadow: 0 0 8px #EF4444;
+    animation: pulse 1.5s infinite;
+}
+.nbh-right { font-size: 12px; color: #6B7280; cursor: pointer; font-weight: bold;}
+
+.news-item {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding-bottom: 12px; margin-bottom: 12px;
+    border-bottom: 1px dashed #374151;
+    cursor: pointer; transition: 0.2s;
+}
+.news-item:last-child { border-bottom: none; padding-bottom: 0; margin-bottom: 0;}
+.news-item:active { opacity: 0.6; }
+.news-time {
+    font-size: 12px; color: #D97706; font-weight: 900;
+    background: #FFFBEB; padding: 2px 6px; border-radius: 6px; flex-shrink: 0;
+}
+.news-content { flex: 1; }
+.news-title { font-size: 13px; font-weight: 900; color: #E5E7EB; margin-bottom: 4px; line-height: 1.4;}
+.news-source { font-size: 10px; color: #6B7280; display: flex; justify-content: space-between;}
