@@ -67,19 +67,23 @@
     </div>
 
     <div id="page-tips" class="page-section active">
+    
+    <div class="neth-hero-bg">
+        <div class="neth-hero-overlay"></div>
         
-        <div class="home-top-header">
-            <div class="top-btn-left" onclick="switchTab('trending')">
-                <span>🏆</span> 查榜单
+        <div class="neth-hero-nav">
+            
+            <div class="hero-btn" onclick="switchTab('trending')">
+                🏆 查榜单
             </div>
             
-            <div class="header-titles">
-                <h1 class="title">荷包管家 🇳🇱</h1>
-                <div class="subtitle">生存指南 & 避雷百科</div>
+            <div class="hero-title-box">
+                <h1>荷包管家 🇳🇱</h1>
+                <p>生存指南 & 避雷百科</p>
             </div>
             
-            <div class="top-scan-container" id="topScanContainer">
-                <div class="top-scan-btn" onclick="document.getElementById('topScanContainer').classList.toggle('active')">
+            <div class="top-scan-container" id="topScanContainer" style="position: relative;">
+                <div class="hero-icon-btn" onclick="document.getElementById('topScanContainer').classList.toggle('active')">
                     📸
                 </div>
                 <div class="top-fab-menu">
@@ -87,18 +91,17 @@
                     <div class="fab-menu-item" onclick="startBarcodeScan(); document.getElementById('topScanContainer').classList.remove('active');">⏸️ 扫条码搜素</div>
                 </div>
             </div>
+            
         </div>
 
-       <div class="neth-hero-bg">
-    <div class="neth-hero-overlay"></div>
-    <div class="neth-hero-content">
-        <div class="rb-mode-switcher">
-            <div class="rb-mode-btn active" onclick="switchRbMode('starter')">🐣 新手村</div>
-            <div class="rb-mode-btn" onclick="switchRbMode('advanced')">🥓 进阶篇</div>
-            <div class="rb-mode-btn" onclick="switchRbMode('pro')">💼 Pro玩家</div>
+        <div class="neth-hero-content">
+            <div class="rb-mode-switcher">
+                <div class="rb-mode-btn active" onclick="switchRbMode('starter')">🐣 新手村</div>
+                <div class="rb-mode-btn" onclick="switchRbMode('advanced')">🥓 进阶篇</div>
+                <div class="rb-mode-btn" onclick="switchRbMode('pro')">💼 Pro玩家</div>
+            </div>
         </div>
     </div>
-</div>
 
 <div id="redbookContainer" class="page-content" style="padding-top: 5px;">
     
