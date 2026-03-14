@@ -249,89 +249,105 @@ function renderHomeTrending(list, containerId, type) {
     container.innerHTML = html;
 }
 
-// ================= 5. 商品详情页与评价 =================
 // ================= 5. 商品详情页与异步深度加载 =================
 function openDetailsFromScan() { currentDetailData = {...currentProductData}; setupDetailPage(); }
-function openDetailsFromHistory(index) { let h = JSON.parse(localStorage.getItem('hebao_history')||'[]'); currentDetailData = h[index]; setupDetailPage(); }
 
-// 🌟 核心修复：补充红黑榜单专属的跳转函数
 function openDetailsFromHomeTrending(type, index) { 
     currentDetailData = type === 'like' ? globalTrendingLikes[index] : globalTrendingDislikes[index]; 
     setupDetailPage(); 
 }
 
-// 🌟 核心升级：带有骨架屏的异步详情页加载
+function openDetailsFromHistory(index) { let h = JSON.parse(localStorage.getItem('hebao_history')||'[]'); currentDetailData = h[index]; setupDetailPage(); }
+
+// 🌟 核心升级：极致防崩保护 + DeepSeek 异步呼吸灯
 async function setupDetailPage() {
-    const d = currentDetailData; if (!d) return;
+    const d = currentDetailData; 
+    if (!d) {
+        showToast("获取商品数据失败", "error");
+        return;
+    }
     
-    // 1. 瞬间渲染基础信息 (无延迟)
-    const imgEl = document.getElementById('detailImg'); 
-    imgEl.src = d.image_url || d.img_src || 'https://images.unsplash.com/photo-1544025162-8315ea07659b?q=80&w=600&auto=format&fit=crop'; 
-    imgEl.onclick = function() { openLightbox(this.src); }; // 支持点击大图预览
-
-    document.getElementById('detailChineseName').innerText = d.chinese_name || d.dutch_name || '未知商品'; 
-    document.getElementById('detailDutchName').innerText = d.dutch_name || ''; 
-    
-    document.getElementById('detailInsightBox').style.display = d.insight ? 'block' : 'none'; 
-    document.getElementById('detailInsight').innerText = d.insight || '';
-    document.getElementById('detailWarningBox').style.display = d.warning ? 'block' : 'none'; 
-    document.getElementById('detailWarning').innerText = d.warning || '';
-    
-    document.getElementById('chatHistory').innerHTML = ''; 
-    document.getElementById('askInput').value = ''; 
-    switchTab('details', null);
-
-    // 2. 异步触发深度报告 (对接后端的 detail.js)
-    const altBox = document.getElementById('detailAltBox');
-    const altContent = document.getElementById('detailAlternatives');
-    const recipeBox = document.getElementById('detailRecipeBox');
-    const recipeList = document.getElementById('recipeCardList');
-    
-    recipeBox.style.display = 'block';
-
-    if (d.alternatives && d.pairing) {
-        // 如果本地数据库/缓存里已经有平替和测评了，直接秒出
-        if(d.alternatives) { altBox.style.display='block'; altContent.innerHTML = d.alternatives.split('|').map(p=>`<div class="alt-tag">${p}</div>`).join(''); }
-        renderReviewCards(d.pairing);
-    } else {
-        // 🌟 重点：如果还没测过，渲染极其高级的骨架屏加载状态！
-        altBox.style.display = 'none';
-        recipeList.innerHTML = '<div style="text-align:center; color:#6366F1; padding:30px 0; font-weight:bold;"><span class="pulse-dot" style="display:inline-block; background:#6366F1; margin-right:8px;"></span>DeepSeek 正在深度评测平替与口味...</div>';
-        
-        try {
-            // 向云端发起请求
-            const res = await fetch('/api/detail', {
-                method: 'POST',
-                headers: getAuthHeaders(),
-                body: JSON.stringify({ dutchName: d.dutch_name, chineseName: d.chinese_name || '' })
-            });
-            const deepData = await res.json();
-            
-            // 渲染 AI 传回来的平替
-            if(deepData.alternatives) { 
-                d.alternatives = deepData.alternatives;
-                altBox.style.display='block'; 
-                altContent.innerHTML = deepData.alternatives.split('|').map(p=>`<div class="alt-tag">${p}</div>`).join(''); 
-            }
-            // 渲染 AI 传回来的点评
-            if(deepData.pairing) {
-                d.pairing = deepData.pairing; 
-                renderReviewCards(deepData.pairing);
-            } else {
-                recipeList.innerHTML = '<div style="text-align:center;color:#9CA3AF;font-size:13px;padding:20px 0;">暂无评价</div>';
-            }
-
-            // 更新到本地足迹缓存，下次点开直接秒出
-            let history = JSON.parse(localStorage.getItem('hebao_history') || '[]'); 
-            let index = history.findIndex(i => i.dutch_name === d.dutch_name);
-            if(index !== -1) { 
-                history[index].alternatives = d.alternatives;
-                history[index].pairing = d.pairing; 
-                localStorage.setItem('hebao_history', JSON.stringify(history)); 
-            }
-        } catch(e) {
-            recipeList.innerHTML = '<div style="text-align:center;color:#EF4444;font-size:13px;padding:20px 0;">深度报告生成失败，请重试</div>';
+    try {
+        // 1. 瞬间渲染大图与基础信息 (加入极其严格的 if 防丢保护，哪怕 HTML 元素没了也不会崩溃！)
+        const imgEl = document.getElementById('detailImg'); 
+        if(imgEl) {
+            imgEl.src = d.image_url || d.img_src || 'https://images.unsplash.com/photo-1544025162-8315ea07659b?q=80&w=600&auto=format&fit=crop'; 
+            imgEl.onclick = function() { openLightbox(this.src); }; // 支持点击全屏放大
         }
+        
+        if(document.getElementById('detailChineseName')) document.getElementById('detailChineseName').innerText = d.chinese_name || d.dutch_name || '未知商品'; 
+        if(document.getElementById('detailDutchName')) document.getElementById('detailDutchName').innerText = d.dutch_name || ''; 
+        
+        const insightBox = document.getElementById('detailInsightBox');
+        if(insightBox) insightBox.style.display = d.insight ? 'block' : 'none'; 
+        if(document.getElementById('detailInsight')) document.getElementById('detailInsight').innerText = d.insight || '';
+        
+        const warningBox = document.getElementById('detailWarningBox');
+        if(warningBox) warningBox.style.display = d.warning ? 'block' : 'none'; 
+        if(document.getElementById('detailWarning')) document.getElementById('detailWarning').innerText = d.warning || '';
+        
+        if(document.getElementById('chatHistory')) document.getElementById('chatHistory').innerHTML = ''; 
+        if(document.getElementById('askInput')) document.getElementById('askInput').value = ''; 
+        
+        // 切换到详情页面
+        if(typeof switchTab === 'function') switchTab('details', null);
+
+        // 2. 异步深度加载模块 (对接你后端的 detail.js)
+        const altBox = document.getElementById('detailAltBox');
+        const altContent = document.getElementById('detailAlternatives');
+        const recipeBox = document.getElementById('detailRecipeBox');
+        const recipeList = document.getElementById('recipeCardList');
+        
+        if(recipeBox) recipeBox.style.display = 'block';
+
+        // 如果本地足迹里已经测过平替和口味了，直接秒开
+        if (d.alternatives && d.pairing) {
+            if(altBox && altContent) { altBox.style.display='block'; altContent.innerHTML = d.alternatives.split('|').map(p=>`<div class="alt-tag">${p}</div>`).join(''); }
+            if(typeof renderReviewCards === 'function') renderReviewCards(d.pairing);
+        } else {
+            // 🌟 重点：如果没测过，渲染极其高级的骨架屏动画！
+            if(altBox) altBox.style.display = 'none';
+            if(recipeList) recipeList.innerHTML = '<div style="text-align:center; color:#6366F1; padding:30px 0; font-weight:bold;"><span class="pulse-dot" style="display:inline-block; background:#6366F1; margin-right:8px;"></span>DeepSeek 正在深度评测平替与口味...</div>';
+            
+            try {
+                // 呼叫后端 API
+                const res = await fetch('/api/detail', {
+                    method: 'POST',
+                    headers: typeof getAuthHeaders === 'function' ? getAuthHeaders() : { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ dutchName: d.dutch_name, chineseName: d.chinese_name || '' })
+                });
+                const deepData = await res.json();
+                
+                // 渲染 AI 传回来的平替
+                if(deepData.alternatives) { 
+                    d.alternatives = deepData.alternatives;
+                    if(altBox && altContent) { altBox.style.display='block'; altContent.innerHTML = deepData.alternatives.split('|').map(p=>`<div class="alt-tag">${p}</div>`).join(''); }
+                }
+                
+                // 渲染 AI 传回来的点评
+                if(deepData.pairing) {
+                    d.pairing = deepData.pairing; 
+                    if(typeof renderReviewCards === 'function') renderReviewCards(deepData.pairing);
+                } else {
+                    if(recipeList) recipeList.innerHTML = '<div style="text-align:center;color:#9CA3AF;font-size:13px;padding:20px 0;">暂无评价</div>';
+                }
+
+                // 更新到本地足迹缓存，下次点开直接秒出
+                let history = JSON.parse(localStorage.getItem('hebao_history') || '[]'); 
+                let index = history.findIndex(i => i.dutch_name === d.dutch_name);
+                if(index !== -1) { 
+                    history[index].alternatives = d.alternatives;
+                    history[index].pairing = d.pairing; 
+                    localStorage.setItem('hebao_history', JSON.stringify(history)); 
+                }
+            } catch(e) {
+                if(recipeList) recipeList.innerHTML = '<div style="text-align:center;color:#EF4444;font-size:13px;padding:20px 0;">深度报告生成失败，请重试</div>';
+            }
+        }
+    } catch(e) {
+        // 如果哪怕出现了极端的未知错误，系统也不会卡死，而是友善地弹窗提示
+        console.error("渲染详情页失败:", e);
+        showToast("页面结构缺失，渲染详情失败", "error");
     }
 }
 function renderReviewCards(pairingString) {
