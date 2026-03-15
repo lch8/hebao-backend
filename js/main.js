@@ -8,7 +8,7 @@ import { ChatEngine } from './modules/chat.js';
 import { showToast } from './core/toast.js';
 import { ModalManager } from './components/modals.js';
 import { safeDOM } from './core/dom.js';
-import { AuthEngine } from './modules/auth.js';
+// import { AuthEngine } from './modules/auth.js'; // 如果你有这个文件，请确保路径正确
 // ============================================================================
 // 🎨 UI 界面与发布菜单引擎 (专门接管底部的加号发布与弹窗开关)
 // ============================================================================
