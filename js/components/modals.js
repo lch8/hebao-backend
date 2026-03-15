@@ -6,27 +6,42 @@ import { showToast } from '../core/toast.js';
 // 📦 模板库：存放所有被从 index.html 抽离的巨无霸弹窗
 const ModalTemplates = {
     // --- 1. 发布底部菜单 ---
+    // --- 1. 发布底部菜单 (高级 iOS 悬浮面板风格) ---
     publishSheet: `
-        <div class="publish-overlay" id="publishOverlay" onclick="window.App ? window.App.closePublishSheet() : closePublishSheet()"></div>
-        <div class="publish-sheet" id="publishSheet">
-            <div class="ps-close" onclick="window.App ? window.App.closePublishSheet() : closePublishSheet()">✕</div>
-            <div class="ps-title">你想发点什么？</div>
-            <div class="ps-options" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                <div class="ps-opt ps-opt-1" onclick="openIdlePublish()">
-                    <div class="ps-icon">📦</div>
-                    <div class="ps-text">卖闲置</div><div class="ps-sub">回血清仓</div>
+        <div class="full-modal" id="publishSheet" style="display: none; background: rgba(17,24,39,0.5); position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 999999; justify-content: center; align-items: flex-end; backdrop-filter: blur(4px);">
+            <div class="publish-sheet-container" style="background: #FFF; width: 100%; border-radius: 24px 24px 0 0; padding: 25px 20px calc(40px + env(safe-area-inset-bottom)); position: relative;">
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                    <h3 style="font-size: 18px; font-weight: 900; color: #111827; margin: 0;">✨ 你想发点什么？</h3>
+                    <div onclick="window.App.closeModal('publishSheet')" style="width: 32px; height: 32px; background: #F1F5F9; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: #64748B; font-size: 14px; cursor: pointer; font-weight: bold;">✕</div>
                 </div>
-                <div class="ps-opt ps-opt-2" onclick="openHelpPublish()">
-                    <div class="ps-icon">🤝</div>
-                    <div class="ps-text">发悬赏</div><div class="ps-sub">花钱求助</div>
-                </div>
-                <div class="ps-opt ps-opt-3" onclick="openPartnerPublish()">
-                    <div class="ps-icon">🥂</div>
-                    <div class="ps-text">找搭子</div><div class="ps-sub">灵魂共鸣</div>
-                </div>
-                <div class="ps-opt" onclick="openQuestionPublish()" style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 16px; padding: 15px; text-align: center; cursor: pointer;">
-                    <div class="ps-icon" style="font-size: 32px; margin-bottom: 5px;">🙋</div>
-                    <div class="ps-text" style="font-size: 15px; font-weight: 900; color: #16A34A;">提个问题</div><div class="ps-sub" style="font-size: 11px; color: #22C55E;">校友热心解答</div>
+                
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                    
+                    <div class="pub-card" onclick="window.App.openModal('publishIdleModal'); window.App.closeModal('publishSheet');">
+                        <div class="pub-icon" style="background: #FFFBEB;">📦</div>
+                        <div class="pub-title">卖闲置</div>
+                        <div class="pub-sub">回血清仓</div>
+                    </div>
+                    
+                    <div class="pub-card" onclick="window.App.openModal('publishHelpModal'); window.App.closeModal('publishSheet');">
+                        <div class="pub-icon" style="background: #FEF2F2;">🤝</div>
+                        <div class="pub-title">发悬赏</div>
+                        <div class="pub-sub">花钱求助</div>
+                    </div>
+                    
+                    <div class="pub-card" onclick="window.App.openModal('publishPartnerModal'); window.App.closeModal('publishSheet');">
+                        <div class="pub-icon" style="background: #F0FDF4;">🥂</div>
+                        <div class="pub-title">找搭子</div>
+                        <div class="pub-sub">灵魂共鸣</div>
+                    </div>
+                    
+                    <div class="pub-card" onclick="window.App.openModal('publishQuestionModal'); window.App.closeModal('publishSheet');">
+                        <div class="pub-icon" style="background: #EFF6FF;">🙋</div>
+                        <div class="pub-title">提个问题</div>
+                        <div class="pub-sub">校友热心解答</div>
+                    </div>
+
                 </div>
             </div>
         </div>
