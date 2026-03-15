@@ -2,14 +2,17 @@
 // js/modules/market.js - 集市与发布引擎 (极度防御版)
 // ============================================================================
 import { showToast } from '../core/toast.js';
-
+import { ModalManager } from '../components/modals.js';
+import { ChatEngine } from './chat.js'; // 确保路径正确
 // 模块级私有状态
 let selectedImagesArray = [];
 let mockIdleItems = []; 
 let mockHelpItems = []; 
 let mockPartnerItems = []; 
 let mockQuestionItems = [];
-
+let currentCommunityPost = null; 
+let selectedItemIds = new Set(); 
+let currentTotalPrice = 0;
 // 语音输入初始化 (防浏览器不支持)
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition = null;
@@ -297,5 +300,117 @@ export const MarketEngine = {
             const btn = document.querySelector('#publishIdleModal .fm-submit'); 
             if(btn) { btn.innerText = "发布"; btn.style.pointerEvents = 'auto'; }
         }
+    }
+    // 🌟 新增：注入 JIT 逻辑的闲置详情页打开方法
+    openCommunityPost(postId) {
+        try {
+            // 1. 🛡️ 核心修复：先让系统把弹窗 HTML 动态注入到页面中！
+            ModalManager.injectIfNeeded('postDetailModal');
+
+            // 2. 初始化重置状态
+            selectedItemIds = new Set();
+            currentTotalPrice = 0;
+            const priceEl = document.getElementById('pdTotalPrice');
+            const chatBtn = document.getElementById('pdChatBtn');
+            if (priceEl) priceEl.innerText = `€0.00`;
+            if (chatBtn) chatBtn.innerText = `私信想要 (0件)`;
+
+            // 3. 查找数据 (假设 window.allCommunityPostsCache 已经存了数据)
+            const post = (window.allCommunityPostsCache || []).find(p => p.id === postId) || mockIdleItems.find(p => p.id === postId);
+            if (!post) return;
+            currentCommunityPost = post;
+
+            // 4. 渲染卖家信息
+            const sellerInfo = document.getElementById('pdSellerInfo');
+            if (sellerInfo) {
+                sellerInfo.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <div class="pd-seller-avatar" style="font-size:32px;">${post.avatar || '😎'}</div>
+                            <div style="display:flex; flex-direction:column; gap:2px;">
+                                <div class="pd-seller-name" style="font-weight:900; font-size:15px;">${post.name || '热心校友'} ${post.badge || ''}</div>
+                                <div class="pd-seller-time" style="font-size:11px; color:#9CA3AF;">发布于近期</div>
+                            </div>
+                        </div>
+                        <div style="background:#F3F4F6; color:#6B7280; padding:6px 12px; border-radius:14px; font-size:12px; font-weight:bold;">
+                            信用 ${post.credit || '良好'}
+                        </div>
+                    </div>`;
+            }
+
+            // 5. 渲染物品瀑布流
+            let payload;
+            try { payload = JSON.parse(post.content); } catch(e) { payload = { items: [{ id: 'item1', name: post.title, price: post.priceNum, url: post.img, is_sold: post.isSold }] }; }
+            
+            const listContainer = document.getElementById('pdItemsList');
+            if (listContainer) {
+                let itemsHtml = '';
+                if (payload.items && payload.items.length > 0) {
+                    payload.items.forEach(item => {
+                        const isSold = item.is_sold;
+                        const priceNum = parseFloat(item.price) || 0;
+                        const cardClass = isSold ? 'pd-item-card sold' : 'pd-item-card';
+                        
+                        itemsHtml += `
+                        <div class="${cardClass}" onclick="${isSold ? '' : `window.App.toggleItemCard(this, '${item.id}', ${priceNum})`}">
+                            <img class="pd-item-img" src="${item.url || 'https://via.placeholder.com/400'}" style="height: 220px;">
+                            <div class="pd-item-overlay">
+                                <div style="display:flex; justify-content:space-between; align-items:flex-end; width:100%;">
+                                    <div style="flex:1; overflow:hidden; padding-right:10px;">
+                                        <div class="pd-item-name">${item.name || '闲置好物'}</div>
+                                        <div class="pd-item-price">€${item.price}</div>
+                                    </div>
+                                    ${isSold ? '<div class="pd-sold-badge">已售出</div>' : `<input type="checkbox" class="custom-checkbox" id="chk_${item.id}" onclick="event.stopPropagation(); window.App.toggleItemCheckbox(this, '${item.id}', ${priceNum})">`}
+                                </div>
+                            </div>
+                        </div>`;
+                    });
+                }
+                listContainer.innerHTML = itemsHtml;
+            }
+
+            // 6. 最后，安全地打开弹窗
+            ModalManager.open('postDetailModal');
+        } catch (error) {
+            console.error("🚨 [Market] 详情页渲染失败:", error);
+        }
+    },
+
+    toggleItemCard(cardEl, itemId, price) {
+        const chk = document.getElementById(`chk_${itemId}`);
+        if (!chk) return;
+        chk.checked = !chk.checked; 
+        this.toggleItemCheckbox(chk, itemId, price);
+    },
+
+    toggleItemCheckbox(checkbox, itemId, price) {
+        if (checkbox.checked) {
+            selectedItemIds.add(itemId);
+            currentTotalPrice += price;
+        } else {
+            selectedItemIds.delete(itemId);
+            currentTotalPrice -= price;
+        }
+        currentTotalPrice = Math.max(0, currentTotalPrice); // 防止浮点数精度变负数
+        document.getElementById('pdTotalPrice').innerText = `€${currentTotalPrice.toFixed(2)}`;
+        document.getElementById('pdChatBtn').innerText = `私信想要 (${selectedItemIds.size}件)`;
+    },
+
+    initiateBuyChat() {
+        if (selectedItemIds.size === 0) return showToast("👉 请先点击图片，勾选您想要的物品哦！", "warning");
+        
+        let payload;
+        try { payload = JSON.parse(currentCommunityPost.content); } catch(e) { payload = { items: [{ id: 'item1', name: currentCommunityPost.title, url: currentCommunityPost.img }] }; }
+        
+        let wantNames = payload.items.filter(i => selectedItemIds.has(i.id)).map(i => i.name).join('、');
+        const firstItemImg = payload.items.find(i => selectedItemIds.has(i.id))?.url || currentCommunityPost.img;
+        
+        // 调用聊天引擎
+        ChatEngine.openChat(currentCommunityPost.user_id || 'test_id', currentCommunityPost.name, currentCommunityPost.avatar, currentCommunityPost.id, `想要这几件 (€${currentTotalPrice.toFixed(2)})`, currentTotalPrice.toFixed(2), firstItemImg, false, 'idle');
+        
+        const input = document.getElementById('chatInput'); 
+        if(input) input.value = `哈喽！我想要你清单里的：【${wantNames}】，请问还在吗？`;
+        
+        ModalManager.close('postDetailModal');
     }
 };
