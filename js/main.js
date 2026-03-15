@@ -89,6 +89,37 @@ modulesToBind.forEach(module => {
 });
 
 console.log("🚢 [Hebao Core] 主引擎满血复活，榜单与发布系统就绪！");
+// ============================================================================
+// 📸 架构师补丁：大总管的扫码/拍照唤起技能
+// ============================================================================
+window.App.openScanner = function() {
+    try {
+        // 1. 寻找我们在 index.html 里埋好的隐藏相机输入框
+        const fileInput = document.getElementById('packageImgInput');
+        
+        if (fileInput) {
+            // 2. 模拟物理点击，直接唤起原生手机系统相机/相册
+            fileInput.click();
+            
+            // 3. (可选) 如果你希望点开相机时，底层页面直接切到“解析页”，可以加上这句
+            // 这样拍完照返回时，直接就能看到扫描动画
+            const scanPage = document.getElementById('page-scan');
+            if (scanPage) {
+                // 隐藏其他所有页面，独显扫描页
+                document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
+                scanPage.classList.add('active');
+            }
+        } else {
+            // 备用降级方案：如果你用的是二维码插件的弹窗
+            if (window.App.openModal) {
+                window.App.openModal('scannerModal');
+            }
+        }
+    } catch (error) {
+        console.error("🚨 唤起相机失败:", error);
+        if (window.App.showToast) window.App.showToast("无法调用相机，请检查权限设置");
+    }
+};
 
 // ============================================================================
 // 🚀 全局启动器 (页面加载完毕后自动拉取数据)
