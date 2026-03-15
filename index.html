@@ -266,100 +266,90 @@
         </div>
     </div>
 
-    <div id="page-profile" class="page-section">
-        <div class="profile-header-card">
-            <div class="p-user-wrap">
-                <input type="file" id="avatarUpload" accept="image/*" style="display:none;" onchange="previewAvatar(event)">
-                <div class="p-avatar" id="profileAvatarBox" onclick="window.App ? window.App.requireAuth(() => document.getElementById('avatarUpload').click()) : alert('请稍后')">
-                    <span id="profileAvatarEmoji">👻</span>
-                    <img id="profileAvatarImg" class="p-avatar-img" src="">
-                </div>
-                <div class="p-info">
-                    <div class="p-name-row">
-                        <span class="p-name" id="profileName">管家游客</span>
-                        <span class="credit-badge" id="profileCreditBadge">极佳 850</span>
-                    </div>
-                    <div class="p-uid" id="profileUid">ID: 未登录</div>
-                    <div class="p-tags" id="profileTags">
-                        <span class="p-tag" id="profileGenderTag">保密</span>
-                        <span class="p-tag" id="profileMbtiTag">MBTI</span>
-                    </div>
-                    <div class="p-bio" id="profileBio">这个人很懒，还没写自我介绍~</div>
-                </div>
-            </div>
-            <div class="p-actions" id="profileActions">
-                <button class="btn-edit-profile" onclick="window.App ? window.App.openModal('editProfileModal') : alert('引擎未加载')">编辑资料</button>
-                <button class="btn-settings" onclick="handleLogout()">⚙️</button>
-            </div>
-        </div>
+   <div id="page-profile" class="page-section">
+        
+        <div class="profile-header-card" style="position: relative; padding: 40px 20px 20px; background: linear-gradient(180deg, #E0F2FE 0%, #F4F6F8 100%);">
+            <div style="position: absolute; top: 15px; right: 20px; font-size: 20px; color: #64748B; cursor: pointer; transition: transform 0.2s;" onclick="window.App ? window.App.handleLogout() : alert('引擎加载中')">⚙️</div>
 
-        <div class="guest-login-block" id="guestLoginBlock">
-            <button class="btn-huge-login" onclick="window.App ? window.App.openModal('loginModal') : alert('引擎未加载')">一键登录 / 注册</button>
-            <div style="font-size: 12px; color: #9CA3AF; margin-top: 10px;">登录后解锁二手交易、评论与信用特权</div>
-        </div>
-
-        <div class="vip-banner" onclick="window.App ? window.App.requireAuth(() => window.App.openModal('emailVerifyModal')) : alert('请稍后')">
-            <div class="vip-text">
-                <div class="vip-title">🎓 认证大学/职场邮箱</div>
-                <div class="vip-sub">点亮真实身份标签，闲置曝光率 +300%</div>
-            </div>
-            <div class="vip-btn">去点亮</div>
-        </div>
-
-        <div id="authCenterBlock" class="auth-container" style="display: none;">
-            <div class="fm-section-title" style="margin-left: 0; margin-bottom: 12px;">盾牌守护 · 提升信任分</div>
-            <div class="auth-card" onclick="window.App ? window.App.openModal('emailVerifyModal') : alert('请稍后')">
-                <div class="auth-info">
-                    <div class="auth-icon edu">🎓</div>
-                    <div>
-                        <div class="auth-name">教育/机构邮箱认证</div>
-                        <div class="auth-sub" id="emailAuthStatusText">点亮校友身份 (信用分+50)</div>
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <div class="p-avatar" style="width: 65px; height: 65px; border-radius: 50%; background: #FFF; box-shadow: 0 4px 15px rgba(0,0,0,0.08); display: flex; align-items: center; justify-content: center; font-size: 30px; border: 3px solid #FFF;">👻</div>
+                <div class="p-info" style="flex: 1;">
+                    <div style="font-size: 20px; font-weight: 900; color: #0F172A; margin-bottom: 4px;">管家游客</div>
+                    <div style="font-size: 12px; color: #64748B; display: flex; align-items: center; gap: 6px;">
+                        <span>ID: 未登录</span>
+                        <span style="background: #E2E8F0; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; color: #475569;">Lv.0</span>
                     </div>
                 </div>
-                <div class="auth-action" id="emailAuthBtn">去认证</div>
             </div>
-            <div class="auth-card" onclick="window.App ? window.App.openModal('wechatBindModal') : alert('请稍后')">
-                <div class="auth-info">
-                    <div class="auth-icon wechat">💬</div>
-                    <div>
-                        <div class="auth-name">一键绑定微信</div>
-                        <div class="auth-sub" id="wechatAuthStatusText">买家可一键复制添加</div>
-                    </div>
+
+            <div class="guest-login-block" style="margin-top: 20px; background: #FFF; padding: 14px 16px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-size: 14px; font-weight: 900; color: #111827;">解锁全部特权</div>
+                    <div style="font-size: 11px; color: #9CA3AF; margin-top: 2px;">同步二手交易与避雷记录</div>
                 </div>
-                <div class="auth-action" id="wechatAuthBtn">去绑定</div>
+                <button onclick="window.App.openModal('loginModal')" style="background: #111827; color: #FFF; border: none; padding: 10px 18px; border-radius: 20px; font-size: 13px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(17,24,39,0.2);">立即登录</button>
             </div>
         </div>
 
-        <div class="menu-list">
-            <div class="menu-item" onclick="window.App ? window.App.openModal('creditInfoModal') : alert('请稍后')">
-                <div class="menu-left"><span class="menu-icon">🛡️</span> 管家信用分规则</div>
-                <div class="menu-arrow">❯</div>
-            </div>
-            <div class="menu-item" onclick="window.App ? window.App.openModal('collectionsModal') : alert('请稍后')">
-                <div class="menu-left"><span class="menu-icon">💖</span> 我的收藏</div>
-                <div class="menu-arrow">❯</div>
-            </div>
-            <div class="menu-item" onclick="alert('有问题请添加客服微信：HebaoHelper')">
-                <div class="menu-left"><span class="menu-icon">🎧</span> 联系管家客服</div>
-                <div class="menu-arrow">❯</div>
+        <div style="padding: 0 20px; margin-top: 10px;">
+            <div class="vip-banner" onclick="window.App.openModal('emailVerifyModal')" style="background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%); padding: 16px 20px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 8px 20px rgba(15,23,42,0.15); cursor: pointer; position: relative; overflow: hidden;">
+                <div style="position: absolute; top: -20px; right: -20px; width: 80px; height: 80px; background: rgba(251,191,36,0.15); filter: blur(20px); border-radius: 50%;"></div>
+                
+                <div style="position: relative; z-index: 1;">
+                    <div style="font-size: 15px; font-weight: 900; color: #FBBF24; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">🎓 认证大学/职场邮箱</div>
+                    <div style="font-size: 11px; color: #94A3B8;">点亮真实身份标签，闲置曝光率 +300%</div>
+                </div>
+                <div style="background: linear-gradient(135deg, #FDE68A 0%, #F59E0B 100%); color: #78350F; font-size: 12px; font-weight: 900; padding: 6px 14px; border-radius: 20px; z-index: 1; box-shadow: 0 2px 8px rgba(245,158,11,0.3);">去点亮</div>
             </div>
         </div>
 
-        <div class="asset-tabs">
-            <div class="a-tab active" onclick="switchAssetTab('footprint', this)">👣 避雷足迹</div>
-            <div class="a-tab" onclick="switchAssetTab('posts', this)">📦 我的发布</div>
-            <div class="a-tab" onclick="switchAssetTab('reviews', this)">💬 收到评价</div>
+        <div style="padding: 0 20px; margin-top: 20px;">
+            <div class="menu-list" style="background: #FFF; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); overflow: hidden;">
+                <div class="menu-item" onclick="window.App.openModal('creditInfoModal')" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #F8FAFC; cursor: pointer;">
+                    <div style="display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: bold; color: #334155;">
+                        <div style="width: 32px; height: 32px; border-radius: 10px; background: #FEF2F2; display: flex; align-items: center; justify-content: center; font-size: 16px;">🛡️</div>
+                        管家信用分规则
+                    </div>
+                    <div style="color: #CBD5E1; font-weight: bold; font-size: 18px;">›</div>
+                </div>
+                <div class="menu-item" onclick="window.App.openModal('collectionsModal')" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #F8FAFC; cursor: pointer;">
+                    <div style="display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: bold; color: #334155;">
+                        <div style="width: 32px; height: 32px; border-radius: 10px; background: #FDF4FF; display: flex; align-items: center; justify-content: center; font-size: 16px;">💖</div>
+                        我的收藏
+                    </div>
+                    <div style="color: #CBD5E1; font-weight: bold; font-size: 18px;">›</div>
+                </div>
+                <div class="menu-item" onclick="alert('有问题请添加客服微信：HebaoHelper')" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; cursor: pointer;">
+                    <div style="display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: bold; color: #334155;">
+                        <div style="width: 32px; height: 32px; border-radius: 10px; background: #F0FDF4; display: flex; align-items: center; justify-content: center; font-size: 16px;">🎧</div>
+                        联系管家客服
+                    </div>
+                    <div style="color: #CBD5E1; font-weight: bold; font-size: 18px;">›</div>
+                </div>
+            </div>
         </div>
 
-        <div id="asset-footprint" class="asset-content active"><div id="footprintList"></div></div>
-        <div id="asset-posts" class="asset-content active">
-            <div class="empty-state" id="postsEmptyState">
-                <div class="empty-state-icon">📭</div>
-                你还没有发布过闲置/互助哦
+        <div style="padding: 0 20px; margin-top: 25px;">
+            <div class="asset-tabs" style="display: flex; gap: 24px; border-bottom: 1px solid #E2E8F0; padding-bottom: 12px; margin-bottom: 20px;">
+                <div class="a-tab active" onclick="switchAssetTab('footprint', this)">👣 避雷足迹</div>
+                <div class="a-tab" onclick="switchAssetTab('posts', this)">📦 我的发布</div>
+                <div class="a-tab" onclick="switchAssetTab('reviews', this)">💬 收到评价</div>
             </div>
-            <div id="myPostsList"></div>
+
+            <div id="asset-footprint" class="asset-content active"><div id="footprintList"></div></div>
+            <div id="asset-posts" class="asset-content" style="display:none;">
+                <div class="empty-state" id="postsEmptyState" style="text-align: center; padding: 40px 0; color: #94A3B8;">
+                    <div style="font-size: 32px; margin-bottom: 10px;">📭</div>
+                    你还没有发布过闲置/互助哦
+                </div>
+                <div id="myPostsList"></div>
+            </div>
+            <div id="asset-reviews" class="asset-content" style="display:none;">
+                <div class="empty-state" id="reviewsEmptyState" style="text-align: center; padding: 40px 0; color: #94A3B8;">还没有收到评价</div>
+            </div>
         </div>
-        <div id="asset-reviews" class="asset-content"><div class="empty-state" id="reviewsEmptyState"></div></div>
+        
+        <div style="height: 100px;"></div>
     </div>
 
     <div id="page-details" class="page-section">
