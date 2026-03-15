@@ -1,79 +1,108 @@
-// js/main.js
+// ============================================================================
+// js/main.js - 荷包管家核心调度引擎 (终极防弹版)
+// ============================================================================
 import { ScannerEngine } from './modules/scanner.js';
 import { MarketEngine } from './modules/market.js';
 import { WikiEngine } from './modules/wiki.js';
 import { ChatEngine } from './modules/chat.js';
 import { showToast } from './core/toast.js';
-import { ModalManager } from './components/modals.js'; // 🌟 新增：引入弹窗引擎
-// 假设未来的 auth 和 profile 逻辑
-// import { AuthEngine } from './modules/auth.js'; 
+import { ModalManager } from './components/modals.js';
+import { safeDOM } from './core/dom.js';
 
-// 🛡️ 极度防御：全局入口挂载
-if (!window.App) {
-    window.App = {
-        showToast,
+// ============================================================================
+// 🎨 UI 界面与发布菜单引擎 (专门接管底部的加号发布与弹窗开关)
+// ============================================================================
+const UIEngine = {
+    openPublishSheet() {
+        ModalManager.injectIfNeeded('publishSheet');
+        safeDOM.execute('publishOverlay', el => el.style.display = 'block');
+        safeDOM.execute('publishSheet', el => {
+            el.style.display = 'block';
+            // 延迟一帧强制重绘，触发 CSS 从下往上滑出的动画
+            setTimeout(() => el.style.transform = 'translateY(0)', 10);
+        });
+    },
+    closePublishSheet() {
+        safeDOM.execute('publishOverlay', el => el.style.display = 'none');
+        safeDOM.execute('publishSheet', el => {
+            el.style.transform = 'translateY(100%)';
+            // 等待动画结束再将其隐藏
+            setTimeout(() => el.style.display = 'none', 300);
+        });
+    },
+    openIdlePublish() {
+        this.closePublishSheet();
+        ModalManager.injectIfNeeded('publishIdleModal');
+        safeDOM.execute('publishIdleModal', el => el.style.display = 'flex');
+    },
+    closeIdlePublish() {
+        safeDOM.execute('publishIdleModal', el => el.style.display = 'none');
+    },
+    openHelpPublish() {
+        this.closePublishSheet();
+        // 确保你的 modals.js 里有 publishHelpModal 这个模板
+        ModalManager.injectIfNeeded('publishHelpModal'); 
+        safeDOM.execute('publishHelpModal', el => el.style.display = 'flex');
+    },
+    openPartnerPublish() {
+        this.closePublishSheet();
+        // 确保你的 modals.js 里有 publishPartnerModal 这个模板
+        ModalManager.injectIfNeeded('publishPartnerModal'); 
+        safeDOM.execute('publishPartnerModal', el => el.style.display = 'flex');
+    }
+};
 
-        injectIfNeeded: ModalManager.injectIfNeeded.bind(ModalManager), // 🌟 新增：暴露给旧 app.js 使用
-        // --- 1. Scanner ---
-        handlePackageImage: ScannerEngine.handlePackageImage.bind(ScannerEngine),
-        startBarcodeScan: ScannerEngine.startBarcodeScan.bind(ScannerEngine),
-        closeScanner: ScannerEngine.closeScanner.bind(ScannerEngine),
-        openDetailsFromScan: ScannerEngine.openDetailsFromScan.bind(ScannerEngine),
-        openDetailsFromHistory: ScannerEngine.openDetailsFromHistory.bind(ScannerEngine),
-        submitDetailReview: ScannerEngine.submitDetailReview.bind(ScannerEngine),
-        likeReviewCard: ScannerEngine.likeReviewCard.bind(ScannerEngine),
-        
-        // --- 2. Market ---
-        applyMarketFilters: MarketEngine.applyFilters.bind(MarketEngine),
-        handleMultiImageSelect: MarketEngine.handleMultiImageSelect.bind(MarketEngine),
-        toggleVoiceInput: MarketEngine.toggleVoiceInput.bind(MarketEngine),
-        submitIdlePost: MarketEngine.submitIdlePost.bind(MarketEngine),
-        
-        // --- 3. Wiki ---
-        switchRbMode: WikiEngine.switchRbMode.bind(WikiEngine),
-        hSwipeStart: WikiEngine.hSwipeStart.bind(WikiEngine),
-        hSwipeMove: WikiEngine.hSwipeMove.bind(WikiEngine),
-        hSwipeEnd: WikiEngine.hSwipeEnd.bind(WikiEngine),
-        toggleWikiCard: WikiEngine.toggleWikiCard.bind(WikiEngine),
-        checkSafetyCode: WikiEngine.checkSafetyCode.bind(WikiEngine),
-        // --- 闲置详情页桥接 ---
-        openCommunityPost: MarketEngine.openCommunityPost.bind(MarketEngine),
-        toggleItemCard: MarketEngine.toggleItemCard.bind(MarketEngine),
-        toggleItemCheckbox: MarketEngine.toggleItemCheckbox.bind(MarketEngine),
-        initiateBuyChat: MarketEngine.initiateBuyChat.bind(MarketEngine),
+// ============================================================================
+// 🛡️ 极度防御：全局入口挂载 (统领所有引擎)
+// ============================================================================
+window.App = window.App || {};
+window.App.showToast = showToast;
+window.App.injectIfNeeded = ModalManager.injectIfNeeded.bind(ModalManager);
+window.App.safeDOM = safeDOM;
 
-        // --- 红宝书评论桥接 ---
-        openWikiComments: WikiEngine.openWikiComments.bind(WikiEngine),
-        submitWikiComment: WikiEngine.submitWikiComment.bind(WikiEngine),
+// 💡 暴力兼容引擎：把所有模块的方法不仅挂载到 window.App，还直接挂载到顶级 window 上！
+// 这样无论 HTML 怎么写（onclick="xxx()" 或 onclick="window.App.xxx()"）都能绝对命中！
+const modulesToBind = [ScannerEngine, MarketEngine, WikiEngine, ChatEngine, UIEngine];
 
-        // --- 4. Chat ---
-        openChat: ChatEngine.openChat.bind(ChatEngine),
-        closeChat: ChatEngine.closeChat.bind(ChatEngine),
-        sendChatMessage: ChatEngine.sendChatMessage.bind(ChatEngine),
-        sendQuickMessage: ChatEngine.sendQuickMessage.bind(ChatEngine),
-
-        // 占位 Auth (待抽离)
-        getAuthHeaders: () => { return { 'Content-Type': 'application/json' }; },
-        requireAuth: (callback) => { if (callback) callback(); } // 假设已登录
-    };
-
-    // 🔗 暴力兼容旧代码中 HTML 直接写的 onclick="switchRbMode(...)"
-    Object.keys(window.App).forEach(key => {
-        window[key] = window.App[key];
+modulesToBind.forEach(module => {
+    Object.keys(module).forEach(key => {
+        if (typeof module[key] === 'function') {
+            const boundFunc = module[key].bind(module);
+            window.App[key] = boundFunc;
+            window[key] = boundFunc; 
+        }
     });
+});
 
-    console.log("🚢 [Hebao Core] 四大模块引擎已成功模块化并挂载，旧版 app.js 可以彻底删除了！");
-}
+// --- 占位 Auth (应对代码中随时可能调用的鉴权检查) ---
+window.App.getAuthHeaders = () => {
+    const token = localStorage.getItem('hebao_token');
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    return headers;
+};
 
+window.App.requireAuth = (callback) => { 
+    const isLoggedIn = localStorage.getItem('hebao_logged_in') === 'true';
+    if (!isLoggedIn) {
+        safeDOM.execute('loginModal', el => el.style.display = 'flex');
+    } else {
+        if (callback) callback(); 
+    }
+};
+window.requireAuth = window.App.requireAuth;
 
+console.log("🚢 [Hebao Core] 主引擎加载完毕，所有模块已挂载，发布系统就绪！");
 
-// 全局启动器
+// ============================================================================
+// 🚀 全局启动器 (页面加载完毕后执行)
+// ============================================================================
 document.addEventListener('DOMContentLoaded', () => {
     try {
-        WikiEngine.switchRbMode(localStorage.getItem('hp_survival_mode') || 'starter');
-        MarketEngine.loadCommunityPosts();
-        ScannerEngine.renderFootprints();
-    } catch (e) {
-        console.error("🚨 [App Init Error]:", e);
+        if (window.App.switchRbMode) {
+            window.App.switchRbMode(localStorage.getItem('hp_survival_mode') || 'starter');
+        }
+    } catch(e) { 
+        console.error("🚨 启动时发生错误:", e); 
     }
 });
