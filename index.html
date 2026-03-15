@@ -389,7 +389,16 @@
     <img id="lightboxImg" src="" alt="大图预览" onclick="event.stopPropagation()">
     <div class="lightbox-close" onclick="closeLightbox()">✕</div>
 </div>
-<script src="./api.js" defer></script>
+<script>
+        window.addEventListener('error', function(e) {
+            alert("🚨 发现致命错误！\n文件: " + (e.filename ? e.filename.split('/').pop() : '未知') + "\n行号: " + e.lineno + "\n报错: " + e.message);
+        });
+        window.addEventListener('unhandledrejection', function(e) {
+            alert("🚨 发现异步致命错误！\n报错: " + e.reason);
+        });
+    </script>
+
+    <script src="./api.js" defer></script>
     <script src="./ui.js" defer></script>
 
     <script type="module" src="./js/main.js"></script>
