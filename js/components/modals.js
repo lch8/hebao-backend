@@ -473,6 +473,20 @@ const ModalTemplates = {
                 <button onclick="window.App.sendChatMessage()" style="background: #111827; color: #FFF; width: 40px; height: 40px; border-radius: 50%; border: none; font-size: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer;">↑</button>
             </div>
         </div>
+    `,
+    // --- 18. Pro 玩家专属数据图表弹窗 ---
+    proChartModal: `
+        <div class="modal-overlay" id="proChartModal" style="z-index: 4000;">
+            <div class="modal-content" style="width: 90%; max-width: 400px; padding: 25px 20px;">
+                <div class="modal-close" onclick="window.App.closeModal('proChartModal')">✕</div>
+                <h3 id="chartModalTitle" style="margin-top:0; color: #111827; margin-bottom: 5px; font-size: 16px; font-weight: 900;">走势图</h3>
+                <div id="chartModalSub" style="font-size: 11px; color: #9CA3AF; margin-bottom: 20px;">数据仅供参考，不构成投资建议</div>
+                
+                <div style="position: relative; height: 220px; width: 100%;">
+                    <canvas id="proTrendCanvas"></canvas>
+                </div>
+            </div>
+        </div>
     `
 };
 
