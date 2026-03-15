@@ -1403,7 +1403,6 @@ body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "S
     position: relative;
     width: 100%;
     /* 高度调小一点，让它不会太占屏幕 */
-    height: 190px; 
     background-image: url('https://images.unsplash.com/photo-1512470876302-972faa2aa9a4?q=80&w=800&auto=format&fit=crop');
     background-size: cover;
     background-position: center 30%;
@@ -1411,7 +1410,6 @@ body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "S
     border-bottom-left-radius: 24px;
     border-bottom-right-radius: 24px;
     overflow: hidden;
-    margin-bottom: 10px;
 }
 
 .neth-hero-overlay {
