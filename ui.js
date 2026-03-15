@@ -93,3 +93,50 @@ function renderProfileState() {
         creditBadge.style.display = 'none'; 
     }
 }
+
+// ============================================================================
+// 🛡️ 架构师补丁：补齐丢失的 Profile (我的) 页面渲染函数
+// ============================================================================
+
+// 1. 渲染避雷足迹 (读取本地扫码历史)
+window.renderFootprints = function() {
+    const list = document.getElementById('footprintList');
+    if (!list) return;
+    
+    try {
+        const history = JSON.parse(localStorage.getItem('hp_scan_history') || '[]');
+        if (history.length === 0) {
+            list.innerHTML = '<div class="empty-state" style="text-align:center; padding: 40px 0; color: #9CA3AF;"><div style="font-size:32px; margin-bottom:10px;">👣</div>还没有扫码记录哦，快去扫一扫吧！</div>';
+            return;
+        }
+        
+        let html = '';
+        history.forEach((item, index) => {
+            // 兼容各种图片字段和兜底图
+            const safeImg = item.image_url || item.img_src || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><rect width="100%" height="100%" fill="%23F3F4F6"/><text x="50%" y="50%" font-family="sans-serif" font-size="10" fill="%239CA3AF" text-anchor="middle" dominant-baseline="middle">暂无图</text></svg>';
+            
+            html += `
+            <div style="background:#FFF; border-radius:12px; margin-bottom:12px; display:flex; align-items:center; padding:12px; border:1px solid #E5E7EB; cursor:pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.02);" onclick="window.App ? window.App.openDetailsFromHistory(${index}) : null">
+                <img src="${safeImg}" style="width:50px; height:50px; border-radius:8px; object-fit:cover; flex-shrink:0; background:#F3F4F6;" onerror="this.style.display='none'">
+                <div style="margin-left:12px; flex:1;">
+                    <div style="font-weight:900; font-size:14px; color:#111827;">${item.chinese_name || item.dutch_name || '未知商品'}</div>
+                    <div style="font-size:12px; color:#9CA3AF; margin-top:4px;">${item.category || '未分类'}</div>
+                </div>
+            </div>`;
+        });
+        list.innerHTML = html;
+    } catch (error) {
+        console.error("渲染足迹失败:", error);
+    }
+};
+
+// 2. 占位：防止点击“我的发布”和“收到评价”时也报错
+window.renderMyPosts = window.renderMyPosts || function() { 
+    const list = document.getElementById('myPostsList');
+    if (list) list.innerHTML = '<div style="text-align:center; padding:40px 0; color:#9CA3AF;">这里将展示你发布的闲置，功能接入中...</div>';
+};
+
+window.renderMyReviews = window.renderMyReviews || function() { 
+    const list = document.getElementById('asset-reviews');
+    if (list) list.innerHTML = '<div style="text-align:center; padding:40px 0; color:#9CA3AF;">这里将展示你收到的评价，功能接入中...</div>';
+};
