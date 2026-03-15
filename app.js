@@ -652,6 +652,9 @@ async function renderProNews() {
 
 // ================= 11. 终极自启动 =================
 window.addEventListener('DOMContentLoaded', () => { 
+    const savedMode = localStorage.getItem('hp_survival_mode') || 'starter';
+    const pageTips = document.getElementById('page-tips');
+    if (pageTips) pageTips.classList.add(`theme-${savedMode}`);
     try {
         loadTrendingToHome(); 
         loadCommunityPosts();
