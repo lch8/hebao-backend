@@ -433,25 +433,37 @@ const rbWikis = [
     { id: 'w8', mode: 'advanced', category: '生活避坑', icon: '🌡️', title: '年度能源账单结算陷阱', tag: '防坑几千欧', summary: '年底突然收到几千欧的天然气账单？', details: '建议平时在 App 里主动调高每月预付费，年底多退少补。' }
 ];
 
+// ============================================================================
+// 📖 红宝书 (Tips) 模式切换引擎 (原生业务逻辑 + 动态背景变色)
+// ============================================================================
 let currentRbMode = localStorage.getItem('hp_survival_mode') || 'starter';
 let currentRbCategory = 'all';
 
 function switchRbMode(mode) {
     try {
-        currentRbMode = mode; localStorage.setItem('hp_survival_mode', mode);
+        currentRbMode = mode; 
+        localStorage.setItem('hp_survival_mode', mode);
+        
+        // 1. 切换胶囊按钮的高亮状态
         document.querySelectorAll('.rb-mode-btn').forEach(btn => btn.classList.remove('active'));
         const activeBtn = document.querySelector(`.rb-mode-btn[onclick*="${mode}"]`);
         if(activeBtn) activeBtn.classList.add('active');
         
         const toggleDisplay = (id, style) => { const el = document.getElementById(id); if(el) el.style.display = style; };
         
+        // 2. 核心业务逻辑分发
         if (mode === 'starter') {
-            toggleDisplay('rbStarterMode', 'block'); toggleDisplay('rbWikiMode', 'none'); 
-            renderStarterTasks();
+            toggleDisplay('rbStarterMode', 'block'); 
+            toggleDisplay('rbWikiMode', 'none'); 
+            // 触发新手村任务渲染
+            if (typeof renderStarterTasks === 'function') renderStarterTasks();
         } else if (mode === 'advanced') {
-            toggleDisplay('rbStarterMode', 'none'); toggleDisplay('rbWikiMode', 'block'); 
-            toggleDisplay('rbWidgetsArea', 'flex'); toggleDisplay('proWidgetsArea', 'none');
-            toggleDisplay('safetyCheckWidget', 'block'); toggleDisplay('wikiSectionArea', 'block'); 
+            toggleDisplay('rbStarterMode', 'none'); 
+            toggleDisplay('rbWikiMode', 'block'); 
+            toggleDisplay('rbWidgetsArea', 'flex'); 
+            toggleDisplay('proWidgetsArea', 'none');
+            toggleDisplay('safetyCheckWidget', 'block'); 
+            toggleDisplay('wikiSectionArea', 'block'); 
             currentRbCategory = 'all'; 
             
             // 动态初始化百科分类 Tabs
@@ -459,14 +471,30 @@ function switchRbMode(mode) {
             if (tabContainer && tabContainer.innerHTML.trim() === '') {
                 tabContainer.innerHTML = `<div class="w-tab active" onclick="switchWikiTab('all', this)">全部干货</div><div class="w-tab" onclick="switchWikiTab('羊毛购物', this)">羊毛购物</div><div class="w-tab" onclick="switchWikiTab('交通出行', this)">交通出行</div><div class="w-tab" onclick="switchWikiTab('生活避坑', this)">生活避坑</div>`;
             }
-            renderWikiList(); 
+            // 触发百科列表渲染
+            if (typeof renderWikiList === 'function') renderWikiList(); 
         } else if (mode === 'pro') {
-            toggleDisplay('rbStarterMode', 'none'); toggleDisplay('rbWikiMode', 'block'); 
-            toggleDisplay('rbWidgetsArea', 'none'); toggleDisplay('proWidgetsArea', 'flex');
-            toggleDisplay('safetyCheckWidget', 'none'); toggleDisplay('wikiSectionArea', 'none'); 
-            renderProNews();
+            toggleDisplay('rbStarterMode', 'none'); 
+            toggleDisplay('rbWikiMode', 'block'); 
+            toggleDisplay('rbWidgetsArea', 'none'); 
+            toggleDisplay('proWidgetsArea', 'flex');
+            toggleDisplay('safetyCheckWidget', 'none'); 
+            toggleDisplay('wikiSectionArea', 'none'); 
+            // 触发 Pro 新闻渲染
+            if (typeof renderProNews === 'function') renderProNews();
         }
-    } catch(e) { console.error("模式切换错误:", e); }
+
+        // 3. ✨ 架构师高定补丁：动态切换页面底色主题！
+        const pageTips = document.getElementById('page-tips');
+        if (pageTips) {
+            // 先剥下旧衣服，穿上对应模式的新衣服
+            pageTips.classList.remove('theme-starter', 'theme-advanced', 'theme-pro');
+            pageTips.classList.add(`theme-${mode}`);
+        }
+
+    } catch(e) { 
+        console.error("🚨 模式切换错误:", e); 
+    }
 }
 
 function showEmergency(type) {
