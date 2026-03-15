@@ -77,8 +77,8 @@ export const MarketEngine = {
                 
                 // 🛡️ 核心修复 1：在 ${item.id} 外面包上单引号，防止字符串类型的 ID 导致执行错误！
                 html += `
-                <div class="waterfall-item" onclick="window.App.openCommunityPost('${item.id || 0}')">
-                    <div class="wf-img-box">${soldOverlayHtml}${countBadge}<img class="wf-img" src="${item.img || ''}"></div>
+            <div class="waterfall-item" onclick="openCommunityPost('${item.id || 0}')">
+            <div class="wf-img-box">${soldOverlayHtml}${countBadge}<img class="wf-img" src="${item.img || ''}"></div>
                     <div class="wf-info">
                         <div class="wf-title" style="${item.isSold ? 'color:#9CA3AF;' : ''}">${item.title || '无题'}</div>
                         <div class="wf-price-row"><span class="wf-currency" style="${item.isSold ? 'color:#9CA3AF;' : ''}">€</span><span class="wf-price" style="${item.isSold ? 'color:#9CA3AF;' : ''}">${item.price || '0'}</span></div>
