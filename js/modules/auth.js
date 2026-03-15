@@ -21,7 +21,12 @@ export const AuthEngine = {
     requireAuth(actionFunction) { 
         if (!isLoggedIn) { 
             currentPendingAction = actionFunction; 
-            safeDOM.execute('loginModal', el => el.style.display = 'flex'); 
+            // 🛡️ 核心修复：使用全局大总管来安全唤起登录弹窗！
+            if (window.App && window.App.openModal) {
+                window.App.openModal('loginModal');
+            } else {
+                safeDOM.execute('loginModal', el => el.style.display = 'flex'); 
+            }
         } else { 
             if (actionFunction) actionFunction(); 
         } 
