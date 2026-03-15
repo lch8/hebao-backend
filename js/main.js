@@ -120,6 +120,23 @@ window.App.openScanner = function() {
         if (window.App.showToast) window.App.showToast("无法调用相机，请检查权限设置");
     }
 };
+const originalSwitchRbMode = window.App.switchRbMode; // 保存模块里原有的业务逻辑
+
+window.App.switchRbMode = function(mode) {
+    // 1. 先让原系统去老老实实执行业务逻辑（比如渲染任务、加载百科等）
+    if (originalSwitchRbMode) {
+        originalSwitchRbMode(mode); 
+    }
+    
+    // 2. ✨ 执行完后，强行追加“换衣服”魔法！
+    const pageTips = document.getElementById('page-tips');
+    if (pageTips) {
+        pageTips.classList.remove('theme-starter', 'theme-advanced', 'theme-pro');
+        pageTips.classList.add(`theme-${mode}`);
+    }
+};
+// 同步更新给全局变量，防止 HTML 里找不到
+window.switchRbMode = window.App.switchRbMode;
 
 // ============================================================================
 // 🚀 全局启动器 (页面加载完毕后自动拉取数据)
