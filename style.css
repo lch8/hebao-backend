@@ -1784,3 +1784,79 @@ body, .page-section, .container {
     border: none !important; /* 去掉多余的边框，全靠阴影撑起体积 */
     box-shadow: 0 6px 20px rgba(17, 24, 39, 0.05) !important;
 }
+
+/* ============================================================================
+   🚑 架构师补丁：修复并重塑“主线通关任务”的 UI 样式
+   ============================================================================ */
+
+/* 1. 修复标题：恢复大字号和加粗 */
+.section-title {
+    font-size: 16px !important;
+    font-weight: 900 !important;
+    color: #111827 !important;
+    margin-bottom: 12px !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+/* 2. 修复任务切换 Tab：恢复横向胶囊排列 */
+.task-tabs {
+    display: flex !important;
+    gap: 10px !important;
+    margin-bottom: 16px !important;
+}
+.tt-tab {
+    flex: 1 !important;
+    text-align: center !important;
+    background: #F1F5F9 !important; /* 浅灰蓝底色 */
+    color: #64748B !important;
+    padding: 10px 0 !important;
+    border-radius: 20px !important;
+    font-size: 13px !important;
+    font-weight: bold !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    border: 1px solid transparent !important;
+}
+/* 激活状态的胶囊：高级黑 */
+.tt-tab.active {
+    background: #0F172A !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.2) !important;
+}
+
+/* 3. 修复进度条面板：恢复成白色悬浮卡片 */
+.progress-panel {
+    background: #FFFFFF !important;
+    border-radius: 16px !important;
+    padding: 16px 20px !important;
+    margin-bottom: 20px !important;
+    box-shadow: 0 6px 20px rgba(17, 24, 39, 0.03) !important; /* 空气感阴影 */
+    border: 1px solid rgba(229, 231, 235, 0.6) !important;
+}
+.pp-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    font-size: 13px !important;
+    font-weight: 900 !important;
+    color: #475569 !important;
+    margin-bottom: 12px !important;
+}
+.pp-count {
+    color: #2563EB !important; /* 品牌蓝字号 */
+    font-size: 16px !important;
+}
+/* 进度条轨道与填充 */
+.pp-bar {
+    background: #E2E8F0 !important;
+    height: 8px !important;
+    border-radius: 4px !important;
+    overflow: hidden !important;
+}
+.pp-bar-fill {
+    background: linear-gradient(90deg, #3B82F6 0%, #2563EB 100%) !important;
+    height: 100% !important;
+    border-radius: 4px !important;
+    transition: width 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important; /* 丝滑进度动画 */
+}
