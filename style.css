@@ -1860,3 +1860,26 @@ body, .page-section, .container {
     border-radius: 4px !important;
     transition: width 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important; /* 丝滑进度动画 */
 }
+/* 确保切换逻辑拥有最高优先级 */
+.page-section {
+    display: none !important; 
+}
+.page-section.active {
+    display: block !important; /* 或者 flex，根据你的布局定 */
+}
+/* 确保榜单和集市的文字不是白色的 */
+#homeTrendingListLikes, 
+#homeTrendingListDislikes, 
+#communityPostList, 
+#wikiListContainer {
+    color: #111827 !important; /* 深黑色文字 */
+    min-height: 200px; /* 防止内容没加载时容器塌陷成一条线 */
+    display: block !important;
+}
+
+/* 确保加载中/空状态的文字可见 */
+.empty-state, .loading-text {
+    color: #9CA3AF !important;
+    text-align: center;
+    padding: 40px 0;
+}
