@@ -15,6 +15,16 @@ import { safeDOM } from './core/dom.js';
 // 🎨 UI 界面与强制发布菜单引擎
 // ============================================================================
 const UIEngine = {
+    openModal(modalId, displayStyle = 'flex') {
+        ModalManager.injectIfNeeded(modalId);
+        safeDOM.execute(modalId, el => {
+            // 延迟一帧触发，保证 CSS 动画能正常播出来
+            setTimeout(() => el.style.display = displayStyle, 10);
+        });
+    },
+    closeModal(modalId) {
+        safeDOM.execute(modalId, el => el.style.display = 'none');
+    },
     openPublishSheet() {
         ModalManager.injectIfNeeded('publishSheet');
         // 🌟 终极强制 CSS 注入：无视任何原本的错误，强制将其以最高层级显示！
