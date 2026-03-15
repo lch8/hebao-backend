@@ -106,8 +106,11 @@ export const WikiEngine = {
     // ============================================================================
 // 🗞️ 架构师高定：Pro 玩家 24h AI 新闻速报渲染引擎
 // ============================================================================
-window.renderProNews = async function() {
-    const container = document.getElementById('proNewsList'); 
+// ============================================================================
+    // 🗞️ 架构师高定：Pro 玩家 24h AI 新闻速报渲染引擎
+    // ============================================================================
+    async renderProNews() {
+        const container = document.getElementById('proNewsList');
     if (!container) return;
 
     // 1. 极客感拉满的 AI 抓取骨架屏 (加载状态)
