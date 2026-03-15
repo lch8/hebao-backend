@@ -1905,3 +1905,28 @@ body, .page-section, .container {
     text-align: center;
     padding: 40px 0;
 }
+
+/* 专属高级感 Tab 切换栏样式 */
+.a-tab {
+    font-size: 15px;
+    font-weight: bold;
+    color: #94A3B8;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+}
+.a-tab.active {
+    color: #0F172A;
+    font-weight: 900;
+}
+.a-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -13px; /* 紧贴下边框 */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20px;
+    height: 3px;
+    background: #0F172A;
+    border-radius: 2px;
+}
