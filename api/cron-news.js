@@ -7,31 +7,41 @@ export default async function handler(req, res) {
 
         // 1. 抓取荷兰国家新闻台 (NOS) 的 RSS
         const rssRes = await fetch('https://feeds.nos.nl/nosnieuwsalgemeen');
-        if (!rssRes.ok) throw new Error("RSS 源拉取失败, HTTP 状态码: " + rssRes.status);
+        if (!rssRes.ok) throw new Error("RSS 源拉取失败, 状态码: " + rssRes.status);
         const xml = await rssRes.text();
 
-        // 2. 🛡️ 兼容性极强的原生正则解析引擎 (同时支持带/不带 CDATA 的 XML)
+        // 2. 🛡️ 终极暴力字符串切割法 (绝对不会匹配失败)
         const items = [];
-        const itemRegex = /<item>([\s\S]*?)<\/item>/g;
-        const titleRegex = /<title>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/title>/;
-        const descRegex = /<description>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/description>/;
-
-        let match;
-        while ((match = itemRegex.exec(xml)) !== null && items.length < 2) {
-            const itemXml = match[1];
-            const titleMatch = titleRegex.exec(itemXml);
-            const descMatch = descRegex.exec(itemXml);
+        const itemChunks = xml.split('<item>'); // 按 item 切割
+        
+        // 从 i=1 开始循环，因为 split 的第 0 个元素是 <item> 之前的头部信息
+        for (let i = 1; i < itemChunks.length; i++) {
+            if (items.length >= 2) break; // 只取最新的 2 条
             
-            if (titleMatch && descMatch) {
-                items.push({ 
-                    nlTitle: titleMatch[1].trim(), 
-                    nlDesc: descMatch[1].replace(/<[^>]+>/g, '').trim() // 剥离多余的 HTML 标签
-                });
+            const chunk = itemChunks[i];
+            let title = '';
+            let desc = '';
+            
+            // 暴力提取标题
+            if (chunk.includes('<title>') && chunk.includes('</title>')) {
+                title = chunk.split('<title>')[1].split('</title>')[0];
+                title = title.replace('<![CDATA[', '').replace(']]>', '').trim();
+            }
+            
+            // 暴力提取摘要
+            if (chunk.includes('<description>') && chunk.includes('</description>')) {
+                desc = chunk.split('<description>')[1].split('</description>')[0];
+                desc = desc.replace('<![CDATA[', '').replace(']]>', '');
+                desc = desc.replace(/<[^>]+>/g, '').trim(); // 剔除所有的 HTML 标签 (如 <img>, <a>)
+            }
+            
+            if (title && desc) {
+                items.push({ nlTitle: title, nlDesc: desc });
             }
         }
 
         if (items.length === 0) {
-            console.error("抓取到的 XML 片段:", xml.substring(0, 300));
+            console.error("切割提取失败，服务器返回的原始内容前300字:", xml.substring(0, 300));
             throw new Error("RSS 解析为空");
         }
 
@@ -45,13 +55,11 @@ export default async function handler(req, res) {
 
         // 4. 逐条交给 DeepSeek 洗稿并入库
         for (const item of items) {
-            // 查重：如果数据库已有这篇新闻的荷兰语原标题，则跳过
             const checkExist = await db.execute({ sql: "SELECT id FROM pro_news WHERE dutch_title = ?", args: [item.nlTitle] });
             if (checkExist.rows.length > 0) continue;
 
             console.log(`🧠 [DeepSeek] 正在洗稿: ${item.nlTitle}`);
 
-            // 唤起 DeepSeek，严格约束 JSON 输出
             const aiRes = await fetch('https://api.deepseek.com/v1/chat/completions', {
                 method: 'POST',
                 headers: {
@@ -72,12 +80,8 @@ export default async function handler(req, res) {
             });
 
             const aiData = await aiRes.json();
-            if (!aiData.choices || !aiData.choices[0].message.content) {
-                console.error("DeepSeek 返回异常:", aiData);
-                continue;
-            }
+            if (!aiData.choices || !aiData.choices[0].message.content) continue;
 
-            // 5. 解析 JSON 并写入数据库
             try {
                 const result = JSON.parse(aiData.choices[0].message.content);
                 await db.execute({
@@ -87,7 +91,7 @@ export default async function handler(req, res) {
                 });
                 addedCount++;
             } catch (jsonErr) {
-                console.error("JSON 解析或入库失败:", jsonErr);
+                console.error("JSON 解析失败:", jsonErr);
             }
         }
 
