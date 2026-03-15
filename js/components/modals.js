@@ -457,7 +457,6 @@ const ModalTemplates = {
         </div>
     `
 };
-};
 
 export const ModalManager = {
     /**
