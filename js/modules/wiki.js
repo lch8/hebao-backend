@@ -1,8 +1,9 @@
 // ============================================================================
-// js/modules/wiki.js - 红宝书与生存百科引擎 (极度防御全量版)
+// js/modules/wiki.js - 红宝书与生存百科引擎 (极度防御全量版 + Pro 新闻对接)
 // ============================================================================
 import { ModalManager } from '../components/modals.js';
 import { showToast } from '../core/toast.js';
+import { safeDOM } from '../core/dom.js'; // 🛡️ 引入安全 DOM 引擎
 
 // ================= 📦 内置核心数据 =================
 const rbTaskData = {
@@ -54,15 +55,300 @@ function playDingSound() {
 }
 
 export const WikiEngine = {
+    // ------------------------------------------------------------------------
+    // 1. 模式切换 (防弹版)
+    // ------------------------------------------------------------------------
     switchRbMode(mode) {
         try {
             currentRbMode = mode; 
             localStorage.setItem('hp_survival_mode', mode);
 
+            // 安全重置顶部 Tab
             document.querySelectorAll('.rb-mode-btn').forEach(btn => btn.classList.remove('active'));
             const activeBtn = document.querySelector(`.rb-mode-btn[onclick*="${mode}"]`);
             if(activeBtn) activeBtn.classList.add('active');
             
+            // 🛡️ 极度防御：全部使用 safeDOM 替代直接操作
+            if (mode === 'starter') {
+                safeDOM.execute('rbStarterMode', el => el.style.display = 'block'); 
+                safeDOM.execute('rbWikiMode', el => el.style.display = 'none'); 
+                safeDOM.execute('fabGridBtn', el => el.style.display = 'none');
+                safeDOM.execute('redbookContainer', el => el.classList.remove('rb-pro-theme')); 
+                this.renderStarterTasks();
+            } else {
+                safeDOM.execute('rbStarterMode', el => el.style.display = 'none'); 
+                safeDOM.execute('rbWikiMode', el => el.style.display = 'block'); 
+                
+                if (mode === 'advanced') {
+                    safeDOM.execute('rbWidgetsArea', el => el.style.display = 'flex'); 
+                    safeDOM.execute('proWidgetsArea', el => el.style.display = 'none');
+                    safeDOM.execute('safetyCheckWidget', el => el.style.display = 'block'); 
+                    safeDOM.execute('wikiSectionArea', el => el.style.display = 'block'); 
+                    safeDOM.execute('fabGridBtn', el => el.style.display = 'flex');
+                    
+                    currentRbCategory = 'all'; 
+                    safeDOM.execute('wikiTabs', el => {
+                        el.innerHTML = `<div class="w-tab active" onclick="window.App.switchWikiTab('all', this)">全部干货</div>
+                        <div class="w-tab" onclick="window.App.switchWikiTab('羊毛购物', this)">羊毛购物</div>
+                        <div class="w-tab" onclick="window.App.switchWikiTab('交通出行', this)">交通出行</div>
+                        <div class="w-tab" onclick="window.App.switchWikiTab('生活避坑', this)">生活避坑</div>`;
+                    });
+                    this.renderWikiList(); 
+                } else if (mode === 'pro') {
+                    safeDOM.execute('rbWidgetsArea', el => el.style.display = 'none'); 
+                    safeDOM.execute('proWidgetsArea', el => el.style.display = 'flex');
+                    safeDOM.execute('safetyCheckWidget', el => el.style.display = 'none'); 
+                    safeDOM.execute('wikiSectionArea', el => el.style.display = 'none'); 
+                    safeDOM.execute('fabGridBtn', el => el.style.display = 'none');
+                    safeDOM.execute('redbookContainer', el => el.classList.add('rb-pro-theme')); 
+                    
+                    // 🌟 核心对接：呼叫拉取新闻的方法！
+                    this.renderProNews();
+                }
+            }
+        } catch (error) { console.error("🚨 [Wiki] 模式切换崩溃:", error); }
+    },
+
+    // ------------------------------------------------------------------------
+    // 2. Pro 模式专属：拉取 AI 提炼的 24h 荷兰新闻
+    // ------------------------------------------------------------------------
+    async renderProNews() {
+        // 渲染加载态骨架屏
+        safeDOM.execute('proNewsList', el => {
+            el.innerHTML = `
+                <div style="text-align:center; padding: 40px 0; color: var(--text-muted);">
+                    <div style="font-size: 24px; animation: pulse 1.5s infinite;">📡</div>
+                    <div style="margin-top: 10px; font-size: 13px;">正在连线 Turso 拉取 24h 荷兰简报...</div>
+                </div>
+            `;
+        });
+
+        try {
+            const res = await fetch('/api/get-news');
+            if (!res.ok) throw new Error("网络请求失败");
+            const data = await res.json();
+
+            safeDOM.execute('proNewsList', el => {
+                if (data.success && data.news && data.news.length > 0) {
+                    let html = '';
+                    data.news.forEach(item => {
+                        // 使用你定义的高级卡片质感
+                        html += `
+                        <div class="pro-news-item" style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 15px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.1); cursor: pointer;" onclick="window.App.showToast('正文弹窗正在开发中... 点击了: ${item.title}')">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span style="font-size: 11px; font-weight: bold; background: ${item.tagColor}20; color: ${item.tagColor}; padding: 3px 8px; border-radius: 6px;">${item.tag}</span>
+                                <span style="font-size: 11px; color: #9CA3AF;">${item.time}</span>
+                            </div>
+                            <div style="font-size: 15px; font-weight: 600; color: #FFF; margin-bottom: 6px; line-height: 1.4;">${item.title}</div>
+                            <div style="font-size: 13px; color: #D1D5DB; margin-bottom: 12px; line-height: 1.5;">${item.aiSummary}</div>
+                            <div style="display: flex; justify-content: space-between; font-size: 11px; color: #6B7280;">
+                                <span>来源: ${item.source}</span>
+                                <span style="color: #3B82F6;">${item.actionText} →</span>
+                            </div>
+                        </div>`;
+                    });
+                    el.innerHTML = html;
+                } else {
+                    el.innerHTML = `<div style="text-align:center; padding: 30px 0; color: #9CA3AF;">暂无最新资讯</div>`;
+                }
+            });
+        } catch (error) {
+            console.error("🚨 [Wiki] 新闻拉取失败:", error);
+            safeDOM.execute('proNewsList', el => {
+                el.innerHTML = `<div style="text-align:center; padding: 30px 0; color: #EF4444;">网络连接失败，请稍后重试</div>`;
+            });
+        }
+    },
+
+    // ------------------------------------------------------------------------
+    // 3. 护城河：安全盾牌查询 (防弹版)
+    // ------------------------------------------------------------------------
+    checkSafetyCode() {
+        // 使用 safeDOM 获取输入值
+        const input = safeDOM.getValue('postcodeInput').trim(); 
+        
+        if (input.length !== 4) return showToast("请输入准确的4位数字邮编哦！(例如：2512)", "warning"); 
+        
+        const dangerZones = ['2512', '2525', '2526', '3081', '3083', '1102', '1103', '1104', '1062']; 
+        const warnZones = ['2521', '2522', '3024', '3025', '1055', '1056'];
+
+        safeDOM.execute('safetyResult', el => {
+            el.style.display = 'block';
+            if (dangerZones.includes(input)) { 
+                el.className = 'sc-result danger'; 
+                el.innerHTML = `<b>🔴 高危预警：</b><br>历史治安反馈较差，建议避免夜间单独出行，租房避开一楼。`; 
+            } else if (warnZones.includes(input)) { 
+                el.className = 'sc-result warn'; 
+                el.innerHTML = `<b>🟡 谨慎区域：</b><br>人员流动较复杂。自行车极其容易被盗，请务必使用粗链条锁！`; 
+            } else { 
+                el.className = 'sc-result safe'; 
+                el.innerHTML = `<b>🟢 治安良好：</b><br>管家数据库显示该区暂无高频恶性治安反馈，正常生活即可。`; 
+            }
+        });
+    },
+
+    showEmergency(type) {
+        if (type === 'medical') showToast('夜间急病请先拨打 Huisartsenpost，生命危险直拨 112！', 'error');
+        else if (type === 'fraud') showToast('切勿提前转账定金！请核实房东 KVK。', 'warning');
+        else if (type === 'key') showToast('千万别在谷歌搜带 [Ad] 的开锁匠 (极贵)！请找本地正规店铺。', 'warning');
+        else if (type === 'passport') showToast('护照丢失请立刻报警获取挂失单，并联系中国驻荷大使馆！', 'error');
+    },
+
+    switchTaskPhase(phase, el) { 
+        currentTaskPhase = phase; 
+        document.querySelectorAll('.tt-tab').forEach(tab => tab.classList.remove('active')); 
+        if(el) el.classList.add('active'); 
+        this.renderStarterTasks(); 
+    },
+
+    renderStarterTasks() {
+        safeDOM.execute('starterTaskList', list => {
+            const savedProgress = JSON.parse(localStorage.getItem('hp_tasks_done') || '[]');
+            const currentTasks = rbTaskData[currentTaskPhase] || [];
+            
+            let html = ''; let doneCount = 0;
+            currentTasks.forEach(task => {
+                const isDone = savedProgress.includes(task.id); if (isDone) doneCount++;
+                html += `
+                <div class="task-card ${isDone ? 'done' : ''}" id="task_${task.id}">
+                    <input type="checkbox" class="custom-checkbox-task" ${isDone ? 'checked' : ''} onchange="window.App.toggleTask('${task.id}', this)">
+                    <div class="task-content">
+                        <div class="task-title">${task.title}</div>
+                        <div class="task-desc">${task.desc}</div>
+                        <div class="task-hook-action" onclick="window.App.showToast('正在前往集市...')"><span>👉</span> ${task.hook}</div>
+                    </div>
+                </div>`;
+            });
+            list.innerHTML = html;
+            
+            safeDOM.execute('taskProgressBar', pb => pb.style.width = `${currentTasks.length ? (doneCount / currentTasks.length) * 100 : 0}%`);
+            safeDOM.execute('taskProgressText', pt => pt.innerText = `${doneCount}/${currentTasks.length}`);
+        });
+    },
+
+    toggleTask(id, checkbox) {
+        let savedProgress = JSON.parse(localStorage.getItem('hp_tasks_done') || '[]');
+        if (checkbox.checked) { playDingSound(); if (!savedProgress.includes(id)) savedProgress.push(id); } 
+        else { savedProgress = savedProgress.filter(taskId => taskId !== id); }
+        localStorage.setItem('hp_tasks_done', JSON.stringify(savedProgress));
+        this.renderStarterTasks(); 
+    },
+
+    hSwipeStart(e, id) { swipeStartX = e.touches[0].clientX; isSwiping = true; isDraggingClickPrevent = false; activeSwipeId = id; safeDOM.execute(`front_${id}`, frontCard => frontCard.style.transition = 'none'); },
+    hSwipeMove(e, id) {
+        if (!isSwiping || activeSwipeId !== id) return;
+        swipeCurrentX = e.touches[0].clientX; const diffX = swipeCurrentX - swipeStartX;
+        if (Math.abs(diffX) > 10) isDraggingClickPrevent = true; 
+        safeDOM.execute(`front_${id}`, frontCard => frontCard.style.transform = `translateX(${diffX}px)`);
+        
+        const saveBg = document.querySelector(`#swipe_${id} .save-bg`); const deleteBg = document.querySelector(`#swipe_${id} .delete-bg`);
+        if (diffX > 0) { if(saveBg) saveBg.style.opacity = Math.min(diffX / 80, 1); if(deleteBg) deleteBg.style.opacity = 0; } 
+        else { if(saveBg) saveBg.style.opacity = 0; if(deleteBg) deleteBg.style.opacity = Math.min(Math.abs(diffX) / 80, 1); }
+    },
+    hSwipeEnd(e, id) {
+        if (!isSwiping || activeSwipeId !== id) return;
+        isSwiping = false; const diffX = swipeCurrentX - swipeStartX; 
+        safeDOM.execute(`front_${id}`, frontCard => {
+            frontCard.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
+            const threshold = window.innerWidth * 0.35;
+            if (Math.abs(diffX) > 10) {
+                if (diffX > threshold) { frontCard.style.transform = `translateX(${window.innerWidth}px)`; setTimeout(() => this.handleWikiAction(id, 'saved'), 300); } 
+                else if (diffX < -threshold) { frontCard.style.transform = `translateX(-${window.innerWidth}px)`; setTimeout(() => this.handleWikiAction(id, 'deleted'), 300); } 
+                else { frontCard.style.transform = `translateX(0px)`; this.resetSwipeBg(id); }
+            } else { frontCard.style.transform = `translateX(0px)`; this.resetSwipeBg(id); }
+        });
+        setTimeout(() => { isDraggingClickPrevent = false; activeSwipeId = null; }, 100);
+    },
+    resetSwipeBg(id) { const sBg = document.querySelector(`#swipe_${id} .save-bg`); const dBg = document.querySelector(`#swipe_${id} .delete-bg`); if(sBg) sBg.style.opacity = 0; if(dBg) dBg.style.opacity = 0; },
+    toggleWikiCard(el) { if (isSwiping || isDraggingClickPrevent) return; const transform = window.getComputedStyle(el).transform; const matrix = new WebKitCSSMatrix(transform); if (Math.abs(matrix.m41) < 5) el.classList.toggle('open'); },
+    
+    handleWikiAction(id, actionStr) {
+        let arr = JSON.parse(localStorage.getItem(`hp_wiki_${actionStr}`) || '[]'); if (!arr.includes(id)) arr.push(id);
+        localStorage.setItem(`hp_wiki_${actionStr}`, JSON.stringify(arr));
+        if(actionStr === 'saved') showToast("⭐ 已加入收藏", "success");
+        this.renderWikiList();
+    },
+
+    switchWikiTab(category, el) { document.querySelectorAll('.w-tab').forEach(tab => tab.classList.remove('active')); el.classList.add('active'); currentRbCategory = category; this.renderWikiList(); },
+    filterWiki() { this.renderWikiList(safeDOM.getValue('wikiSearchInput').toLowerCase()); },
+
+    renderWikiList(searchQuery = '') {
+        safeDOM.execute('wikiListContainer', list => {
+            let html = '';
+            const deletedData = JSON.parse(localStorage.getItem('hp_wiki_deleted') || '[]'); const savedData = JSON.parse(localStorage.getItem('hp_wiki_saved') || '[]');
+            const customWikis = JSON.parse(localStorage.getItem('hp_custom_wikis') || '[]'); 
+            const allWikis = [...rbWikis, ...customWikis];
+
+            let filteredData = allWikis.filter(w => {
+                if (w.mode !== currentRbMode) return false;
+                if (deletedData.includes(w.id) || savedData.includes(w.id)) return false;
+                const catMatch = currentRbCategory === 'all' ? true : w.category === currentRbCategory;
+                const searchMatch = w.title.toLowerCase().includes(searchQuery) || w.summary.toLowerCase().includes(searchQuery);
+                return catMatch && searchMatch;
+            });
+
+            if (filteredData.length === 0) { 
+                list.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding: 60px 0;">该分类下暂无干货啦！<br><br><span style="font-size:12px; cursor:pointer; color:#10B981; text-decoration:underline;" onclick="localStorage.removeItem(\'hp_wiki_deleted\'); localStorage.removeItem(\'hp_wiki_saved\'); window.App.renderWikiList();">点我重置所有卡片</span></div>'; 
+            } else {
+                filteredData.forEach(w => {
+                    html += `
+                    <div class="swipe-wrapper" id="swipe_${w.id}">
+                        <div class="swipe-bg save-bg">⭐ 收藏</div><div class="swipe-bg delete-bg">🗑️ 懂了</div>
+                        <div class="wiki-card swipe-front" id="front_${w.id}" onclick="window.App.toggleWikiCard(this)" ontouchstart="window.App.hSwipeStart(event, '${w.id}')" ontouchmove="window.App.hSwipeMove(event, '${w.id}')" ontouchend="window.App.hSwipeEnd(event, '${w.id}')">
+                            <div class="wk-header"><div class="wk-icon">${w.icon}</div><div class="wk-info"><div class="wk-title">${w.title} <span class="wk-tag">${w.tag}</span></div><div class="wk-summary">${w.summary}</div></div></div>
+                            <div class="wk-detail" onclick="event.stopPropagation()">
+                                <div class="wk-step">${w.details}</div>
+                                <div class="wk-ugc-btn" onclick="window.App.openWikiComments('${w.id}', '${w.title}')">💬 查看网友补充 & 踩坑情报</div>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+            }
+            html += `<button class="btn-ai-create" onclick="window.App.injectIfNeeded('aiWikiModal'); document.getElementById('aiWikiModal').style.display='flex'">✨ AI 自动提取长文并录入</button>`;
+            list.innerHTML = html;
+        });
+    },
+
+    openWikiComments(wikiId, wikiTitle) {
+        ModalManager.injectIfNeeded('wikiCommentModal');
+        currentWikiIdForComment = wikiId;
+        const titleEl = document.querySelector('#wikiCommentModal .fm-title'); if (titleEl) titleEl.innerText = wikiTitle + ' 的评论';
+        this.renderWikiComments(); ModalManager.open('wikiCommentModal');
+    },
+
+    renderWikiComments() {
+        safeDOM.execute('wikiCommentList', list => {
+            const allComments = JSON.parse(localStorage.getItem('hp_wiki_comments') || '{}'); const comments = allComments[currentWikiIdForComment] || [];
+            if (comments.length === 0) { list.innerHTML = `<div style="text-align:center; color:#9CA3AF; padding:40px 0;">还没有人分享踩坑经验，你来抢沙发吧！</div>`; return; }
+            let html = ''; comments.forEach(c => { html += `<div class="wc-item"><div class="wc-avatar">${c.avatar}</div><div class="wc-content"><div class="wc-name"><span>${c.name}</span> <span style="color:#9CA3AF; font-weight:normal;">刚刚</span></div><div class="wc-text">${c.text}</div></div></div>`; });
+            list.innerHTML = html; list.scrollTop = list.scrollHeight;
+        });
+    },
+
+    submitWikiComment() {
+        const text = safeDOM.getValue('wikiCommentInput').trim(); 
+        if (!text) return showToast("写点什么再发送吧！", "warning");
+        
+        const allComments = JSON.parse(localStorage.getItem('hp_wiki_comments') || '{}'); 
+        if (!allComments[currentWikiIdForComment]) allComments[currentWikiIdForComment] = [];
+        allComments[currentWikiIdForComment].push({ name: localStorage.getItem('hp_name') || '管家热心用户', avatar: '😎', text: text });
+        
+        localStorage.setItem('hp_wiki_comments', JSON.stringify(allComments)); 
+        safeDOM.execute('wikiCommentInput', el => el.value = ''); 
+        this.renderWikiComments(); 
+        showToast("💡 分享干货，信用分 +2", "success");
+    }
+};
+
+// 💥 暴力绑定机制：直接塞进全局，彻底解决 HTML onclick 报 undefined 的问题！
+if (typeof window !== 'undefined') {
+    Object.keys(WikiEngine).forEach(key => {
+        if (typeof WikiEngine[key] === 'function') {
+            window.App = window.App || {};
+            window.App[key] = WikiEngine[key].bind(WikiEngine);
+        }
+    });
+}            
             const toggleDisplay = (id, style) => { const el = document.getElementById(id); if(el) el.style.display = style; };
             const mainContainer = document.getElementById('redbookContainer');
 
