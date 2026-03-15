@@ -389,6 +389,22 @@
     <img id="lightboxImg" src="" alt="大图预览" onclick="event.stopPropagation()">
     <div class="lightbox-close" onclick="closeLightbox()">✕</div>
 </div>
+    <div class="full-modal" id="loginModal" style="display: none; background: rgba(0,0,0,0.6); position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 999999; justify-content: center; align-items: center;">
+    <div style="background: #FFF; width: 85%; max-width: 320px; border-radius: 20px; padding: 25px; position: relative;">
+        <div onclick="document.getElementById('loginModal').style.display='none'" style="position: absolute; top: 15px; right: 15px; font-size: 20px; color: #9CA3AF; cursor: pointer;">✕</div>
+        <div style="font-size: 20px; font-weight: 900; color: #111827; text-align: center; margin-bottom: 10px;">身份认证</div>
+        <div style="font-size: 13px; color: #6B7280; text-align: center; margin-bottom: 20px;">使用荷兰高校邮箱 (.edu / .nl) 可自动点亮校友勋章哦！</div>
+        
+        <input type="email" id="hebaoAuthEmail" placeholder="输入邮箱 (推荐使用学校邮箱)" style="width: 100%; box-sizing: border-box; padding: 12px 15px; border-radius: 12px; border: 1px solid #E5E7EB; background: #F9FAFB; margin-bottom: 15px; font-size: 14px; outline: none;">
+        
+        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+            <input type="text" id="hebaoAuthCode" placeholder="6位验证码" style="flex: 1; min-width: 0; box-sizing: border-box; padding: 12px 15px; border-radius: 12px; border: 1px solid #E5E7EB; background: #F9FAFB; font-size: 14px; outline: none;">
+            <button id="btnSendCode" onclick="window.App.sendAuthCode()" style="background: #E5E7EB; color: #4B5563; border: none; padding: 0 15px; border-radius: 12px; font-size: 13px; font-weight: bold; cursor: pointer; white-space: nowrap;">获取验证码</button>
+        </div>
+        
+        <button id="btnLogin" onclick="window.App.verifyCode()" style="width: 100%; background: #111827; color: #FFF; border: none; padding: 14px 0; border-radius: 12px; font-size: 15px; font-weight: bold; cursor: pointer;">立即验证</button>
+    </div>
+</div>
 <script>
         window.addEventListener('error', function(e) {
             alert("🚨 发现致命错误！\n文件: " + (e.filename ? e.filename.split('/').pop() : '未知') + "\n行号: " + e.lineno + "\n报错: " + e.message);
