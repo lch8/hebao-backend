@@ -3,6 +3,6 @@
   "version": "1.0.0",
   "dependencies": {
     "cos-nodejs-sdk-v5": "^2.14.3",
-    "@libsql/client": "^0.6.0"
+    "@libsql/client": "latest"
   }
 }
