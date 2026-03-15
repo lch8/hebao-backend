@@ -1,6 +1,7 @@
 // ============================================================================
 // js/modules/wiki.js - 红宝书与生存百科引擎 (极度防御版)
 // ============================================================================
+import { ModalManager } from '../components/modals.js';
 import { showToast } from '../core/toast.js';
 
 // 模块级私有变量
@@ -9,7 +10,7 @@ let currentRbCategory = 'all';
 let currentTaskPhase = 'pre';
 let swipeStartX = 0, swipeCurrentX = 0, isSwiping = false;
 let isDraggingClickPrevent = false, activeSwipeId = null;
-
+let currentWikiIdForComment = null;
 export const WikiEngine = {
     // ------------------------------------------------------------------------
     // 1. 核心模式切换逻辑
@@ -190,5 +191,83 @@ export const WikiEngine = {
         }
     },
     
-    // ... 其他 renderWikiList 等逻辑，套用同样的 try...catch 和判空 ...
+    // 🌟 新增：注入 JIT 逻辑的红宝书评论弹窗
+    openWikiComments(wikiId, wikiTitle) {
+        try {
+            // 1. 🛡️ 核心修复：注入弹窗 HTML
+            ModalManager.injectIfNeeded('wikiCommentModal');
+
+            // 2. 填充标题和数据
+            currentWikiIdForComment = wikiId;
+            const titleEl = document.querySelector('#wikiCommentModal .fm-title');
+            if (titleEl) {
+                titleEl.innerText = wikiTitle + ' 的评论';
+            }
+            
+            this.renderWikiComments();
+
+            // 3. 打开弹窗
+            ModalManager.open('wikiCommentModal');
+        } catch (error) {
+            console.error("🚨 [Wiki] 评论弹窗渲染失败:", error);
+        }
+    },
+
+    renderWikiComments() {
+        try {
+            const list = document.getElementById('wikiCommentList'); 
+            if (!list) return;
+
+            const allComments = JSON.parse(localStorage.getItem('hp_wiki_comments') || '{}'); 
+            const comments = allComments[currentWikiIdForComment] || [];
+            
+            if (comments.length === 0) { 
+                list.innerHTML = `<div style="text-align:center; color:#9CA3AF; padding:40px 0;">还没有人分享踩坑经验，你来抢沙发吧！</div>`; 
+                return; 
+            }
+            
+            let html = '';
+            comments.forEach(c => { 
+                html += `
+                <div class="wc-item">
+                    <div class="wc-avatar">${c.avatar}</div>
+                    <div class="wc-content">
+                        <div class="wc-name"><span>${c.name}</span> <span style="color:#9CA3AF; font-weight:normal;">刚刚</span></div>
+                        <div class="wc-text">${c.text}</div>
+                    </div>
+                </div>`; 
+            });
+            list.innerHTML = html; 
+            list.scrollTop = list.scrollHeight;
+        } catch (error) {
+            console.error("🚨 [Wiki] 评论渲染失败:", error);
+        }
+    },
+
+    submitWikiComment() {
+        try {
+            const input = document.getElementById('wikiCommentInput'); 
+            if (!input) return;
+            const text = input.value.trim(); 
+            if (!text) return showToast("写点什么再发送吧！", "warning");
+
+            const allComments = JSON.parse(localStorage.getItem('hp_wiki_comments') || '{}'); 
+            if (!allComments[currentWikiIdForComment]) allComments[currentWikiIdForComment] = [];
+            
+            // 这里假设头像存在 localStorage 中，没有则用 😎 占位
+            allComments[currentWikiIdForComment].push({ 
+                name: localStorage.getItem('hp_name') || '管家热心用户', 
+                avatar: '😎', 
+                text: text 
+            });
+            
+            localStorage.setItem('hp_wiki_comments', JSON.stringify(allComments)); 
+            input.value = ''; 
+            this.renderWikiComments();
+            
+            showToast("💡 分享干货，信用分 +2", "success");
+        } catch (error) {
+            console.error("🚨 [Wiki] 评论提交失败:", error);
+        }
+    }
 };
