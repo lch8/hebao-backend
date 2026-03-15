@@ -1,21 +1,6 @@
-// api/delete-post.js
-export const config = { runtime: 'edge' };
+import { verifyJwt } from './_auth.js';
 
-async function verifyJwt(token, secret) {
-    try {
-        const parts = token.split('.');
-        if (parts.length !== 3) return null;
-        const [headerB64, payloadB64, sigB64] = parts;
-        const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']);
-        const sigStd = sigB64.replace(/-/g, '+').replace(/_/g, '/') + '=='.slice((sigB64.length + 2) % 4 || 4);
-        const valid = await crypto.subtle.verify('HMAC', key, Uint8Array.from(atob(sigStd), c => c.charCodeAt(0)), new TextEncoder().encode(`${headerB64}.${payloadB64}`));
-        if (!valid) return null;
-        const payloadStd = payloadB64.replace(/-/g, '+').replace(/_/g, '/') + '=='.slice((payloadB64.length + 2) % 4 || 4);
-        const payload = JSON.parse(atob(payloadStd));
-        if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return null;
-        return payload.userId;
-    } catch { return null; }
-}
+export const config = { runtime: 'edge' };
 
 export default async function handler(req) {
     if (req.method === 'OPTIONS') return new Response(null, { status: 200, headers: { 'Access-Control-Allow-Origin': '*' }});
@@ -27,7 +12,7 @@ export default async function handler(req) {
 
     try {
         const { postId } = await req.json();
-        if (!postId) return new Response(JSON.stringify({ error: '参数不全' }), { status: 400 });
+        if (!postId) return new Response(JSON.stringify({ error: '参数不全' }), { status: 400, headers: { 'Access-Control-Allow-Origin': '*' } });
 
         let dbUrl = process.env.TURSO_DATABASE_URL.replace('libsql://', 'https://');
         const authToken = process.env.TURSO_AUTH_TOKEN;
@@ -42,7 +27,7 @@ export default async function handler(req) {
                         stmt: {
                             sql: "DELETE FROM community_posts WHERE id = ? AND user_id = ?",
                             args: [
-                                { type: "integer", value: String(postId) },
+                                { type: "integer", value: parseInt(postId) },
                                 { type: "text", value: String(authUserId) }
                             ]
                         }
