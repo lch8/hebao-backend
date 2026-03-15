@@ -34,6 +34,15 @@ if (!window.App) {
         hSwipeEnd: WikiEngine.hSwipeEnd.bind(WikiEngine),
         toggleWikiCard: WikiEngine.toggleWikiCard.bind(WikiEngine),
         checkSafetyCode: WikiEngine.checkSafetyCode.bind(WikiEngine),
+        // --- 闲置详情页桥接 ---
+        openCommunityPost: MarketEngine.openCommunityPost.bind(MarketEngine),
+        toggleItemCard: MarketEngine.toggleItemCard.bind(MarketEngine),
+        toggleItemCheckbox: MarketEngine.toggleItemCheckbox.bind(MarketEngine),
+        initiateBuyChat: MarketEngine.initiateBuyChat.bind(MarketEngine),
+
+        // --- 红宝书评论桥接 ---
+        openWikiComments: WikiEngine.openWikiComments.bind(WikiEngine),
+        submitWikiComment: WikiEngine.submitWikiComment.bind(WikiEngine),
 
         // --- 4. Chat ---
         openChat: ChatEngine.openChat.bind(ChatEngine),
@@ -53,6 +62,8 @@ if (!window.App) {
 
     console.log("🚢 [Hebao Core] 四大模块引擎已成功模块化并挂载，旧版 app.js 可以彻底删除了！");
 }
+
+
 
 // 全局启动器
 document.addEventListener('DOMContentLoaded', () => {
