@@ -42,22 +42,29 @@
     </div>
 
     <div id="page-tips" class="page-section active">
-        <div class="neth-hero-bg" style="background: linear-gradient(135deg, #EBF4FF 0%, #F3E8FF 100%); border-radius: 0 0 24px 24px; padding: 15px 20px 25px 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+       <div class="neth-hero-bg" style="background: linear-gradient(135deg, #E0F2FE 0%, #F0FDF4 100%); border-radius: 0 0 24px 24px; padding: 15px 20px 15px 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); margin-bottom: 16px;">
     
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
-        <button class="hero-btn" onclick="window.switchTab('trending')" style="background: #FFF; border: none; padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; color: #D97706; box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <button onclick="window.switchTab('trending')" style="background: rgba(255,255,255,0.7); border: none; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 800; color: #D97706; box-shadow: 0 2px 8px rgba(0,0,0,0.04); cursor: pointer; backdrop-filter: blur(4px);">
             🏆 查榜单
         </button>
         
         <div style="text-align: center;">
-            <h1 style="font-size: 18px; font-weight: 900; color: #111827; margin: 0;">荷包管家 🇳🇱</h1>
-            <p style="font-size: 11px; color: #6B7280; margin: 2px 0 0 0;">留学生避雷 & 生存指南</p>
+            <h1 style="font-size: 18px; font-weight: 900; color: #0F172A; margin: 0; letter-spacing: 0.5px;">荷包管家 🇳🇱</h1>
+            <p style="font-size: 11px; color: #64748B; margin: 2px 0 0 0;">留学生避雷 & 生存指南</p>
         </div>
         
-        <div onclick="window.App.openScanner()" style="background: #FFF; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer;">
+        <div onclick="window.App.openScanner()" style="background: rgba(255,255,255,0.7); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); cursor: pointer; backdrop-filter: blur(4px);">
             📸
         </div>
     </div>
+
+    <div class="rb-mode-switcher" style="background: rgba(255, 255, 255, 0.4); padding: 4px; border-radius: 16px; display: flex; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); backdrop-filter: blur(10px);">
+        <div class="rb-mode-btn active" onclick="window.App.switchRbMode('starter')" style="flex: 1; text-align: center; padding: 8px 0; font-size: 13px; font-weight: bold; border-radius: 12px; cursor: pointer;">🐣 新手村</div>
+        <div class="rb-mode-btn" onclick="window.App.switchRbMode('advanced')" style="flex: 1; text-align: center; padding: 8px 0; font-size: 13px; font-weight: bold; border-radius: 12px; cursor: pointer;">🥓 进阶篇</div>
+        <div class="rb-mode-btn" onclick="window.App.switchRbMode('pro')" style="flex: 1; text-align: center; padding: 8px 0; font-size: 13px; font-weight: bold; border-radius: 12px; cursor: pointer;">💼 Pro玩家</div>
+    </div>
+</div>
 
     <div class="rb-mode-switcher" style="background: rgba(255, 255, 255, 0.6); padding: 4px; border-radius: 16px; display: flex; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
         <div class="rb-mode-btn active" onclick="window.App.switchRbMode('starter')" style="flex: 1; text-align: center; padding: 8px 0; font-size: 13px; font-weight: bold; border-radius: 12px; cursor: pointer;">🐣 新手村</div>
