@@ -7,7 +7,7 @@ export default async function handler(req, res) {
         // ==========================================
         // 🛡️ 绝对净化：只读取 TURSO_URL，拒绝任何其他变量劫持！
         // ==========================================
-        const dbUrl = process.env.TURSO_URL;
+        const dbUrl = process.env.TURSO_DATABASE_URL;
         const dbToken = process.env.TURSO_AUTH_TOKEN;
         
         if (!dbUrl) {
