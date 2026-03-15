@@ -1930,3 +1930,50 @@ body, .page-section, .container {
     background: #0F172A;
     border-radius: 2px;
 }
+/* ============================================================================
+   🚀 架构师高定：底部发布面板 (Action Sheet) 样式
+   ============================================================================ */
+
+/* 面板从底部滑出的丝滑动画 */
+.publish-sheet-container {
+    animation: slideUpSheet 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes slideUpSheet {
+    from { transform: translateY(100%); opacity: 0.5; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* 统一选项卡片：高级灰底色与白边框 */
+.pub-card {
+    background: #F8FAFC; 
+    border: 1px solid #FFFFFF; 
+    border-radius: 20px; 
+    padding: 20px 16px; 
+    text-align: center; 
+    cursor: pointer; 
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.02); 
+}
+
+/* 点击时的物理反馈：微微按压回缩 */
+.pub-card:active {
+    transform: scale(0.95);
+    background: #F1F5F9;
+}
+
+/* 糖果色图标底座 */
+.pub-icon {
+    width: 48px; 
+    height: 48px; 
+    border-radius: 16px; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    font-size: 24px; 
+    margin: 0 auto 12px auto; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+/* 文字排版 */
+.pub-title { font-size: 15px; font-weight: 900; color: #1E293B; margin-bottom: 4px; }
+.pub-sub { font-size: 11px; color: #64748B; font-weight: bold; }
