@@ -103,50 +103,7 @@ export const WikiEngine = {
         } catch (error) { console.error("🚨 [Wiki] 模式切换崩溃:", error); }
     },
 
-    async renderProNews() {
-        safeDOM.execute('proNewsList', el => {
-            el.innerHTML = `
-                <div style="text-align:center; padding: 40px 0; color: var(--text-muted);">
-                    <div style="font-size: 24px; animation: pulse 1.5s infinite;">📡</div>
-                    <div style="margin-top: 10px; font-size: 13px;">正在连线 Turso 拉取 24h 荷兰简报...</div>
-                </div>
-            `;
-        });
-
-        try {
-            const res = await fetch('/api/get-news');
-            if (!res.ok) throw new Error("网络请求失败");
-            const data = await res.json();
-
-            safeDOM.execute('proNewsList', el => {
-                if (data.success && data.news && data.news.length > 0) {
-                    let html = '';
-                    data.news.forEach(item => {
-                        html += `
-                        <div class="pro-news-item" style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 15px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.1); cursor: pointer;" onclick="window.App.showToast('正文弹窗正在开发中... 点击了: ${item.title}')">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                <span style="font-size: 11px; font-weight: bold; background: ${item.tagColor}20; color: ${item.tagColor}; padding: 3px 8px; border-radius: 6px;">${item.tag}</span>
-                                <span style="font-size: 11px; color: #9CA3AF;">${item.time}</span>
-                            </div>
-                            <div style="font-size: 15px; font-weight: 600; color: #FFF; margin-bottom: 6px; line-height: 1.4;">${item.title}</div>
-                            <div style="font-size: 13px; color: #D1D5DB; margin-bottom: 12px; line-height: 1.5;">${item.aiSummary}</div>
-                            <div style="display: flex; justify-content: space-between; font-size: 11px; color: #6B7280;">
-                                <span>来源: ${item.source}</span>
-                                <span style="color: #3B82F6;">${item.actionText} →</span>
-                            </div>
-                        </div>`;
-                    });
-                    el.innerHTML = html;
-                } else {
-                    el.innerHTML = `<div style="text-align:center; padding: 30px 0; color: #9CA3AF;">暂无最新资讯</div>`;
-                }
-            });
-        } catch (error) {
-            safeDOM.execute('proNewsList', el => {
-                el.innerHTML = `<div style="text-align:center; padding: 30px 0; color: #EF4444;">网络连接失败，请稍后重试</div>`;
-            });
-        }
-    },
+    
 
     checkSafetyCode() {
         const input = safeDOM.getValue('postcodeInput').trim(); 
