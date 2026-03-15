@@ -6,6 +6,7 @@
     <title>荷包管家 🇳🇱 - 荷兰生活避雷神器</title>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="./style.css">
 </head>
 
@@ -121,19 +122,19 @@
 
                 <div id="proWidgetsArea" style="display: none; padding: 0 20px; margin-bottom: 20px; flex-direction: column; gap: 15px;">
                     <div class="pro-metrics-grid">
-                        <div class="pro-metric-card glass-card">
-                            <div class="pm-title">💶 欧元/人民币</div>
-                            <div class="pm-value up">7.82 <span class="pm-trend">↑0.03</span></div>
-                        </div>
-                        <div class="pro-metric-card glass-card">
-                            <div class="pm-title">⚡ 今日均电价</div>
-                            <div class="pm-value down">€0.12<span class="pm-unit">/kWh</span></div>
-                        </div>
-                        <div class="pro-metric-card glass-card">
-                            <div class="pm-title">🏠 10年期房贷</div>
-                            <div class="pm-value">3.85<span class="pm-unit">%</span></div>
-                        </div>
-                    </div>
+    <div class="pro-metric-card glass-card" style="cursor: pointer;" onclick="window.App.showProChart('exchange')">
+        <div class="pm-title">💶 欧元/人民币</div>
+        <div class="pm-value up">7.82 <span class="pm-trend">↑0.03</span></div>
+    </div>
+    <div class="pro-metric-card glass-card" style="cursor: pointer;" onclick="window.App.showProChart('power')">
+        <div class="pm-title">⚡ 今日均电价</div>
+        <div class="pm-value down">€0.12<span class="pm-unit">/kWh</span></div>
+    </div>
+    <div class="pro-metric-card glass-card" style="cursor: pointer;" onclick="window.App.showProChart('mortgage')">
+        <div class="pm-title">🏠 10年期房贷</div>
+        <div class="pm-value">3.85<span class="pm-unit">%</span></div>
+    </div>
+</div>
                     <div class="pro-news-board glass-card">
                         <div class="news-board-header">
                             <div class="nbh-left"><span class="pulse-dot"></span> 🇳🇱 荷兰 24h 速报 <span style="font-size:10px; color:#9CA3AF; margin-left:6px; border:1px solid #4B5563; padding:1px 4px; border-radius:4px;">AI译</span></div>
