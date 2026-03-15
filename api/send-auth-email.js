@@ -9,7 +9,7 @@ export default async function handler(req) {
         const { email } = await req.json();
         // 1. 生成 6 位随机验证码
         const code = Math.floor(100000 + Math.random() * 900000).toString();
-        const expiresAt = new Date(Date.now() + 10 * 60000).toISOString(); // 10分钟有效
+        const expiresAt = new Date(Date.now() + 10 * 60000).toISOString(); 
 
         let dbUrl = process.env.TURSO_DATABASE_URL.replace('libsql://', 'https://');
         const authToken = process.env.TURSO_AUTH_TOKEN;
@@ -26,8 +26,7 @@ export default async function handler(req) {
             })
         });
 
-        // 3. 调用 Resend API 发送邮件
-        // 注意：如果你没有在 Resend 绑定自己的域名，测试阶段只能发给 Resend 注册时的那个邮箱（或者是使用 resend.dev 的代发域名）
+        // 3. 调用 Resend API 发送邮件 (替换为你自己的域名)
         const mailRes = await fetch('https://api.resend.com/emails', {
             method: 'POST',
             headers: { 
@@ -35,7 +34,7 @@ export default async function handler(req) {
                 'Content-Type': 'application/json' 
             },
             body: JSON.stringify({
-                from: '荷包管家 <onboarding@resend.dev>', 
+                from: '荷包管家 <noreply@hebaogj.xyz>', // 🌟 换成你自己的专属域名！
                 to: email,
                 subject: '【荷包管家】您的身份验证码',
                 html: `
@@ -51,8 +50,15 @@ export default async function handler(req) {
             })
         });
 
+        // 🚨 架构师补丁：必须拦截并解析 Resend 的报错，不能盲目返回 true！
+        const mailData = await mailRes.json();
+        if (!mailRes.ok) {
+            throw new Error(`邮件发送被拒绝: ${mailData.message || JSON.stringify(mailData)}`);
+        }
+
         return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }});
     } catch (e) {
+        // 如果发信失败，前端会看到真实的错误原因，不再是假装成功
         return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }});
     }
 }
