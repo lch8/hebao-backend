@@ -4,6 +4,7 @@ import { MarketEngine } from './modules/market.js';
 import { WikiEngine } from './modules/wiki.js';
 import { ChatEngine } from './modules/chat.js';
 import { showToast } from './core/toast.js';
+import { ModalManager } from './components/modals.js'; // 🌟 新增：引入弹窗引擎
 // 假设未来的 auth 和 profile 逻辑
 // import { AuthEngine } from './modules/auth.js'; 
 
@@ -11,7 +12,8 @@ import { showToast } from './core/toast.js';
 if (!window.App) {
     window.App = {
         showToast,
-        
+
+        injectIfNeeded: ModalManager.injectIfNeeded.bind(ModalManager), // 🌟 新增：暴露给旧 app.js 使用
         // --- 1. Scanner ---
         handlePackageImage: ScannerEngine.handlePackageImage.bind(ScannerEngine),
         startBarcodeScan: ScannerEngine.startBarcodeScan.bind(ScannerEngine),
