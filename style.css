@@ -1688,3 +1688,88 @@ body, .page-section, .container {
     color: #111827 !important;
     box-shadow: 0 2px 10px rgba(0,0,0,0.05) !important;
 }
+
+/* ============================================================================
+   ✨ 架构师高定 UI 补丁：拯救突兀感，拉满高级感
+   ============================================================================ */
+
+/* ---------------------------------------------------
+   1. 拯救加号按钮：苹果级“伪镂空”悬浮效果
+--------------------------------------------------- */
+.tab-item-publish {
+    top: -24px !important; /* 整体再往上提一点，脱离底栏的束缚 */
+}
+.btn-publish {
+    width: 58px !important;
+    height: 58px !important;
+    background: linear-gradient(135deg, #111827 0%, #374151 100%) !important;
+    /* 🍏 核心魔法：加上与底栏同色的粗边框，视觉上“挖”掉一块 */
+    border: 4px solid #FFFFFF !important; 
+    box-shadow: 0 8px 20px rgba(17, 24, 39, 0.25) !important; /* 加深悬浮阴影 */
+}
+.tab-item-publish .tab-text {
+    bottom: -22px !important; /* 按钮抬高了，文字要跟着下沉保持在底栏内 */
+}
+
+/* ---------------------------------------------------
+   2. 拯救压抑的页头：干掉黑洞图，换上现代弥散极光
+--------------------------------------------------- */
+.neth-hero-bg {
+    /* 极简的高级蓝黄弥散渐变，透气感拉满 */
+    background: linear-gradient(135deg, #E0E7FF 0%, #EEF2FF 50%, #FDF4FF 100%) !important; 
+    background-image: none !important; /* 强行关掉那张写实风景图 */
+}
+.neth-hero-overlay {
+    display: none !important; /* 干掉压抑的黑色半透明遮罩 */
+}
+.hero-title-box h1 {
+    color: #111827 !important; /* 背景亮了，标题必须变深色 */
+    text-shadow: none !important; /* 去掉以前为了在黑底上看清而加的阴影 */
+}
+.hero-title-box p {
+    color: #4B5563 !important; /* 副标题变深灰 */
+}
+
+/* 优化页头上的小控件，适应新的亮色背景 */
+.hero-btn {
+    background: rgba(255, 255, 255, 0.9) !important;
+    color: #D97706 !important; /* 金橙色文字 */
+    border: 1px solid rgba(255,255,255,1) !important;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05) !important;
+}
+.rb-mode-switcher {
+    background: rgba(255,255,255,0.6) !important; /* 半透明毛玻璃底座 */
+    border: 1px solid rgba(255,255,255,0.8) !important;
+}
+.rb-mode-btn.active {
+    background: #FFFFFF !important;
+    color: #111827 !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
+}
+.rb-mode-btn {
+    color: #6B7280 !important;
+}
+
+/* ---------------------------------------------------
+   3. 拯救廉价的交互按钮：高级克制蓝
+--------------------------------------------------- */
+.task-hook-action {
+    background: #EFF6FF !important; /* 极其浅的婴儿蓝底色 */
+    color: #2563EB !important; /* 沉稳的皇家蓝文字 */
+    border-radius: 12px !important;
+    font-weight: bold !important;
+    padding: 8px 14px !important;
+    transition: all 0.2s ease;
+}
+.task-hook-action:active {
+    background: #DBEAFE !important;
+    transform: scale(0.96);
+}
+
+/* 统一进度条颜色，去掉奇怪的绿色 */
+.pp-bar-fill {
+    background: linear-gradient(90deg, #3B82F6 0%, #2563EB 100%) !important;
+}
+.pp-count {
+    color: #2563EB !important;
+}
