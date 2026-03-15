@@ -1,6 +1,8 @@
 // ui.js - 视图层控制，包含 Tab 切换和弹窗逻辑
+window.isLoggedIn = localStorage.getItem('hebao_logged_in') === 'true';
+window.userUUID = localStorage.getItem('hebao_uuid') || '';
 
-let lastTab = 'tips'; 
+let lastTab = 'tips';
 
 function toggleScanMenu() {
     const fab = document.getElementById('mainScanFab');
