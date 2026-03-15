@@ -4,54 +4,62 @@ import { MarketEngine } from './modules/market.js';
 import { WikiEngine } from './modules/wiki.js';
 import { ChatEngine } from './modules/chat.js';
 import { showToast } from './core/toast.js';
+// 假设未来的 auth 和 profile 逻辑
+// import { AuthEngine } from './modules/auth.js'; 
 
-// 🛡️ 极度防御：确保全局只初始化一次
+// 🛡️ 极度防御：全局入口挂载
 if (!window.App) {
     window.App = {
-        // --- 路由/全局 ---
         showToast,
         
-        // --- 扫码与详情 ---
-        handlePackageImage: ScannerEngine.handlePackageImage,
-        setupDetailPage: ScannerEngine.setupDetailPage,
-        
-        // --- 集市 ---
-        renderIdleItems: MarketEngine.renderIdleItems,
-        
-        // --- 红宝书 ---
-        switchRbMode: WikiEngine.switchRbMode,
-        
-        // --- 聊天 ---
-        openChat: ChatEngine.openChat
-
-        likeReviewCard: ScannerEngine.likeReviewCard.bind(ScannerEngine),
+        // --- 1. Scanner ---
+        handlePackageImage: ScannerEngine.handlePackageImage.bind(ScannerEngine),
+        startBarcodeScan: ScannerEngine.startBarcodeScan.bind(ScannerEngine),
+        closeScanner: ScannerEngine.closeScanner.bind(ScannerEngine),
+        openDetailsFromScan: ScannerEngine.openDetailsFromScan.bind(ScannerEngine),
         openDetailsFromHistory: ScannerEngine.openDetailsFromHistory.bind(ScannerEngine),
         submitDetailReview: ScannerEngine.submitDetailReview.bind(ScannerEngine),
-        getAuthHeaders: () => { return { 'Content-Type': 'application/json' }; } // 假设 auth.js 没接好前先提供基础 Header
+        likeReviewCard: ScannerEngine.likeReviewCard.bind(ScannerEngine),
+        
+        // --- 2. Market ---
+        applyMarketFilters: MarketEngine.applyFilters.bind(MarketEngine),
+        handleMultiImageSelect: MarketEngine.handleMultiImageSelect.bind(MarketEngine),
+        toggleVoiceInput: MarketEngine.toggleVoiceInput.bind(MarketEngine),
+        submitIdlePost: MarketEngine.submitIdlePost.bind(MarketEngine),
+        
+        // --- 3. Wiki ---
+        switchRbMode: WikiEngine.switchRbMode.bind(WikiEngine),
+        hSwipeStart: WikiEngine.hSwipeStart.bind(WikiEngine),
+        hSwipeMove: WikiEngine.hSwipeMove.bind(WikiEngine),
+        hSwipeEnd: WikiEngine.hSwipeEnd.bind(WikiEngine),
+        toggleWikiCard: WikiEngine.toggleWikiCard.bind(WikiEngine),
+        checkSafetyCode: WikiEngine.checkSafetyCode.bind(WikiEngine),
+
+        // --- 4. Chat ---
+        openChat: ChatEngine.openChat.bind(ChatEngine),
+        closeChat: ChatEngine.closeChat.bind(ChatEngine),
+        sendChatMessage: ChatEngine.sendChatMessage.bind(ChatEngine),
+        sendQuickMessage: ChatEngine.sendQuickMessage.bind(ChatEngine),
+
+        // 占位 Auth (待抽离)
+        getAuthHeaders: () => { return { 'Content-Type': 'application/json' }; },
+        requireAuth: (callback) => { if (callback) callback(); } // 假设已登录
     };
 
-    // 绑定旧版 index.html 中裸露的全局函数，防止白屏报错
-    window.switchRbMode = window.App.switchRbMode;
-    window.handlePackageImage = window.App.handlePackageImage;
-    window.openChat = window.App.openChat;
-    window.showToast = window.App.showToast;
+    // 🔗 暴力兼容旧代码中 HTML 直接写的 onclick="switchRbMode(...)"
+    Object.keys(window.App).forEach(key => {
+        window[key] = window.App[key];
+    });
 
-// 绑定给原生 HTML onClick 使用
-    window.handlePackageImage = ScannerEngine.handlePackageImage.bind(ScannerEngine);
-    window.startBarcodeScan = ScannerEngine.startBarcodeScan.bind(ScannerEngine);
-    window.closeScanner = ScannerEngine.closeScanner.bind(ScannerEngine);
-    window.resetApp = ScannerEngine.resetApp.bind(ScannerEngine);
-    window.openDetailsFromScan = ScannerEngine.openDetailsFromScan.bind(ScannerEngine);
-    
-    console.log("🚢 荷包管家核心引擎模块化加载完毕，防御装甲已上线。");
+    console.log("🚢 [Hebao Core] 四大模块引擎已成功模块化并挂载，旧版 app.js 可以彻底删除了！");
 }
 
-// 启动入口
+// 全局启动器
 document.addEventListener('DOMContentLoaded', () => {
     try {
-        // 初始化应用状态
         WikiEngine.switchRbMode(localStorage.getItem('hp_survival_mode') || 'starter');
-        // ... 其他初始化逻辑
+        MarketEngine.loadCommunityPosts();
+        ScannerEngine.renderFootprints();
     } catch (e) {
         console.error("🚨 [App Init Error]:", e);
     }
