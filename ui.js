@@ -165,3 +165,61 @@ window.renderMyReviews = window.renderMyReviews || function() {
     const list = document.getElementById('asset-reviews');
     if (list) list.innerHTML = '<div style="text-align:center; padding:40px 0; color:#9CA3AF;">这里将展示你收到的评价，功能接入中...</div>';
 };
+
+// ============================================================================
+// 🗞️ 架构师高定：Pro 玩家 24h AI 新闻速报渲染引擎
+// ============================================================================
+window.renderProNews = async function() {
+    const container = document.getElementById('proNewsList'); 
+    if (!container) return;
+
+    // 1. 极客感拉满的 AI 抓取骨架屏 (加载状态)
+    container.innerHTML = `
+        <div style="padding: 30px 0; text-align: center; color: #64748B; font-size: 13px; display: flex; flex-direction: column; align-items: center; gap: 10px;">
+            <div style="display: flex; gap: 4px;">
+                <span class="pulse-dot" style="background: #3B82F6; animation-delay: 0s;"></span>
+                <span class="pulse-dot" style="background: #3B82F6; animation-delay: 0.2s;"></span>
+                <span class="pulse-dot" style="background: #3B82F6; animation-delay: 0.4s;"></span>
+            </div>
+            <span>DeepSeek 正在从荷兰媒体抓取并翻译...</span>
+        </div>
+    `;
+
+    try {
+        // 2. 呼叫我们刚才在 Vercel 部署的后端 API
+        const res = await fetch('/api/get-news');
+        const result = await res.json();
+
+        if (result.success && result.data && result.data.length > 0) {
+            let html = '';
+            
+            // 3. 渲染精致的时间轴 (TimeLine)
+            result.data.forEach((news, index) => {
+                const isLast = index === result.data.length - 1;
+                // 🔥 热点标签
+                const hotBadge = news.hot ? `<span style="background: linear-gradient(135deg, #FEF2F2, #FEE2E2); color: #DC2626; font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-right: 6px; font-weight: 900; border: 1px solid #FECACA;">🔥 爆</span>` : '';
+                
+                html += `
+                <div style="display: flex; gap: 15px; align-items: flex-start; position: relative; margin-bottom: ${isLast ? '0' : '16px'};">
+                    <div style="display: flex; flex-direction: column; align-items: center; min-width: 40px;">
+                        <div style="font-size: 12px; color: #64748B; font-weight: 900; margin-bottom: 4px;">${news.time}</div>
+                        ${!isLast ? `<div style="width: 2px; height: 100%; background: #E2E8F0; position: absolute; top: 22px; left: 19px; z-index: 1;"></div>` : ''}
+                        <div style="width: 8px; height: 8px; border-radius: 50%; background: ${news.hot ? '#EF4444' : '#CBD5E1'}; position: relative; z-index: 2; box-shadow: 0 0 0 3px #FFF;"></div>
+                    </div>
+                    
+                    <div style="flex: 1; padding-bottom: ${isLast ? '0' : '10px'};">
+                        <div style="font-size: 13px; color: #1E293B; line-height: 1.6; font-weight: 500;">
+                            ${hotBadge}<span style="color: #3B82F6; font-weight: 900; margin-right: 4px;">[${news.tag}]</span>${news.content}
+                        </div>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = `<div style="padding: 15px 0 5px 0;">${html}</div>`;
+        } else {
+            throw new Error("No data returned");
+        }
+    } catch (e) {
+        console.error("新闻拉取失败:", e);
+        container.innerHTML = `<div style="text-align:center; padding:30px 0; color:#EF4444; font-size:13px;">📡 信号中断，未能连接到荷兰新闻塔</div>`;
+    }
+};
