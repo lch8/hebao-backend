@@ -1,22 +1,22 @@
-import { createClient } from '@libsql/client';
+export const config = { runtime: 'edge' };
 
-export default async function handler(req, res) {
+export default async function handler(req) {
+    // 防御校验：仅限 Vercel 触发器或授权管理员
+    const authHeader = req.headers.get('authorization');
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+        return new Response(JSON.stringify({ error: '🚨 Unauthorized Cron Access' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
+    }
+
     try {
         console.log("🕷️ [Cron] 启动荷兰新闻自动抓取...");
 
-        // ==========================================
-        // 🛡️ 绝对净化：只读取 TURSO_URL，拒绝任何其他变量劫持！
-        // ==========================================
-        const dbUrl = process.env.TURSO_DATABASE_URL;
-        const dbToken = process.env.TURSO_AUTH_TOKEN;
+        let dbUrl = process.env.TURSO_DATABASE_URL;
+        const authToken = process.env.TURSO_AUTH_TOKEN;
         
-        if (!dbUrl) {
-            return res.status(500).json({ success: false, error: "缺少 TURSO_URL 环境变量！" });
+        if (!dbUrl || !authToken) {
+            return new Response(JSON.stringify({ success: false, error: "缺少 TURSO 环境变量！" }), { status: 500, headers: { 'Content-Type': 'application/json' } });
         }
-        if (!dbToken) {
-            return res.status(500).json({ success: false, error: "缺少 TURSO_AUTH_TOKEN 环境变量！" });
-        }
-        // ==========================================
+        dbUrl = dbUrl.replace('libsql://', 'https://');
 
         const rssRes = await fetch('https://feeds.nos.nl/nosnieuwsalgemeen');
         if (!rssRes.ok) throw new Error("RSS 源拉取失败, 状态码: " + rssRes.status);
@@ -41,16 +41,26 @@ export default async function handler(req, res) {
 
         if (items.length === 0) throw new Error("RSS 解析为空");
 
-        const db = createClient({ url: dbUrl, authToken: dbToken });
         let addedCount = 0;
 
         for (const item of items) {
-            const checkExist = await db.execute({ sql: "SELECT id FROM pro_news WHERE dutch_title = ?", args: [item.nlTitle] });
-            if (checkExist.rows.length > 0) continue;
+            // 查重验证
+            const checkRes = await fetch(`${dbUrl}/v2/pipeline`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    requests: [
+                        { type: "execute", stmt: { sql: "SELECT id FROM pro_news WHERE dutch_title = ?", args: [{ type: "text", value: item.nlTitle }] } },
+                        { type: "close" }
+                    ]
+                })
+            });
+            const checkData = await checkRes.json();
+            if (checkData.results[0]?.response?.result?.rows?.length > 0) continue;
 
             console.log(`🧠 [DeepSeek] 正在洗稿: ${item.nlTitle}`);
 
-            const aiRes = await fetch('https://api.deepseek.com/v1/chat/completions', {
+            const aiRes = await fetch('https://api.deepseek.com/chat/completions', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -60,7 +70,7 @@ export default async function handler(req, res) {
                     model: "deepseek-chat",
                     messages: [{
                         role: "system",
-                        content: `你是一个在荷兰生活多年的华人管家。请将以下荷兰语新闻翻译并提炼，严格输出 JSON 格式，绝不要包含 Markdown 代码块标记（如 \`\`\`json ）。\n必须包含以下字段：\n1. "title": 中文吸睛标题 (不超过25字)\n2. "aiSummary": 中文一句话省流总结\n3. "tag": 新闻分类标签 (必须带一个Emoji，如 '🚨 突发')\n4. "tagColor": 对应标签的 HEX 颜色 (突发为 #EF4444，资产为 #B45309，交通为 #3B82F6)\n5. "actionText": 给读者的建议动作 (不超过6个字)`
+                        content: `你是一个在荷兰生活多年的华人管家。请将以下荷兰语新闻翻译并提炼，严格输出 JSON 格式，绝不要包含 Markdown 代码块标记。\n必须包含以下字段：\n1. "title": 中文吸睛标题 (不超过25字)\n2. "aiSummary": 中文一句话省流总结\n3. "tag": 新闻分类标签 (必须带一个Emoji)\n4. "tagColor": 对应标签的 HEX 颜色\n5. "actionText": 给读者的建议动作 (不超过6个字)`
                     }, { role: "user", content: `荷兰语标题: ${item.nlTitle}\n荷兰语摘要: ${item.nlDesc}` }],
                     response_format: { type: "json_object" }
                 })
@@ -70,18 +80,43 @@ export default async function handler(req, res) {
             if (!aiData.choices || !aiData.choices[0].message.content) continue;
 
             try {
-                const result = JSON.parse(aiData.choices[0].message.content);
-                await db.execute({
-                    sql: `INSERT INTO pro_news (title, ai_summary, source, tag, tag_color, action_text, dutch_title) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                    args: [result.title, result.aiSummary, 'NOS.nl', result.tag, result.tagColor, result.actionText, item.nlTitle]
+                let aiText = aiData.choices[0].message.content.replace(/```json/g, '').replace(/```/g, '').trim();
+                const result = JSON.parse(aiText);
+                
+                await fetch(`${dbUrl}/v2/pipeline`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        requests: [
+                            { type: "execute", stmt: { 
+                                sql: `INSERT INTO pro_news (title, ai_summary, source, tag, tag_color, action_text, dutch_title) VALUES (?, ?, ?, ?, ?, ?, ?)`, 
+                                args: [
+                                    { type: "text", value: String(result.title) },
+                                    { type: "text", value: String(result.aiSummary) },
+                                    { type: "text", value: 'NOS.nl' },
+                                    { type: "text", value: String(result.tag) },
+                                    { type: "text", value: String(result.tagColor) },
+                                    { type: "text", value: String(result.actionText) },
+                                    { type: "text", value: String(item.nlTitle) }
+                                ] 
+                            } },
+                            { type: "close" }
+                        ]
+                    })
                 });
                 addedCount++;
-            } catch (jsonErr) { console.error("JSON 解析失败:", jsonErr); }
+            } catch (jsonErr) { console.error("JSON 解析或写入失败:", jsonErr); }
         }
 
-        res.status(200).json({ success: true, message: `成功同步并洗稿了 ${addedCount} 条新闻！` });
+        return new Response(JSON.stringify({ success: true, message: `成功同步并洗稿了 ${addedCount} 条新闻！` }), { 
+            status: 200, 
+            headers: { 'Content-Type': 'application/json' } 
+        });
 
     } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
+        return new Response(JSON.stringify({ success: false, error: error.message }), { 
+            status: 500, 
+            headers: { 'Content-Type': 'application/json' } 
+        });
     }
 }
