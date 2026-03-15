@@ -1773,3 +1773,16 @@ body, .page-section, .container {
 .pp-count {
     color: #2563EB !important;
 }
+
+/* 1. 拯救大白墙：铺设高级冷灰底色 */
+body, .page-section, .container {
+    background-color: #F4F6F8 !important; /* 核心：带有一点点蓝调的极浅灰 */
+    min-height: 100vh;
+}
+
+/* 2. 修复卡片对比度：让空气阴影重新显现 */
+.glass-card, .task-card, .trending-item {
+    background: #FFFFFF !important;
+    border: none !important; /* 去掉多余的边框，全靠阴影撑起体积 */
+    box-shadow: 0 6px 20px rgba(17, 24, 39, 0.05) !important;
+}
