@@ -1,5 +1,27 @@
 @charset "UTF-8";
+/* ============================================================================
+   🚨 架构师终极救场：全局页面路由引擎 (强制覆盖一切冲突)
+   ============================================================================ */
+/* 1. 强制隐藏所有未激活的页面，无视任何内联样式！ */
+.page-section {
+    display: none !important; 
+}
 
+/* 2. 只有被激活的页面才允许出现，并带有高级淡入动画！ */
+.page-section.active {
+    display: block !important; 
+    animation: pageFadeIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes pageFadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 3. 防止容器塌陷：确保加载数据前，列表有最小高度撑起页面 */
+#homeTrendingListLikes, #homeTrendingListDislikes, #communityPostList, #conversationList {
+    min-height: 50vh; 
+}
 /* ==========================================================================
    荷包管家 - 终极精调版 Design System
    ========================================================================== */
