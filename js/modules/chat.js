@@ -1,11 +1,14 @@
 // ============================================================================
-// js/modules/chat.js - 私信聊天引擎 (极度防御版)
+// js/modules/chat.js - 私信聊天引擎 (心跳轮询 + 乐观更新版)
 // ============================================================================
 import { showToast } from '../core/toast.js';
+import { safeDOM } from '../core/dom.js';
+import { ModalManager } from '../components/modals.js';
 
 let currentChatPartnerId = null; 
 let currentChatPostId = null; 
 let chatPollingInterval = null;
+let lastMessageCount = 0; // 记录上次的消息数量，防止重绘闪烁
 
 export const ChatEngine = {
     // ------------------------------------------------------------------------
@@ -13,7 +16,6 @@ export const ChatEngine = {
     // ------------------------------------------------------------------------
     openChat(targetId, targetName, targetAvatar, postId, postTitle, postPrice, postImg, isSold, postType = 'idle') {
         try {
-            // 假设 requireAuth 已绑定在全局
             if(window.App && typeof window.App.requireAuth === 'function') {
                 window.App.requireAuth(() => this._initChatWindow(targetId, targetName, targetAvatar, postId, postTitle, postPrice, postImg, isSold));
             } else {
@@ -26,114 +28,181 @@ export const ChatEngine = {
     },
 
     _initChatWindow(targetId, targetName, targetAvatar, postId, postTitle, postPrice, postImg, isSold) {
-        const uid = window.userUUID || localStorage.getItem('hp_uid');
-        if (targetId === uid) {
-            return showToast("💡 管家提示：不能给自己发私信哦！");
+        const uid = window.userUUID || localStorage.getItem('hebao_uuid');
+        if (targetId === String(uid)) {
+            return showToast("💡 管家提示：这是你自己的帖子哦，不能跟自己聊天~", "warning");
         }
-        
-        currentChatPartnerId = targetId; 
+
+        currentChatPartnerId = targetId;
         currentChatPostId = postId;
-        
-        const modal = document.getElementById('chatModal'); 
-        if (!modal) return showToast("聊天窗口丢失", "error");
-        
-        modal.style.display = 'flex'; 
+        lastMessageCount = 0;
 
-        // 安全填充 UI
-        const safeSetText = (id, text) => { const el = document.getElementById(id); if(el) el.innerText = text; };
-        
-        safeSetText('chatTargetName', targetName || '联系卖家');
-        safeSetText('chatTargetAvatar', targetAvatar || '😎');
-        safeSetText('chatProductTitle', postTitle || '商品信息');
-        safeSetText('chatProductPrice', '€' + (postPrice || '0.00'));
+        // 注入聊天弹窗
+        ModalManager.injectIfNeeded('chatModal');
 
-        const imgEl = document.getElementById('chatProductImg');
-        if (imgEl) {
-            if (postImg && (postImg.startsWith('http') || postImg.startsWith('data:image'))) { 
-                imgEl.src = postImg; 
-            } else { 
-                imgEl.src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23F3F4F6'/><text x='50%' y='50%' font-size='12' fill='%239CA3AF' text-anchor='middle' dominant-baseline='middle'>暂无</text></svg>"; 
+        // 更新头部信息
+        safeDOM.execute('chatPartnerName', el => el.innerText = targetName || '校友');
+        
+        // 渲染正在交易的商品卡片
+        safeDOM.execute('chatPostCard', card => {
+            if (postId) {
+                card.style.display = 'flex';
+                safeDOM.execute('chatPostImg', img => { img.src = postImg || ''; img.style.display = postImg ? 'block' : 'none'; });
+                safeDOM.execute('chatPostTitle', title => title.innerText = postTitle || '闲置好物');
+                safeDOM.execute('chatPostPrice', price => price.innerText = postPrice ? `€${postPrice}` : '');
+            } else {
+                card.style.display = 'none';
             }
-        }
+        });
 
-        // 商品已售出的状态切换防御
-        const toggleDisplay = (id, display) => { const el = document.getElementById(id); if(el) el.style.display = display; };
-        
-        if (isSold) {
-            toggleDisplay('cpsActionBtn', 'none'); 
-            toggleDisplay('cpsSoldStamp', 'block'); 
-            toggleDisplay('chatInputDisabled', 'block'); 
-            toggleDisplay('chatInputBar', 'none'); 
-            toggleDisplay('chatQuickReplies', 'none');
-        } else {
-            toggleDisplay('cpsActionBtn', 'block'); 
-            toggleDisplay('cpsSoldStamp', 'none'); 
-            toggleDisplay('chatInputDisabled', 'none'); 
-            toggleDisplay('chatInputBar', 'flex'); 
-            toggleDisplay('chatQuickReplies', 'flex');
-        }
+        // 初始化加载状态
+        safeDOM.execute('chatInput', el => el.value = '');
+        safeDOM.execute('chatMsgList', el => el.innerHTML = '<div style="text-align:center; padding: 40px; color:#9CA3AF; font-size: 13px;">📡 正在拉取历史消息...</div>');
 
-        const msgList = document.getElementById('chatMsgList'); 
-        if(msgList) msgList.innerHTML = '<div style="text-align:center; color:#9CA3AF; font-size:12px; margin-top:20px;">加载历史消息中...</div>';
-        
-        this.loadChatHistory(); 
-        if(chatPollingInterval) clearInterval(chatPollingInterval); 
-        chatPollingInterval = setInterval(() => this.loadChatHistory(), 3000);
-    },
+        // 打开弹窗
+        ModalManager.open('chatModal');
 
-    closeChat() { 
-        try {
-            const modal = document.getElementById('chatModal');
-            if(modal) modal.style.display = 'none'; 
-            if(chatPollingInterval) clearInterval(chatPollingInterval); 
-        } catch(e) {}
+        // 立即拉取一次真实数据
+        this.loadChatHistory();
+
+        // 🚀 开启心跳轮询！(每 3 秒找服务器要一次新消息)
+        if (chatPollingInterval) clearInterval(chatPollingInterval);
+        chatPollingInterval = setInterval(() => {
+            this.loadChatHistory(true);
+        }, 3000);
     },
 
     // ------------------------------------------------------------------------
-    // 2. 消息收发核心逻辑
+    // 2. 关闭聊天室并销毁心跳
+    // ------------------------------------------------------------------------
+    closeChat() {
+        if (chatPollingInterval) {
+            clearInterval(chatPollingInterval);
+            chatPollingInterval = null;
+            console.log("🛑 聊天心跳已断开，节省性能");
+        }
+        currentChatPartnerId = null;
+        safeDOM.execute('chatModal', el => el.style.display = 'none');
+    },
+
+    // ------------------------------------------------------------------------
+    // 3. 拉取历史消息
+    // ------------------------------------------------------------------------
+    async loadChatHistory(isPolling = false) {
+        if (!currentChatPartnerId) return;
+        const uid = window.userUUID || localStorage.getItem('hebao_uuid');
+
+        try {
+            const res = await fetch(`/api/get-messages?userId1=${uid}&userId2=${currentChatPartnerId}`);
+            if (!res.ok) throw new Error("拉取请求失败");
+            
+            const data = await res.json();
+            if (data.success) {
+                const messages = data.messages || [];
+                
+                // 如果是后台轮询，且消息数量没变，直接 return 避免屏幕闪烁
+                if (isPolling && messages.length === lastMessageCount) return;
+                
+                lastMessageCount = messages.length;
+
+                safeDOM.execute('chatMsgList', list => {
+                    if (messages.length === 0) {
+                        list.innerHTML = `<div style="text-align:center; padding: 40px; color:#9CA3AF; font-size: 12px;">你们还没有聊过天，发句“哈喽”破个冰吧！🧊</div>`;
+                        return;
+                    }
+
+                    let html = '';
+                    messages.forEach(msg => {
+                        const isMe = String(msg.sender_id) === String(uid);
+                        // 处理时区时间显示
+                        const date = new Date(msg.created_at + 'Z');
+                        const timeStr = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                        
+                        if (isMe) {
+                            html += `<div class="chat-row me" style="display:flex; justify-content:flex-end; margin-bottom: 15px;">
+                                <div style="font-size: 10px; color: #9CA3AF; margin-right: 8px; margin-top: auto;">${timeStr}</div>
+                                <div style="background: #111827; color: #FFF; padding: 10px 14px; border-radius: 16px 16px 4px 16px; font-size: 14px; max-width: 70%; word-break: break-all;">${msg.content}</div>
+                                <div style="font-size:24px; margin-left:8px;">😎</div>
+                            </div>`;
+                        } else {
+                            html += `<div class="chat-row them" style="display:flex; justify-content:flex-start; margin-bottom: 15px;">
+                                <div style="font-size:24px; margin-right:8px;">🤖</div>
+                                <div style="background: #F3F4F6; color: #111827; padding: 10px 14px; border-radius: 16px 16px 16px 4px; font-size: 14px; max-width: 70%; word-break: break-all;">${msg.content}</div>
+                                <div style="font-size: 10px; color: #9CA3AF; margin-left: 8px; margin-top: auto;">${timeStr}</div>
+                            </div>`;
+                        }
+                    });
+                    
+                    list.innerHTML = html;
+                    list.scrollTop = list.scrollHeight; // 滚动到最底部
+                });
+            }
+        } catch (error) {
+            console.error("🚨 拉取消息失败:", error);
+        }
+    },
+
+    // ------------------------------------------------------------------------
+    // 4. 发送消息 (乐观更新策略)
     // ------------------------------------------------------------------------
     async sendChatMessage() {
-        try {
-            const input = document.getElementById('chatInput'); 
-            if(!input) return;
-            const text = input.value.trim(); 
-            if(!text) return;
-            
-            const msgList = document.getElementById('chatMsgList'); 
-            const savedAvatar = localStorage.getItem('hebao_avatar') || ''; 
-            const avatarHtml = savedAvatar ? `<img src="${savedAvatar}">` : `<span>😎</span>`;
-            
-            // 乐观更新 UI
-            if(msgList) {
-                msgList.insertAdjacentHTML('beforeend', `<div class="chat-row me"><div class="chat-text">${text}</div><div class="chat-avatar">${avatarHtml}</div></div>`); 
-                input.value = ''; 
-                // 安全滚动
-                setTimeout(() => { msgList.scrollTop = msgList.scrollHeight; }, 50);
-            }
+        const input = document.getElementById('chatInput');
+        if (!input) return;
+        
+        const text = input.value.trim();
+        if (!text) return;
+        
+        const uid = window.userUUID || localStorage.getItem('hebao_uuid');
+        if (!uid || !currentChatPartnerId) return;
 
-            const uid = window.userUUID || localStorage.getItem('hp_uid');
+        // 🌟 1. 乐观更新：自己发的消息瞬间上屏，不等服务器！(给用户极速的体验)
+        safeDOM.execute('chatMsgList', list => {
+            if (lastMessageCount === 0) list.innerHTML = ''; // 清空空提示
+            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            list.insertAdjacentHTML('beforeend', `
+                <div class="chat-row me" style="display:flex; justify-content:flex-end; margin-bottom: 15px; opacity: 0.6; transition: opacity 0.3s;">
+                    <div style="font-size: 10px; color: #9CA3AF; margin-right: 8px; margin-top: auto;">${timeStr}</div>
+                    <div style="background: #111827; color: #FFF; padding: 10px 14px; border-radius: 16px 16px 4px 16px; font-size: 14px; max-width: 70%; word-break: break-all;">${text}</div>
+                    <div style="font-size:24px; margin-left:8px;">😎</div>
+                </div>
+            `);
+            list.scrollTop = list.scrollHeight;
+        });
+        
+        input.value = '';
+        lastMessageCount++; // 手动模拟增加，防止轮询马上把它刷掉
+
+        // 🌟 2. 异步将消息发射给服务器
+        try {
             const headers = window.App && window.App.getAuthHeaders ? window.App.getAuthHeaders() : { 'Content-Type': 'application/json' };
             
-            await fetch('/api/send-message', { 
+            const res = await fetch('/api/send-message', { 
                 method: 'POST', 
                 headers: headers, 
-                body: JSON.stringify({ senderId: uid, receiverId: currentChatPartnerId, postId: currentChatPostId, content: text }) 
-            }); 
+                body: JSON.stringify({ 
+                    senderId: uid, 
+                    receiverId: currentChatPartnerId, 
+                    postId: currentChatPostId, 
+                    content: text 
+                }) 
+            });
+            
+            if (!res.ok) throw new Error("接口返回报错");
+            
+            // 发送成功后立刻向服务器拉取一次真实记录，替换掉刚才半透明的“假消息”
+            this.loadChatHistory();
+            
         } catch(e) { 
             console.error("🚨 消息发送失败:", e);
-            showToast("消息发送失败，请重试", "warning"); 
+            showToast("发送失败，请检查网络", "error"); 
         }
     },
 
     sendQuickMessage(text) {
-        try {
-            const input = document.getElementById('chatInput');
-            if (input) {
-                input.value = text;
-                this.sendChatMessage();
-            }
-        } catch(e) {}
-    },
-
-    // ... loadChatHistory 轮询逻辑同理加壳 ...
+        safeDOM.execute('chatInput', el => {
+            el.value = text;
+            this.sendChatMessage();
+        });
+    }
 };
