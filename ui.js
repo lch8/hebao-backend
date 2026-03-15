@@ -13,39 +13,28 @@ function toggleScanMenu() {
 
 // ... 下面保留你原有的 switchTab, renderProfileState 等函数不变 ...
 
+// ui.js
 function switchTab(tabId, element) {
     document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
     const target = document.getElementById('page-' + tabId); 
     if(target) target.classList.add('active');
-    
-    // 如果是点击了底部的真实 Tab 按钮，记录下来方便 goBack 返回
+
     if (element) { 
         document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active')); 
         element.classList.add('active'); 
-        if (tabId !== 'details' && tabId !== 'trending') lastTab = tabId; 
     }
-    
+
+    // 🌟 架构师加装：如果切换到了“消息”页，立刻拉取最新的聊天列表！
+    if (tabId === 'messages' && window.App && window.App.loadConversations) {
+        window.App.loadConversations();
+    }
+
     const tabBar = document.querySelector('.tab-bar');
-    const chatBar = document.getElementById('stickyChatBar');
-    
-    // 🌟 核心优化：进入详情页或红黑榜时，隐藏底部导航栏！
     if (tabId === 'details' || tabId === 'trending') { 
         if(tabBar) tabBar.style.display = 'none'; 
     } else { 
         if(tabBar) tabBar.style.display = 'flex'; 
     }
-
-    if (tabId === 'details') {
-        if(chatBar) chatBar.style.display = 'flex';
-    } else {
-        if(chatBar) chatBar.style.display = 'none';
-    }
-    if (tabId === 'messages') {
-        if (typeof loadConversations === 'function') {
-            loadConversations();
-        }
-    }
-    if (tabId === 'profile') { renderFootprints(); renderProfileState(); }
 }
 
 function goBack() { 
