@@ -93,13 +93,20 @@ console.log("🚢 [Hebao Core] 主引擎满血复活，榜单与发布系统就�
 // ============================================================================
 // 🚀 全局启动器 (页面加载完毕后自动拉取数据)
 // ============================================================================
+// 🚀 全局启动器 (确保所有页面一打开就有数据！)
 document.addEventListener('DOMContentLoaded', () => {
-    try {
-        if (window.App.switchRbMode) window.App.switchRbMode(localStorage.getItem('hp_survival_mode') || 'starter');
-        // 页面一加载就去后台拉取红黑榜和集市数据！
-        if (window.App.loadTrendingData) window.App.loadTrendingData(); 
-        if (window.App.loadCommunityPosts) window.App.loadCommunityPosts(); 
-    } catch(e) { 
-        console.error("🚨 启动时发生错误:", e); 
-    }
+    setTimeout(() => {
+        try {
+            if (window.App.switchRbMode) window.App.switchRbMode(localStorage.getItem('hp_survival_mode') || 'starter');
+            
+            // 🌟 强制拉取四大金刚的数据！
+            if (window.App.loadTrendingData) window.App.loadTrendingData(); 
+            if (window.App.loadCommunityPosts) window.App.loadCommunityPosts(); 
+            if (window.App.loadConversations) window.App.loadConversations();
+            
+            console.log("🚢 [Hebao Core] 所有后台数据引擎已启动！");
+        } catch(e) { 
+            console.error("🚨 启动时发生错误:", e); 
+        }
+    }, 100); // 延迟 0.1 秒，等待 DOM 完全渲染
 });
