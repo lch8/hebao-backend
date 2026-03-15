@@ -159,7 +159,7 @@ window.renderProNews = async function() {
         console.error("新闻拉取失败:", e);
         container.innerHTML = `<div style="text-align:center; padding:30px 0; color:#EF4444; font-size:13px;">📡 信号中断，未能连接到荷兰新闻塔</div>`;
     }
-};
+},
 
     checkSafetyCode() {
         const input = safeDOM.getValue('postcodeInput').trim(); 
