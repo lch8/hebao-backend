@@ -42,41 +42,59 @@
     </div>
 
     <div id="page-tips" class="page-section active">
-        <div class="neth-hero-bg">
-            <div class="neth-hero-overlay"></div>
-            <div class="neth-hero-nav">
-                <div class="hero-btn" onclick="switchTab('trending')">🏆 查榜单</div>
-                <div class="hero-title-box">
-                    <h1>荷包管家 🇳🇱</h1>
-                    <p>生存指南 & 避雷百科</p>
-                </div>
-                <div class="top-scan-container" id="topScanContainer" style="position: relative;">
-                    <div class="hero-icon-btn" onclick="document.getElementById('topScanContainer').classList.toggle('active')">📸</div>
-                    <div class="top-fab-menu">
-                        <div class="fab-menu-item" onclick="document.getElementById('packageImgInput').click(); document.getElementById('topScanContainer').classList.remove('active');">📸 拍包装排雷</div>
-                        <div class="fab-menu-item" onclick="startBarcodeScan(); document.getElementById('topScanContainer').classList.remove('active');">⏸️ 扫条码搜素</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="neth-hero-content">
-                <div class="rb-mode-switcher">
-                    <div class="rb-mode-btn active" onclick="switchRbMode('starter')">🐣 新手村</div>
-                    <div class="rb-mode-btn" onclick="switchRbMode('advanced')">🥓 进阶篇</div>
-                    <div class="rb-mode-btn" onclick="switchRbMode('pro')">💼 Pro玩家</div>
-                </div>
-            </div>
+        <div class="neth-hero-bg" style="background: linear-gradient(135deg, #EBF4FF 0%, #F3E8FF 100%); border-radius: 0 0 24px 24px; padding: 15px 20px 25px 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03);">
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+        <button class="hero-btn" onclick="window.switchTab('trending')" style="background: #FFF; border: none; padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; color: #D97706; box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer;">
+            🏆 查榜单
+        </button>
+        
+        <div style="text-align: center;">
+            <h1 style="font-size: 18px; font-weight: 900; color: #111827; margin: 0;">荷包管家 🇳🇱</h1>
+            <p style="font-size: 11px; color: #6B7280; margin: 2px 0 0 0;">留学生避雷 & 生存指南</p>
         </div>
+        
+        <div onclick="window.App.openScanner()" style="background: #FFF; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); cursor: pointer;">
+            📸
+        </div>
+    </div>
+
+    <div class="rb-mode-switcher" style="background: rgba(255, 255, 255, 0.6); padding: 4px; border-radius: 16px; display: flex; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+        <div class="rb-mode-btn active" onclick="window.App.switchRbMode('starter')" style="flex: 1; text-align: center; padding: 8px 0; font-size: 13px; font-weight: bold; border-radius: 12px; cursor: pointer;">🐣 新手村</div>
+        <div class="rb-mode-btn" onclick="window.App.switchRbMode('advanced')" style="flex: 1; text-align: center; padding: 8px 0; font-size: 13px; font-weight: bold; border-radius: 12px; cursor: pointer;">🥓 进阶篇</div>
+        <div class="rb-mode-btn" onclick="window.App.switchRbMode('pro')" style="flex: 1; text-align: center; padding: 8px 0; font-size: 13px; font-weight: bold; border-radius: 12px; cursor: pointer;">💼 Pro玩家</div>
+    </div>
+</div>
 
         <div id="redbookContainer" class="page-content" style="padding-top: 5px;">
             <div id="rbStarterMode">
-                <div class="section-title-row"><span class="st-icon">🚨</span><span class="st-text">紧急避难所</span></div>
-                <div class="emergency-grid">
-                    <div class="em-card pulse-red" onclick="showEmergency('medical')"><div class="em-icon">🚑</div><div class="em-text">夜间急病</div></div>
-                    <div class="em-card pulse-orange" onclick="showEmergency('fraud')"><div class="em-icon">🏠</div><div class="em-text">租房防骗</div></div>
-                    <div class="em-card pulse-yellow" onclick="showEmergency('key')"><div class="em-icon">🔑</div><div class="em-text">忘带钥匙</div></div>
-                    <div class="em-card pulse-blue" onclick="showEmergency('passport')"><div class="em-icon">💳</div><div class="em-text">证件丢失</div></div>
-                </div>
+                <div style="padding: 0 20px; margin-bottom: 24px;">
+    <div style="font-size: 16px; font-weight: 900; color: #111827; margin-bottom: 12px; display: flex; align-items: center;">
+        🧰 留子百宝箱
+    </div>
+    
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+        <div class="em-card" onclick="window.App.showToast('正在开发打折日历...')" style="background: #FFF; border-radius: 16px; padding: 12px 0; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer;">
+            <div style="font-size: 24px; margin-bottom: 6px;">🛒</div>
+            <div style="font-size: 11px; font-weight: bold; color: #4B5563;">超市羊毛</div>
+        </div>
+        
+        <div class="em-card" onclick="window.App.showToast('交通攻略加载中...')" style="background: #FFF; border-radius: 16px; padding: 12px 0; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer;">
+            <div style="font-size: 24px; margin-bottom: 6px;">🚂</div>
+            <div style="font-size: 11px; font-weight: bold; color: #4B5563;">交通省钱</div>
+        </div>
+        
+        <div class="em-card" onclick="window.switchTab('market')" style="background: #FFF; border-radius: 16px; padding: 12px 0; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer;">
+            <div style="font-size: 24px; margin-bottom: 6px;">📦</div>
+            <div style="font-size: 11px; font-weight: bold; color: #4B5563;">淘二手</div>
+        </div>
+        
+        <div class="em-card" onclick="window.App.showToast('急救手册弹窗即将上线...')" style="background: #FFF; border-radius: 16px; padding: 12px 0; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer;">
+            <div style="font-size: 24px; margin-bottom: 6px;">🚨</div>
+            <div style="font-size: 11px; font-weight: bold; color: #EF4444;">急救手册</div>
+        </div>
+    </div>
+</div>
 
                 <div class="section-title-row" style="margin-top: 25px;"><span class="st-icon">🗺️</span><span class="st-text">主线通关任务</span></div>
                 <div class="task-tabs-scroll">
