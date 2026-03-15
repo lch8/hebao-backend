@@ -74,8 +74,10 @@ export const MarketEngine = {
             data.forEach(item => { 
                 const soldOverlayHtml = item.isSold ? `<div class="wf-sold-overlay"><div class="wf-sold-text">已售空</div></div>` : ''; 
                 const countBadge = item.itemCount > 1 ? `<div class="waterfall-count-badge">共 ${item.itemCount} 件</div>` : ''; 
+                
+                // 🛡️ 核心修复 1：在 ${item.id} 外面包上单引号，防止字符串类型的 ID 导致执行错误！
                 html += `
-                <div class="waterfall-item" onclick="window.App.openCommunityPost(${item.id || 0})">
+                <div class="waterfall-item" onclick="window.App.openCommunityPost('${item.id || 0}')">
                     <div class="wf-img-box">${soldOverlayHtml}${countBadge}<img class="wf-img" src="${item.img || ''}"></div>
                     <div class="wf-info">
                         <div class="wf-title" style="${item.isSold ? 'color:#9CA3AF;' : ''}">${item.title || '无题'}</div>
@@ -298,8 +300,14 @@ export const MarketEngine = {
         safeDOM.execute('pdTotalPrice', el => el.innerText = `€0.00`);
         safeDOM.execute('pdChatBtn', el => el.innerText = `私信想要 (0件)`);
 
-        const post = (window.allCommunityPostsCache || []).find(p => p.id === postId) || mockIdleItems.find(p => p.id === postId);
-        if (!post) return;
+        // 🛡️ 核心修复 2：将两边的 ID 全部转换为 String 再对比，无视 Number/String 差异！
+        const post = (window.allCommunityPostsCache || []).find(p => String(p.id) === String(postId)) 
+                  || mockIdleItems.find(p => String(p.id) === String(postId));
+                  
+        if (!post) {
+            console.warn(`🚨 找不到商品数据，当前寻找的 postId:`, postId);
+            return showToast("哎呀，商品数据走丢了，请刷新页面", "warning");
+        }
         currentCommunityPost = post;
 
         safeDOM.execute('pdSellerInfo', sellerInfo => {
@@ -308,7 +316,7 @@ export const MarketEngine = {
                     <div style="display:flex; align-items:center; gap:12px;">
                         <div class="pd-seller-avatar" style="font-size:32px;">${post.avatar || '😎'}</div>
                         <div style="display:flex; flex-direction:column; gap:2px;">
-                            <div class="pd-seller-name" style="font-weight:900; font-size:15px;">${post.name || '热心校友'} ${post.badge || ''}</div>
+                            <div class="pd-seller-name" style="font-weight:900; font-size:15px;">${post.author_name || post.name || '热心校友'}</div>
                             <div class="pd-seller-time" style="font-size:11px; color:#9CA3AF;">发布于近期</div>
                         </div>
                     </div>
@@ -318,8 +326,15 @@ export const MarketEngine = {
                 </div>`;
         });
 
+        // 兼容数据结构解析
         let payload;
-        try { payload = JSON.parse(post.content); } catch(e) { payload = { items: [{ id: 'item1', name: post.title, price: post.priceNum, url: post.img, is_sold: post.isSold }] }; }
+        try { 
+            payload = JSON.parse(post.content); 
+            // 如果解析出来没有 items (旧版直接存文本的情况)
+            if (!payload.items) payload = { items: [{ id: 'item1', name: post.title, price: post.price || post.likes || 0, url: post.image_url || post.img, is_sold: false }] };
+        } catch(e) { 
+            payload = { items: [{ id: 'item1', name: post.title, price: post.price || post.likes || 0, url: post.image_url || post.img, is_sold: false }] }; 
+        }
         
         safeDOM.execute('pdItemsList', listContainer => {
             let itemsHtml = '';
