@@ -139,6 +139,81 @@ window.App.switchRbMode = function(mode) {
 window.switchRbMode = window.App.switchRbMode;
 
 // ============================================================================
+// 📈 架构师高定补丁：Pro 玩家数据图表渲染引擎
+// ============================================================================
+let currentProChart = null; // 记录当前的图表实例，防止重叠污染
+
+window.App.showProChart = function(type) {
+    // 1. 调起我们刚写好的画板弹窗
+    window.App.openModal('proChartModal');
+    
+    // 2. 延迟 100ms 渲染图表（必须等弹窗完全显示，Canvas 才有宽高）
+    setTimeout(() => {
+        const ctx = document.getElementById('proTrendCanvas').getContext('2d');
+        
+        // 如果之前画过图，必须先销毁，否则鼠标放上去会疯狂闪烁
+        if (currentProChart) {
+            currentProChart.destroy();
+        }
+
+        let title = '', labels = [], dataPoints = [], lineColor = '', bgColor = '';
+
+        // 3. 根据点击的不同卡片，装载不同的模拟数据和情绪配色
+        if (type === 'exchange') {
+            title = '💶 欧元/人民币 (近7天走势)';
+            labels = ['周一', '周二', '周三', '周四', '周五', '周六', '今日'];
+            dataPoints = [7.75, 7.78, 7.81, 7.79, 7.80, 7.82, 7.82];
+            lineColor = '#EF4444'; // 红色代表上涨
+            bgColor = 'rgba(239, 68, 68, 0.1)';
+        } else if (type === 'power') {
+            title = '⚡ 荷兰日均电价走势 (€/kWh)';
+            labels = ['10-01', '10-02', '10-03', '10-04', '10-05', '10-06', '今日'];
+            dataPoints = [0.15, 0.16, 0.14, 0.12, 0.11, 0.13, 0.12];
+            lineColor = '#10B981'; // 绿色代表电价下降
+            bgColor = 'rgba(16, 185, 129, 0.1)';
+        } else if (type === 'mortgage') {
+            title = '🏠 荷兰10年期房贷利率 (%)';
+            labels = ['4月', '5月', '6月', '7月', '8月', '9月', '本月'];
+            dataPoints = [4.12, 4.05, 3.98, 3.95, 3.90, 3.88, 3.85];
+            lineColor = '#3B82F6'; // 稳重的金融蓝
+            bgColor = 'rgba(59, 130, 246, 0.1)';
+        }
+
+        document.getElementById('chartModalTitle').innerText = title;
+
+        // 4. 调用 Chart.js 绘制丝滑的高级曲线
+        currentProChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: dataPoints,
+                    borderColor: lineColor,
+                    backgroundColor: bgColor,
+                    borderWidth: 3,
+                    pointBackgroundColor: '#FFF',
+                    pointBorderColor: lineColor,
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    fill: true, // 开启下方渐变填充
+                    tension: 0.4 // 贝塞尔曲线，让线条极其圆润丝滑
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { font: { size: 10, family: 'sans-serif' }, color: '#9CA3AF' } },
+                    y: { grid: { color: '#F3F4F6', drawBorder: false }, ticks: { font: { size: 10 }, color: '#9CA3AF' } }
+                },
+                interaction: { mode: 'nearest', axis: 'x', intersect: false }
+            }
+        });
+    }, 150); // 留出充足时间让 Modal 动画播放完
+};
+
+// ============================================================================
 // 🚀 全局启动器 (页面加载完毕后自动拉取数据)
 // ============================================================================
 // 🚀 全局启动器 (确保所有页面一打开就有数据！)
