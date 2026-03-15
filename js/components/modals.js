@@ -329,23 +329,25 @@ const ModalTemplates = {
 
     // --- 13. 闲置商品瀑布流点击详情 ---
     postDetailModal: `
-        <div class="full-modal" id="postDetailModal" style="display: none; background: #F9FAFB;">
-            <div class="fm-header" style="background: #FFF; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                <div class="fm-close" onclick="closePostDetail()">✕</div>
-                <div class="fm-title">闲置详情</div>
+        <div class="full-modal" id="postDetailModal" style="display: none; background: #F9FAFB; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 99999;">
+            <div class="fm-header" style="background: #FFF; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; padding: 15px;">
+                <div class="fm-close" onclick="document.getElementById('postDetailModal').style.display='none'" style="font-size: 20px; cursor: pointer;">✕</div>
+                <div class="fm-title" style="font-weight: bold; font-size: 16px;">闲置详情</div>
                 <div style="width: 24px;"></div>
             </div>
+            
             <div style="padding: 15px; overflow-y: auto; height: calc(100vh - 130px); padding-bottom: 80px;" id="pdContentArea">
                 <div id="pdSellerInfo" style="background: #FFF; padding: 15px; border-radius: 16px; margin-bottom: 15px; border: 1px solid #E5E7EB;"></div>
                 <div style="font-size: 14px; font-weight: 900; margin-bottom: 10px; color: #111827;">物品清单</div>
                 <div id="pdItemsList"></div>
             </div>
-            <div style="position: fixed; bottom: 0; left: 0; right: 0; background: #FFF; padding: 15px 20px; padding-bottom: calc(15px + env(safe-area-inset-bottom)); border-top: 1px solid #E5E7EB; display: flex; justify-content: space-between; align-items: center; z-index: 100;">
+            
+            <div style="position: absolute; bottom: 0; left: 0; right: 0; background: #FFF; padding: 15px 20px; padding-bottom: calc(15px + env(safe-area-inset-bottom)); border-top: 1px solid #E5E7EB; display: flex; justify-content: space-between; align-items: center; z-index: 100;">
                 <div style="display: flex; flex-direction: column;">
                     <span style="font-size: 11px; color: #6B7280;">已选总计</span>
                     <span id="pdTotalPrice" style="font-size: 20px; font-weight: 900; color: #D97706;">€0.00</span>
                 </div>
-                <button id="pdChatBtn" onclick="initiateBuyChat()" style="background: #111827; color: #FFF; padding: 10px 24px; border-radius: 14px; font-size: 14px; font-weight: bold; border: none;">私信想要 (0件)</button>
+                <button id="pdChatBtn" onclick="window.App.initiateBuyChat()" style="background: #111827; color: #FFF; padding: 10px 24px; border-radius: 14px; font-size: 14px; font-weight: bold; border: none; cursor: pointer;">私信想要 (0件)</button>
             </div>
         </div>
     `,
