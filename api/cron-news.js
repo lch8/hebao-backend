@@ -5,22 +5,16 @@ export default async function handler(req, res) {
         console.log("🕷️ [Cron] 启动荷兰新闻自动抓取...");
 
         // ==========================================
-        // 🌟 自动向下兼容变量名，绝不漏掉任何一个！
+        // 🛡️ 绝对净化：只读取 TURSO_URL，拒绝任何其他变量劫持！
         // ==========================================
-        const dbUrl = process.env.TURSO_DATABASE_URL || process.env.TURSO_URL || process.env.DATABASE_URL;
+        const dbUrl = process.env.TURSO_URL;
         const dbToken = process.env.TURSO_AUTH_TOKEN;
         
         if (!dbUrl) {
-            return res.status(500).json({ 
-                success: false, 
-                error: "环境变量缺失！请检查 Vercel 是否有名为 TURSO_DATABASE_URL 的变量，并且在配置后进行了 Redeploy！" 
-            });
+            return res.status(500).json({ success: false, error: "缺少 TURSO_URL 环境变量！" });
         }
-        if (!dbUrl.startsWith('libsql://') && !dbUrl.startsWith('https://')) {
-            return res.status(500).json({ success: false, error: `数据库链接格式错误，当前读到的是: ${dbUrl}` });
-        }
-        if (!process.env.DEEPSEEK_API_KEY) {
-            return res.status(500).json({ success: false, error: "缺少 DEEPSEEK_API_KEY 环境变量！" });
+        if (!dbToken) {
+            return res.status(500).json({ success: false, error: "缺少 TURSO_AUTH_TOKEN 环境变量！" });
         }
         // ==========================================
 
@@ -47,7 +41,6 @@ export default async function handler(req, res) {
 
         if (items.length === 0) throw new Error("RSS 解析为空");
 
-        // 初始化 Turso 数据库
         const db = createClient({ url: dbUrl, authToken: dbToken });
         let addedCount = 0;
 
