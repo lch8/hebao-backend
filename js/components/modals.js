@@ -154,7 +154,7 @@ const ModalTemplates = {
     publishIdleModal: `
         <div class="full-modal" id="publishIdleModal" style="display: none;">
             <div class="fm-header">
-                <div class="fm-close" onclick="closeIdlePublish()">✕</div>
+                <div class="fm-close" onclick="window.App.closeModal('publishIdleModal')">✕</div>
                 <div class="fm-title">发布闲置</div>
                 <div class="fm-submit" onclick="submitIdlePost()">发布</div>
             </div>
@@ -219,7 +219,7 @@ const ModalTemplates = {
     publishHelpModal: `
         <div class="full-modal" id="publishHelpModal" style="display: none;">
             <div class="fm-header">
-                <div class="fm-close" onclick="closeHelpPublish()">✕</div>
+                <div class="fm-close" onclick="window.App.closeModal('publishHelpModal')">✕</div>
                 <div class="fm-title">发布悬赏</div>
                 <div class="fm-submit" onclick="submitHelpPost()">发布</div>
             </div>
@@ -273,7 +273,7 @@ const ModalTemplates = {
     publishPartnerModal: `
         <div class="full-modal" id="publishPartnerModal" style="display: none;">
             <div class="fm-header">
-                <div class="fm-close" onclick="closePartnerPublish()">✕</div>
+                <div class="fm-close" onclick="window.App.closeModal('publishPartnerModal')">✕</div>
                 <div class="fm-title">找搭子</div>
                 <div class="fm-submit" style="background:#8B5CF6;" onclick="submitPartnerPost()">发布</div>
             </div>
@@ -325,7 +325,7 @@ const ModalTemplates = {
     publishQuestionModal: `
         <div class="full-modal" id="publishQuestionModal" style="display: none;">
             <div class="fm-header">
-                <div class="fm-close" onclick="closeQuestionPublish()">✕</div>
+                <div class="fm-close" onclick="window.App.closeModal('publishQuestionModal')">✕</div>
                 <div class="fm-title">提个问题</div>
                 <div class="fm-submit" style="background:#10B981;" onclick="submitQuestionPost()">发布</div>
             </div>
