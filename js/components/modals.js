@@ -431,6 +431,32 @@ const ModalTemplates = {
             </div>
         </div>
     `
+
+    chatModal: `
+        <div class="full-modal" id="chatModal" style="display: none; background: #F9FAFB; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 999999;">
+            <div class="fm-header" style="background: #FFF; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; padding: 15px;">
+                <div class="fm-close" onclick="window.App.closeChat()" style="font-size: 24px; cursor: pointer;">‹</div>
+                <div class="fm-title" id="chatPartnerName" style="font-weight: 900; font-size: 16px;"></div>
+                <div style="width: 24px;"></div>
+            </div>
+            
+            <div id="chatPostCard" style="display:none; background: #FFF; padding: 10px 15px; border-bottom: 1px solid #E5E7EB; align-items: center; gap: 10px;">
+                <img id="chatPostImg" style="width: 40px; height: 40px; border-radius: 6px; object-fit: cover;">
+                <div style="flex:1;">
+                    <div id="chatPostTitle" style="font-size: 13px; font-weight: bold; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;"></div>
+                    <div id="chatPostPrice" style="font-size: 12px; color: #D97706; font-weight: bold;"></div>
+                </div>
+            </div>
+
+            <div id="chatMsgList" style="padding: 15px; overflow-y: auto; height: calc(100vh - 160px); padding-bottom: 80px; display: flex; flex-direction: column;"></div>
+            
+            <div style="position: absolute; bottom: 0; left: 0; right: 0; background: #F3F4F6; padding: 10px 15px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); border-top: 1px solid #E5E7EB; display: flex; align-items: center; gap: 10px;">
+                <input type="text" id="chatInput" placeholder="发消息..." style="flex: 1; padding: 12px 15px; border-radius: 20px; border: 1px solid #E5E7EB; font-size: 14px; outline: none;" onkeypress="if(event.key==='Enter') window.App.sendChatMessage()">
+                <button onclick="window.App.sendChatMessage()" style="background: #111827; color: #FFF; width: 40px; height: 40px; border-radius: 50%; border: none; font-size: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer;">↑</button>
+            </div>
+        </div>
+    `
+};
 };
 
 export const ModalManager = {
