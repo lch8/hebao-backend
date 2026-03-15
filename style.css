@@ -53,15 +53,100 @@ body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "S
 @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
 /* ================= 2. 底部导航与发布 ================= */
-.tab-bar { position: fixed; bottom: 0; left: 0; right: 0; height: 65px; background: rgba(255,255,255,0.92); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 -4px 30px rgba(0,0,0,0.04); display: flex; justify-content: space-around; align-items: center; z-index: 100; max-width: 600px; margin: 0 auto; padding-bottom: env(safe-area-inset-bottom); border-top-left-radius: var(--radius-modal); border-top-right-radius: var(--radius-modal); border-top: 1px solid rgba(229,231,235,0.5);}
-.tab-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); cursor: pointer; transition: 0.2s; height: 100%; position: relative;}
-.tab-item.active { color: var(--brand-dark); }
-.tab-icon { font-size: 22px; margin-bottom: 4px; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-.tab-item.active .tab-icon { transform: translateY(-3px) scale(1.15); }
-.tab-text { font-size: 10px; font-weight: 900; }
-.tab-item-publish { flex: 1; display: flex; justify-content: center; align-items: flex-start; height: 100%; position: relative; cursor: pointer; }
-.btn-publish { width: 52px; height: 52px; background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary-hover) 100%); border-radius: var(--radius-xl); display: flex; justify-content: center; align-items: center; color: white; font-size: 28px; font-weight: bold; position: absolute; top: -18px; box-shadow: var(--shadow-colored); transition: transform 0.2s; border: 4px solid var(--bg-card);}
-.tab-item-publish:active .btn-publish { transform: scale(0.92); }
+/* ============================================================================
+   🎨 架构师重构：苹果级毛玻璃底栏 & 悬浮加号 (替换原有的 tab-bar 样式)
+   ============================================================================ */
+
+/* 1. 底部导航栏基础美化：毛玻璃 + 空气感阴影 */
+.tab-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 65px; /* 设定固定高度，增加内部呼吸感 */
+    background: rgba(255, 255, 255, 0.92); /* 半透明纯白背景 */
+    backdrop-filter: blur(15px); /* 苹果 iOS 核心：毛玻璃背景虚化 */
+    -webkit-backdrop-filter: blur(15px); /* 兼容 Safari */
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.04); /* 极其柔和的顶部阴影 */
+    padding-bottom: env(safe-area-inset-bottom); /* 完美兼容全面屏底部小黑条 */
+    z-index: 9999;
+    border-top: 1px solid rgba(0,0,0,0.03);
+}
+
+/* 2. 优化普通 Tab 按钮：增加点击放大动画与字体对比度 */
+.tab-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #9CA3AF; /* 未选中时的浅灰色 */
+    font-size: 11px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    width: 60px;
+}
+.tab-item.active {
+    color: #111827; /* 选中时变成极致深藏青色 */
+    font-weight: 900;
+}
+.tab-item .tab-icon {
+    font-size: 22px;
+    margin-bottom: 3px;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Q弹动画曲线 */
+}
+.tab-item.active .tab-icon {
+    transform: scale(1.15) translateY(-2px); /* 选中时图标微微放大并上浮 */
+}
+
+/* 3. 🚨 重塑加号的包裹层：让它“突破”导航栏的顶部界限 */
+.tab-item-publish {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 70px;
+    height: 65px;
+    top: -12px; /* 核心魔法：整体向上偏移，产生悬浮突破感 */
+    cursor: pointer;
+}
+
+/* 4. 🚨 核心：把薄荷绿换成高级暗色质感按钮 */
+.btn-publish {
+    width: 52px;
+    height: 52px;
+    /* 高级深邃渐变背景 */
+    background: linear-gradient(135deg, #374151 0%, #111827 100%); 
+    color: #FFF;
+    border-radius: 50%; /* 完美的圆形 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: 300;
+    /* 双层阴影：外层空气悬浮阴影 + 内层微光高光（模拟真实立体质感） */
+    box-shadow: 0 8px 20px rgba(17, 24, 39, 0.3), inset 0 1px 1px rgba(255,255,255,0.2); 
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 2;
+}
+
+/* 5. 交互反馈：按下去时的物理挤压感 */
+.tab-item-publish:active .btn-publish {
+    transform: scale(0.92); /* 点击时内凹缩小 */
+    box-shadow: 0 4px 10px rgba(17, 24, 39, 0.4);
+}
+
+/* 6. 发布文字适配：位置微调，不与圆形打架 */
+.tab-item-publish .tab-text {
+    position: absolute;
+    bottom: -6px; /* 紧贴底栏底部 */
+    color: #9CA3AF;
+    font-size: 11px;
+    font-weight: bold;
+}
 
 /* ================= 3. 首页顶部导航 & 悬浮菜单 ================= */
 .home-top-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px 5px 15px; margin-top: calc(15px + env(safe-area-inset-top)); margin-bottom: 15px; }
