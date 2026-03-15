@@ -204,5 +204,54 @@ export const ChatEngine = {
             el.value = text;
             this.sendChatMessage();
         });
+    },
+    async loadConversations() {
+        const uid = window.userUUID || localStorage.getItem('hebao_uuid');
+        if (!uid) {
+            safeDOM.execute('conversationList', el => el.innerHTML = '<div style="text-align:center; padding: 40px; color:#9CA3AF;">请先登录查看消息</div>');
+            return;
+        }
+
+        safeDOM.execute('conversationList', el => el.innerHTML = '<div style="text-align:center; padding: 40px; color:#9CA3AF; font-size: 13px;">📡 正在同步消息队列...</div>');
+
+        try {
+            const res = await fetch(`/api/get-conversations?userId=${uid}`);
+            const data = await res.json();
+
+            safeDOM.execute('conversationList', list => {
+                // 如果没有聊天记录，显示空状态
+                if (!data.success || !data.conversations || data.conversations.length === 0) {
+                    list.innerHTML = '';
+                    safeDOM.execute('msgEmptyState', el => el.style.display = 'flex');
+                    return;
+                }
+
+                safeDOM.execute('msgEmptyState', el => el.style.display = 'none');
+                let html = '';
+                
+                data.conversations.forEach(conv => {
+                    const date = new Date(conv.last_time + 'Z');
+                    const timeStr = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                    const shortId = conv.partner_id.substring(0, 4); // 截取前4位当做默认名字
+                    
+                    html += `
+                    <div style="display:flex; align-items:center; background:#FFF; padding:15px; border-radius: 16px; margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.02); border: 1px solid #E5E7EB; cursor:pointer; transition: transform 0.1s;" 
+                         onclick="window.App.openChat('${conv.partner_id}', '校友_${shortId}', '😎')">
+                        <div style="font-size:40px; margin-right:12px; background: #F3F4F6; border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">😎</div>
+                        <div style="flex:1; overflow:hidden;">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:4px; align-items: center;">
+                                <span style="font-weight:900; font-size:15px; color:#111827;">校友_${shortId}</span>
+                                <span style="font-size:11px; color:#9CA3AF;">${timeStr}</span>
+                            </div>
+                            <div style="font-size:13px; color:#6B7280; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${conv.last_message}</div>
+                        </div>
+                    </div>`;
+                });
+                list.innerHTML = html;
+            });
+        } catch(e) {
+            console.error("🚨 拉取会话列表失败:", e);
+            safeDOM.execute('conversationList', el => el.innerHTML = '<div style="text-align:center; padding: 40px; color:#EF4444;">网络错误，请刷新重试</div>');
+        }
     }
 };
