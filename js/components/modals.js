@@ -34,17 +34,20 @@ const ModalTemplates = {
 
     // --- 2. 登录/注册弹窗 ---
     loginModal: `
-        <div class="modal-overlay" id="loginModal" style="display: none; z-index: 4000;">
-            <div class="modal-content" style="text-align: center;">
-                <div class="modal-close" onclick="document.getElementById('loginModal').style.display='none'">✕</div>
-                <h3 style="margin-top:0;">🔐 身份认证</h3>
-                <p style="font-size: 13px; color: #6B7280; margin-bottom: 20px;">为了保证社区真实互助，发布前需验证邮箱。</p>
-                <input type="email" id="hebaoAuthEmail" class="search-input" placeholder="输入您的邮箱地址 (推荐校园或工作邮箱)" style="width: 100%; box-sizing: border-box; margin-bottom: 15px; text-align: center;">
+        <div class="full-modal" id="loginModal" style="display: none; background: rgba(0,0,0,0.6); position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 999999; justify-content: center; align-items: center;">
+            <div style="background: #FFF; width: 85%; max-width: 320px; border-radius: 20px; padding: 25px; position: relative;">
+                <div onclick="window.App.closeModal('loginModal')" style="position: absolute; top: 15px; right: 15px; font-size: 20px; color: #9CA3AF; cursor: pointer;">✕</div>
+                <div style="font-size: 20px; font-weight: 900; color: #111827; text-align: center; margin-bottom: 10px;">身份认证</div>
+                <div style="font-size: 13px; color: #6B7280; text-align: center; margin-bottom: 20px;">使用荷兰高校邮箱 (.edu / .nl) 可自动点亮校友勋章哦！</div>
+                
+                <input type="email" id="hebaoAuthEmail" placeholder="输入邮箱 (推荐使用学校邮箱)" style="width: 100%; box-sizing: border-box; padding: 12px 15px; border-radius: 12px; border: 1px solid #E5E7EB; background: #F9FAFB; margin-bottom: 15px; font-size: 14px; outline: none;">
+                
                 <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                    <input type="text" id="authCode" class="search-input" placeholder="6位验证码" style="width: 60%; text-align: center; letter-spacing: 2px;">
-                    <button id="btnSendCode" class="action-btn" style="width: 40%; background: #F3F4F6; color: #374151; font-size: 13px; border: 1px solid #E5E7EB;" onclick="sendAuthCode()">获取验证码</button>
+                    <input type="text" id="hebaoAuthCode" placeholder="6位验证码" style="flex: 1; min-width: 0; box-sizing: border-box; padding: 12px 15px; border-radius: 12px; border: 1px solid #E5E7EB; background: #F9FAFB; font-size: 14px; outline: none;">
+                    <button id="btnSendCode" onclick="window.App.sendAuthCode()" style="background: #E5E7EB; color: #4B5563; border: none; padding: 0 15px; border-radius: 12px; font-size: 13px; font-weight: bold; cursor: pointer; white-space: nowrap;">获取验证码</button>
                 </div>
-                <button id="btnVerifyLogin" class="action-btn" style="width: 100%;" onclick="verifyEmailCode()">立即验证</button>
+                
+                <button id="btnLogin" onclick="window.App.verifyCode()" style="width: 100%; background: #111827; color: #FFF; border: none; padding: 14px 0; border-radius: 12px; font-size: 15px; font-weight: bold; cursor: pointer;">立即验证</button>
             </div>
         </div>
     `,
