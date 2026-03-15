@@ -1615,3 +1615,76 @@ body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "S
     color: #FFF;
     box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
+/* ============================================================================
+   🎨 架构师重构：全局卡片圆角与空气感阴影 (Breathing Cards)
+   ============================================================================ */
+
+/* 1. 统一全局页面底色，用极其极简的灰白底，把白色卡片“托”起来 */
+body, .page-section, .container {
+    background-color: #F9FAFB !important; 
+}
+
+/* 2. 重塑所有核心卡片：统一大圆角 + 空气感阴影 */
+.glass-card, 
+.trending-item, 
+.task-card, 
+.wiki-card,
+.waterfall-item,
+.help-card,
+.partner-card,
+.auth-card,
+.em-card,
+.widget-card {
+    border-radius: 16px !important; /* 统一外部几何韵律 */
+    background: #FFFFFF !important;
+    border: 1px solid rgba(229, 231, 235, 0.6) !important; /* 极柔和的边缘反光 */
+    /* 🍏 苹果核心魔法：双层空气阴影 (一层大范围极淡，一层小范围微深) */
+    box-shadow: 0 8px 30px rgba(17, 24, 39, 0.04), 0 2px 8px rgba(17, 24, 39, 0.02) !important;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    overflow: hidden; /* 防止内部元素溢出破坏圆角 */
+}
+
+/* 3. 黄金嵌套法则：内部图片元素的圆角必须比外部小 */
+.trending-item .t-img,
+.waterfall-item img,
+.help-card img,
+.auth-card .auth-icon {
+    border-radius: 12px !important; 
+}
+
+/* 4. 赋予卡片生命力：点击时的“微呼吸”物理交互 */
+.trending-item:active, 
+.wiki-card:active,
+.waterfall-item:active,
+.auth-card:active,
+.em-card:active {
+    transform: scale(0.97); /* 按下去时微微回缩 */
+    box-shadow: 0 2px 10px rgba(17, 24, 39, 0.04) !important; /* 阴影随之收拢 */
+}
+
+/* 5. 拯救超市红黑榜顶部的 Tab 切换栏 (增加呼吸感留白) */
+.trending-tabs {
+    background: rgba(243, 244, 246, 0.8) !important;
+    padding: 6px !important;
+    border-radius: 20px !important;
+    display: inline-flex;
+    margin: 0 auto 20px auto !important;
+    width: 90% !important;
+    left: 5%;
+    position: relative;
+}
+.trending-tabs .t-tab {
+    flex: 1;
+    text-align: center;
+    border-radius: 14px !important;
+    padding: 10px 0 !important;
+    font-size: 14px !important;
+    font-weight: bold !important;
+    color: #6B7280 !important;
+    transition: all 0.3s ease;
+}
+.trending-tabs .t-tab.active {
+    background: #FFFFFF !important;
+    color: #111827 !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05) !important;
+}
