@@ -124,7 +124,43 @@ window.renderMyPosts = window.renderMyPosts || function() {
     const list = document.getElementById('myPostsList');
     if (list) list.innerHTML = '<div style="text-align:center; padding:40px 0; color:#9CA3AF;">这里将展示你发布的闲置，功能接入中...</div>';
 };
+// ============================================================================
+// 🛡️ 架构师补丁：补齐“我的”页面底部 Asset Tabs 的切换逻辑
+// ============================================================================
+window.switchAssetTab = function(tabId, element) {
+    try {
+        // 1. 移除所有 Tab 的高亮状态
+        document.querySelectorAll('.a-tab').forEach(el => el.classList.remove('active'));
+        // 2. 隐藏所有的内容面板
+        document.querySelectorAll('.asset-content').forEach(el => {
+            el.style.display = 'none';
+            el.classList.remove('active');
+        });
 
+        // 3. 激活当前点击的 Tab
+        if (element) {
+            element.classList.add('active');
+        }
+        
+        // 4. 显示对应的目标内容面板
+        const targetContent = document.getElementById('asset-' + tabId);
+        if (targetContent) {
+            targetContent.style.display = 'block';
+            targetContent.classList.add('active');
+        }
+
+        // 5. 智能按需加载数据 (利用我们之前写好的占位函数)
+        if (tabId === 'footprint' && typeof window.renderFootprints === 'function') {
+            window.renderFootprints();
+        } else if (tabId === 'posts' && typeof window.renderMyPosts === 'function') {
+            window.renderMyPosts();
+        } else if (tabId === 'reviews' && typeof window.renderMyReviews === 'function') {
+            window.renderMyReviews();
+        }
+    } catch (error) {
+        console.error("🚨 切换 Asset Tab 失败:", error);
+    }
+};
 window.renderMyReviews = window.renderMyReviews || function() { 
     const list = document.getElementById('asset-reviews');
     if (list) list.innerHTML = '<div style="text-align:center; padding:40px 0; color:#9CA3AF;">这里将展示你收到的评价，功能接入中...</div>';
