@@ -5,19 +5,22 @@ export default async function handler(req, res) {
         console.log("🕷️ [Cron] 启动荷兰新闻自动抓取...");
 
         // ==========================================
-        // 🚨 探照灯：检查环境变量到底长啥样！
+        // 🌟 自动向下兼容变量名，绝不漏掉任何一个！
         // ==========================================
-        const dbUrl = process.env.TURSO_URL;
+        const dbUrl = process.env.TURSO_DATABASE_URL || process.env.TURSO_URL || process.env.DATABASE_URL;
         const dbToken = process.env.TURSO_AUTH_TOKEN;
         
         if (!dbUrl) {
-            return res.status(500).json({ success: false, error: "系统大崩溃：TURSO_URL 是 undefined！Vercel 根本没读到环境变量！" });
+            return res.status(500).json({ 
+                success: false, 
+                error: "环境变量缺失！请检查 Vercel 是否有名为 TURSO_DATABASE_URL 的变量，并且在配置后进行了 Redeploy！" 
+            });
         }
         if (!dbUrl.startsWith('libsql://') && !dbUrl.startsWith('https://')) {
-            return res.status(500).json({ success: false, error: `TURSO_URL 格式不对，缺少前缀！当前读到的是: ${dbUrl}` });
+            return res.status(500).json({ success: false, error: `数据库链接格式错误，当前读到的是: ${dbUrl}` });
         }
-        if (!dbToken) {
-            return res.status(500).json({ success: false, error: "TURSO_AUTH_TOKEN 缺失！" });
+        if (!process.env.DEEPSEEK_API_KEY) {
+            return res.status(500).json({ success: false, error: "缺少 DEEPSEEK_API_KEY 环境变量！" });
         }
         // ==========================================
 
@@ -52,10 +55,7 @@ export default async function handler(req, res) {
             const checkExist = await db.execute({ sql: "SELECT id FROM pro_news WHERE dutch_title = ?", args: [item.nlTitle] });
             if (checkExist.rows.length > 0) continue;
 
-            // 检查 DeepSeek Token
-            if (!process.env.DEEPSEEK_API_KEY) {
-                throw new Error("DEEPSEEK_API_KEY 是 undefined！");
-            }
+            console.log(`🧠 [DeepSeek] 正在洗稿: ${item.nlTitle}`);
 
             const aiRes = await fetch('https://api.deepseek.com/v1/chat/completions', {
                 method: 'POST',
