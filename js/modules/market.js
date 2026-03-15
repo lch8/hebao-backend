@@ -291,78 +291,99 @@ export const MarketEngine = {
     // ------------------------------------------------------------------------
     // 5. 详情页与交易逻辑 (安全绑定)
     // ------------------------------------------------------------------------
+    // ------------------------------------------------------------------------
+    // 5. 详情页与交易逻辑 (雷达追踪 + 暴力防弹版)
+    // ------------------------------------------------------------------------
     openCommunityPost(postId) {
-        ModalManager.injectIfNeeded('postDetailModal');
+        try {
+            // 💡 追踪点 1：检查是否成功进入函数
+            console.log("👉 准备打开商品详情, 接收到的 postId:", postId);
 
-        selectedItemIds = new Set();
-        currentTotalPrice = 0;
-        
-        safeDOM.execute('pdTotalPrice', el => el.innerText = `€0.00`);
-        safeDOM.execute('pdChatBtn', el => el.innerText = `私信想要 (0件)`);
+            // 1. 尝试注入 HTML
+            ModalManager.injectIfNeeded('postDetailModal');
+            const modalEl = document.getElementById('postDetailModal');
+            
+            if (!modalEl) {
+                alert("🚨 追踪报错：在页面上找不到 postDetailModal！请检查 modals.js 模板名是否拼对。");
+                return;
+            }
 
-        // 🛡️ 核心修复 2：将两边的 ID 全部转换为 String 再对比，无视 Number/String 差异！
-        const post = (window.allCommunityPostsCache || []).find(p => String(p.id) === String(postId)) 
-                  || mockIdleItems.find(p => String(p.id) === String(postId));
-                  
-        if (!post) {
-            console.warn(`🚨 找不到商品数据，当前寻找的 postId:`, postId);
-            return showToast("哎呀，商品数据走丢了，请刷新页面", "warning");
-        }
-        currentCommunityPost = post;
+            // 2. 查找数据
+            const post = (window.allCommunityPostsCache || []).find(p => String(p.id) === String(postId)) 
+                      || mockIdleItems.find(p => String(p.id) === String(postId));
+                      
+            if (!post) {
+                alert(`🚨 追踪报错：数据走丢了！数据库缓存中找不到 ID 为 [${postId}] 的商品！`);
+                return;
+            }
 
-        safeDOM.execute('pdSellerInfo', sellerInfo => {
-            sellerInfo.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-                    <div style="display:flex; align-items:center; gap:12px;">
-                        <div class="pd-seller-avatar" style="font-size:32px;">${post.avatar || '😎'}</div>
-                        <div style="display:flex; flex-direction:column; gap:2px;">
-                            <div class="pd-seller-name" style="font-weight:900; font-size:15px;">${post.author_name || post.name || '热心校友'}</div>
-                            <div class="pd-seller-time" style="font-size:11px; color:#9CA3AF;">发布于近期</div>
-                        </div>
-                    </div>
-                    <div style="background:#F3F4F6; color:#6B7280; padding:6px 12px; border-radius:14px; font-size:12px; font-weight:bold;">
-                        信用 ${post.credit || '良好'}
-                    </div>
-                </div>`;
-        });
+            // 3. 基础赋值
+            currentCommunityPost = post;
+            selectedItemIds = new Set();
+            currentTotalPrice = 0;
+            
+            safeDOM.execute('pdTotalPrice', el => el.innerText = `€0.00`);
+            safeDOM.execute('pdChatBtn', el => el.innerText = `私信想要 (0件)`);
 
-        // 兼容数据结构解析
-        let payload;
-        try { 
-            payload = JSON.parse(post.content); 
-            // 如果解析出来没有 items (旧版直接存文本的情况)
-            if (!payload.items) payload = { items: [{ id: 'item1', name: post.title, price: post.price || post.likes || 0, url: post.image_url || post.img, is_sold: false }] };
-        } catch(e) { 
-            payload = { items: [{ id: 'item1', name: post.title, price: post.price || post.likes || 0, url: post.image_url || post.img, is_sold: false }] }; 
-        }
-        
-        safeDOM.execute('pdItemsList', listContainer => {
-            let itemsHtml = '';
-            if (payload.items && payload.items.length > 0) {
-                payload.items.forEach(item => {
-                    const isSold = item.is_sold;
-                    const priceNum = parseFloat(item.price) || 0;
-                    const cardClass = isSold ? 'pd-item-card sold' : 'pd-item-card';
-                    
-                    itemsHtml += `
-                    <div class="${cardClass}" onclick="${isSold ? '' : `window.App.toggleItemCard(this, '${item.id}', ${priceNum})`}">
-                        <img class="pd-item-img" src="${item.url || 'https://via.placeholder.com/400'}" style="height: 220px;">
-                        <div class="pd-item-overlay">
-                            <div style="display:flex; justify-content:space-between; align-items:flex-end; width:100%;">
-                                <div style="flex:1; overflow:hidden; padding-right:10px;">
-                                    <div class="pd-item-name">${item.name || '闲置好物'}</div>
-                                    <div class="pd-item-price">€${item.price}</div>
-                                </div>
-                                ${isSold ? '<div class="pd-sold-badge">已售出</div>' : `<input type="checkbox" class="custom-checkbox" id="chk_${item.id}" onclick="event.stopPropagation(); window.App.toggleItemCheckbox(this, '${item.id}', ${priceNum})">`}
+            safeDOM.execute('pdSellerInfo', sellerInfo => {
+                sellerInfo.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <div class="pd-seller-avatar" style="font-size:32px;">${post.avatar || '😎'}</div>
+                            <div style="display:flex; flex-direction:column; gap:2px;">
+                                <div class="pd-seller-name" style="font-weight:900; font-size:15px;">${post.author_name || post.name || '热心校友'}</div>
+                                <div class="pd-seller-time" style="font-size:11px; color:#9CA3AF;">发布于近期</div>
                             </div>
                         </div>
                     </div>`;
-                });
-            }
-            listContainer.innerHTML = itemsHtml;
-        });
+            });
 
-        ModalManager.open('postDetailModal');
+            // 4. 解析复杂商品列表数据
+            let payload;
+            try { 
+                payload = typeof post.content === 'string' ? JSON.parse(post.content) : post.content; 
+                if (!payload || !payload.items) {
+                    payload = { items: [{ id: 'item1', name: post.title, price: post.price || post.likes || 0, url: post.image_url || post.img, is_sold: false }] };
+                }
+            } catch(e) { 
+                payload = { items: [{ id: 'item1', name: post.title, price: post.price || post.likes || 0, url: post.image_url || post.img, is_sold: false }] }; 
+            }
+            
+            safeDOM.execute('pdItemsList', listContainer => {
+                let itemsHtml = '';
+                if (payload.items && payload.items.length > 0) {
+                    payload.items.forEach(item => {
+                        const isSold = item.is_sold;
+                        const priceNum = parseFloat(item.price) || 0;
+                        const cardClass = isSold ? 'pd-item-card sold' : 'pd-item-card';
+                        
+                        itemsHtml += `
+                        <div class="${cardClass}" onclick="${isSold ? '' : `window.App.toggleItemCard(this, '${item.id}', ${priceNum})`}">
+                            <img class="pd-item-img" src="${item.url || 'https://via.placeholder.com/400'}" style="height: 220px;">
+                            <div class="pd-item-overlay">
+                                <div style="display:flex; justify-content:space-between; align-items:flex-end; width:100%;">
+                                    <div style="flex:1; overflow:hidden; padding-right:10px;">
+                                        <div class="pd-item-name">${item.name || '闲置好物'}</div>
+                                        <div class="pd-item-price">€${item.price}</div>
+                                    </div>
+                                    ${isSold ? '<div class="pd-sold-badge">已售出</div>' : `<input type="checkbox" class="custom-checkbox" id="chk_${item.id}" onclick="event.stopPropagation(); window.App.toggleItemCheckbox(this, '${item.id}', ${priceNum})">`}
+                                </div>
+                            </div>
+                        </div>`;
+                    });
+                }
+                listContainer.innerHTML = itemsHtml;
+            });
+
+            // 💡 追踪点 2：如果代码顺利走到这里，说明前面完全没报错！
+            // 暴力撕开弹窗，无视任何动画延迟
+            modalEl.style.display = 'block'; 
+            
+        } catch (error) {
+            // 💡 终极防线：无论哪里报错，直接弹窗显示红字报错信息！
+            alert("🚨 致命报错拦截：\\n" + error.message);
+            console.error("详情页报错详细堆栈:", error);
+        }
     },
 
     toggleItemCard(cardEl, itemId, price) {
