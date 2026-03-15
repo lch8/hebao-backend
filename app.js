@@ -275,34 +275,7 @@ function selectPill(element, groupName) { document.querySelectorAll(`#${groupNam
 // ================= 7. 社区集市拉取与渲染 =================
 let mockIdleItems = []; let mockHelpItems = []; let mockPartnerItems = []; window.allCommunityPostsCache = []; let mockQuestionItems = [];
 
-async function loadCommunityPosts() {
-    try {
-        const res = await fetch('/api/get-community'); const data = await res.json();
-        if (data.success && data.posts) {
-            mockIdleItems = []; mockHelpItems = []; mockPartnerItems = []; mockQuestionItems = []; window.allCommunityPostsCache = data.posts; 
-            data.posts.forEach(post => {
-                const title = post.title || ''; const time = new Date(post.created_at).getTime() || Date.now(); const author = post.author_name || '匿名管家';
-                let payload; try { payload = JSON.parse(post.content); } catch(e) { payload = { oldText: post.content }; }
-                let badgeHtml = `<span class="trust-badge badge-work">✅ 已实名</span>`;
-                
-                if (title.includes('[闲置]')) {
-                    const firstImg = (payload.items && payload.items.length > 0) ? payload.items[0].url : 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&auto=format&fit=crop';
-                    const priceMatch = title.match(/€(\d+(\.\d+)?)/); const price = priceMatch ? priceMatch[1] : '面议';
-                    const isAllSold = payload.items ? payload.items.every(i => i.is_sold) : false; const itemCount = payload.items ? payload.items.length : 0;
-                    mockIdleItems.push({ userId: post.user_id, id: post.id, img: firstImg, title: title.replace('[闲置] ', ''), price: price, priceNum: parseFloat(price) || 0, avatar: "😎", name: author, badge: badgeHtml, isSold: isAllSold, itemCount: itemCount, timestamp: time });
-                } else if (title.includes('[互助')) {
-                    const rewardMatch = title.match(/€(\d+(\.\d+)?)/); const reward = rewardMatch ? rewardMatch[1] : '0'; const isUrgent = title.includes('🔥急');
-                    mockHelpItems.push({ userId: post.user_id, id: post.id, type: isUrgent ? "🔥 紧急" : "🤝 求助", isUrgent: isUrgent, title: payload.oldText ? payload.oldText.substring(0,40)+'...' : title, reward: reward, rewardNum: parseFloat(reward) || 0, date: "私信沟通", location: "荷兰", avatar: "🐼", name: author, badge: badgeHtml, distKm: 1, timestamp: time, imgIcon: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%'><rect width='100%' height='100%' fill='%23EFF6FF'/><text x='50%' y='50%' font-size='20' text-anchor='middle' dominant-baseline='middle'>🤝</text></svg>" });
-                } else if (title.includes('[找搭子]')) {
-                    mockPartnerItems.push({ userId: post.user_id, id: post.id, avatar: "👱‍♀️", name: author, badge: badgeHtml, gender: "f", mbti: "未知", mbtiType: "all", title: title.replace('[找搭子] ', ''), desc: payload.oldText || '', tags: ["✨ 新发布"], distKm: 1, daysAway: 1, timestamp: time });
-                } else if (title.includes('[问答]')) {
-                    mockQuestionItems.push({ userId: post.user_id, id: post.id, avatar: "🤔", name: author, badge: badgeHtml, title: title.replace('[问答] ', ''), desc: payload.oldText || '', timestamp: time });
-                }
-            });
-            applyMarketFilters('idle'); applyMarketFilters('help'); applyMarketFilters('partner'); applyMarketFilters('question');
-        }
-    } catch (err) { console.error("加载社区数据失败", err); }
-}
+
 
 function applyMarketFilters(type) {
     try {
@@ -323,19 +296,7 @@ function applyMarketFilters(type) {
     } catch(e) { console.error(e); }
 }
 
-// 💡 修复重点：给 onclick 的 ID 全部加上单引号！
-function renderMarketIdle(data = mockIdleItems) { 
-    const container = document.getElementById('idleWaterfall'); if(!container) return; 
-    if(data.length === 0) { container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:40px 0;">空空如也，快去发一个吧！</div>'; return; } 
-    let html = ''; 
-    data.forEach(item => { 
-        const soldOverlayHtml = item.isSold ? `<div class="wf-sold-overlay"><div class="wf-sold-text">已售空</div></div>` : ''; 
-        const countBadge = item.itemCount > 1 ? `<div class="waterfall-count-badge">共 ${item.itemCount} 件</div>` : ''; 
-        // 🛡️ 修复点：openCommunityPost('${item.id}')，强制用引号包裹 UUID
-        html += `<div class="waterfall-item" onclick="openCommunityPost('${item.id}')"><div class="wf-img-box">${soldOverlayHtml}${countBadge}<img class="wf-img" src="${item.img}"></div><div class="wf-info"><div class="wf-title" style="${item.isSold ? 'color:#9CA3AF;' : ''}">${item.title}</div><div class="wf-price-row"><span class="wf-currency" style="${item.isSold ? 'color:#9CA3AF;' : ''}">€</span><span class="wf-price" style="${item.isSold ? 'color:#9CA3AF;' : ''}">${item.price}</span></div><div class="wf-user-row"><div class="wf-user"><div class="wf-avatar">${item.avatar}</div><div class="wf-name">${item.name}${item.badge}</div></div></div></div></div>`; 
-    }); 
-    container.innerHTML = html; 
-}
+
 
 function renderMarketHelp(data = mockHelpItems) { 
     const container = document.getElementById('helpListContainer'); if(!container) return; 
@@ -384,61 +345,7 @@ let currentCommunityPost = null;
 let selectedItemIds = new Set(); 
 let currentTotalPrice = 0;
 
-function openCommunityPost(postId) {
-    try {
-        const modal = document.getElementById('postDetailModal');
-        if (!modal) { console.error("未找到 postDetailModal"); return; }
-        
-        selectedItemIds = new Set(); currentTotalPrice = 0;
-        document.getElementById('pdTotalPrice').innerText = `€0.00`; document.getElementById('pdChatBtn').innerText = `私信想要 (0件)`;
-        modal.style.display = 'flex'; 
 
-        // 🛡️ 强制转换为字符串比对，防止 UUID 类型导致找不到
-        const post = mockIdleItems.find(p => String(p.id) === String(postId)) || window.allCommunityPostsCache?.find(p => String(p.id) === String(postId));
-        if (!post) { showToast("未找到该商品数据", "error"); return; }
-        currentCommunityPost = post;
-
-        document.getElementById('pdSellerInfo').innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
-                <div style="display:flex; align-items:center; gap:12px;">
-                    <div class="pd-seller-avatar" style="font-size:32px;">${post.avatar || '😎'}</div>
-                    <div style="display:flex; flex-direction:column; gap:2px;">
-                        <div class="pd-seller-name" style="font-weight:900; font-size:15px;">${post.name || '热心校友'} ${post.badge || ''}</div>
-                        <div class="pd-seller-time" style="font-size:11px; color:#9CA3AF;">发布于近期</div>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        let payload;
-        try { payload = JSON.parse(post.content); } catch(e) { payload = { items: [{ id: 'item1', name: post.title, price: post.priceNum, url: post.img, is_sold: post.isSold }] }; }
-        
-        const listContainer = document.getElementById('pdItemsList');
-        let itemsHtml = '';
-
-        if (payload.items && payload.items.length > 0) {
-            payload.items.forEach(item => {
-                const isSold = item.is_sold; const priceNum = parseFloat(item.price) || 0;
-                const cardClass = isSold ? 'pd-item-card sold' : 'pd-item-card';
-                // 🛡️ 修复复选框点击 ID 加引号
-                itemsHtml += `
-                <div class="${cardClass}" onclick="${isSold ? '' : `toggleItemCard(this, '${item.id}', ${priceNum})`}">
-                <img class="pd-item-img" src="${item.url || 'https://via.placeholder.com/400'}" style="height: 220px;" onclick="event.stopPropagation(); openLightbox(this.src)">
-                    <div class="pd-item-overlay">
-                        <div style="display:flex; justify-content:space-between; align-items:flex-end; width:100%;">
-                            <div style="flex:1; overflow:hidden; padding-right:10px;">
-                                <div class="pd-item-name">${item.name || '闲置好物'}</div>
-                                <div class="pd-item-price">€${item.price}</div>
-                            </div>
-                            ${isSold ? '<div class="pd-sold-badge">已售出</div>' : `<input type="checkbox" class="custom-checkbox" id="chk_${item.id}" onclick="event.stopPropagation(); toggleItemCheckbox(this, '${item.id}', ${priceNum})">`}
-                        </div>
-                    </div>
-                </div>`;
-            });
-        }
-        listContainer.innerHTML = itemsHtml;
-    } catch(e) { console.error("打开商品详情失败:", e); }
-}
 
 function toggleItemCard(cardEl, itemId, price) {
     const chk = document.getElementById(`chk_${itemId}`);
@@ -455,20 +362,7 @@ function toggleItemCheckbox(checkbox, itemId, price) {
     document.getElementById('pdChatBtn').innerText = `私信想要 (${selectedItemIds.size}件)`;
 }
 
-function initiateBuyChat() {
-    if (selectedItemIds.size === 0) return showToast("👉 请先勾选您想要的物品！", "warning");
-    let payload; try { payload = JSON.parse(currentCommunityPost.content); } catch(e) { payload = { items: [{ id: 'item1', name: currentCommunityPost.title, url: currentCommunityPost.img }] }; }
-    let wantNames = payload.items.filter(i => selectedItemIds.has(i.id)).map(i => i.name).join('、');
-    const firstItemImg = payload.items.find(i => selectedItemIds.has(i.id))?.url || currentCommunityPost.img;
-    
-    openChat(currentCommunityPost.userId, currentCommunityPost.name, '😎', currentCommunityPost.id, `想要这几件 (€${currentTotalPrice.toFixed(2)})`, currentTotalPrice.toFixed(2), firstItemImg, false, 'idle');
-    
-    setTimeout(() => {
-        const input = document.getElementById('chatInput'); 
-        if(input) input.value = `哈喽！我想要：【${wantNames}】，请问还在吗？`;
-    }, 100);
-    closePostDetail();
-}
+
 function closePostDetail() { document.getElementById('postDetailModal').style.display = 'none'; }
 
 
