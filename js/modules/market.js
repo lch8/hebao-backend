@@ -425,13 +425,19 @@ export const MarketEngine = {
     }
 };
 
-// 💥 兼容绑定机制：如果需要单独导出到全局
+// 💥 终极暴力兼容绑定机制：防止任何旧 HTML 的 onclick 找不到对象
 if (typeof window !== 'undefined') {
     window.App = window.App || {};
-    window.App.safeDOM = safeDOM; // 暴露给 HTML 的 onclick
+    window.App.safeDOM = safeDOM; 
+    
     Object.keys(MarketEngine).forEach(key => {
         if (typeof MarketEngine[key] === 'function') {
-            window.App[key] = MarketEngine[key].bind(MarketEngine);
+            const boundFunc = MarketEngine[key].bind(MarketEngine);
+            // 挂载到 window.App 下
+            window.App[key] = boundFunc;
+            // 🌟 终极流氓打法：同时直接挂载到 window 最顶层！
+            // 这样无论 HTML 怎么写 onclick="openCommunityPost()" 都能绝对命中！
+            window[key] = boundFunc; 
         }
     });
 }
