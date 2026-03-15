@@ -8,7 +8,7 @@ import { ChatEngine } from './modules/chat.js';
 import { showToast } from './core/toast.js';
 import { ModalManager } from './components/modals.js';
 import { safeDOM } from './core/dom.js';
-
+import { AuthEngine } from './modules/auth.js';
 // ============================================================================
 // 🎨 UI 界面与发布菜单引擎 (专门接管底部的加号发布与弹窗开关)
 // ============================================================================
@@ -62,8 +62,8 @@ window.App.safeDOM = safeDOM;
 
 // 💡 暴力兼容引擎：把所有模块的方法不仅挂载到 window.App，还直接挂载到顶级 window 上！
 // 这样无论 HTML 怎么写（onclick="xxx()" 或 onclick="window.App.xxx()"）都能绝对命中！
-const modulesToBind = [ScannerEngine, MarketEngine, WikiEngine, ChatEngine, UIEngine];
-
+// 💡 暴力兼容引擎：把所有模块的方法挂载到全局
+const modulesToBind = [ScannerEngine, MarketEngine, WikiEngine, ChatEngine, UIEngine, AuthEngine];
 modulesToBind.forEach(module => {
     Object.keys(module).forEach(key => {
         if (typeof module[key] === 'function') {
@@ -74,23 +74,7 @@ modulesToBind.forEach(module => {
     });
 });
 
-// --- 占位 Auth (应对代码中随时可能调用的鉴权检查) ---
-window.App.getAuthHeaders = () => {
-    const token = localStorage.getItem('hebao_token');
-    const headers = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    return headers;
-};
 
-window.App.requireAuth = (callback) => { 
-    const isLoggedIn = localStorage.getItem('hebao_logged_in') === 'true';
-    if (!isLoggedIn) {
-        safeDOM.execute('loginModal', el => el.style.display = 'flex');
-    } else {
-        if (callback) callback(); 
-    }
-};
-window.requireAuth = window.App.requireAuth;
 
 console.log("🚢 [Hebao Core] 主引擎加载完毕，所有模块已挂载，发布系统就绪！");
 
