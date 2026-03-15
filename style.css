@@ -1977,3 +1977,28 @@ body, .page-section, .container {
 /* 文字排版 */
 .pub-title { font-size: 15px; font-weight: 900; color: #1E293B; margin-bottom: 4px; }
 .pub-sub { font-size: 11px; color: #64748B; font-weight: bold; }
+
+/* ============================================================================
+   🌈 架构师高定：红宝书动态情境背景色
+   ============================================================================ */
+
+/* 1. 给主容器加上丝滑的颜色渐变过渡动画 */
+#page-tips {
+    transition: background 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+    min-height: 100vh;
+}
+
+/* 2. 🐣 新手村主题：治愈薄荷暖绿 (缓解初来乍到的焦虑) */
+#page-tips.theme-starter {
+    background: linear-gradient(180deg, #F0FDF4 0%, #F8FAFC 100%) !important;
+}
+
+/* 3. 🥓 进阶篇主题：探索天空蓝 (鼓励出门社交与探索) */
+#page-tips.theme-advanced {
+    background: linear-gradient(180deg, #F0F9FF 0%, #F8FAFC 100%) !important;
+}
+
+/* 4. 💼 Pro玩家主题：高阶极客紫 (沉浸、深度的硬核感) */
+#page-tips.theme-pro {
+    background: linear-gradient(180deg, #FAF5FF 0%, #F8FAFC 100%) !important;
+}
