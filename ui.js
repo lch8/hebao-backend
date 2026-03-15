@@ -1,13 +1,17 @@
 // ui.js - 视图层控制，包含 Tab 切换和弹窗逻辑
+
+// 🛡️ 架构师补丁：注入全局防伪装变量，防止 UI 引擎崩溃
 window.isLoggedIn = localStorage.getItem('hebao_logged_in') === 'true';
 window.userUUID = localStorage.getItem('hebao_uuid') || '';
 
-let lastTab = 'tips';
+let lastTab = 'tips'; 
 
 function toggleScanMenu() {
     const fab = document.getElementById('mainScanFab');
-    fab.classList.toggle('active');
+    if(fab) fab.classList.toggle('active');
 }
+
+// ... 下面保留你原有的 switchTab, renderProfileState 等函数不变 ...
 
 function switchTab(tabId, element) {
     document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
