@@ -320,38 +320,30 @@ window.submitQuestionPost = async function() {
 // 📖 帖子详情页渲染与评论引擎
 // ============================================================================
 
-// 🌟 真实后端对接：从 Turso 拉取帖子列表
+// 🌟 替换旧版：从 Turso 拉取帖子列表 (带强力反缓存机制)
 window.fetchMarketQuestions = async function() {
     const container = document.getElementById('questionListContainer');
     if (!container) return;
-    
-    // 显示高级加载骨架屏
     container.innerHTML = '<div style="text-align:center; padding: 40px 0; color: #9CA3AF;"><span class="pulse-dot" style="background:#10B981;"></span> 正在从服务器拉取最新帖子...</div>';
 
     try {
-        // 🚀 调用你的 Vercel + Turso API (查询帖子)
-        const response = await fetch('/api/get-posts?type=question'); // 👉 换成你的 API
+        // 💥 架构师核心：加上 &_t=时间戳，每一次请求都是全新的，强行打穿 Vercel 的旧缓存！
+        const fetchUrl = '/api/get-posts?type=question&_t=' + Date.now(); 
+        const response = await fetch(fetchUrl); 
         const result = await response.json();
 
         if (result.success && result.data) {
             let html = '';
-            
-            // 假设后端返回的数据按照时间倒序排列
             result.data.forEach(post => {
-                // 还原存入 Turso 的图片 JSON 字符串
                 let images = [];
                 try { images = JSON.parse(post.images || '[]'); } catch(e) {}
-
                 let imgHtml = '';
                 if (images.length > 0) {
                     imgHtml = `<div style="display:flex; gap:8px; margin-top:12px; margin-bottom:8px; overflow-x:auto; padding-bottom:5px;">`;
                     images.forEach(img => { imgHtml += `<img src="${img}" style="width: 110px; height: 110px; border-radius: 8px; object-fit: cover; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">`; });
                     imgHtml += `</div>`;
                 }
-
-                // 🌟 注意：这里把帖子的整块数据转成 JSON 存入 onClick，方便详情页直接读取，不用再发一次网络请求！
                 const postDataStr = encodeURIComponent(JSON.stringify({...post, images}));
-
                 html += `
                 <div class="question-card" onclick="window.openQuestionDetailFromAPI('${postDataStr}')" style="cursor: pointer; border: 1px solid #E5E7EB; background: #FFF; border-radius: 16px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
                     <div class="qc-title" style="font-size: 16px; font-weight: 900; color: #111827; margin-bottom: 8px;">${post.title}</div>
@@ -363,11 +355,10 @@ window.fetchMarketQuestions = async function() {
                     </div>
                 </div>`;
             });
-            
             container.innerHTML = html || '<div style="text-align:center; padding: 40px 0; color: #9CA3AF;">暂无帖子，快来发布第一条吧！</div>';
         }
     } catch (error) {
-        console.error("拉取帖子失败:", error);
+        console.error("拉取失败:", error);
         container.innerHTML = '<div style="text-align:center; padding: 40px 0; color: #EF4444;">🚨 网络信号不佳，拉取失败</div>';
     }
 };
@@ -445,3 +436,17 @@ window.submitPartnerPost = function() {
     if (window.switchTab) window.switchTab('market');
     if (window.switchMarketTab) window.switchMarketTab('partner', document.querySelectorAll('.m-tab')[2]);
 };
+
+// ============================================================================
+// 🛡️ 架构师补丁：开机自启拉取机制 (专门对付刷新页面)
+// ============================================================================
+window.addEventListener('DOMContentLoaded', () => {
+    // 延迟 500 毫秒，等 DOM 和之前的框架渲染完，再去拉取最新帖子
+    setTimeout(() => {
+        const questionTab = document.getElementById('market-question');
+        // 如果当前正好停在问答区，立刻拉数据！
+        if (questionTab && questionTab.classList.contains('active')) {
+            if (typeof window.fetchMarketQuestions === 'function') window.fetchMarketQuestions();
+        }
+    }, 500);
+});
