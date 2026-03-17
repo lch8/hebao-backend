@@ -76,8 +76,7 @@ window.App.injectIfNeeded = ModalManager.injectIfNeeded.bind(ModalManager);
 window.App.safeDOM = safeDOM;
 
 // 💡 将所有模块不仅挂载到 window.App，还强制挂载到顶级 window 上！
-const modulesToBind = [ScannerEngine, MarketEngine, WikiEngine, ChatEngine, AuthEngine, TrendingEngine, UIEngine];
-
+const modulesToBind = [ScannerEngine, MarketEngine, WikiEngine, ChatEngine, AuthEngine, TrendingEngine, UIEngine, ProfileEngine];
 modulesToBind.forEach(module => {
     Object.keys(module).forEach(key => {
         if (typeof module[key] === 'function') {
