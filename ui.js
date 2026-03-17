@@ -228,26 +228,104 @@ window.renderProNews = async function() {
 // 🚀 架构师补丁：集市四大金刚发布引擎 (闲置、悬赏、搭子、问答)
 // ============================================================================
 
+// ============================================================================
+// 📸 架构师补丁：小红书级图文发布系统 (预览 + 真实上墙)
+// ============================================================================
+
+window.questionImages = []; // 全局暂存用户选中的图片
+
+// 1. 处理图片选中与九宫格预览
+window.handleQuestionImageSelect = function(event) {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+    
+    const container = document.getElementById('questionImgPreviewContainer');
+    const uploadBtn = document.getElementById('questionUploadBtn');
+    
+    for (let i = 0; i < files.length; i++) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            window.questionImages.push(e.target.result); // 存入数组
+            
+            // 动态生成一张预览图卡片
+            const imgDiv = document.createElement('div');
+            imgDiv.style.cssText = 'width: 90px; height: 90px; border-radius: 12px; overflow: hidden; position: relative; border: 1px solid #E5E7EB;';
+            imgDiv.innerHTML = `
+                <img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover;">
+                <div style="position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.5); color: #FFF; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; backdrop-filter: blur(4px);" onclick="this.parentElement.remove(); window.questionImages.splice(${window.questionImages.length - 1}, 1);">✕</div>
+            `;
+            // 将预览图插在加号按钮的前面
+            container.insertBefore(imgDiv, uploadBtn);
+        };
+        reader.readAsDataURL(files[i]);
+    }
+};
+
+// 2. 真实提交通道
 window.submitQuestionPost = function() {
     try {
         const title = document.getElementById('questionTitle') ? document.getElementById('questionTitle').value.trim() : '';
         const desc = document.getElementById('questionDesc') ? document.getElementById('questionDesc').value.trim() : '';
         
         if (!title || !desc) {
-            return window.App.showToast("标题和描述都不能为空哦！", "warning");
+            return window.App.showToast("标题和正文都不能为空哦！", "warning");
         }
 
-        // 模拟网络请求发送数据
-        window.App.showToast("✅ 问题发布成功！管家正在为你推送到问答区", "success");
+        const listContainer = document.getElementById('questionListContainer');
+        if (listContainer) {
+            // 如果用户传了图片，我们把它们渲染成一排横向滚动的缩略图
+            let imgHtml = '';
+            if (window.questionImages && window.questionImages.length > 0) {
+                imgHtml = `<div style="display:flex; gap:8px; margin-top:12px; margin-bottom:8px; overflow-x:auto; padding-bottom:5px;">`;
+                window.questionImages.forEach(img => {
+                    imgHtml += `<img src="${img}" style="width: 110px; height: 110px; border-radius: 8px; object-fit: cover; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">`;
+                });
+                imgHtml += `</div>`;
+            }
+
+            const myName = localStorage.getItem('hp_name') || '管家新人';
+            
+            // 构建一张全新的帖子卡片 (带高亮的新帖光环)
+            const newCardHtml = `
+            <div class="question-card" style="border: 2px solid #10B981; animation: slideUpSheet 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); background: #FFF; border-radius: 16px; padding: 15px; margin-bottom: 15px; box-shadow: 0 6px 15px rgba(16, 185, 129, 0.1);">
+                <div class="qc-title" style="font-size: 16px; font-weight: 900; color: #111827; margin-bottom: 8px;">
+                    ${title} <span style="background: linear-gradient(135deg, #34D399, #10B981); color: #FFF; font-size: 10px; padding: 2px 6px; border-radius: 6px; vertical-align: text-bottom; margin-left: 4px;">🆕 刚发布</span>
+                </div>
+                <div class="qc-desc" style="font-size: 14px; color: #475569; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">${desc}</div>
+                ${imgHtml}
+                <div class="qc-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 12px; border-top: 1px solid #F1F5F9;">
+                    <div class="qc-user" style="font-size: 12px; color: #64748B; display:flex; align-items:center; gap:6px; font-weight: bold;">
+                        <span style="font-size:20px;">👻</span> <span>${myName}</span>
+                    </div>
+                    <div class="qc-answer-btn" style="color: #10B981; font-weight: 900; font-size: 13px; background: #ECFDF5; padding: 6px 12px; border-radius: 20px;">✍️ 抢首答</div>
+                </div>
+            </div>`;
+            
+            // 💥 魔法：把新帖子强制插到问答列表的【最顶部】！
+            listContainer.insertAdjacentHTML('afterbegin', newCardHtml);
+        }
+
+        window.App.showToast("✅ 发布成功！已推送到问答区", "success");
         window.App.closeModal('publishQuestionModal');
         
-        // 自动清空表单，方便下次发布
+        // --- 发完后打扫战场 (清空表单) ---
         if (document.getElementById('questionTitle')) document.getElementById('questionTitle').value = '';
         if (document.getElementById('questionDesc')) document.getElementById('questionDesc').value = '';
+        window.questionImages = []; // 清空图片数组
+        const previewContainer = document.getElementById('questionImgPreviewContainer');
+        if(previewContainer) {
+            // 把除了“加号上传按钮”和“隐藏Input”之外的预览图全删掉
+            Array.from(previewContainer.children).forEach(child => {
+                if(child.id !== 'questionUploadBtn' && child.tagName !== 'INPUT') child.remove();
+            });
+        }
         
-        // 自动跳转到集市的问答 Tab
+        // --- 强制跳转与刷新 ---
         if (window.switchTab) window.switchTab('market');
-        if (window.switchMarketTab) window.switchMarketTab('question', document.querySelectorAll('.m-tab')[3]);
+        if (window.switchMarketTab) {
+            const tabs = document.querySelectorAll('.m-tab');
+            if (tabs.length >= 4) window.switchMarketTab('question', tabs[3]);
+        }
 
     } catch (e) { console.error("发布问题出错:", e); }
 };
