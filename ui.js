@@ -369,4 +369,81 @@ window.submitIdlePost = async function() {
     }
 };
 
+// ============================================================================
+// 🛍️ 战役二：闲置交易双列瀑布流渲染引擎
+// ============================================================================
+
+window.fetchMarketIdles = async function() {
+    const container = document.getElementById('idleWaterfall');
+    if (!container) return;
+    
+    // 高级加载骨架屏
+    container.innerHTML = '<div style="text-align:center; padding: 40px 0; color: #9CA3AF; width: 100%;"><span class="pulse-dot" style="background:#10B981;"></span> 正在从服务器拉取最新闲置...</div>';
+
+    try {
+        // 💥 加上时间戳，强行打穿 Vercel 的旧缓存！
+        const fetchUrl = '/api/get-posts?type=idle&_t=' + Date.now(); 
+        const response = await fetch(fetchUrl); 
+        const result = await response.json();
+
+        if (result.success && result.data && result.data.length > 0) {
+            let html = '';
+            
+            // 🎨 纯 CSS 魔法：一句话实现小红书式的双列错落瀑布流！
+            container.style.cssText = 'column-count: 2; column-gap: 10px; padding: 10px 15px; display: block;';
+
+            result.data.forEach(post => {
+                let images = [];
+                try { images = JSON.parse(post.images || '[]'); } catch(e) {}
+                
+                // 取第一张图作为瀑布流的封面大图
+                const coverImg = images.length > 0 ? images[0] : 'https://via.placeholder.com/150';
+                
+                // 将数据字符串化，方便下一战传给详情页
+                const postDataStr = encodeURIComponent(JSON.stringify({...post, images}));
+
+                html += `
+                <div class="idle-card" onclick="window.openIdleDetailFromAPI('${postDataStr}')" style="break-inside: avoid; background: #FFF; border-radius: 12px; overflow: hidden; margin-bottom: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); border: 1px solid #F3F4F6; cursor: pointer; position: relative;">
+                    <div style="position: relative; width: 100%; padding-top: 100%;">
+                        <img src="${coverImg}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                    
+                    <div style="padding: 10px;">
+                        <div style="font-size: 13px; font-weight: 600; color: #111827; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 8px; line-height: 1.4;">${post.title}</div>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 4px;">
+                                <span style="font-size: 14px;">${post.avatar || '👻'}</span>
+                                <span style="font-size: 10px; color: #64748B; font-weight: bold;">${post.author}</span>
+                            </div>
+                            <div style="color: #10B981; font-size: 11px; font-weight: 900;">点击查看</div>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        } else {
+            container.style.cssText = 'display: block;';
+            container.innerHTML = '<div style="text-align:center; padding: 60px 0; color: #9CA3AF; width: 100%;">集市空空如也，快来抢占首发！</div>';
+        }
+    } catch (error) {
+        console.error("拉取闲置失败:", error);
+        container.innerHTML = '<div style="text-align:center; padding: 40px 0; color: #EF4444; width: 100%;">🚨 网络信号不佳，拉取失败</div>';
+    }
+};
+
+// 占位函数：防止你点击卡片时报错（我们“战役三”会具体写它）
+window.openIdleDetailFromAPI = function(dataStr) {
+    if (window.App && window.App.showToast) window.App.showToast("详情页还在搭建中，即将进入战役三！", "info");
+};
+
+// ============================================================================
+// 🛡️ 架构师补丁：开机自启拉取机制
+// ============================================================================
+// 当你刷新页面时，自动去拉取闲置数据
+window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        if (typeof window.fetchMarketIdles === 'function') window.fetchMarketIdles();
+    }, 500); // 延迟 500ms 等待框架渲染完毕
+});
 
