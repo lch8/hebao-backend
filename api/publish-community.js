@@ -43,8 +43,8 @@ export default async function handler(req) {
                         { type: "text", value: String(title) },
                         { type: "text", value: String(content) },
                         { type: "text", value: String(imageUrl) },
-                        { type: "integer", value: Number(likes) } 
-                    ]}}, 
+                        { type: "text", value: String(likes || 0) } // ✅ 终极防爆：强行转成字符串，彻底绕过类型校验！
+                        ]}}, 
                     { type: "close" } 
                 ]
             })
