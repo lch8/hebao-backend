@@ -224,4 +224,149 @@ window.renderProNews = async function() {
     }
 };
 
+// ============================================================================
+// 📦 架构师高定：闲置交易发布引擎 (多图压缩 + 结构化数据打包)
+// ============================================================================
+
+window.idleImages = []; // 闲置图片暂存区
+window.isPublishingIdle = false; // 防连击锁
+
+// 1. 黑科技：前端极限压缩引擎 (必加，防止 17 秒卡顿重演)
+window.compressImage = function(file, maxWidth, maxHeight, quality) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = function(event) {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = function() {
+                let width = img.width, height = img.height;
+                if (width > height && width > maxWidth) { height = Math.round(height * maxWidth / width); width = maxWidth; }
+                else if (height > width && height > maxHeight) { width = Math.round(width * maxHeight / height); height = maxHeight; }
+                const canvas = document.createElement('canvas');
+                canvas.width = width; canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                resolve(canvas.toDataURL('image/jpeg', quality)); 
+            };
+        };
+    });
+};
+
+// 2. 丝滑的多图选择与预览
+window.handleMultiImageSelect = async function(event) {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+    
+    const container = document.getElementById('idleImgPreviewContainer');
+    const uploadBtn = container.querySelector('.upload-btn');
+    
+    // 强行把预览区改为横向滑动 (小红书风格)
+    container.style.display = 'flex';
+    container.style.gap = '10px';
+    container.style.overflowX = 'auto';
+    container.style.paddingBottom = '5px';
+
+    if (window.App && window.App.showToast) window.App.showToast("⏳ 正在处理高清照片...", "info");
+
+    for (let i = 0; i < files.length; i++) {
+        try {
+            const compressedBase64 = await window.compressImage(files[i], 800, 800, 0.8);
+            window.idleImages.push(compressedBase64);
+
+            const imgDiv = document.createElement('div');
+            imgDiv.style.cssText = 'width: 90px; height: 90px; border-radius: 8px; overflow: hidden; position: relative; border: 1px solid #E5E7EB; flex-shrink: 0;';
+            imgDiv.innerHTML = `
+                <img src="${compressedBase64}" style="width: 100%; height: 100%; object-fit: cover;">
+                <div style="position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.5); color: #FFF; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer;" 
+                     onclick="this.parentElement.remove(); window.idleImages.splice(${window.idleImages.length - 1}, 1);">✕</div>
+            `;
+            container.insertBefore(imgDiv, uploadBtn);
+        } catch(e) { console.error("图片处理失败", e); }
+    }
+};
+
+// 3. 终极防弹版：闲置发布上云引擎
+window.submitIdlePost = async function() {
+    if (window.isPublishingIdle) return window.App.showToast("拼命上传中，请勿重复点击哦 🚀", "warning");
+
+    // 获取用户输入 (目前借用 AI 语音框作为商品描述)
+    const descInput = document.getElementById('aiKeywords_idle');
+    const desc = descInput ? descInput.value.trim() : '';
+    const locationInput = document.getElementById('idleLocation');
+    const location = locationInput ? locationInput.value.trim() : '';
+
+    // 获取标签状态
+    const bargainActive = document.querySelector('#bargainGroup .pill.active');
+    const bargain = bargainActive ? bargainActive.innerText : '一口价';
+    const paymentActive = document.querySelector('#paymentGroup .pill.active');
+    const payment = paymentActive ? paymentActive.innerText : '均可';
+
+    // 必填项拦截
+    if (window.idleImages.length === 0) return window.App.showToast("至少上传一张闲置照片哦！", "warning");
+    if (!desc) return window.App.showToast("请用一句话描述你要卖什么~", "warning");
+
+    try {
+        window.isPublishingIdle = true;
+        const submitBtn = document.querySelector('#publishIdleModal .fm-submit');
+        if (submitBtn) { submitBtn.innerText = '上传中...'; submitBtn.style.opacity = '0.5'; }
+        if (window.App && window.App.showToast) window.App.showToast("⏳ 正在发布到集市...", "info");
+
+        const myName = localStorage.getItem('hp_name') || '管家新人';
+        const title = desc.length > 15 ? desc.substring(0, 15) + '...' : desc; // 自动截取标题
+
+        // 🌟 核心魔法：把结构化数据打包进 desc 里，方便以后展示
+        const richDesc = `${desc}\n\n📍 交易地点: ${location || '同城面交'}\n🔪 议价空间: ${bargain}\n💶 收款方式: ${payment}`;
+
+        const postPayload = {
+            title: title,
+            desc: richDesc,
+            author: myName,
+            avatar: '👻',
+            images: JSON.stringify(window.idleImages),
+            type: 'idle' // 明确告诉后端这是【闲置】
+        };
+
+        const response = await fetch('/api/create-post', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(postPayload)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            if (window.App && window.App.showToast) window.App.showToast("✅ 闲置发布成功！", "success");
+            if (window.App && window.App.closeModal) window.App.closeModal('publishIdleModal');
+
+            // 打扫战场，重置表单
+            if (descInput) descInput.value = '';
+            if (locationInput) locationInput.value = '';
+            window.idleImages = [];
+            const container = document.getElementById('idleImgPreviewContainer');
+            if (container) {
+                Array.from(container.children).forEach(child => {
+                    if (!child.classList.contains('upload-btn')) child.remove();
+                });
+            }
+
+            // 自动跳转到集市 - 闲置区
+            if (window.switchTab) window.switchTab('market');
+            if (window.switchMarketTab) window.switchMarketTab('idle', document.querySelectorAll('.m-tab')[0]);
+            
+            // 触发瀑布流刷新 (我们下一战要写这个函数)
+            if (window.fetchMarketIdles) window.fetchMarketIdles();
+        } else {
+            throw new Error(result.error || "服务器未知错误");
+        }
+    } catch (error) {
+        console.error("发布闲置失败:", error);
+        if (window.App && window.App.showToast) window.App.showToast("🚨 发布失败: " + error.message, "error");
+    } finally {
+        window.isPublishingIdle = false;
+        const submitBtn = document.querySelector('#publishIdleModal .fm-submit');
+        if (submitBtn) { submitBtn.innerText = '发布'; submitBtn.style.opacity = '1'; }
+    }
+};
+
 
