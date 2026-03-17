@@ -252,7 +252,7 @@ export const MarketEngine = {
             const totalPrice = safeDOM.getValue('idlePrice', '0');
             
             // 防御性按钮状态控制 (防止手抖重复提交)
-            const submitBtnId = 'publishIdleSubmitBtn'; // 确保你的 index.html 中提交按钮有这个ID
+            const submitBtnId = 'publishIdleSubmitBtn'; 
             safeDOM.execute(submitBtnId, btn => { btn.innerText = "打水印中..."; btn.style.pointerEvents = 'none'; });
 
             let finalItemsData = [];
@@ -271,39 +271,32 @@ export const MarketEngine = {
                 } 
             }
             
-            } // 紧接着上面那个 for 循环的右括号
+            // ==========================================
+            // 🌟 真实补丁：将打包好的数据打入 Turso 数据库
+            // ==========================================
+            const myName = localStorage.getItem('hp_name') || '管家新人';
+            const postTitle = `[闲置] ${finalItemsData.length > 0 ? finalItemsData[0].name : '好物出清'}`;
+            
+            const dbPayload = {
+                title: postTitle,
+                content: JSON.stringify({ items: finalItemsData, location: loc }),
+                image_url: finalItemsData.length > 0 ? finalItemsData[0].url : '',
+                author_name: myName,
+                likes: totalPrice, // 巧妙借用：临时顶替价格显示
+                type: 'idle'
+            };
 
-        // ==========================================
-        // 🌟 真实补丁：将打包好的数据打入 Turso 数据库
-        // ==========================================
-        const myName = localStorage.getItem('hp_name') || '管家新人';
-        
-        // 注意：你的 market.js 里 loadCommunityPosts 是靠识别标题里有没有 "[闲置]" 来分类的
-        const postTitle = `[闲置] ${finalItemsData.length > 0 ? finalItemsData[0].name : '好物出清'}`;
-        
-        const dbPayload = {
-            title: postTitle,
-            content: JSON.stringify({ items: finalItemsData, location: loc }),
-            image_url: finalItemsData.length > 0 ? finalItemsData[0].url : '',
-            author_name: myName,
-            likes: totalPrice, // 巧妙借用：你的 market.js 引擎是用 likes 字段临时顶替价格显示的
-            type: 'idle'
-        };
+            const dbRes = await fetch('/api/publish-community', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dbPayload)
+            });
 
-        // 呼叫你 API 文件夹里的 publish-community 接口
-        const dbRes = await fetch('/api/publish-community', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(dbPayload)
-        });
-
-        const dbResult = await dbRes.json();
-        if (!dbResult.success) {
-            throw new Error(dbResult.error || "数据库存储失败");
-        }
-        // ==========================================
-
-        showToast("🎉 发布成功！", "success");
+            const dbResult = await dbRes.json();
+            if (!dbResult.success) {
+                throw new Error(dbResult.error || "数据库存储失败");
+            }
+            // ==========================================
             
             showToast("🎉 发布成功！", "success"); 
             if(window.App && window.App.closeIdlePublish) window.App.closeIdlePublish(); 
@@ -311,6 +304,8 @@ export const MarketEngine = {
             selectedImagesArray = []; 
             this.renderIdleItemCards(); 
             safeDOM.execute('idlePrice', el => el.value = ''); 
+            
+            // 🌟 发布完自动刷新集市瀑布流！
             this.loadCommunityPosts(); 
 
         } catch(e) { 
@@ -319,7 +314,6 @@ export const MarketEngine = {
             safeDOM.execute('publishIdleSubmitBtn', btn => { btn.innerText = "发布"; btn.style.pointerEvents = 'auto'; });
         }
     },
-
     // ------------------------------------------------------------------------
     // 5. 详情页与交易逻辑 (安全绑定)
     // ------------------------------------------------------------------------
