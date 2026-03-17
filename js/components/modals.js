@@ -343,44 +343,7 @@ const ModalTemplates = {
         </div>
     `,
 
-    // --- 14. 聊天室系统 ---
-    chatModal: `
-        <div class="full-modal" id="chatModal" style="display: none; z-index: 3000; background: #F3F4F6;">
-            <div class="chat-header">
-                <div class="ch-back" onclick="closeChat()">‹ 返回</div>
-                <div class="ch-title-box">
-                    <div class="ch-title" id="chatTargetName">联系卖家</div>
-                    <div class="ch-status">🟢 在线</div>
-                </div>
-                <div class="ch-more">···</div>
-                <div id="chatTargetAvatar" style="display:none;"></div> 
-            </div>
-            <div class="chat-product-snippet">
-                <img id="chatProductImg" class="cps-img" src="" alt="商品">
-                <div class="cps-info">
-                    <div class="cps-title" id="chatProductTitle">商品信息</div>
-                    <div class="cps-price" id="chatProductPrice">€0.00</div>
-                </div>
-                <button class="cps-btn" id="cpsActionBtn" onclick="alert('已发送购买意向')">我想要</button>
-                <div id="cpsSoldStamp" style="display:none; position:absolute; right:15px; top:15px; border:2px solid #9CA3AF; color:#9CA3AF; font-size:12px; font-weight:900; padding:2px 8px; border-radius:4px; transform:rotate(-15deg); letter-spacing:2px;">已售出</div>
-            </div>
-            <div class="chat-msg-container" id="chatMsgList"></div>
-            <div class="chat-quick-replies" id="chatQuickReplies">
-                <div class="qr-pill" onclick="sendQuickMessage('🔪 你好，我很想要！请问价格还能稍微便宜一点点吗？')">🔪 屠龙刀砍价</div>
-                <div class="qr-pill" onclick="sendQuickMessage('📍 请问平时可以在哪个火车站面交呢？')">📍 问面交地</div>
-                <div class="qr-pill" onclick="sendQuickMessage('📦 请问支持邮寄吗？邮费买家自理。')">📦 问邮寄</div>
-                <div class="qr-pill" onclick="sendQuickMessage('👀 东西还在吗？有没有什么明显的瑕疵呀？')">👀 问成色</div>
-            </div>
-            <div class="chat-input-bar" id="chatInputBar">
-                <div class="c-action-btn">⊕</div>
-                <div class="c-input-wrapper">
-                    <input type="text" id="chatInput" class="c-input" placeholder="发消息..." onkeypress="if(event.key==='Enter') sendChatMessage()">
-                </div>
-                <button class="c-send-btn" onclick="sendChatMessage()">⬆</button>
-            </div>
-            <div class="chat-input-disabled" id="chatInputDisabled" style="display:none;">🚫 物品已售出，交易关闭</div>
-        </div>
-    `,
+    
 
     // --- 15. 我的收藏 ---
     collectionsModal: `
