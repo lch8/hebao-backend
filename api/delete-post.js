@@ -1,3 +1,4 @@
+// api/delete-post.js
 import { verifyJwt } from './_auth.js';
 
 export const config = { runtime: 'edge' };
@@ -27,7 +28,8 @@ export default async function handler(req) {
                         stmt: {
                             sql: "DELETE FROM community_posts WHERE id = ? AND user_id = ?",
                             args: [
-                                { type: "integer", value: parseInt(postId) },
+                                // 🌟 兜底转换：有些数据库的 ID 是字符串类型，这里为了不被拒绝，我们统统用 text
+                                { type: "text", value: String(postId) },
                                 { type: "text", value: String(authUserId) }
                             ]
                         }
@@ -37,11 +39,21 @@ export default async function handler(req) {
             })
         });
 
+        // 🌟 终极照妖镜：拦截 Turso 的直接拒绝
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Turso 拒绝连接 (${response.status}): ${errorText}`);
+        }
+
         const result = await response.json();
-        if (result.results[0].type === 'error') throw new Error(result.results[0].error.message);
+        
+        // 🌟 防爆盾：防止 undefined 报错
+        if (result.message || result.error) throw new Error(`Turso 报错: ${result.message || result.error}`);
+        if (!result.results || !result.results[0]) throw new Error(`Turso 返回格式异常: ${JSON.stringify(result)}`);
+        if (result.results[0].type === 'error') throw new Error(`Turso SQL 报错: ${result.results[0].error.message}`);
 
         return new Response(JSON.stringify({ success: true, message: '下架成功' }), { status: 200, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }});
     } catch (error) {
-        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Access-Control-Allow-Origin': '*' }});
+        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }});
     }
 }
