@@ -235,26 +235,7 @@ window.renderProNews = async function() {
 window.questionImages = []; 
 window.tempPostStore = window.tempPostStore || {}; // 全局暂存刚刚发布的帖子数据
 
-window.handleQuestionImageSelect = function(event) {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
-    const container = document.getElementById('questionImgPreviewContainer');
-    const uploadBtn = document.getElementById('questionUploadBtn');
-    
-    for (let i = 0; i < files.length; i++) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            window.questionImages.push(e.target.result); 
-            const imgDiv = document.createElement('div');
-            imgDiv.style.cssText = 'width: 90px; height: 90px; border-radius: 12px; overflow: hidden; position: relative; border: 1px solid #E5E7EB;';
-            imgDiv.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover;">
-                <div style="position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.5); color: #FFF; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer;" onclick="this.parentElement.remove(); window.questionImages.splice(${window.questionImages.length - 1}, 1);">✕</div>`;
-            container.insertBefore(imgDiv, uploadBtn);
-        };
-        reader.readAsDataURL(files[i]);
-    }
-};
-
+DELETE FROM posts;
 // 🌟 真实后端对接：发布帖子
 // 🌟 真实后端对接：防弹版发布帖子引擎
 window.submitQuestionPost = async function() {
