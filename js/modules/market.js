@@ -244,83 +244,94 @@ export const MarketEngine = {
         });
     },
 
-   async submitIdlePost() {
+  async submitIdlePost() {
         try {
-            // 🌟 1. 第一道关卡：直接在函数开头强行获取最新 Token
+            console.log("🚀 开始触发真实发布引擎...");
             const token = localStorage.getItem('hebao_token');
             if (!token) return showToast("请先前往「我的」页面登录哦！", "warning");
 
             if(selectedImagesArray.length === 0) return showToast("请至少传一张照片！", "warning");
 
+            // 1. 饱和式抓取 UI 上的所有文字
             const loc = safeDOM.getValue('idleLocation', '');
             const totalPrice = safeDOM.getValue('idlePrice', '0');
+            const aiDesc = safeDOM.getValue('aiKeywords_idle', '').trim(); // 抓取中央大输入框
             
-            // 防御性按钮状态控制
-            const submitBtnId = 'publishIdleSubmitBtn'; 
-            safeDOM.execute(submitBtnId, btn => { btn.innerText = "打水印中..."; btn.style.pointerEvents = 'none'; });
+            // 锁定按钮防止连击
+            safeDOM.execute('publishIdleSubmitBtn', btn => { btn.innerText = "上传云端..."; btn.style.pointerEvents = 'none'; });
 
-            // 🌟 2. 强行构造通行证：绝不使用可能有 Bug 的旧函数！
             const myHeaders = { 
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}` // 👈 把 VIP 身份牌焊死在这里
+                'Authorization': `Bearer ${token}` 
             };
 
             let finalItemsData = [];
             for (let img of selectedImagesArray) { 
                 const taggedBase64 = await this.addTagToImage(img.preview, img.name, img.price); 
-                
-                // 🌟 3. 传图接口也带上通行证
                 const res = await fetch('/api/upload', { 
-                    method: 'POST', 
-                    headers: myHeaders, 
-                    body: JSON.stringify({ imageBase64: taggedBase64 }) 
+                    method: 'POST', headers: myHeaders, body: JSON.stringify({ imageBase64: taggedBase64 }) 
                 }); 
                 const data = await res.json(); 
                 if(data.success) { 
                     finalItemsData.push({ id: img.id, url: data.url, name: img.name, price: img.price, is_sold: false }); 
                 } else {
-                    throw new Error(data.error || "图片上传被服务器拒绝");
+                    throw new Error(data.error || "图片传到腾讯云失败");
                 }
             }
             
+            safeDOM.execute('publishIdleSubmitBtn', btn => { btn.innerText = "写入数据库..."; });
+
             // ==========================================
-            // 🌟 4. 存库接口同样带上通行证
+            // 🌟 2. 终极防空魔法：绝对不可能为空的标题拼装
             // ==========================================
             const myName = localStorage.getItem('hp_name') || '管家新人';
-            const postTitle = `[闲置] ${finalItemsData.length > 0 ? finalItemsData[0].name : '好物出清'}`;
+            let firstItemName = finalItemsData.length > 0 && finalItemsData[0].name ? finalItemsData[0].name : '';
             
+            // 如果用户既没填大输入框，也没填小卡片，给一个终极兜底文案
+            let safeTitle = aiDesc || firstItemName || '闲置好物出清，看中私聊~';
+            const postTitle = `[闲置] ${safeTitle}`;
+            
+            // 饱和式投喂：把所有后端可能检查的字段全填上
             const dbPayload = {
-                title: postTitle,
-                content: JSON.stringify({ items: finalItemsData, location: loc }),
+                title: postTitle,       // 标准标题
+                name: postTitle,        // 兼容别名
+                desc: safeTitle,        // 兼容正文检查
+                content: JSON.stringify({ items: finalItemsData, location: loc, desc: safeTitle }),
                 image_url: finalItemsData.length > 0 ? finalItemsData[0].url : '',
                 author_name: myName,
-                likes: totalPrice, 
+                likes: totalPrice || 0, 
                 type: 'idle'
             };
 
+            console.log("📦 准备发给后端的终极数据包:", dbPayload);
+
             const dbRes = await fetch('/api/publish-community', {
                 method: 'POST',
-                headers: myHeaders, // 👈 再次出示身份牌
+                headers: myHeaders,
                 body: JSON.stringify(dbPayload)
             });
 
             const dbResult = await dbRes.json();
+            console.log("📥 后端返回的审判结果:", dbResult);
+            
             if (!dbResult.success) {
-                throw new Error(dbResult.error || "数据库存储失败");
+                throw new Error(dbResult.error || "被服务器拒绝，标题或内容不合规");
             }
             // ==========================================
             
             showToast("🎉 发布成功！", "success"); 
             if(window.App && window.App.closeIdlePublish) window.App.closeIdlePublish(); 
             
+            // 3. 打扫战场并刷新瀑布流
             selectedImagesArray = []; 
             this.renderIdleItemCards(); 
             safeDOM.execute('idlePrice', el => el.value = ''); 
+            safeDOM.execute('aiKeywords_idle', el => el.value = ''); 
             
-            // 🌟 发布完自动刷新集市瀑布流！
             this.loadCommunityPosts(); 
 
         } catch(e) { 
+            console.error("🚨 发布异常终止:", e);
             showToast("发布失败：" + e.message, "error"); 
         } finally { 
             safeDOM.execute('publishIdleSubmitBtn', btn => { btn.innerText = "发布"; btn.style.pointerEvents = 'auto'; });
