@@ -235,7 +235,6 @@ window.renderProNews = async function() {
 window.questionImages = []; 
 window.tempPostStore = window.tempPostStore || {}; // 全局暂存刚刚发布的帖子数据
 
-DELETE FROM posts;
 // 🌟 真实后端对接：发布帖子
 // 🌟 真实后端对接：防弹版发布帖子引擎
 window.submitQuestionPost = async function() {
