@@ -646,6 +646,49 @@ export const MarketEngine = {
     }
 };
 
+// ------------------------------------------------------------------------
+    // 🌟 悬赏 & 搭子 专属唤起私信引擎
+    // ------------------------------------------------------------------------
+    initiateHelpChat(postId) {
+        const post = mockHelpItems.find(p => String(p.id) === String(postId));
+        if (!post) return showToast("哎呀，帖子似乎走丢了", "error");
+        
+        const cleanTitle = post.title.replace('[互助] ', '');
+        
+        // 调用 ChatEngine 弹窗 (没有图片传空，传入赏金金额)
+        ChatEngine.openChat(
+            post.user_id || 'test_id', 
+            post.author_name || '悬赏主', 
+            post.avatar || '👻', 
+            post.id, 
+            `悬赏: ${cleanTitle}`, 
+            post.likes || 0, 
+            '', false, 'help'
+        );
+        
+        // 自动填写非常礼貌的接单话术
+        safeDOM.execute('chatInput', input => input.value = `哈喽！我看到你的悬赏【${cleanTitle}】，我可以接单哦，请问还需要吗？`);
+    },
+
+    initiatePartnerChat(postId) {
+        const post = mockPartnerItems.find(p => String(p.id) === String(postId));
+        if (!post) return showToast("哎呀，帖子似乎走丢了", "error");
+        
+        const cleanTitle = post.title.replace('[找搭子] ', '');
+        
+        ChatEngine.openChat(
+            post.user_id || 'test_id', 
+            post.author_name || '发起人', 
+            post.avatar || '👻', 
+            post.id, 
+            `搭子局: ${cleanTitle}`, 
+            0, '', false, 'partner'
+        );
+        
+        // 自动填写自来熟的破冰话术
+        safeDOM.execute('chatInput', input => input.value = `哈喽！我对你的搭子局【${cleanTitle}】很感兴趣，能加我一个吗？🙋`);
+    }
+
 // 💥 终极暴力兼容绑定机制：防止任何旧 HTML 的 onclick 找不到对象
 if (typeof window !== 'undefined') {
     window.App = window.App || {};
