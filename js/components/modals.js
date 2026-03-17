@@ -502,6 +502,47 @@ const ModalTemplates = {
                 </div>
             </div>
         </div>
+    `,
+    // --- 19. 帖子详情页 (小红书沉浸式交互风格) ---
+    questionDetailModal: `
+        <div class="full-modal" id="questionDetailModal" style="display: none; background: #FFF; z-index: 100000; flex-direction: column;">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #F1F5F9; background: #FFF;">
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <div onclick="window.App.closeModal('questionDetailModal')" style="font-size: 26px; color: #64748B; cursor: pointer; padding-right: 5px;">‹</div>
+                    <div id="qdAvatar" style="font-size: 24px; width: 36px; height: 36px; background: #F8FAFC; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid #F1F5F9;">👻</div>
+                    <div id="qdAuthor" style="font-size: 14px; font-weight: 900; color: #1E293B;">管家新人</div>
+                </div>
+                <button style="background: #FFF0F2; color: #F43F5E; border: 1px solid #FECDD3; padding: 6px 14px; border-radius: 20px; font-weight: 900; font-size: 12px; cursor: pointer;">+ 关注</button>
+            </div>
+
+            <div style="flex: 1; overflow-y: auto; padding-bottom: 80px; background: #FFF;">
+                
+                <div id="qdImageContainer" style="width: 100%; overflow-x: auto; display: flex; scroll-snap-type: x mandatory;"></div>
+                
+                <div style="padding: 20px;">
+                    <h2 id="qdTitle" style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 900; margin-bottom: 12px; line-height: 1.4;"></h2>
+                    <div id="qdDesc" style="font-size: 15px; color: #334155; line-height: 1.7; white-space: pre-wrap; margin-bottom: 20px;"></div>
+                    <div style="font-size: 11px; color: #94A3B8; margin-bottom: 20px;">发布于 刚刚 · 荷兰</div>
+                    
+                    <div style="border-top: 1px solid #F1F5F9; padding-top: 20px;">
+                        <div style="font-size: 14px; font-weight: 900; color: #475569; margin-bottom: 15px;">共 <span id="qdCommentCount">0</span> 条回复</div>
+                        <div id="qdCommentList">
+                            </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="background: #FFF; padding: 10px 20px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); border-top: 1px solid #E5E7EB; display: flex; align-items: center; gap: 15px;">
+                <div style="flex: 1; background: #F3F4F6; border-radius: 20px; padding: 10px 15px; display: flex; align-items: center; gap: 8px;">
+                    <span style="color: #9CA3AF;">✏️</span>
+                    <input type="text" id="qdCommentInput" placeholder="说点什么..." style="flex: 1; background: transparent; border: none; font-size: 14px; outline: none;" onkeypress="if(event.key==='Enter') window.submitQuestionComment()">
+                </div>
+                <div style="display: flex; gap: 15px; font-size: 22px; color: #475569;">
+                    <span style="cursor:pointer;" onclick="window.submitQuestionComment()">发送</span>
+                </div>
+            </div>
+        </div>
     `
 };
 
