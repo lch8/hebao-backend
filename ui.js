@@ -387,4 +387,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 200);
 });
 
+// ============================================================================
+// 📦 拦截并接管 Profile 页面的 Tab 切换逻辑
+// ============================================================================
+window.switchAssetTab = function(tabId, element) {
+    // 1. 切换高亮 UI
+    document.querySelectorAll('.a-tab').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.asset-content').forEach(el => el.style.display = 'none');
+    element.classList.add('active');
+    
+    const targetContent = document.getElementById('asset-' + tabId);
+    if(targetContent) targetContent.style.display = 'block';
 
+    // 2. 🌟 如果点的是“我的发布”，自动触发我们刚写的拉取引擎！
+    if (tabId === 'posts' && window.App && window.App.loadMyPosts) {
+        window.App.loadMyPosts();
+    }
+    
+    // 3. 避雷足迹的占位提示
+    if (tabId === 'footprint') {
+        const fp = document.getElementById('footprintList');
+        if(fp && !fp.innerHTML.includes('暂无')) fp.innerHTML = '<div style="text-align:center; padding:40px 0; color:#9CA3AF;">暂无扫码避雷记录</div>';
+    }
+};
