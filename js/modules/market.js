@@ -244,35 +244,47 @@ export const MarketEngine = {
         });
     },
 
-    async submitIdlePost() {
+   async submitIdlePost() {
         try {
+            // 🌟 1. 第一道关卡：直接在函数开头强行获取最新 Token
+            const token = localStorage.getItem('hebao_token');
+            if (!token) return showToast("请先前往「我的」页面登录哦！", "warning");
+
             if(selectedImagesArray.length === 0) return showToast("请至少传一张照片！", "warning");
 
             const loc = safeDOM.getValue('idleLocation', '');
             const totalPrice = safeDOM.getValue('idlePrice', '0');
             
-            // 防御性按钮状态控制 (防止手抖重复提交)
+            // 防御性按钮状态控制
             const submitBtnId = 'publishIdleSubmitBtn'; 
             safeDOM.execute(submitBtnId, btn => { btn.innerText = "打水印中..."; btn.style.pointerEvents = 'none'; });
+
+            // 🌟 2. 强行构造通行证：绝不使用可能有 Bug 的旧函数！
+            const myHeaders = { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` // 👈 把 VIP 身份牌焊死在这里
+            };
 
             let finalItemsData = [];
             for (let img of selectedImagesArray) { 
                 const taggedBase64 = await this.addTagToImage(img.preview, img.name, img.price); 
-                const headers = window.App && window.App.getAuthHeaders ? window.App.getAuthHeaders() : { 'Content-Type': 'application/json' };
                 
+                // 🌟 3. 传图接口也带上通行证
                 const res = await fetch('/api/upload', { 
                     method: 'POST', 
-                    headers: headers, 
+                    headers: myHeaders, 
                     body: JSON.stringify({ imageBase64: taggedBase64 }) 
                 }); 
                 const data = await res.json(); 
                 if(data.success) { 
                     finalItemsData.push({ id: img.id, url: data.url, name: img.name, price: img.price, is_sold: false }); 
-                } 
+                } else {
+                    throw new Error(data.error || "图片上传被服务器拒绝");
+                }
             }
             
             // ==========================================
-            // 🌟 真实补丁：将打包好的数据打入 Turso 数据库
+            // 🌟 4. 存库接口同样带上通行证
             // ==========================================
             const myName = localStorage.getItem('hp_name') || '管家新人';
             const postTitle = `[闲置] ${finalItemsData.length > 0 ? finalItemsData[0].name : '好物出清'}`;
@@ -282,13 +294,13 @@ export const MarketEngine = {
                 content: JSON.stringify({ items: finalItemsData, location: loc }),
                 image_url: finalItemsData.length > 0 ? finalItemsData[0].url : '',
                 author_name: myName,
-                likes: totalPrice, // 巧妙借用：临时顶替价格显示
+                likes: totalPrice, 
                 type: 'idle'
             };
 
             const dbRes = await fetch('/api/publish-community', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: myHeaders, // 👈 再次出示身份牌
                 body: JSON.stringify(dbPayload)
             });
 
