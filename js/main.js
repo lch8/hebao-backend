@@ -225,6 +225,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (window.App.loadTrendingData) window.App.loadTrendingData(); 
             if (window.App.loadCommunityPosts) window.App.loadCommunityPosts(); 
             if (window.App.loadConversations) window.App.loadConversations();
+            // 在你的 DOMContentLoaded 或各种 Engine 绑定完毕之后，加上这句：
+if (window.App && window.App.startGlobalPolling) {
+    window.App.startGlobalPolling();
+}
             
             console.log("🚢 [Hebao Core] 所有后台数据引擎已启动！");
         } catch(e) { 
