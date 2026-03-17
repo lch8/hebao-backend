@@ -321,26 +321,39 @@ const ModalTemplates = {
         </div>
     `,
 
-    // --- 12. 提问发布弹窗 ---
+    // --- 12. 提问发布弹窗 (小红书沉浸式 UI) ---
     publishQuestionModal: `
-        <div class="full-modal" id="publishQuestionModal" style="display: none;">
-            <div class="fm-header">
-                <div class="fm-close" onclick="window.App.closeModal('publishQuestionModal')">✕</div>
-                <div class="fm-title">提个问题</div>
-                <div class="fm-submit" style="background:#10B981;" onclick="submitQuestionPost()">发布</div>
+        <div class="full-modal" id="publishQuestionModal" style="display: none; background: #FFF; z-index: 100000;">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #F1F5F9;">
+                <div onclick="window.App.closeModal('publishQuestionModal')" style="font-size: 15px; color: #64748B; cursor: pointer;">取消</div>
+                <div style="font-size: 16px; font-weight: 900; color: #0F172A;">提个问题</div>
+                <button onclick="window.submitQuestionPost()" style="background: #10B981; color: #FFF; border: none; padding: 6px 18px; border-radius: 20px; font-weight: bold; font-size: 13px; cursor: pointer; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);">发布</button>
             </div>
-            <div class="fm-content">
-                <input type="text" id="questionTitle" class="ai-input" style="font-size:16px; font-weight:bold; border-color:#E5E7EB; margin-top:15px;" placeholder="一句话描述你的问题 (如: NS火车晚点怎么退款?)">
-                <textarea id="questionDesc" class="fm-textarea" style="height: 150px; border-color:#E5E7EB; margin-bottom:10px;" placeholder="详细描述一下你遇到的背景或困惑，大家才好帮你解答哦..."></textarea>
-                <div class="fm-section-title">问题分类</div>
-                <div class="fm-row" style="border-bottom:none;">
-                    <div class="pill-group" style="justify-content: flex-start;" id="questionTagGroup">
-                        <div class="pill active" onclick="selectPill(this, 'questionTagGroup')">🏠 租房/生活</div>
-                        <div class="pill" onclick="selectPill(this, 'questionTagGroup')">🎓 学习/选课</div>
-                        <div class="pill" onclick="selectPill(this, 'questionTagGroup')">🛂 签证/居留</div>
-                        <div class="pill" onclick="selectPill(this, 'questionTagGroup')">🛒 羊毛/购物</div>
+            
+            <div style="padding: 20px; height: calc(100vh - 60px); overflow-y: auto;">
+                
+                <input type="text" id="questionTitle" style="width: 100%; box-sizing: border-box; font-size: 20px; font-weight: 900; border: none; border-bottom: 1px solid #F1F5F9; padding-bottom: 15px; margin-bottom: 15px; outline: none; color: #0F172A;" placeholder="填写标题会有更多赞哦~">
+                
+                <textarea id="questionDesc" style="width: 100%; box-sizing: border-box; height: 140px; font-size: 15px; border: none; outline: none; resize: none; color: #334155; line-height: 1.6;" placeholder="添加正文，详细描述你的困惑。比如：收到了 Gemeente 的这封信，请问是要交垃圾税吗？..."></textarea>
+                
+                <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 30px;">
+                    <div style="width: 90px; height: 90px; background: #F8FAFC; border-radius: 12px; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #94A3B8; cursor: pointer; border: 1px dashed #CBD5E1; transition: all 0.2s;" onclick="window.App ? window.App.showToast('正在调起系统相册...') : alert('加载中')">
+                        <span style="font-size: 32px; margin-bottom: 2px; font-weight: 300;">+</span>
+                        <span style="font-size: 11px;">照片/截图</span>
                     </div>
                 </div>
+
+                <div style="font-size: 13px; font-weight: 900; color: #475569; margin-bottom: 12px;">选择话题 (必选)</div>
+                <div class="pill-group" style="justify-content: flex-start; gap: 10px; flex-wrap: wrap;" id="questionTagGroup">
+                    <div class="pill active" onclick="selectPill(this, 'questionTagGroup')">🏠 租房/生活</div>
+                    <div class="pill" onclick="selectPill(this, 'questionTagGroup')">🎓 学习/选课</div>
+                    <div class="pill" onclick="selectPill(this, 'questionTagGroup')">🛂 签证/居留</div>
+                    <div class="pill" onclick="selectPill(this, 'questionTagGroup')">🛒 羊毛/购物</div>
+                    <div class="pill" onclick="selectPill(this, 'questionTagGroup')" style="border-color: #C7D2FE; background: #EEF2FF; color: #4F46E5;">✉️ 信件求翻译</div>
+                </div>
+                
+                <div style="height: 100px;"></div>
             </div>
         </div>
     `,
