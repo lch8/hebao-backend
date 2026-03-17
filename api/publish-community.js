@@ -1,5 +1,5 @@
 // api/publish-community.js
-import { verifyJwt } from './_auth.js'; // 👈 核心改动：一行代码搞定鉴权引入！
+import { verifyJwt } from './_auth.js';
 
 export const config = { runtime: 'edge' };
 
@@ -7,21 +7,23 @@ export default async function handler(req) {
     if (req.method === 'OPTIONS') return new Response(null, { status: 200, headers: { 'Access-Control-Allow-Origin': '*' }});
     if (req.method !== 'POST') return new Response(JSON.stringify({ error: '只允许 POST' }), { status: 405 });
 
+    // 1. 严格保安：JWT 鉴权
     const token = req.headers.get('Authorization')?.slice(7);
     const authUserId = token ? await verifyJwt(token, process.env.JWT_SECRET) : null;
     if (!authUserId) return new Response(JSON.stringify({ error: '请先登录' }), { status: 401, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
 
     try {
-        // 🌟 核心修复：宽容地接收前端传来的各种可能字段
+        // 2. 宽容大度：全面兼容前端发来的各种字段组合
         const body = await req.json();
         const title = body.title || body.name || '';
-        // 兼容 text, content, desc 等各种写法
-        const text = body.text || body.content || body.desc || ''; 
-        const authorName = body.authorName || body.author_name || '';
-        const imageUrl = body.imageUrl || body.image_url || '';
+        // 兼容前端的 content 或 text
+        const content = body.content || body.text || body.desc || ''; 
+        const authorName = body.author_name || body.authorName || '';
+        const imageUrl = body.image_url || body.imageUrl || '';
+        const likes = body.likes || 0; // 🌟 关键修复：接收前端传来的商品价格！
 
-        if (!title || !text) {
-            return new Response(JSON.stringify({ error: '标题和正文不能为空哦！' }), { status: 400 }); 
+        if (!title || !content) {
+            return new Response(JSON.stringify({ error: '标题和正文不能为空哦！' }), { status: 400 });
         }
 
         let dbUrl = process.env.TURSO_DATABASE_URL; 
@@ -31,9 +33,10 @@ export default async function handler(req) {
 
         const finalName = authorName && authorName.trim() !== ''
             ? authorName.trim()
-            : '野生大厨' + Math.floor(Math.random() * 9999); 
+            : '匿名管家' + Math.floor(Math.random() * 9999); 
 
-        const sql = `INSERT INTO community_posts (user_id, author_name, title, content, image_url) VALUES (?, ?, ?, ?, ?)`; 
+        // 🌟 3. 核心修复：SQL 语句增加 likes 字段，彻底堵住价格丢失漏洞！
+        const sql = `INSERT INTO community_posts (user_id, author_name, title, content, image_url, likes) VALUES (?, ?, ?, ?, ?, ?)`; 
 
         const response = await fetch(`${dbUrl}/v2/pipeline`, {
             method: 'POST',
@@ -44,8 +47,9 @@ export default async function handler(req) {
                         { type: "text", value: String(authUserId) },
                         { type: "text", value: String(finalName) },
                         { type: "text", value: String(title) },
-                        { type: "text", value: String(text) },
-                        { type: "text", value: String(imageUrl || '') }
+                        { type: "text", value: String(content) },
+                        { type: "text", value: String(imageUrl) },
+                        { type: "integer", value: Number(likes) } // 把价格稳稳地存进去
                     ]}}, 
                     { type: "close" } 
                 ]
