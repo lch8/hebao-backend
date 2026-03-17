@@ -10,7 +10,7 @@ import { TrendingEngine } from './modules/trending.js'; // 🌟 引入刚建好�
 import { showToast } from './core/toast.js';
 import { ModalManager } from './components/modals.js';
 import { safeDOM } from './core/dom.js';
-
+import { ProfileEngine } from './modules/profile.js';
 // ============================================================================
 // 🎨 UI 界面与强制发布菜单引擎
 // ============================================================================
