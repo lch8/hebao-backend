@@ -134,8 +134,9 @@ export const MarketEngine = {
             data.forEach(post => {
                 let content = {}; try { content = JSON.parse(post.content); } catch(e){}
                 const isUrgent = content.urgent === '十万火急';
+                // 🌟 核心防断裂 CSS: break-inside: avoid; display: inline-block; width: 100%; box-sizing: border-box;
                 html += `
-                <div style="background:#FFF; border-radius:16px; padding:15px; margin: 15px; box-shadow:0 4px 15px rgba(0,0,0,0.03); border:1px solid ${isUrgent ? '#FECACA' : '#F3F4F6'};">
+                <div style="background:#FFF; border-radius:16px; padding:15px; margin-bottom: 15px; box-shadow:0 4px 15px rgba(0,0,0,0.03); border:1px solid ${isUrgent ? '#FECACA' : '#F3F4F6'}; break-inside: avoid; display: inline-block; width: 100%; box-sizing: border-box;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                         <div style="display:flex; align-items:center; gap:8px;">
                             <span style="font-size:24px;">${post.avatar || '👻'}</span>
@@ -147,7 +148,7 @@ export const MarketEngine = {
                     <div style="font-size:13px; color:#4B5563; line-height:1.5; margin-bottom:10px;">${content.desc || ''}</div>
                     <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #E5E7EB; padding-top:10px;">
                         <div style="font-size:11px; color:#6B7280;">⏰ ${content.time ? content.time.replace('T', ' ') : '越快越好'} | 📍 ${content.location || '线上/面交'}</div>
-                        <button onclick="alert('即将唤起私信！')" style="background:#111827; color:#FFF; border:none; padding:6px 14px; border-radius:12px; font-size:12px; font-weight:bold; cursor:pointer;">接单</button>
+                        <button onclick="window.App.initiateHelpChat('${post.id}')" style="background:#111827; color:#FFF; border:none; padding:6px 14px; border-radius:12px; font-size:12px; font-weight:bold; cursor:pointer;">接单</button>
                     </div>
                 </div>`;
             });
@@ -163,7 +164,7 @@ export const MarketEngine = {
                 let content = {}; try { content = JSON.parse(post.content); } catch(e){}
                 const mbtiTag = content.mbti === 'e' ? '🔥 寻 E 人' : (content.mbti === 'i' ? '🍵 寻 I 人' : '✨ MBTI 不限');
                 html += `
-                <div style="background:#FFF; border-radius:16px; padding:15px; margin: 15px; box-shadow:0 4px 15px rgba(0,0,0,0.03); border:1px solid #E9D5FF;">
+                <div style="background:#FFF; border-radius:16px; padding:15px; margin-bottom: 15px; box-shadow:0 4px 15px rgba(0,0,0,0.03); border:1px solid #E9D5FF; break-inside: avoid; display: inline-block; width: 100%; box-sizing: border-box;">
                     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
                         <div style="font-size:15px; font-weight:900; color:#4C1D95; flex:1;">${post.title.replace('[找搭子] ', '')}</div>
                         <div style="background:#F3E8FF; color:#7E22CE; padding:4px 8px; border-radius:8px; font-size:11px; font-weight:bold;">${content.tag || '组局'}</div>
@@ -179,14 +180,13 @@ export const MarketEngine = {
                             <span style="font-size:20px;">${post.avatar || '👻'}</span>
                             <span style="font-size:12px; font-weight:bold; color:#6B7280;">${post.author_name}</span>
                         </div>
-                        <button onclick="alert('即将唤起私信！')" style="background:#8B5CF6; color:#FFF; border:none; padding:6px 14px; border-radius:12px; font-size:12px; font-weight:bold; cursor:pointer;">聊一聊</button>
+                        <button onclick="window.App.initiatePartnerChat('${post.id}')" style="background:#8B5CF6; color:#FFF; border:none; padding:6px 14px; border-radius:12px; font-size:12px; font-weight:bold; cursor:pointer;">聊一聊</button>
                     </div>
                 </div>`;
             });
             container.innerHTML = html;
         });
     },
-
     // ------------------------------------------------------------------------
     // 3. 闲置发布：多图上传与 Canvas 本地水印
     // ------------------------------------------------------------------------
