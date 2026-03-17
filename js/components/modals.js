@@ -337,8 +337,10 @@ const ModalTemplates = {
                 
                 <textarea id="questionDesc" style="width: 100%; box-sizing: border-box; height: 140px; font-size: 15px; border: none; outline: none; resize: none; color: #334155; line-height: 1.6;" placeholder="添加正文，详细描述你的困惑。比如：收到了 Gemeente 的这封信，请问是要交垃圾税吗？..."></textarea>
                 
-                <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 30px;">
-                    <div style="width: 90px; height: 90px; background: #F8FAFC; border-radius: 12px; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #94A3B8; cursor: pointer; border: 1px dashed #CBD5E1; transition: all 0.2s;" onclick="window.App ? window.App.showToast('正在调起系统相册...') : alert('加载中')">
+                <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 30px;" id="questionImgPreviewContainer">
+                    <input type="file" id="questionImgInput" accept="image/*" multiple style="display: none;" onchange="window.handleQuestionImageSelect(event)">
+                    
+                    <div id="questionUploadBtn" style="width: 90px; height: 90px; background: #F8FAFC; border-radius: 12px; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #94A3B8; cursor: pointer; border: 1px dashed #CBD5E1; transition: all 0.2s;" onclick="document.getElementById('questionImgInput').click()">
                         <span style="font-size: 32px; margin-bottom: 2px; font-weight: 300;">+</span>
                         <span style="font-size: 11px;">照片/截图</span>
                     </div>
