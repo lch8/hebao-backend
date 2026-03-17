@@ -271,7 +271,39 @@ export const MarketEngine = {
                 } 
             }
             
-            // ... 提交到数据库逻辑 ...
+            } // 紧接着上面那个 for 循环的右括号
+
+        // ==========================================
+        // 🌟 真实补丁：将打包好的数据打入 Turso 数据库
+        // ==========================================
+        const myName = localStorage.getItem('hp_name') || '管家新人';
+        
+        // 注意：你的 market.js 里 loadCommunityPosts 是靠识别标题里有没有 "[闲置]" 来分类的
+        const postTitle = `[闲置] ${finalItemsData.length > 0 ? finalItemsData[0].name : '好物出清'}`;
+        
+        const dbPayload = {
+            title: postTitle,
+            content: JSON.stringify({ items: finalItemsData, location: loc }),
+            image_url: finalItemsData.length > 0 ? finalItemsData[0].url : '',
+            author_name: myName,
+            likes: totalPrice, // 巧妙借用：你的 market.js 引擎是用 likes 字段临时顶替价格显示的
+            type: 'idle'
+        };
+
+        // 呼叫你 API 文件夹里的 publish-community 接口
+        const dbRes = await fetch('/api/publish-community', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dbPayload)
+        });
+
+        const dbResult = await dbRes.json();
+        if (!dbResult.success) {
+            throw new Error(dbResult.error || "数据库存储失败");
+        }
+        // ==========================================
+
+        showToast("🎉 发布成功！", "success");
             
             showToast("🎉 发布成功！", "success"); 
             if(window.App && window.App.closeIdlePublish) window.App.closeIdlePublish(); 
