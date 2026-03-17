@@ -244,7 +244,7 @@ export const MarketEngine = {
         });
     },
 
-  async submitIdlePost() {
+async submitIdlePost() {
         try {
             console.log("🚀 开始触发真实发布引擎...");
             const token = localStorage.getItem('hebao_token');
@@ -252,11 +252,20 @@ export const MarketEngine = {
 
             if(selectedImagesArray.length === 0) return showToast("请至少传一张照片！", "warning");
 
-            // 1. 饱和式抓取 UI 上的所有文字
             const loc = safeDOM.getValue('idleLocation', '');
-            const totalPrice = safeDOM.getValue('idlePrice', '0');
-            const aiDesc = safeDOM.getValue('aiKeywords_idle', '').trim(); // 抓取中央大输入框
+            const aiDesc = safeDOM.getValue('aiKeywords_idle', '').trim(); 
             
+            // ==========================================
+            // 🌟 核心算账补丁：自动遍历所有物品，算出真实总价！
+            // ==========================================
+            let calculatedTotalPrice = 0;
+            selectedImagesArray.forEach(img => {
+                const p = parseFloat(img.price);
+                if (!isNaN(p)) {
+                    calculatedTotalPrice += p;
+                }
+            });
+
             // 锁定按钮防止连击
             safeDOM.execute('publishIdleSubmitBtn', btn => { btn.innerText = "上传云端..."; btn.style.pointerEvents = 'none'; });
 
@@ -281,29 +290,21 @@ export const MarketEngine = {
             
             safeDOM.execute('publishIdleSubmitBtn', btn => { btn.innerText = "写入数据库..."; });
 
-            // ==========================================
-            // 🌟 2. 终极防空魔法：绝对不可能为空的标题拼装
-            // ==========================================
-            const myName = localStorage.getItem('hp_name') || '管家新人';
+            const myName = localStorage.getItem('hp_name') || '匿名管家';
             let firstItemName = finalItemsData.length > 0 && finalItemsData[0].name ? finalItemsData[0].name : '';
-            
-            // 如果用户既没填大输入框，也没填小卡片，给一个终极兜底文案
             let safeTitle = aiDesc || firstItemName || '闲置好物出清，看中私聊~';
             const postTitle = `[闲置] ${safeTitle}`;
             
-            // 饱和式投喂：把所有后端可能检查的字段全填上
             const dbPayload = {
-                title: postTitle,       // 标准标题
-                name: postTitle,        // 兼容别名
-                desc: safeTitle,        // 兼容正文检查
+                title: postTitle,
+                name: postTitle,
+                desc: safeTitle,
                 content: JSON.stringify({ items: finalItemsData, location: loc, desc: safeTitle }),
                 image_url: finalItemsData.length > 0 ? finalItemsData[0].url : '',
                 author_name: myName,
-                likes: totalPrice || 0, 
+                likes: calculatedTotalPrice, // 👈 完美传入真实总价！
                 type: 'idle'
             };
-
-            console.log("📦 准备发给后端的终极数据包:", dbPayload);
 
             const dbRes = await fetch('/api/publish-community', {
                 method: 'POST',
@@ -312,22 +313,17 @@ export const MarketEngine = {
             });
 
             const dbResult = await dbRes.json();
-            console.log("📥 后端返回的审判结果:", dbResult);
-            
-            if (!dbResult.success) {
-                throw new Error(dbResult.error || "被服务器拒绝，标题或内容不合规");
-            }
-            // ==========================================
+            if (!dbResult.success) throw new Error(dbResult.error || "被服务器拒绝，标题或内容不合规");
             
             showToast("🎉 发布成功！", "success"); 
             if(window.App && window.App.closeIdlePublish) window.App.closeIdlePublish(); 
             
-            // 3. 打扫战场并刷新瀑布流
+            // 打扫战场
             selectedImagesArray = []; 
             this.renderIdleItemCards(); 
-            safeDOM.execute('idlePrice', el => el.value = ''); 
             safeDOM.execute('aiKeywords_idle', el => el.value = ''); 
             
+            // 刷新集市瀑布流
             this.loadCommunityPosts(); 
 
         } catch(e) { 
