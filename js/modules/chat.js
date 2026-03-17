@@ -95,10 +95,7 @@ export const ChatEngine = {
                         </div>
                     </div>`;
                 });
-                // 只有当用户真的停留在消息页面时，才暴力重绘列表（防止闪烁）
-                if (document.getElementById('tab-messages') && document.getElementById('tab-messages').style.display !== 'none') {
                     list.innerHTML = html;
-                }
             });
         } catch(e) {
             console.error("🚨 拉取会话列表失败:", e);
