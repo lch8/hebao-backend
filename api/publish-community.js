@@ -7,20 +7,17 @@ export default async function handler(req) {
     if (req.method === 'OPTIONS') return new Response(null, { status: 200, headers: { 'Access-Control-Allow-Origin': '*' }});
     if (req.method !== 'POST') return new Response(JSON.stringify({ error: '只允许 POST' }), { status: 405 });
 
-    // 1. 严格保安：JWT 鉴权
     const token = req.headers.get('Authorization')?.slice(7);
     const authUserId = token ? await verifyJwt(token, process.env.JWT_SECRET) : null;
     if (!authUserId) return new Response(JSON.stringify({ error: '请先登录' }), { status: 401, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
 
     try {
-        // 2. 宽容大度：全面兼容前端发来的各种字段组合
         const body = await req.json();
         const title = body.title || body.name || '';
-        // 兼容前端的 content 或 text
         const content = body.content || body.text || body.desc || ''; 
         const authorName = body.author_name || body.authorName || '';
         const imageUrl = body.image_url || body.imageUrl || '';
-        const likes = body.likes || 0; // 🌟 关键修复：接收前端传来的商品价格！
+        const likes = body.likes || 0; 
 
         if (!title || !content) {
             return new Response(JSON.stringify({ error: '标题和正文不能为空哦！' }), { status: 400 });
@@ -31,11 +28,8 @@ export default async function handler(req) {
         if (!dbUrl || !authToken) return new Response(JSON.stringify({ error: '环境变量未配置！' }), { status: 500 }); 
         dbUrl = dbUrl.replace('libsql://', 'https://'); 
 
-        const finalName = authorName && authorName.trim() !== ''
-            ? authorName.trim()
-            : '匿名管家' + Math.floor(Math.random() * 9999); 
+        const finalName = authorName && authorName.trim() !== '' ? authorName.trim() : '匿名管家' + Math.floor(Math.random() * 9999); 
 
-        // 🌟 3. 核心修复：SQL 语句增加 likes 字段，彻底堵住价格丢失漏洞！
         const sql = `INSERT INTO community_posts (user_id, author_name, title, content, image_url, likes) VALUES (?, ?, ?, ?, ?, ?)`; 
 
         const response = await fetch(`${dbUrl}/v2/pipeline`, {
@@ -49,18 +43,37 @@ export default async function handler(req) {
                         { type: "text", value: String(title) },
                         { type: "text", value: String(content) },
                         { type: "text", value: String(imageUrl) },
-                        { type: "integer", value: Number(likes) } // 把价格稳稳地存进去
+                        { type: "integer", value: Number(likes) } 
                     ]}}, 
                     { type: "close" } 
                 ]
             })
         });
 
+        // 🌟 终极照妖镜：先看 HTTP 状态码对不对！
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Turso 拒绝连接 (${response.status}): ${errorText}`);
+        }
+
         const result = await response.json(); 
-        if (result.results[0].type === 'error') throw new Error("Turso数据库拒收: " + result.results[0].error.message); 
+        
+        // 🌟 防爆盾：检查 Turso 是否返回了非预期的格式
+        if (result.message || result.error) {
+            throw new Error(`Turso 报错: ${result.message || result.error}`);
+        }
+        if (!result.results || !result.results[0]) {
+            throw new Error(`Turso 返回格式异常: ${JSON.stringify(result)}`);
+        }
+        
+        // 🌟 拦截 SQL 级别的错误（比如表不存在、字段名写错）
+        if (result.results[0].type === 'error') {
+            throw new Error(`Turso SQL 报错: ${result.results[0].error.message}`);
+        }
 
         return new Response(JSON.stringify({ success: true, message: '发布成功！' }), { status: 200, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }); 
     } catch (error) {
+        // 把真实的错误原因直接扔给前端
         return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } }); 
     }
 }
