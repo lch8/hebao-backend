@@ -229,107 +229,146 @@ window.renderProNews = async function() {
 // ============================================================================
 
 // ============================================================================
-// 📸 架构师补丁：小红书级图文发布系统 (预览 + 真实上墙)
+// 📸 架构师高定：小红书级图文发布与交互闭环系统
 // ============================================================================
 
-window.questionImages = []; // 全局暂存用户选中的图片
+window.questionImages = []; 
+window.tempPostStore = window.tempPostStore || {}; // 全局暂存刚刚发布的帖子数据
 
-// 1. 处理图片选中与九宫格预览
 window.handleQuestionImageSelect = function(event) {
     const files = event.target.files;
     if (!files || files.length === 0) return;
-    
     const container = document.getElementById('questionImgPreviewContainer');
     const uploadBtn = document.getElementById('questionUploadBtn');
     
     for (let i = 0; i < files.length; i++) {
         const reader = new FileReader();
         reader.onload = function(e) {
-            window.questionImages.push(e.target.result); // 存入数组
-            
-            // 动态生成一张预览图卡片
+            window.questionImages.push(e.target.result); 
             const imgDiv = document.createElement('div');
             imgDiv.style.cssText = 'width: 90px; height: 90px; border-radius: 12px; overflow: hidden; position: relative; border: 1px solid #E5E7EB;';
-            imgDiv.innerHTML = `
-                <img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover;">
-                <div style="position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.5); color: #FFF; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; backdrop-filter: blur(4px);" onclick="this.parentElement.remove(); window.questionImages.splice(${window.questionImages.length - 1}, 1);">✕</div>
-            `;
-            // 将预览图插在加号按钮的前面
+            imgDiv.innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover;">
+                <div style="position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.5); color: #FFF; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer;" onclick="this.parentElement.remove(); window.questionImages.splice(${window.questionImages.length - 1}, 1);">✕</div>`;
             container.insertBefore(imgDiv, uploadBtn);
         };
         reader.readAsDataURL(files[i]);
     }
 };
 
-// 2. 真实提交通道
 window.submitQuestionPost = function() {
     try {
         const title = document.getElementById('questionTitle') ? document.getElementById('questionTitle').value.trim() : '';
         const desc = document.getElementById('questionDesc') ? document.getElementById('questionDesc').value.trim() : '';
-        
-        if (!title || !desc) {
-            return window.App.showToast("标题和正文都不能为空哦！", "warning");
-        }
+        if (!title || !desc) return window.App.showToast("标题和正文都不能为空哦！", "warning");
 
         const listContainer = document.getElementById('questionListContainer');
         if (listContainer) {
-            // 如果用户传了图片，我们把它们渲染成一排横向滚动的缩略图
+            const myName = localStorage.getItem('hp_name') || '管家新人';
+            const postId = 'post_' + Date.now(); // 生成唯一帖子 ID
+            
+            // 🌟 核心：将帖子数据存入临时大脑
+            window.tempPostStore[postId] = { title, desc, author: myName, avatar: '👻', images: [...window.questionImages] };
+
             let imgHtml = '';
-            if (window.questionImages && window.questionImages.length > 0) {
+            if (window.questionImages.length > 0) {
                 imgHtml = `<div style="display:flex; gap:8px; margin-top:12px; margin-bottom:8px; overflow-x:auto; padding-bottom:5px;">`;
-                window.questionImages.forEach(img => {
-                    imgHtml += `<img src="${img}" style="width: 110px; height: 110px; border-radius: 8px; object-fit: cover; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">`;
-                });
+                window.questionImages.forEach(img => { imgHtml += `<img src="${img}" style="width: 110px; height: 110px; border-radius: 8px; object-fit: cover; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">`; });
                 imgHtml += `</div>`;
             }
 
-            const myName = localStorage.getItem('hp_name') || '管家新人';
-            
-            // 构建一张全新的帖子卡片 (带高亮的新帖光环)
+            // 🌟 核心：给卡片加上 onclick 跳转详情页的指令
             const newCardHtml = `
-            <div class="question-card" style="border: 2px solid #10B981; animation: slideUpSheet 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); background: #FFF; border-radius: 16px; padding: 15px; margin-bottom: 15px; box-shadow: 0 6px 15px rgba(16, 185, 129, 0.1);">
-                <div class="qc-title" style="font-size: 16px; font-weight: 900; color: #111827; margin-bottom: 8px;">
-                    ${title} <span style="background: linear-gradient(135deg, #34D399, #10B981); color: #FFF; font-size: 10px; padding: 2px 6px; border-radius: 6px; vertical-align: text-bottom; margin-left: 4px;">🆕 刚发布</span>
-                </div>
+            <div class="question-card" onclick="window.openQuestionDetail('${postId}')" style="cursor: pointer; border: 2px solid #10B981; background: #FFF; border-radius: 16px; padding: 15px; margin-bottom: 15px; box-shadow: 0 6px 15px rgba(16, 185, 129, 0.1);">
+                <div class="qc-title" style="font-size: 16px; font-weight: 900; color: #111827; margin-bottom: 8px;">${title} <span style="background: linear-gradient(135deg, #34D399, #10B981); color: #FFF; font-size: 10px; padding: 2px 6px; border-radius: 6px; margin-left: 4px;">🆕 刚发布</span></div>
                 <div class="qc-desc" style="font-size: 14px; color: #475569; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">${desc}</div>
                 ${imgHtml}
                 <div class="qc-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 12px; border-top: 1px solid #F1F5F9;">
-                    <div class="qc-user" style="font-size: 12px; color: #64748B; display:flex; align-items:center; gap:6px; font-weight: bold;">
-                        <span style="font-size:20px;">👻</span> <span>${myName}</span>
-                    </div>
+                    <div class="qc-user" style="font-size: 12px; color: #64748B; display:flex; align-items:center; gap:6px; font-weight: bold;"><span style="font-size:20px;">👻</span> <span>${myName}</span></div>
                     <div class="qc-answer-btn" style="color: #10B981; font-weight: 900; font-size: 13px; background: #ECFDF5; padding: 6px 12px; border-radius: 20px;">✍️ 抢首答</div>
                 </div>
             </div>`;
-            
-            // 💥 魔法：把新帖子强制插到问答列表的【最顶部】！
             listContainer.insertAdjacentHTML('afterbegin', newCardHtml);
         }
 
-        window.App.showToast("✅ 发布成功！已推送到问答区", "success");
+        window.App.showToast("✅ 发布成功！", "success");
         window.App.closeModal('publishQuestionModal');
-        
-        // --- 发完后打扫战场 (清空表单) ---
         if (document.getElementById('questionTitle')) document.getElementById('questionTitle').value = '';
         if (document.getElementById('questionDesc')) document.getElementById('questionDesc').value = '';
-        window.questionImages = []; // 清空图片数组
+        window.questionImages = []; 
         const previewContainer = document.getElementById('questionImgPreviewContainer');
-        if(previewContainer) {
-            // 把除了“加号上传按钮”和“隐藏Input”之外的预览图全删掉
-            Array.from(previewContainer.children).forEach(child => {
-                if(child.id !== 'questionUploadBtn' && child.tagName !== 'INPUT') child.remove();
-            });
-        }
-        
-        // --- 强制跳转与刷新 ---
+        if(previewContainer) { Array.from(previewContainer.children).forEach(child => { if(child.id !== 'questionUploadBtn' && child.tagName !== 'INPUT') child.remove(); }); }
         if (window.switchTab) window.switchTab('market');
-        if (window.switchMarketTab) {
-            const tabs = document.querySelectorAll('.m-tab');
-            if (tabs.length >= 4) window.switchMarketTab('question', tabs[3]);
-        }
-
+        if (window.switchMarketTab) { const tabs = document.querySelectorAll('.m-tab'); if (tabs.length >= 4) window.switchMarketTab('question', tabs[3]); }
     } catch (e) { console.error("发布问题出错:", e); }
 };
 
+// ============================================================================
+// 📖 帖子详情页渲染与评论引擎
+// ============================================================================
+
+window.openQuestionDetail = function(postId) {
+    const post = window.tempPostStore[postId];
+    if (!post) return window.App.showToast('帖子数据走丢了', 'error');
+    
+    window.App.injectIfNeeded('questionDetailModal');
+    
+    // 渲染文案
+    document.getElementById('qdTitle').innerText = post.title;
+    document.getElementById('qdDesc').innerText = post.desc;
+    document.getElementById('qdAuthor').innerText = post.author;
+    document.getElementById('qdAvatar').innerText = post.avatar;
+    
+    // 渲染大图画廊 (支持横向滑动)
+    const imgContainer = document.getElementById('qdImageContainer');
+    if (post.images && post.images.length > 0) {
+        let imgHtml = '';
+        post.images.forEach(img => {
+            imgHtml += `<img src="${img}" style="width: 100%; max-height: 400px; object-fit: contain; flex: 0 0 100%; scroll-snap-align: start; background: #F8FAFC;">`;
+        });
+        imgContainer.innerHTML = imgHtml;
+        imgContainer.style.display = 'flex';
+    } else {
+        imgContainer.style.display = 'none';
+    }
+    
+    // 重置评论区
+    document.getElementById('qdCommentList').innerHTML = '<div style="text-align:center; color:#9CA3AF; padding: 40px 0; font-size:13px;" id="qdEmptyState">暂无回复，快来抢沙发！</div>';
+    document.getElementById('qdCommentCount').innerText = '0';
+    document.getElementById('qdCommentInput').value = '';
+    
+    // 弹出
+    window.App.openModal('questionDetailModal');
+};
+
+window.submitQuestionComment = function() {
+    const input = document.getElementById('qdCommentInput');
+    const text = input.value.trim();
+    if (!text) return window.App.showToast('写点什么再发送吧', 'warning');
+    
+    const list = document.getElementById('qdCommentList');
+    const empty = document.getElementById('qdEmptyState');
+    if (empty) empty.remove();
+    
+    const myName = localStorage.getItem('hp_name') || '管家热心网友';
+    const html = `
+    <div style="display: flex; gap: 12px; margin-bottom: 24px; animation: pageFadeIn 0.3s;">
+        <div style="font-size: 24px; width: 36px; height: 36px; background: #F1F5F9; border-radius: 50%; display: flex; justify-content: center; align-items: center;">😎</div>
+        <div style="flex: 1;">
+            <div style="font-size: 13px; color: #64748B; font-weight: 900; margin-bottom: 4px;">${myName}</div>
+            <div style="font-size: 14px; color: #1E293B; line-height: 1.6;">${text}</div>
+            <div style="font-size: 11px; color: #94A3B8; margin-top: 8px;">刚刚回复</div>
+        </div>
+        <div style="font-size: 16px; color: #CBD5E1; cursor: pointer;" onclick="this.style.color='#F43F5E'; this.innerText='♥️'">♡</div>
+    </div>`;
+    
+    list.insertAdjacentHTML('afterbegin', html);
+    input.value = '';
+    
+    const countEl = document.getElementById('qdCommentCount');
+    countEl.innerText = parseInt(countEl.innerText) + 1;
+    
+    window.App.showToast('回复成功！', 'success');
+};
 window.submitIdlePost = function() {
     window.App.showToast("✅ 闲置发布成功！信用分 +5", "success");
     window.App.closeModal('publishIdleModal');
