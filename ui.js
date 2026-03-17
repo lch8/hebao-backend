@@ -256,69 +256,82 @@ window.handleQuestionImageSelect = function(event) {
 };
 
 // 🌟 真实后端对接：发布帖子
+// 🌟 真实后端对接：防弹版发布帖子引擎
 window.submitQuestionPost = async function() {
     try {
-        const title = document.getElementById('questionTitle') ? document.getElementById('questionTitle').value.trim() : '';
-        const desc = document.getElementById('questionDesc') ? document.getElementById('questionDesc').value.trim() : '';
-        if (!title || !desc) return window.App.showToast("标题和正文都不能为空哦！", "warning");
+        console.log("🚀 开始触发发布...");
+        const titleInput = document.getElementById('questionTitle');
+        const descInput = document.getElementById('questionDesc');
+        
+        const title = titleInput ? titleInput.value.trim() : '';
+        const desc = descInput ? descInput.value.trim() : '';
+        
+        if (!title || !desc) {
+            if (window.App && window.App.showToast) window.App.showToast("标题和正文都不能为空哦！", "warning");
+            else alert("标题和正文都不能为空哦！");
+            return;
+        }
 
-        // 变成加载状态，防止用户重复点击
-        window.App.showToast("⏳ 正在上传发送中...", "info");
+        if (window.App && window.App.showToast) window.App.showToast("⏳ 正在安全加密并上传...", "info");
         
         const myName = localStorage.getItem('hp_name') || '管家新人';
-        const myAvatar = '👻';
+        const uploadedImageUrls = window.questionImages || []; 
 
-        // ⚠️ 第一步：如果你有真正的图床 API，在这里先上传 window.questionImages
-        // 假设上传后返回了真实的 URL 数组：
-        let uploadedImageUrls = []; 
-        /* if (window.questionImages.length > 0) {
-            uploadedImageUrls = await uploadImagesToVercelBlob(window.questionImages);
-        }
-        */
-        // (测试阶段，如果还没图床，我们暂时传空数组，或者强行传 base64 测一下)
-        uploadedImageUrls = window.questionImages; 
-
-        // 🌟 第二步：组装要发给 Turso API 的数据
         const postPayload = {
             title: title,
             desc: desc,
             author: myName,
-            avatar: myAvatar,
-            images: JSON.stringify(uploadedImageUrls), // 把数组转成字符串存入 Turso
-            type: 'question' // 告诉后端这是个问答帖
+            avatar: '👻',
+            images: JSON.stringify(uploadedImageUrls),
+            type: 'question'
         };
 
-        // 🚀 第三步：调用你的 Vercel + Turso API
-        const response = await fetch('/api/create-post', { // 👉 换成你实际的 API 路由
+        // 发起请求 (如果是在本地双击打开 html，这里绝对会报错)
+        const response = await fetch('/api/create-post', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(postPayload)
         });
 
-        const result = await response.json();
+        // 🛡️ 极度防御：拦截 Vercel 崩溃时返回的 HTML 错误页
+        const textResult = await response.text();
+        let result;
+        try {
+            result = JSON.parse(textResult);
+        } catch (err) {
+            console.error("🚨 服务器返回了非 JSON:", textResult);
+            throw new Error("无法连接到 Turso 数据库，请确认代码已推送至 Vercel 且环境变量已配置！");
+        }
         
         if (result.success) {
-            window.App.showToast("✅ 发布成功！", "success");
-            window.App.closeModal('publishQuestionModal');
+            if (window.App && window.App.showToast) window.App.showToast("✅ 发布成功！", "success");
+            if (window.App && window.App.closeModal) window.App.closeModal('publishQuestionModal');
             
-            // 打扫战场
-            document.getElementById('questionTitle').value = '';
-            document.getElementById('questionDesc').value = '';
+            // 打扫战场，兼容新老 UI
+            if (titleInput) titleInput.value = '';
+            if (descInput) descInput.value = '';
             window.questionImages = []; 
-            document.getElementById('questionImgPreviewContainer').innerHTML = `
-                <input type="file" id="questionImgInput" accept="image/*" multiple style="display: none;" onchange="window.handleQuestionImageSelect(event)">
-                <div id="questionUploadBtn" style="width: 90px; height: 90px; background: #F8FAFC; border-radius: 12px; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #94A3B8; cursor: pointer; border: 1px dashed #CBD5E1; transition: all 0.2s;" onclick="document.getElementById('questionImgInput').click()"><span style="font-size: 32px; margin-bottom: 2px; font-weight: 300;">+</span><span style="font-size: 11px;">照片/截图</span></div>
-            `;
+            const previewBox = document.getElementById('questionImgPreviewContainer');
+            if (previewBox) {
+                previewBox.innerHTML = `
+                    <input type="file" id="questionImgInput" accept="image/*" multiple style="display: none;" onchange="window.handleQuestionImageSelect(event)">
+                    <div id="questionUploadBtn" style="width: 90px; height: 90px; background: #F8FAFC; border-radius: 12px; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #94A3B8; cursor: pointer; border: 1px dashed #CBD5E1; transition: all 0.2s;" onclick="document.getElementById('questionImgInput').click()"><span style="font-size: 32px; margin-bottom: 2px; font-weight: 300;">+</span><span style="font-size: 11px;">照片/截图</span></div>
+                `;
+            }
             
-            // 触发重新从服务器拉取最新列表
+            // 强制刷新列表
             if (window.fetchMarketQuestions) window.fetchMarketQuestions();
         } else {
-            throw new Error(result.error || "服务器错误");
+            throw new Error(result.error || "未知服务器错误");
         }
 
     } catch (e) { 
-        console.error("发布问题出错:", e); 
-        window.App.showToast("🚨 发布失败: " + e.message, "error");
+        console.error("🚨 发布失败崩溃:", e); 
+        if (window.App && window.App.showToast) {
+            window.App.showToast("🚨 发布失败: " + e.message, "error");
+        } else {
+            alert("🚨 发布失败: " + e.message);
+        }
     }
 };
 
