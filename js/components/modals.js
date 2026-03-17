@@ -36,11 +36,6 @@ const ModalTemplates = {
                         <div class="pub-sub">灵魂共鸣</div>
                     </div>
                     
-                    <div class="pub-card" onclick="window.App.openModal('publishQuestionModal'); window.App.closeModal('publishSheet');">
-                        <div class="pub-icon" style="background: #EFF6FF;">🙋</div>
-                        <div class="pub-title">提个问题</div>
-                        <div class="pub-sub">校友热心解答</div>
-                    </div>
 
                 </div>
             </div>
@@ -321,44 +316,7 @@ const ModalTemplates = {
         </div>
     `,
 
-    // --- 12. 提问发布弹窗 (小红书沉浸式 UI) ---
-    publishQuestionModal: `
-        <div class="full-modal" id="publishQuestionModal" style="display: none; background: #FFF; z-index: 100000;">
-            
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #F1F5F9;">
-                <div onclick="window.App.closeModal('publishQuestionModal')" style="font-size: 15px; color: #64748B; cursor: pointer;">取消</div>
-                <div style="font-size: 16px; font-weight: 900; color: #0F172A;">提个问题</div>
-                <button onclick="window.submitQuestionPost()" style="background: #10B981; color: #FFF; border: none; padding: 6px 18px; border-radius: 20px; font-weight: bold; font-size: 13px; cursor: pointer; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);">发布</button>
-            </div>
-            
-            <div style="padding: 20px; height: calc(100vh - 60px); overflow-y: auto;">
-                
-                <input type="text" id="questionTitle" style="width: 100%; box-sizing: border-box; font-size: 20px; font-weight: 900; border: none; border-bottom: 1px solid #F1F5F9; padding-bottom: 15px; margin-bottom: 15px; outline: none; color: #0F172A;" placeholder="填写标题会有更多赞哦~">
-                
-                <textarea id="questionDesc" style="width: 100%; box-sizing: border-box; height: 140px; font-size: 15px; border: none; outline: none; resize: none; color: #334155; line-height: 1.6;" placeholder="添加正文，详细描述你的困惑。比如：收到了 Gemeente 的这封信，请问是要交垃圾税吗？..."></textarea>
-                
-                <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 30px;" id="questionImgPreviewContainer">
-                    <input type="file" id="questionImgInput" accept="image/*" multiple style="display: none;" onchange="window.handleQuestionImageSelect(event)">
-                    
-                    <div id="questionUploadBtn" style="width: 90px; height: 90px; background: #F8FAFC; border-radius: 12px; display: flex; flex-direction: column; justify-content: center; align-items: center; color: #94A3B8; cursor: pointer; border: 1px dashed #CBD5E1; transition: all 0.2s;" onclick="document.getElementById('questionImgInput').click()">
-                        <span style="font-size: 32px; margin-bottom: 2px; font-weight: 300;">+</span>
-                        <span style="font-size: 11px;">照片/截图</span>
-                    </div>
-                </div>
-
-                <div style="font-size: 13px; font-weight: 900; color: #475569; margin-bottom: 12px;">选择话题 (必选)</div>
-                <div class="pill-group" style="justify-content: flex-start; gap: 10px; flex-wrap: wrap;" id="questionTagGroup">
-                    <div class="pill active" onclick="selectPill(this, 'questionTagGroup')">🏠 租房/生活</div>
-                    <div class="pill" onclick="selectPill(this, 'questionTagGroup')">🎓 学习/选课</div>
-                    <div class="pill" onclick="selectPill(this, 'questionTagGroup')">🛂 签证/居留</div>
-                    <div class="pill" onclick="selectPill(this, 'questionTagGroup')">🛒 羊毛/购物</div>
-                    <div class="pill" onclick="selectPill(this, 'questionTagGroup')" style="border-color: #C7D2FE; background: #EEF2FF; color: #4F46E5;">✉️ 信件求翻译</div>
-                </div>
-                
-                <div style="height: 100px;"></div>
-            </div>
-        </div>
-    `,
+    
 
     // --- 13. 闲置商品瀑布流点击详情 ---
     postDetailModal: `
@@ -503,47 +461,7 @@ const ModalTemplates = {
             </div>
         </div>
     `,
-    // --- 19. 帖子详情页 (小红书沉浸式交互风格) ---
-    questionDetailModal: `
-        <div class="full-modal" id="questionDetailModal" style="display: none; background: #FFF; z-index: 100000; flex-direction: column;">
-            
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid #F1F5F9; background: #FFF;">
-                <div style="display: flex; gap: 12px; align-items: center;">
-                    <div onclick="window.App.closeModal('questionDetailModal')" style="font-size: 26px; color: #64748B; cursor: pointer; padding-right: 5px;">‹</div>
-                    <div id="qdAvatar" style="font-size: 24px; width: 36px; height: 36px; background: #F8FAFC; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid #F1F5F9;">👻</div>
-                    <div id="qdAuthor" style="font-size: 14px; font-weight: 900; color: #1E293B;">管家新人</div>
-                </div>
-                <button style="background: #FFF0F2; color: #F43F5E; border: 1px solid #FECDD3; padding: 6px 14px; border-radius: 20px; font-weight: 900; font-size: 12px; cursor: pointer;">+ 关注</button>
-            </div>
-
-            <div style="flex: 1; overflow-y: auto; padding-bottom: 80px; background: #FFF;">
-                
-                <div id="qdImageContainer" style="width: 100%; overflow-x: auto; display: flex; scroll-snap-type: x mandatory;"></div>
-                
-                <div style="padding: 20px;">
-                    <h2 id="qdTitle" style="margin-top: 0; font-size: 18px; color: #0F172A; font-weight: 900; margin-bottom: 12px; line-height: 1.4;"></h2>
-                    <div id="qdDesc" style="font-size: 15px; color: #334155; line-height: 1.7; white-space: pre-wrap; margin-bottom: 20px;"></div>
-                    <div style="font-size: 11px; color: #94A3B8; margin-bottom: 20px;">发布于 刚刚 · 荷兰</div>
-                    
-                    <div style="border-top: 1px solid #F1F5F9; padding-top: 20px;">
-                        <div style="font-size: 14px; font-weight: 900; color: #475569; margin-bottom: 15px;">共 <span id="qdCommentCount">0</span> 条回复</div>
-                        <div id="qdCommentList">
-                            </div>
-                    </div>
-                </div>
-            </div>
-
-            <div style="background: #FFF; padding: 10px 20px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); border-top: 1px solid #E5E7EB; display: flex; align-items: center; gap: 15px;">
-                <div style="flex: 1; background: #F3F4F6; border-radius: 20px; padding: 10px 15px; display: flex; align-items: center; gap: 8px;">
-                    <span style="color: #9CA3AF;">✏️</span>
-                    <input type="text" id="qdCommentInput" placeholder="说点什么..." style="flex: 1; background: transparent; border: none; font-size: 14px; outline: none;" onkeypress="if(event.key==='Enter') window.submitQuestionComment()">
-                </div>
-                <div style="display: flex; gap: 15px; font-size: 22px; color: #475569;">
-                    <span style="cursor:pointer;" onclick="window.submitQuestionComment()">发送</span>
-                </div>
-            </div>
-        </div>
-    `
+    
 };
 
 export const ModalManager = {
