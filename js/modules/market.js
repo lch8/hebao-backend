@@ -1,5 +1,5 @@
 // ============================================================================
-// js/modules/market.js - 集市与发布引擎 (极度防御全量版)
+// js/modules/market.js - 集市与发布引擎 (全栖满血完整版)
 // ============================================================================
 import { showToast } from '../core/toast.js';
 import { safeDOM } from '../core/dom.js'; // 🛡️ 引入安全 DOM 引擎
@@ -53,7 +53,10 @@ export const MarketEngine = {
                     else if (title.includes('[问答]')) mockQuestionItems.push(post);
                 });
 
+                // 强制刷新三个列表
                 this.applyFilters('idle'); 
+                this.applyFilters('help');
+                this.applyFilters('partner');
             }
         } catch (error) {
             console.error("🚨 [Market] 社区数据拉取失败:", error);
@@ -61,8 +64,44 @@ export const MarketEngine = {
     },
 
     // ------------------------------------------------------------------------
-    // 2. 防御性渲染引擎 (瀑布流)
+    // 2. 核心过滤器与多列表渲染引擎
     // ------------------------------------------------------------------------
+    applyFilters(type) {
+        if (type === 'idle') {
+            const sortMode = safeDOM.getValue('sortIdle', 'newest');
+            let onlyBargain = false;
+            safeDOM.execute('pillIdleBargain', el => { onlyBargain = el.classList.contains('active'); });
+            
+            let filtered = [...mockIdleItems]; 
+            if (onlyBargain) filtered = filtered.filter(item => item.isBargain); 
+            if (sortMode === 'priceAsc') filtered.sort((a, b) => a.priceNum - b.priceNum); 
+            else if (sortMode === 'priceDesc') filtered.sort((a, b) => b.priceNum - a.priceNum); 
+            else filtered.sort((a, b) => b.timestamp - a.timestamp); 
+            this.renderMarketIdle(filtered); 
+        } 
+        else if (type === 'help') {
+            const sortMode = safeDOM.getValue('sortHelp', 'newest');
+            let onlyUrgent = false;
+            const urgentPill = document.getElementById('pillHelpUrgent');
+            if (urgentPill) onlyUrgent = urgentPill.classList.contains('active');
+
+            let filtered = [...mockHelpItems];
+            if (onlyUrgent) filtered = filtered.filter(p => { try { return JSON.parse(p.content).urgent === '十万火急'; }catch(e){return false;} });
+            if (sortMode === 'rewardDesc') filtered.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+            else filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+            this.renderMarketHelp(filtered);
+        }
+        else if (type === 'partner') {
+            const mbtiFilter = safeDOM.getValue('filterMBTI', 'all');
+            let filtered = [...mockPartnerItems];
+            if (mbtiFilter !== 'all') {
+                filtered = filtered.filter(p => { try { return JSON.parse(p.content).mbti === mbtiFilter; }catch(e){return false;} });
+            }
+            filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+            this.renderMarketPartner(filtered);
+        }
+    },
+
     renderMarketIdle(data = mockIdleItems) { 
         safeDOM.execute('idleWaterfall', container => {
             if(data.length === 0) { 
@@ -75,10 +114,9 @@ export const MarketEngine = {
                 const soldOverlayHtml = item.isSold ? `<div class="wf-sold-overlay"><div class="wf-sold-text">已售空</div></div>` : ''; 
                 const countBadge = item.itemCount > 1 ? `<div class="waterfall-count-badge">共 ${item.itemCount} 件</div>` : ''; 
                 
-                // 🛡️ 核心修复 1：在 ${item.id} 外面包上单引号，防止字符串类型的 ID 导致执行错误！
                 html += `
-            <div class="waterfall-item" onclick="openCommunityPost('${item.id || 0}')">
-            <div class="wf-img-box">${soldOverlayHtml}${countBadge}<img class="wf-img" src="${item.img || ''}"></div>
+                <div class="waterfall-item" onclick="openCommunityPost('${item.id || 0}')">
+                    <div class="wf-img-box">${soldOverlayHtml}${countBadge}<img class="wf-img" src="${item.img || ''}"></div>
                     <div class="wf-info">
                         <div class="wf-title" style="${item.isSold ? 'color:#9CA3AF;' : ''}">${item.title || '无题'}</div>
                         <div class="wf-price-row"><span class="wf-currency" style="${item.isSold ? 'color:#9CA3AF;' : ''}">€</span><span class="wf-price" style="${item.isSold ? 'color:#9CA3AF;' : ''}">${item.price || '0'}</span></div>
@@ -89,25 +127,68 @@ export const MarketEngine = {
         });
     },
 
-    applyFilters(type) {
-        if (type === 'idle') {
-            const sortMode = safeDOM.getValue('sortIdle', 'newest');
-            let onlyBargain = false;
-            safeDOM.execute('pillIdleBargain', el => { onlyBargain = el.classList.contains('active'); });
-            
-            let filtered = [...mockIdleItems]; 
-            if (onlyBargain) filtered = filtered.filter(item => item.isBargain); 
-            
-            if (sortMode === 'priceAsc') filtered.sort((a, b) => a.priceNum - b.priceNum); 
-            else if (sortMode === 'priceDesc') filtered.sort((a, b) => b.priceNum - a.priceNum); 
-            else filtered.sort((a, b) => b.timestamp - a.timestamp); 
-            
-            this.renderMarketIdle(filtered); 
-        }
+    renderMarketHelp(data) {
+        safeDOM.execute('helpListContainer', container => {
+            if(data.length === 0) return container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:60px 0;">暂无悬赏，太和平了~</div>';
+            let html = '';
+            data.forEach(post => {
+                let content = {}; try { content = JSON.parse(post.content); } catch(e){}
+                const isUrgent = content.urgent === '十万火急';
+                html += `
+                <div style="background:#FFF; border-radius:16px; padding:15px; margin: 15px; box-shadow:0 4px 15px rgba(0,0,0,0.03); border:1px solid ${isUrgent ? '#FECACA' : '#F3F4F6'};">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="font-size:24px;">${post.avatar || '👻'}</span>
+                            <span style="font-size:13px; font-weight:bold; color:#374151;">${post.author_name}</span>
+                        </div>
+                        <div style="font-size:16px; font-weight:900; color:#D97706;">💰 €${post.likes || 0}</div>
+                    </div>
+                    <div style="font-size:14px; font-weight:bold; color:#111827; margin-bottom:6px;">${post.title.replace('[互助] ', '')}</div>
+                    <div style="font-size:13px; color:#4B5563; line-height:1.5; margin-bottom:10px;">${content.desc || ''}</div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #E5E7EB; padding-top:10px;">
+                        <div style="font-size:11px; color:#6B7280;">⏰ ${content.time ? content.time.replace('T', ' ') : '越快越好'} | 📍 ${content.location || '线上/面交'}</div>
+                        <button onclick="alert('即将唤起私信！')" style="background:#111827; color:#FFF; border:none; padding:6px 14px; border-radius:12px; font-size:12px; font-weight:bold; cursor:pointer;">接单</button>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        });
+    },
+
+    renderMarketPartner(data) {
+        safeDOM.execute('partnerListContainer', container => {
+            if(data.length === 0) return container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:60px 0;">目前还没有人找搭子，快去发一个吧！</div>';
+            let html = '';
+            data.forEach(post => {
+                let content = {}; try { content = JSON.parse(post.content); } catch(e){}
+                const mbtiTag = content.mbti === 'e' ? '🔥 寻 E 人' : (content.mbti === 'i' ? '🍵 寻 I 人' : '✨ MBTI 不限');
+                html += `
+                <div style="background:#FFF; border-radius:16px; padding:15px; margin: 15px; box-shadow:0 4px 15px rgba(0,0,0,0.03); border:1px solid #E9D5FF;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                        <div style="font-size:15px; font-weight:900; color:#4C1D95; flex:1;">${post.title.replace('[找搭子] ', '')}</div>
+                        <div style="background:#F3E8FF; color:#7E22CE; padding:4px 8px; border-radius:8px; font-size:11px; font-weight:bold;">${content.tag || '组局'}</div>
+                    </div>
+                    <div style="font-size:13px; color:#4B5563; line-height:1.5; margin-bottom:12px;">${content.desc || ''}</div>
+                    <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;">
+                        <span style="font-size:11px; color:#6B7280; background:#F3F4F6; padding:4px 8px; border-radius:6px;">⏰ ${content.date || '商议'}</span>
+                        <span style="font-size:11px; color:#6B7280; background:#F3F4F6; padding:4px 8px; border-radius:6px;">📍 ${content.location || '随缘'}</span>
+                        <span style="font-size:11px; color:#D97706; background:#FEF3C7; padding:4px 8px; border-radius:6px;">${mbtiTag}</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #E5E7EB; padding-top:10px;">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <span style="font-size:20px;">${post.avatar || '👻'}</span>
+                            <span style="font-size:12px; font-weight:bold; color:#6B7280;">${post.author_name}</span>
+                        </div>
+                        <button onclick="alert('即将唤起私信！')" style="background:#8B5CF6; color:#FFF; border:none; padding:6px 14px; border-radius:12px; font-size:12px; font-weight:bold; cursor:pointer;">聊一聊</button>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        });
     },
 
     // ------------------------------------------------------------------------
-    // 3. 发布系统：多图上传与 Canvas 本地水印 (防内存泄漏)
+    // 3. 闲置发布：多图上传与 Canvas 本地水印
     // ------------------------------------------------------------------------
     handleMultiImageSelect(event) {
         try {
@@ -191,7 +272,6 @@ export const MarketEngine = {
                     ctx.fillStyle = '#FFFFFF'; ctx.fillText(tagText, x + paddingX * 1.6, y + fontSize + paddingY * 0.4); 
 
                     resolve(canvas.toDataURL('image/jpeg', 0.85).split(',')[1]);
-                    // 🛡️ 释放内存，防止移动端 Safari OOM 崩溃
                     canvas.width = 0; canvas.height = 0;
                 }; 
                 img.onerror = () => resolve(previewUrl.split(',')[1]); 
@@ -244,7 +324,10 @@ export const MarketEngine = {
         });
     },
 
-async submitIdlePost() {
+    // ------------------------------------------------------------------------
+    // 5. 三大数据上云接口 (闲置、悬赏、搭子)
+    // ------------------------------------------------------------------------
+    async submitIdlePost() {
         try {
             console.log("🚀 开始触发真实发布引擎...");
             const token = localStorage.getItem('hebao_token');
@@ -255,9 +338,6 @@ async submitIdlePost() {
             const loc = safeDOM.getValue('idleLocation', '');
             const aiDesc = safeDOM.getValue('aiKeywords_idle', '').trim(); 
             
-            // ==========================================
-            // 🌟 核心算账补丁：自动遍历所有物品，算出真实总价！
-            // ==========================================
             let calculatedTotalPrice = 0;
             selectedImagesArray.forEach(img => {
                 const p = parseFloat(img.price);
@@ -266,7 +346,6 @@ async submitIdlePost() {
                 }
             });
 
-            // 锁定按钮防止连击
             safeDOM.execute('publishIdleSubmitBtn', btn => { btn.innerText = "上传云端..."; btn.style.pointerEvents = 'none'; });
 
             const myHeaders = { 
@@ -302,7 +381,7 @@ async submitIdlePost() {
                 content: JSON.stringify({ items: finalItemsData, location: loc, desc: safeTitle }),
                 image_url: finalItemsData.length > 0 ? finalItemsData[0].url : '',
                 author_name: myName,
-                likes: calculatedTotalPrice, // 👈 完美传入真实总价！
+                likes: calculatedTotalPrice, 
                 type: 'idle'
             };
 
@@ -318,12 +397,10 @@ async submitIdlePost() {
             showToast("🎉 发布成功！", "success"); 
             if(window.App && window.App.closeIdlePublish) window.App.closeIdlePublish(); 
             
-            // 打扫战场
             selectedImagesArray = []; 
             this.renderIdleItemCards(); 
             safeDOM.execute('aiKeywords_idle', el => el.value = ''); 
             
-            // 刷新集市瀑布流
             this.loadCommunityPosts(); 
 
         } catch(e) { 
@@ -333,18 +410,124 @@ async submitIdlePost() {
             safeDOM.execute('publishIdleSubmitBtn', btn => { btn.innerText = "发布"; btn.style.pointerEvents = 'auto'; });
         }
     },
+
+    async submitHelpPost() {
+        try {
+            const token = localStorage.getItem('hebao_token');
+            if (!token) return showToast("请先登录哦！", "warning");
+
+            const desc = safeDOM.getValue('helpDesc', '').trim();
+            const reward = safeDOM.getValue('helpReward', '0');
+            const time = safeDOM.getValue('helpTime', '');
+            const loc = safeDOM.getValue('helpLocation', '');
+
+            let type = '其他求助';
+            const activeType = document.querySelector('#helpTypeGroup .pill.active');
+            if (activeType) type = activeType.innerText;
+
+            let urgent = '普通';
+            const activeUrgent = document.querySelector('#helpUrgentGroup .pill.active');
+            if (activeUrgent) urgent = activeUrgent.innerText;
+
+            if (!desc) return showToast("请详细填写你需要什么帮助！", "warning");
+
+            const submitBtn = document.querySelector('#publishHelpModal .fm-submit');
+            if(submitBtn) { submitBtn.innerText = "发布中..."; submitBtn.style.pointerEvents = 'none'; }
+
+            const myName = localStorage.getItem('hp_name') || '匿名管家';
+            const postTitle = `[互助] ${type} - ${urgent}`;
+
+            const dbPayload = {
+                title: postTitle,
+                content: JSON.stringify({ desc, time, location: loc, urgent, type }),
+                image_url: '',
+                author_name: myName,
+                likes: parseFloat(reward) || 0,
+                type: 'help'
+            };
+
+            const dbRes = await fetch('/api/publish-community', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(dbPayload)
+            });
+
+            const dbResult = await dbRes.json();
+            if (!dbResult.success) throw new Error(dbResult.error || "发布失败");
+
+            showToast("🎉 悬赏发布成功！", "success");
+            if(window.App && window.App.closeModal) window.App.closeModal('publishHelpModal');
+            safeDOM.execute('helpDesc', el => el.value = '');
+            this.loadCommunityPosts(); 
+        } catch(e) {
+            showToast("发布失败：" + e.message, "error");
+        } finally {
+            const submitBtn = document.querySelector('#publishHelpModal .fm-submit');
+            if(submitBtn) { submitBtn.innerText = "发布"; submitBtn.style.pointerEvents = 'auto'; }
+        }
+    },
+
+    async submitPartnerPost() {
+        try {
+            const token = localStorage.getItem('hebao_token');
+            if (!token) return showToast("请先登录哦！", "warning");
+
+            const title = safeDOM.getValue('partnerTitle', '').trim();
+            const desc = safeDOM.getValue('partnerDesc', '').trim();
+            const date = safeDOM.getValue('partnerDate', '');
+            const loc = safeDOM.getValue('partnerLocation', '');
+            const mbti = safeDOM.getValue('partnerMbti', 'all');
+
+            let tag = '周末组局';
+            const activeTag = document.querySelector('#partnerTagGroup .pill.active');
+            if (activeTag) tag = activeTag.innerText;
+
+            if (!title || !desc) return showToast("标题和计划详情不能为空哦！", "warning");
+
+            const submitBtn = document.querySelector('#publishPartnerModal .fm-submit');
+            if(submitBtn) { submitBtn.innerText = "召唤中..."; submitBtn.style.pointerEvents = 'none'; }
+
+            const myName = localStorage.getItem('hp_name') || '匿名管家';
+            const postTitle = `[找搭子] ${title}`;
+
+            const dbPayload = {
+                title: postTitle,
+                content: JSON.stringify({ desc, date, location: loc, mbti, tag }),
+                image_url: '',
+                author_name: myName,
+                likes: 0,
+                type: 'partner'
+            };
+
+            const dbRes = await fetch('/api/publish-community', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(dbPayload)
+            });
+
+            const dbResult = await dbRes.json();
+            if (!dbResult.success) throw new Error(dbResult.error || "发布失败");
+
+            showToast("🎉 搭子信号已发出！", "success");
+            if(window.App && window.App.closeModal) window.App.closeModal('publishPartnerModal');
+            safeDOM.execute('partnerTitle', el => el.value = '');
+            safeDOM.execute('partnerDesc', el => el.value = '');
+            this.loadCommunityPosts(); 
+        } catch(e) {
+            showToast("发布失败：" + e.message, "error");
+        } finally {
+            const submitBtn = document.querySelector('#publishPartnerModal .fm-submit');
+            if(submitBtn) { submitBtn.innerText = "发布"; submitBtn.style.pointerEvents = 'auto'; }
+        }
+    },
+
     // ------------------------------------------------------------------------
-    // 5. 详情页与交易逻辑 (安全绑定)
-    // ------------------------------------------------------------------------
-    // ------------------------------------------------------------------------
-    // 5. 详情页与交易逻辑 (雷达追踪 + 暴力防弹版)
+    // 6. 详情页与交易逻辑 (安全绑定)
     // ------------------------------------------------------------------------
     openCommunityPost(postId) {
         try {
-            // 💡 追踪点 1：检查是否成功进入函数
             console.log("👉 准备打开商品详情, 接收到的 postId:", postId);
 
-            // 1. 尝试注入 HTML
             ModalManager.injectIfNeeded('postDetailModal');
             const modalEl = document.getElementById('postDetailModal');
             
@@ -353,7 +536,6 @@ async submitIdlePost() {
                 return;
             }
 
-            // 2. 查找数据
             const post = (window.allCommunityPostsCache || []).find(p => String(p.id) === String(postId)) 
                       || mockIdleItems.find(p => String(p.id) === String(postId));
                       
@@ -362,7 +544,6 @@ async submitIdlePost() {
                 return;
             }
 
-            // 3. 基础赋值
             currentCommunityPost = post;
             selectedItemIds = new Set();
             currentTotalPrice = 0;
@@ -383,7 +564,6 @@ async submitIdlePost() {
                     </div>`;
             });
 
-            // 4. 解析复杂商品列表数据
             let payload;
             try { 
                 payload = typeof post.content === 'string' ? JSON.parse(post.content) : post.content; 
@@ -420,13 +600,10 @@ async submitIdlePost() {
                 listContainer.innerHTML = itemsHtml;
             });
 
-            // 💡 追踪点 2：如果代码顺利走到这里，说明前面完全没报错！
-            // 暴力撕开弹窗，无视任何动画延迟
             modalEl.style.display = 'block'; 
             
         } catch (error) {
-            // 💡 终极防线：无论哪里报错，直接弹窗显示红字报错信息！
-            alert("🚨 致命报错拦截：\\n" + error.message);
+            alert("🚨 致命报错拦截：\n" + error.message);
             console.error("详情页报错详细堆栈:", error);
         }
     },
@@ -461,7 +638,6 @@ async submitIdlePost() {
         let wantNames = payload.items.filter(i => selectedItemIds.has(i.id)).map(i => i.name).join('、');
         const firstItemImg = payload.items.find(i => selectedItemIds.has(i.id))?.url || currentCommunityPost.img;
         
-        // 调用聊天引擎
         ChatEngine.openChat(currentCommunityPost.user_id || 'test_id', currentCommunityPost.name, currentCommunityPost.avatar, currentCommunityPost.id, `想要这几件 (€${currentTotalPrice.toFixed(2)})`, currentTotalPrice.toFixed(2), firstItemImg, false, 'idle');
         
         safeDOM.execute('chatInput', input => input.value = `哈喽！我想要你清单里的：【${wantNames}】，请问还在吗？`);
@@ -478,10 +654,7 @@ if (typeof window !== 'undefined') {
     Object.keys(MarketEngine).forEach(key => {
         if (typeof MarketEngine[key] === 'function') {
             const boundFunc = MarketEngine[key].bind(MarketEngine);
-            // 挂载到 window.App 下
             window.App[key] = boundFunc;
-            // 🌟 终极流氓打法：同时直接挂载到 window 最顶层！
-            // 这样无论 HTML 怎么写 onclick="openCommunityPost()" 都能绝对命中！
             window[key] = boundFunc; 
         }
     });
