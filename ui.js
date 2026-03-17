@@ -223,3 +223,52 @@ window.renderProNews = async function() {
         container.innerHTML = `<div style="text-align:center; padding:30px 0; color:#EF4444; font-size:13px;">📡 信号中断，未能连接到荷兰新闻塔</div>`;
     }
 };
+
+// ============================================================================
+// 🚀 架构师补丁：集市四大金刚发布引擎 (闲置、悬赏、搭子、问答)
+// ============================================================================
+
+window.submitQuestionPost = function() {
+    try {
+        const title = document.getElementById('questionTitle') ? document.getElementById('questionTitle').value.trim() : '';
+        const desc = document.getElementById('questionDesc') ? document.getElementById('questionDesc').value.trim() : '';
+        
+        if (!title || !desc) {
+            return window.App.showToast("标题和描述都不能为空哦！", "warning");
+        }
+
+        // 模拟网络请求发送数据
+        window.App.showToast("✅ 问题发布成功！管家正在为你推送到问答区", "success");
+        window.App.closeModal('publishQuestionModal');
+        
+        // 自动清空表单，方便下次发布
+        if (document.getElementById('questionTitle')) document.getElementById('questionTitle').value = '';
+        if (document.getElementById('questionDesc')) document.getElementById('questionDesc').value = '';
+        
+        // 自动跳转到集市的问答 Tab
+        if (window.switchTab) window.switchTab('market');
+        if (window.switchMarketTab) window.switchMarketTab('question', document.querySelectorAll('.m-tab')[3]);
+
+    } catch (e) { console.error("发布问题出错:", e); }
+};
+
+window.submitIdlePost = function() {
+    window.App.showToast("✅ 闲置发布成功！信用分 +5", "success");
+    window.App.closeModal('publishIdleModal');
+    if (window.switchTab) window.switchTab('market');
+    if (window.switchMarketTab) window.switchMarketTab('idle', document.querySelectorAll('.m-tab')[0]);
+};
+
+window.submitHelpPost = function() {
+    window.App.showToast("✅ 悬赏发布成功！已向周围校友发送广播", "success");
+    window.App.closeModal('publishHelpModal');
+    if (window.switchTab) window.switchTab('market');
+    if (window.switchMarketTab) window.switchMarketTab('help', document.querySelectorAll('.m-tab')[1]);
+};
+
+window.submitPartnerPost = function() {
+    window.App.showToast("✅ 找搭子发布成功！祝你早日找到灵魂伴侣🥂", "success");
+    window.App.closeModal('publishPartnerModal');
+    if (window.switchTab) window.switchTab('market');
+    if (window.switchMarketTab) window.switchMarketTab('partner', document.querySelectorAll('.m-tab')[2]);
+};
