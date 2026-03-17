@@ -201,18 +201,9 @@
             <div class="m-tab active" onclick="switchMarketTab('idle', this)">🏷️ 闲置</div>
             <div class="m-tab" onclick="switchMarketTab('help', this)">🤝 悬赏</div>
             <div class="m-tab" onclick="switchMarketTab('partner', this)">🏕️ 搭子</div>
-            <div class="m-tab" onclick="switchMarketTab('question', this)">🙋 问答</div>
         </div>
 
-        <div id="market-question" class="market-content">
-            <div class="filter-bar">
-                <select id="sortQuestion" class="filter-select" onchange="applyMarketFilters('question')">
-                    <option value="newest">✨ 最新提问</option>
-                    <option value="hot">🔥 回答最多</option>
-                </select>
-            </div>
-            <div class="question-list-container" id="questionListContainer"></div>
-        </div>
+        
 
         <div id="market-idle" class="market-content active">
             <div class="filter-bar">
