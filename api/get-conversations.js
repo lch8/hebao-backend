@@ -1,3 +1,4 @@
+// api/get-conversations.js
 import { verifyJwt } from './_auth.js';
 
 export const config = { runtime: 'edge' };
@@ -14,7 +15,7 @@ export default async function handler(req) {
         let dbUrl = process.env.TURSO_DATABASE_URL.replace('libsql://', 'https://');
         const authToken = process.env.TURSO_AUTH_TOKEN;
 
-        // 核心 SQL：把当前用户作为发送方或接收方的聊天找出来，按人头分组，取最新的一条消息！
+        // 核心 SQL：找出会话并按最新时间排序
         const sql = `
             SELECT 
                 CASE WHEN sender_id = ? THEN receiver_id ELSE sender_id END as partner_id,
@@ -47,8 +48,16 @@ export default async function handler(req) {
             })
         });
 
+        // 🌟 终极防爆盾
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Turso 拒绝连接 (${response.status}): ${errorText}`);
+        }
+
         const result = await response.json();
-        if (result.results[0].type === 'error') throw new Error(result.results[0].error.message);
+        if (result.message || result.error) throw new Error(`Turso 报错: ${result.message || result.error}`);
+        if (!result.results || !result.results[0]) throw new Error(`Turso 返回格式异常: ${JSON.stringify(result)}`);
+        if (result.results[0].type === 'error') throw new Error(`Turso SQL 报错: ${result.results[0].error.message}`);
 
         const resData = result.results[0].response.result;
         const cols = resData.cols.map(c => c.name);
@@ -60,6 +69,7 @@ export default async function handler(req) {
 
         return new Response(JSON.stringify({ success: true, conversations }), { status: 200, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }});
     } catch (error) {
-        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Access-Control-Allow-Origin': '*' }});
+        // 将真实错误抛给前端
+        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }});
     }
 }
