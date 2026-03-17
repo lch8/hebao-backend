@@ -286,4 +286,105 @@ window.handleMultiImageSelect = async function(event) {
     }
 };
 
+// ============================================================================
+// 🔐 架构师补丁：修复登录状态不同步与 UI 渲染问题
+// ============================================================================
+
+// 1. 实时读取本地存储，不再依赖死板的全局变量
+window.renderProfileState = function() {
+    const guestBlock = document.querySelector('.guest-login-block'); // 未登录横幅
+    const nameText = document.querySelector('.p-info div:nth-child(1)'); // 昵称
+    const uidText = document.querySelector('.p-info div:nth-child(2) span:nth-child(1)'); // ID
+    const avatar = document.querySelector('.p-avatar'); // 头像
+    const levelBadge = document.querySelector('.p-info div:nth-child(2) span:nth-child(2)'); // 等级标签
+    
+    if(!nameText) return;
+
+    // 🌟 核心：每次都实时从浏览器的记忆库里掏数据！
+    const isRealLoggedIn = localStorage.getItem('hebao_logged_in') === 'true';
+    const realUUID = localStorage.getItem('hebao_uuid') || '';
+    const realName = localStorage.getItem('hp_name') || '管家新人';
+
+    if (isRealLoggedIn) {
+        if (guestBlock) guestBlock.style.display = 'none'; 
+        nameText.innerText = realName;
+        if (uidText) uidText.innerText = 'ID: ' + realUUID.substring(0,8).toUpperCase();
+        if (avatar) avatar.innerText = '😎'; 
+        if (avatar) avatar.style.border = '3px solid #10B981'; // 登录后给个绿色光环
+        if (levelBadge) levelBadge.innerText = 'Lv.1';
+    } else {
+        if (guestBlock) guestBlock.style.display = 'flex'; 
+        nameText.innerText = '管家游客'; 
+        if (uidText) uidText.innerText = 'ID: 未登录'; 
+        if (avatar) avatar.innerText = '👻';
+        if (avatar) avatar.style.border = '3px solid #FFF';
+        if (levelBadge) levelBadge.innerText = 'Lv.0';
+    }
+};
+
+// 2. 拦截并重写验证引擎：验证成功后直接硬刷新！
+window.App = window.App || {};
+window.App.verifyCode = async function() {
+    const email = document.getElementById('hebaoAuthEmail').value.trim();
+    const code = document.getElementById('hebaoAuthCode').value.trim();
+    if(!email || !code) return window.App.showToast("邮箱和验证码不能为空哦！", "warning");
+    
+    window.App.showToast("⏳ 正在验证您的身份...", "info");
+    const btn = document.getElementById('btnLogin');
+    if(btn) { btn.innerText = "验证中..."; btn.style.pointerEvents = 'none'; }
+    
+    try {
+        // 呼叫你的 Vercel 后端接口
+        const res = await fetch('/api/verify-auth-code', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, code })
+        });
+        const data = await res.json();
+        
+        if(data.success) {
+            // 🌟 核心：把 VIP 身份牌死死钉进本地存储里
+            localStorage.setItem('hebao_token', data.token);
+            localStorage.setItem('hebao_logged_in', 'true');
+            localStorage.setItem('hebao_uuid', data.user ? data.user.id : Date.now().toString());
+            localStorage.setItem('hp_name', (data.user && data.user.name) ? data.user.name : email.split('@')[0]);
+            
+            if(email.endsWith('.edu') || email.endsWith('.nl')) {
+                localStorage.setItem('hp_email_verified', 'true');
+            }
+            
+            window.App.showToast("✅ 登录成功！正在为您生成专属身份...", "success");
+            window.App.closeModal('loginModal');
+            
+            // 💥 终极大招：硬刷新！让整个 App 带上 Token 重新开机！
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            window.App.showToast(data.error || "验证码可能过期或错误哦", "error");
+        }
+    } catch (e) {
+        console.error("验证失败:", e);
+        window.App.showToast("🚨 网络拥堵，请稍后再试", "error");
+    } finally {
+        if(btn) { btn.innerText = "立即验证"; btn.style.pointerEvents = 'auto'; }
+    }
+};
+
+// 3. 每次切换到“我的”页面，主动唤醒一次渲染
+const originalSwitchTabAuth = window.switchTab;
+window.switchTab = function(tabId, element) {
+    if (originalSwitchTabAuth) originalSwitchTabAuth(tabId, element);
+    if (tabId === 'profile') {
+        window.renderProfileState();
+    }
+};
+
+// 4. 开机自启：页面刚加载时立刻渲染一次
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        window.renderProfileState();
+    }, 200);
+});
+
 
