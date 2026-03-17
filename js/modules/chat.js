@@ -1,5 +1,5 @@
 // ============================================================================
-// js/modules/chat.js - 私信聊天引擎 (心跳轮询 + 乐观更新版)
+// js/modules/chat.js - 私信聊天引擎 (带全局雷达轮询 + 新消息提醒)
 // ============================================================================
 import { showToast } from '../core/toast.js';
 import { safeDOM } from '../core/dom.js';
@@ -7,12 +7,106 @@ import { ModalManager } from '../components/modals.js';
 
 let currentChatPartnerId = null; 
 let currentChatPostId = null; 
-let chatPollingInterval = null;
-let lastMessageCount = 0; // 记录上次的消息数量，防止重绘闪烁
+let chatPollingInterval = null;    // 聊天室内的心跳
+let globalPollingInterval = null;  // 全局的后台心跳（雷达）
+let lastMessageCount = 0; 
+let latestConversationTime = null; // 记录最新一条消息的时间，用来触发红点/弹窗
 
 export const ChatEngine = {
     // ------------------------------------------------------------------------
-    // 1. 安全唤起聊天室
+    // 🌟 新增：全局雷达启动器 (在 main.js 登录后调用)
+    // ------------------------------------------------------------------------
+    startGlobalPolling() {
+        if (globalPollingInterval) return; // 防止重复启动
+        const uid = window.userUUID || localStorage.getItem('hebao_uuid');
+        if (!uid) return;
+
+        console.log("📡 聊天全局雷达已启动...");
+        // 刚启动时静默拉取一次
+        this.loadConversations(true);
+
+        // 每 5 秒静默拉取一次消息列表
+        globalPollingInterval = setInterval(() => {
+            this.loadConversations(true);
+        }, 5000);
+    },
+
+    // ------------------------------------------------------------------------
+    // 1. 获取消息列表 (支持静默拉取)
+    // ------------------------------------------------------------------------
+    async loadConversations(isSilent = false) {
+        const uid = window.userUUID || localStorage.getItem('hebao_uuid');
+        if (!uid) {
+            if (!isSilent) safeDOM.execute('conversationList', el => el.innerHTML = '<div style="text-align:center; padding: 40px; color:#9CA3AF;">请先登录查看消息</div>');
+            return;
+        }
+
+        if (!isSilent) safeDOM.execute('conversationList', el => el.innerHTML = '<div style="text-align:center; padding: 40px; color:#9CA3AF; font-size: 13px;">📡 正在同步消息队列...</div>');
+
+        try {
+            const res = await fetch(`/api/get-conversations?userId=${uid}`);
+            const data = await res.json();
+
+            if (!data.success) {
+                if(!isSilent) safeDOM.execute('conversationList', el => el.innerHTML = `<div style="text-align:center; padding: 40px; color:#EF4444;">${data.error}</div>`);
+                return;
+            }
+
+            const conversations = data.conversations || [];
+            
+            // 💡 核心逻辑：检测是否有“新消息”到达！
+            if (conversations.length > 0) {
+                const topConvTime = conversations[0].last_time;
+                if (latestConversationTime !== null && topConvTime !== latestConversationTime) {
+                    // 时间戳变了，说明有新消息！(且发送人不是自己)
+                    // 如果你正打开着那个人的聊天框，就不弹通知了，避免打扰
+                    if (currentChatPartnerId !== conversations[0].partner_id) {
+                        showToast("📩 您收到了一条新私信，快去看看吧！", "info");
+                    }
+                }
+                latestConversationTime = topConvTime;
+            }
+
+            safeDOM.execute('conversationList', list => {
+                if (conversations.length === 0) {
+                    list.innerHTML = '';
+                    safeDOM.execute('msgEmptyState', el => el.style.display = 'flex');
+                    return;
+                }
+
+                safeDOM.execute('msgEmptyState', el => el.style.display = 'none');
+                let html = '';
+                
+                conversations.forEach(conv => {
+                    const date = new Date(conv.last_time + 'Z');
+                    const timeStr = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                    const shortId = conv.partner_id.substring(0, 4); 
+                    
+                    html += `
+                    <div style="display:flex; align-items:center; background:#FFF; padding:15px; border-radius: 16px; margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.02); border: 1px solid #E5E7EB; cursor:pointer; transition: transform 0.1s;" 
+                         onclick="window.App.openChat('${conv.partner_id}', '校友_${shortId}', '😎')">
+                        <div style="font-size:40px; margin-right:12px; background: #F3F4F6; border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">😎</div>
+                        <div style="flex:1; overflow:hidden;">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:4px; align-items: center;">
+                                <span style="font-weight:900; font-size:15px; color:#111827;">校友_${shortId}</span>
+                                <span style="font-size:11px; color:#9CA3AF;">${timeStr}</span>
+                            </div>
+                            <div style="font-size:13px; color:#6B7280; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${conv.last_message}</div>
+                        </div>
+                    </div>`;
+                });
+                // 只有当用户真的停留在消息页面时，才暴力重绘列表（防止闪烁）
+                if (document.getElementById('tab-messages') && document.getElementById('tab-messages').style.display !== 'none') {
+                    list.innerHTML = html;
+                }
+            });
+        } catch(e) {
+            console.error("🚨 拉取会话列表失败:", e);
+        }
+    },
+
+    // ------------------------------------------------------------------------
+    // 2. 安全唤起聊天室
     // ------------------------------------------------------------------------
     openChat(targetId, targetName, targetAvatar, postId, postTitle, postPrice, postImg, isSold, postType = 'idle') {
         try {
@@ -29,21 +123,16 @@ export const ChatEngine = {
 
     _initChatWindow(targetId, targetName, targetAvatar, postId, postTitle, postPrice, postImg, isSold) {
         const uid = window.userUUID || localStorage.getItem('hebao_uuid');
-        if (targetId === String(uid)) {
-            return showToast("💡 管家提示：这是你自己的帖子哦，不能跟自己聊天~", "warning");
-        }
+        if (targetId === String(uid)) return showToast("💡 管家提示：这是你自己的帖子哦，不能跟自己聊天~", "warning");
 
         currentChatPartnerId = targetId;
         currentChatPostId = postId;
         lastMessageCount = 0;
 
-        // 注入聊天弹窗
         ModalManager.injectIfNeeded('chatModal');
 
-        // 更新头部信息
         safeDOM.execute('chatPartnerName', el => el.innerText = targetName || '校友');
         
-        // 渲染正在交易的商品卡片
         safeDOM.execute('chatPostCard', card => {
             if (postId) {
                 card.style.display = 'flex';
@@ -55,38 +144,33 @@ export const ChatEngine = {
             }
         });
 
-        // 初始化加载状态
         safeDOM.execute('chatInput', el => el.value = '');
         safeDOM.execute('chatMsgList', el => el.innerHTML = '<div style="text-align:center; padding: 40px; color:#9CA3AF; font-size: 13px;">📡 正在拉取历史消息...</div>');
 
-        // 打开弹窗
         ModalManager.open('chatModal');
 
-        // 立即拉取一次真实数据
         this.loadChatHistory();
 
-        // 🚀 开启心跳轮询！(每 3 秒找服务器要一次新消息)
         if (chatPollingInterval) clearInterval(chatPollingInterval);
-        chatPollingInterval = setInterval(() => {
-            this.loadChatHistory(true);
-        }, 3000);
+        chatPollingInterval = setInterval(() => { this.loadChatHistory(true); }, 3000);
     },
 
     // ------------------------------------------------------------------------
-    // 2. 关闭聊天室并销毁心跳
+    // 3. 关闭聊天室并销毁心跳
     // ------------------------------------------------------------------------
     closeChat() {
         if (chatPollingInterval) {
             clearInterval(chatPollingInterval);
             chatPollingInterval = null;
-            console.log("🛑 聊天心跳已断开，节省性能");
         }
         currentChatPartnerId = null;
         safeDOM.execute('chatModal', el => el.style.display = 'none');
+        // 关掉聊天框后，立刻静默刷新一次外面的消息列表
+        this.loadConversations(true); 
     },
 
     // ------------------------------------------------------------------------
-    // 3. 拉取历史消息
+    // 4. 拉取历史消息
     // ------------------------------------------------------------------------
     async loadChatHistory(isPolling = false) {
         if (!currentChatPartnerId) return;
@@ -99,10 +183,7 @@ export const ChatEngine = {
             const data = await res.json();
             if (data.success) {
                 const messages = data.messages || [];
-                
-                // 如果是后台轮询，且消息数量没变，直接 return 避免屏幕闪烁
                 if (isPolling && messages.length === lastMessageCount) return;
-                
                 lastMessageCount = messages.length;
 
                 safeDOM.execute('chatMsgList', list => {
@@ -114,7 +195,6 @@ export const ChatEngine = {
                     let html = '';
                     messages.forEach(msg => {
                         const isMe = String(msg.sender_id) === String(uid);
-                        // 处理时区时间显示
                         const date = new Date(msg.created_at + 'Z');
                         const timeStr = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
                         
@@ -134,7 +214,7 @@ export const ChatEngine = {
                     });
                     
                     list.innerHTML = html;
-                    list.scrollTop = list.scrollHeight; // 滚动到最底部
+                    list.scrollTop = list.scrollHeight; 
                 });
             }
         } catch (error) {
@@ -143,7 +223,7 @@ export const ChatEngine = {
     },
 
     // ------------------------------------------------------------------------
-    // 4. 发送消息 (乐观更新策略)
+    // 5. 发送消息
     // ------------------------------------------------------------------------
     async sendChatMessage() {
         const input = document.getElementById('chatInput');
@@ -155,11 +235,10 @@ export const ChatEngine = {
         const uid = window.userUUID || localStorage.getItem('hebao_uuid');
         if (!uid || !currentChatPartnerId) return;
 
-        // 🌟 1. 乐观更新：自己发的消息瞬间上屏，不等服务器！(给用户极速的体验)
+        // 乐观更新
         safeDOM.execute('chatMsgList', list => {
-            if (lastMessageCount === 0) list.innerHTML = ''; // 清空空提示
+            if (lastMessageCount === 0) list.innerHTML = '';
             const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            
             list.insertAdjacentHTML('beforeend', `
                 <div class="chat-row me" style="display:flex; justify-content:flex-end; margin-bottom: 15px; opacity: 0.6; transition: opacity 0.3s;">
                     <div style="font-size: 10px; color: #9CA3AF; margin-right: 8px; margin-top: auto;">${timeStr}</div>
@@ -171,28 +250,17 @@ export const ChatEngine = {
         });
         
         input.value = '';
-        lastMessageCount++; // 手动模拟增加，防止轮询马上把它刷掉
+        lastMessageCount++;
 
-        // 🌟 2. 异步将消息发射给服务器
         try {
             const headers = window.App && window.App.getAuthHeaders ? window.App.getAuthHeaders() : { 'Content-Type': 'application/json' };
-            
             const res = await fetch('/api/send-message', { 
                 method: 'POST', 
                 headers: headers, 
-                body: JSON.stringify({ 
-                    senderId: uid, 
-                    receiverId: currentChatPartnerId, 
-                    postId: currentChatPostId, 
-                    content: text 
-                }) 
+                body: JSON.stringify({ senderId: uid, receiverId: currentChatPartnerId, postId: currentChatPostId, content: text }) 
             });
-            
             if (!res.ok) throw new Error("接口返回报错");
-            
-            // 发送成功后立刻向服务器拉取一次真实记录，替换掉刚才半透明的“假消息”
             this.loadChatHistory();
-            
         } catch(e) { 
             console.error("🚨 消息发送失败:", e);
             showToast("发送失败，请检查网络", "error"); 
@@ -200,58 +268,6 @@ export const ChatEngine = {
     },
 
     sendQuickMessage(text) {
-        safeDOM.execute('chatInput', el => {
-            el.value = text;
-            this.sendChatMessage();
-        });
-    },
-    async loadConversations() {
-        const uid = window.userUUID || localStorage.getItem('hebao_uuid');
-        if (!uid) {
-            safeDOM.execute('conversationList', el => el.innerHTML = '<div style="text-align:center; padding: 40px; color:#9CA3AF;">请先登录查看消息</div>');
-            return;
-        }
-
-        safeDOM.execute('conversationList', el => el.innerHTML = '<div style="text-align:center; padding: 40px; color:#9CA3AF; font-size: 13px;">📡 正在同步消息队列...</div>');
-
-        try {
-            const res = await fetch(`/api/get-conversations?userId=${uid}`);
-            const data = await res.json();
-
-            safeDOM.execute('conversationList', list => {
-                // 如果没有聊天记录，显示空状态
-                if (!data.success || !data.conversations || data.conversations.length === 0) {
-                    list.innerHTML = '';
-                    safeDOM.execute('msgEmptyState', el => el.style.display = 'flex');
-                    return;
-                }
-
-                safeDOM.execute('msgEmptyState', el => el.style.display = 'none');
-                let html = '';
-                
-                data.conversations.forEach(conv => {
-                    const date = new Date(conv.last_time + 'Z');
-                    const timeStr = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-                    const shortId = conv.partner_id.substring(0, 4); // 截取前4位当做默认名字
-                    
-                    html += `
-                    <div style="display:flex; align-items:center; background:#FFF; padding:15px; border-radius: 16px; margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.02); border: 1px solid #E5E7EB; cursor:pointer; transition: transform 0.1s;" 
-                         onclick="window.App.openChat('${conv.partner_id}', '校友_${shortId}', '😎')">
-                        <div style="font-size:40px; margin-right:12px; background: #F3F4F6; border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">😎</div>
-                        <div style="flex:1; overflow:hidden;">
-                            <div style="display:flex; justify-content:space-between; margin-bottom:4px; align-items: center;">
-                                <span style="font-weight:900; font-size:15px; color:#111827;">校友_${shortId}</span>
-                                <span style="font-size:11px; color:#9CA3AF;">${timeStr}</span>
-                            </div>
-                            <div style="font-size:13px; color:#6B7280; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${conv.last_message}</div>
-                        </div>
-                    </div>`;
-                });
-                list.innerHTML = html;
-            });
-        } catch(e) {
-            console.error("🚨 拉取会话列表失败:", e);
-            safeDOM.execute('conversationList', el => el.innerHTML = '<div style="text-align:center; padding: 40px; color:#EF4444;">网络错误，请刷新重试</div>');
-        }
+        safeDOM.execute('chatInput', el => { el.value = text; this.sendChatMessage(); });
     }
 };
