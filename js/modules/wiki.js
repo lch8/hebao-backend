@@ -150,7 +150,9 @@ export const WikiEngine = {
             });
             html += `</div></div>`;
             
-            newsData.forEach((item, index) => {
+            const remainingNews = newsData.slice(3);
+            
+            remainingNews.forEach((item, index) => {
                 const isHot = item.tagColor === '#EF4444' || item.hot === true;
                 const hotBadge = isHot ? `<span style="background:#FEE2E2; color:#DC2626; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold; margin-right:6px;">🔥 爆</span>` : '';
 
@@ -159,12 +161,12 @@ export const WikiEngine = {
                     cleanSummary = cleanSummary.replace(`【${item.title}】`, '').trim();
                 }
 
-                const isLast = index === newsData.length - 1;
+                // 🌟 这里也同步改成了 remainingNews.length，防止最后一条新闻的时间轴多出一条竖线
+                const isLast = index === remainingNews.length - 1;
 
-                // 🌟 安全编码：防止标题或内容里的特殊字符搞坏了 onclick 结构
-               // 💡 终极安全编码：不仅 encode，还要把单引号强制替换为 %27，彻底杜绝语法冲突！
-const safeTitle = encodeURIComponent(item.title || '情报详情').replace(/'/g, "%27");
-const safeDetail = encodeURIComponent(item.detailContent || '').replace(/'/g, "%27");
+                // 💡 终极安全编码：不仅 encode，还要把单引号强制替换为 %27，彻底杜绝语法冲突！
+                const safeTitle = encodeURIComponent(item.title || '情报详情').replace(/'/g, "%27");
+                const safeDetail = encodeURIComponent(item.detailContent || '').replace(/'/g, "%27");
 
                 html += `
                 <div class="news-item" style="display:flex; margin-bottom: 20px; position:relative; break-inside: avoid;">
