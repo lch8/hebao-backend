@@ -107,62 +107,78 @@ export const WikiEngine = {
 // 🗞️ 架构师高定：Pro 玩家 24h AI 新闻速报渲染引擎
 // ============================================================================
 // ============================================================================
-    // 🗞️ 架构师高定：Pro 玩家 24h AI 新闻速报渲染引擎
-    // ============================================================================
     async renderProNews() {
         const container = document.getElementById('proNewsList');
-    if (!container) return;
+        if (!container) return;
 
-    // 1. 极客感拉满的 AI 抓取骨架屏 (加载状态)
-    container.innerHTML = `
-        <div style="padding: 30px 0; text-align: center; color: #64748B; font-size: 13px; display: flex; flex-direction: column; align-items: center; gap: 10px;">
-            <div style="display: flex; gap: 4px;">
-                <span class="pulse-dot" style="background: #3B82F6; animation-delay: 0s;"></span>
-                <span class="pulse-dot" style="background: #3B82F6; animation-delay: 0.2s;"></span>
-                <span class="pulse-dot" style="background: #3B82F6; animation-delay: 0.4s;"></span>
-            </div>
-            <span>DeepSeek 正在从荷兰媒体抓取并翻译...</span>
-        </div>
-    `;
+        try {
+            // 先显示一个优雅的加载状态
+            container.innerHTML = '<div style="text-align:center; padding: 40px 20px; color: #9CA3AF; font-size: 13px;">📡 正在连接全网情报中心...</div>';
 
-    try {
-        // 2. 呼叫后端 API 获取 AI 洗稿后的新闻
-        const res = await fetch('/api/get-news');
-        const result = await res.json();
+            const res = await fetch('/api/get-news');
+            const data = await res.json();
 
-        if (result.success && result.data && result.data.length > 0) {
+            if (!data.success || !data.data || data.data.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding: 40px 20px; color: #9CA3AF; font-size: 13px;">暂无速报，情报官正在快马加鞭赶来~</div>';
+                return;
+            }
+
+            const newsData = data.data;
             let html = '';
             
-            // 3. 渲染精致的时间轴 (TimeLine)
-            result.data.forEach((news, index) => {
-                const isLast = index === result.data.length - 1;
-                // 🔥 热点标签
-                const hotBadge = news.hot ? `<span style="background: linear-gradient(135deg, #FEF2F2, #FEE2E2); color: #DC2626; font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-right: 6px; font-weight: 900; border: 1px solid #FECACA;">🔥 爆</span>` : '';
-                
+            newsData.forEach((item, index) => {
+                // 1. 动态判断是否“爆款”：只有红色系标签或特大新闻才标红🔥
+                const isHot = item.tagColor === '#EF4444' || item.hot === true;
+                const hotBadge = isHot ? `<span style="background:#FEE2E2; color:#DC2626; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold; margin-right:6px;">🔥 爆</span>` : '';
+
+                // 2. 清洗数据：剥离【标题】，让摘要清清爽爽
+                let cleanSummary = item.content || '';
+                if (item.title && cleanSummary.includes(`【${item.title}】`)) {
+                    cleanSummary = cleanSummary.replace(`【${item.title}】`, '').trim();
+                }
+
+                // 为了让最后一条新闻的时间轴竖线不“露底”，判断是不是最后一条
+                const isLast = index === newsData.length - 1;
+
                 html += `
-                <div style="display: flex; gap: 15px; align-items: flex-start; position: relative; margin-bottom: ${isLast ? '0' : '16px'};">
-                    <div style="display: flex; flex-direction: column; align-items: center; min-width: 40px;">
-                        <div style="font-size: 12px; color: #64748B; font-weight: 900; margin-bottom: 4px;">${news.time}</div>
-                        ${!isLast ? `<div style="width: 2px; height: 100%; background: #E2E8F0; position: absolute; top: 22px; left: 19px; z-index: 1;"></div>` : ''}
-                        <div style="width: 8px; height: 8px; border-radius: 50%; background: ${news.hot ? '#EF4444' : '#CBD5E1'}; position: relative; z-index: 2; box-shadow: 0 0 0 3px #FFF;"></div>
-                    </div>
+                <div class="news-item" style="display:flex; margin-bottom: 20px; position:relative; break-inside: avoid;">
                     
-                    <div style="flex: 1; padding-bottom: ${isLast ? '0' : '10px'};">
-                        <div style="font-size: 13px; color: #1E293B; line-height: 1.6; font-weight: 500;">
-                            ${hotBadge}<span style="color: #3B82F6; font-weight: 900; margin-right: 4px;">[${news.tag}]</span>${news.content}
+                    <div style="width: 55px; flex-shrink: 0; text-align: right; padding-right: 15px; position: relative;">
+                        <div style="font-size: 13px; font-weight: 900; color: ${isHot ? '#111827' : '#9CA3AF'}; margin-top: 2px;">${item.time}</div>
+                        <div style="position: absolute; right: -4px; top: 6px; width: 8px; height: 8px; background: ${isHot ? '#EF4444' : '#E5E7EB'}; border-radius: 50%; z-index: 2; border: 2px solid #FFF;"></div>
+                        ${!isLast ? `<div style="position: absolute; right: -1px; top: 14px; bottom: -28px; width: 2px; background: #F3F4F6; z-index: 1;"></div>` : ''}
+                    </div>
+
+                    <div style="flex: 1; padding-bottom: 5px;">
+                        <div style="margin-bottom: 8px; display: flex; align-items: center; flex-wrap: wrap;">
+                            ${hotBadge}
+                            <span style="color: ${item.tagColor || '#3B82F6'}; font-size: 11px; font-weight: 900; background: ${item.tagColor ? item.tagColor+'1A' : '#EFF6FF'}; padding: 3px 8px; border-radius: 6px;">${item.tag}</span>
+                        </div>
+                        
+                        <div style="font-size: 15px; font-weight: 900; color: #111827; margin-bottom: 6px; line-height: 1.4;">
+                            ${item.title || item.content.split('】')[0].replace('【', '')}
+                        </div>
+                        
+                        <div style="font-size: 13px; color: #4B5563; line-height: 1.6; margin-bottom: 12px;">
+                            ${cleanSummary}
+                        </div>
+
+                        <div style="text-align: right;">
+                            <span onclick="alert('即将上线：一键转发给搭子！')" style="background: #F9FAFB; border: 1px solid #E5E7EB; color: #374151; padding: 5px 12px; border-radius: 12px; font-size: 11px; font-weight: bold; cursor: pointer; display: inline-block; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                                ${item.actionText || '去看看'} ⚡️
+                            </span>
                         </div>
                     </div>
                 </div>`;
             });
-            container.innerHTML = `<div style="padding: 15px 0 5px 0;">${html}</div>`;
-        } else {
-            throw new Error("No data returned");
+
+            container.innerHTML = html;
+            
+        } catch (error) {
+            console.error("渲染新闻失败:", error);
+            container.innerHTML = '<div style="text-align:center; padding: 40px; color: #EF4444; font-size: 13px;">情报中心暂时失联了，请刷新重试...</div>';
         }
-    } catch (e) {
-        console.error("新闻拉取失败:", e);
-        container.innerHTML = `<div style="text-align:center; padding:30px 0; color:#EF4444; font-size:13px;">📡 信号中断，未能连接到荷兰新闻塔</div>`;
-    }
-},
+    },
 
     checkSafetyCode() {
         const input = safeDOM.getValue('postcodeInput').trim(); 
