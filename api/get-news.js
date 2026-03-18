@@ -24,7 +24,7 @@ export default async function handler(req) {
                         type: "execute", 
                         stmt: { 
                             // 按照时间倒序，拉取最新的 10 条速报
-                            sql: "SELECT id, title, ai_summary, tag, tag_color, action_text, created_at FROM pro_news ORDER BY id DESC LIMIT 10" 
+                            sql: "SELECT id, title, ai_summary, tag, tag_color, action_text, created_at, url FROM pro_news ORDER BY id DESC LIMIT 10"
                         } 
                     },
                     { type: "close" }
@@ -67,6 +67,7 @@ export default async function handler(req) {
                 title: obj.title,
                 content: `【${obj.title}】${obj.ai_summary || ''}`, 
                 actionText: obj.action_text || '去看看',
+                url: obj.url || '#', // 👈 把链接传给前台
                 hot: true // 刚抓下来的新闻统一标红火
             };
         });
