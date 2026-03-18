@@ -149,7 +149,7 @@ window.App.showProChart = async function(type) {
     const subEl = document.getElementById('chartModalSub');
     
     // 假设你的 canvas ID 叫 proChartCanvas (如果不是，请根据你的 HTML 修改)
-    const ctx = document.getElementById('proChartCanvas'); 
+    const ctx = document.getElementById('proTrendCanvas'); 
     if (!ctx) return console.error("找不到图表 Canvas 容器！");
 
     if (titleEl) titleEl.innerText = '📡 正在连接大盘数据...';
