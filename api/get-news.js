@@ -5,25 +5,84 @@ export default async function handler(req) {
     if (req.method === 'OPTIONS') return new Response(null, { status: 200, headers: { 'Access-Control-Allow-Origin': '*' }});
     
     try {
-        // 🔮 这里是 AI 翻译引擎的占位符。
-        // 未来你可以用 fetch() 去拉取 nu.nl 的 RSS，然后传给 DeepSeek 翻译。
-        // 现在为了打通前后台，我们先返回一组高质量的“留学生息息相关”的硬核模拟数据：
+        // 1. 获取数据库钥匙
+        let dbUrl = process.env.TURSO_DATABASE_URL;
+        const authToken = process.env.TURSO_AUTH_TOKEN;
         
-        const aiTranslatedNews = [
-            { id: 1, time: '10:30', tag: '交通', content: 'NS (荷兰铁路) 宣布下月起非高峰期火车票价下调 3%，以鼓励留学生与通勤者错峰出行。', hot: true },
-            { id: 2, time: '09:15', tag: '政策', content: 'IND (移民局) 最新草案提议：非欧盟留学生的兼职打工时长限制，每周有望从 16 小时放宽至 20 小时。', hot: true },
-            { id: 3, time: '08:00', tag: '生活', content: 'Albert Heijn 推出全新积分系统，Premium 会员本周末购买指定日用品可享双倍返现。', hot: false },
-            { id: 4, time: '昨夜', tag: '天气', content: 'KNMI 发布黄色预警：今晚全国大部分地区将迎强风与降雨，部分地区风力达 8 级，请注意骑行安全。', hot: false }
-        ];
+        if (!dbUrl || !authToken) {
+            throw new Error('数据库环境变量未配置');
+        }
+        dbUrl = dbUrl.replace('libsql://', 'https://');
 
-        // 模拟 AI 处理的延迟感 (0.8秒)
-        await new Promise(resolve => setTimeout(resolve, 800));
+        // 2. 向数据库请求最新洗好的 10 条新闻
+        const response = await fetch(`${dbUrl}/v2/pipeline`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                requests: [
+                    { 
+                        type: "execute", 
+                        stmt: { 
+                            // 按照时间倒序，拉取最新的 10 条速报
+                            sql: "SELECT id, title, ai_summary, tag, tag_color, action_text, created_at FROM pro_news ORDER BY id DESC LIMIT 10" 
+                        } 
+                    },
+                    { type: "close" }
+                ]
+            })
+        });
 
-        return new Response(JSON.stringify({ success: true, data: aiTranslatedNews }), { 
+        const result = await response.json();
+        
+        // 🚨 防爆盾：拦截 Turso 内部报错（比如表不存在）
+        if (result.results && result.results[0].type === 'error') {
+            // 如果报 no such table，说明还没建表
+            if (result.results[0].error.message.includes('no such table')) {
+                return new Response(JSON.stringify({ success: true, data: [{ id: 999, time: '现在', tag: '系统', content: '暂无新闻，请先触发爬虫抓取！', hot: false }] }), { status: 200, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }});
+            }
+            throw new Error(result.results[0].error.message);
+        }
+
+        const resData = result.results[0].response.result;
+        const cols = resData.cols.map(c => c.name);
+        
+        // 3. 将数据库字段完美映射为前端需要的格式
+        const realNews = resData.rows.map(row => {
+            let obj = {};
+            row.forEach((val, i) => obj[cols[i]] = val.value);
+            
+            // 优雅处理时间 (提取 HH:MM)
+            let timeStr = '刚刚';
+            if (obj.created_at) {
+                const date = new Date(obj.created_at + 'Z'); 
+                timeStr = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+            }
+
+            return {
+                id: obj.id,
+                time: timeStr,
+                tag: obj.tag || '🌍 速报',
+                tagColor: obj.tag_color || '#EF4444',
+                // 前端可能同时需要 title 和 content，我们把 AI 总结给 content
+                title: obj.title,
+                content: `【${obj.title}】${obj.ai_summary || ''}`, 
+                actionText: obj.action_text || '去看看',
+                hot: true // 刚抓下来的新闻统一标红火
+            };
+        });
+
+        // 兜底：如果数据库是空的
+        if (realNews.length === 0) {
+            realNews.push({ id: 0, time: '刚刚', tag: '📡 提示', content: '新闻源正在接入中，请稍后再来...', hot: false });
+        }
+
+        return new Response(JSON.stringify({ success: true, data: realNews }), { 
             status: 200, 
             headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
         });
+        
     } catch (error) {
+        console.error("抓取真实新闻报错:", error);
         return new Response(JSON.stringify({ error: error.message }), { 
             status: 500, 
             headers: { 'Access-Control-Allow-Origin': '*' }
