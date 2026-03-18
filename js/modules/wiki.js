@@ -123,6 +123,31 @@ export const WikiEngine = {
 
             const newsData = data.data;
             let html = '';
+            // ================= ☕️ 新增：今日 Small Talk 话题榜 =================
+            const top3 = newsData.slice(0, 3);
+            let html = `
+            <div style="background: linear-gradient(135deg, #E0E7FF 0%, #DBEAFE 100%); border-radius: 16px; padding: 16px; margin-bottom: 24px; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.1);">
+                <div style="display:flex; align-items:center; margin-bottom: 8px;">
+                    <span style="font-size: 22px; margin-right: 8px;">☕️</span>
+                    <span style="font-size: 16px; font-weight: 900; color: #1E3A8A;">今日 Small Talk 破冰榜</span>
+                </div>
+                <div style="font-size: 12px; color: #60A5FA; margin-bottom: 14px; line-height: 1.5;">荷兰人最怕空气突然安静，快拿这 3 个话题去和同事/同学开口闲聊！</div>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+            `;
+            
+            top3.forEach((item, i) => {
+                const safeTitle = encodeURIComponent(item.title || '情报详情').replace(/'/g, "%27");
+                const safeDetail = encodeURIComponent(item.detailContent || '').replace(/'/g, "%27");
+                html += `
+                    <div onclick="window.App.openNewsDetail(decodeURIComponent('${safeTitle}'), decodeURIComponent('${safeDetail}'))" style="background: rgba(255,255,255,0.8); border-radius: 10px; padding: 12px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: background 0.2s;">
+                        <div style="font-size: 13px; font-weight: 900; color: #1E3A8A; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; max-width: 75%;">
+                            <span style="color: #93C5FD; margin-right: 4px;">#${i+1}</span> ${item.title.replace(/\[.*?\]\s*/g, '')}
+                        </div>
+                        <span style="background: #3B82F6; color: white; padding: 4px 10px; border-radius: 12px; font-size: 10px; font-weight: bold; white-space: nowrap;">Get 金句 👋</span>
+                    </div>
+                `;
+            });
+            html += `</div></div>`;
             
             newsData.forEach((item, index) => {
                 const isHot = item.tagColor === '#EF4444' || item.hot === true;
