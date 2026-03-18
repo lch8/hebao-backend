@@ -212,6 +212,49 @@ window.App.showProChart = function(type) {
     }, 150); // 留出充足时间让 Modal 动画播放完
 };
 
+async function loadRealMarketData() {
+    try {
+        const res = await fetch('/api/get-market');
+        const { data } = await res.json();
+        
+        if (data) {
+            // 1. 渲染【汇率卡片】外显数字
+            document.querySelector('#exchange-rate-value').innerText = data.exchange.current;
+            const exChangeEl = document.querySelector('#exchange-rate-change');
+            if (data.exchange.change >= 0) {
+                exChangeEl.innerText = `↑${data.exchange.change}`;
+                exChangeEl.style.color = '#EF4444'; // 涨是红色
+            } else {
+                exChangeEl.innerText = `↓${Math.abs(data.exchange.change)}`;
+                exChangeEl.style.color = '#10B981'; // 跌是绿色
+            }
+
+            // 2. 渲染【电价卡片】外显数字
+            document.querySelector('#energy-price-value').innerText = `€${data.energy.current}`;
+
+            // 3. 渲染【房贷卡片】外显数字
+            document.querySelector('#mortgage-rate-value').innerText = data.mortgage.current;
+
+            // ========================================================
+            // ⚠️ 重点：当你用户点击卡片，弹窗显示曲线图时，把对应的数组传给图表库！
+            // ========================================================
+            
+            // 假设用户点击了汇率卡片：
+            // 图表横坐标 (X轴) 使用： data.exchange.chartLabels  (如: ["03-01", "03-02", ...])
+            // 图表纵坐标 (Y轴) 使用： data.exchange.chartData    (如: [7.81, 7.82, ...])
+
+            // 假设用户点击了电价卡片：
+            // 图表横坐标 (X轴) 使用： data.energy.chartLabels  (如: ["0:00", "1:00", ...])
+            // 图表纵坐标 (Y轴) 使用： data.energy.chartData    (如: [0.12, 0.10, -0.01, ...]) 
+            // （注：荷兰电价有时会出现负数，留学生超爱看这个薅羊毛！）
+        }
+    } catch (error) {
+        console.error("加载真实大盘数据失败", error);
+    }
+}
+
+// 页面加载时调用
+loadRealMarketData();
 // ============================================================================
 // 🚀 全局启动器 (页面加载完毕后自动拉取数据)
 // ============================================================================
