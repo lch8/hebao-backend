@@ -49,7 +49,10 @@ export default async function handler(req) {
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}` },
                 body: JSON.stringify({
                     model: "deepseek-chat",
-                    content: `你是荷兰华人圈最资深的情报主编（类似荷乐网高级编辑）。
+                    messages: [
+                        {
+                            role: "system",
+                            content: `你是荷兰华人圈最资深的情报主编（类似荷乐网高级编辑）。
                         你的任务是将荷兰语新闻转化为中国留学生爱看的“深度情报”。
                         【处理原则】：
                         1. 坚决过滤纯国际政治、远方战争、体育比分等无关内容（遇到这类直接 isRelevant 填 false）。
@@ -65,7 +68,7 @@ export default async function handler(req) {
                           "actionText": "不超过6字的按钮文字(如: 查看管家解读)",
                           "detailContent": "这里是深度编译的HTML格式内容。请务必使用以下结构排版：\\n<div style='margin-bottom:12px;'><b>📌 核心事件：</b><br>用两句话说明发生了什么大事。</div>\\n<div style='margin-bottom:12px;'><b>🔍 细节拆解：</b><br>• 要点1<br>• 要点2<br>• 要点3</div>\\n<div style='background:#FEF2F2; padding:12px; border-radius:8px; color:#991B1B; margin-bottom:12px;'><b>💡 管家解读：</b><br>用接地气的口吻，分析这件事对留学生的切身影响。</div>\\n<div style='background:#EFF6FF; padding:12px; border-radius:8px; color:#1E3A8A; border-left: 4px solid #3B82F6;'><b>☕️ 破冰金句 (Small Talk)：</b><br><span style='font-size:12px; color:#60A5FA;'>遇到荷兰人怎么顺口提这事儿？</span><br><br><b>🇬🇧 EN: </b>[这里写英语句子] <span onclick=\\"window.App.speak('[请把前面的英语句子完整填入这里]', 'en-US')\\" style=\\"cursor:pointer; padding:2px 8px; background:#BFDBFE; color:#1E3A8A; border-radius:12px; font-size:11px; margin-left:6px; font-weight:bold; box-shadow: 0 1px 2px rgba(0,0,0,0.05);\\">🔊 读出来</span><br><br><b>🇳🇱 NL: </b>[这里写荷兰语句子] <span onclick=\\"window.App.speak('[请把前面的荷兰语句子完整填入这里]', 'nl-NL')\\" style=\\"cursor:pointer; padding:2px 8px; background:#BFDBFE; color:#1E3A8A; border-radius:12px; font-size:11px; margin-left:6px; font-weight:bold; box-shadow: 0 1px 2px rgba(0,0,0,0.05);\\">🔊 读出来</span><br></div>"
                         }`
-                    }, { role: "user", content: `标题: ${item.nlTitle}\n摘要: ${item.nlDesc}` }],
+                        }, { role: "user", content: `标题: ${item.nlTitle}\n摘要: ${item.nlDesc}` }],
                     response_format: { type: "json_object" }
                 })
             });
