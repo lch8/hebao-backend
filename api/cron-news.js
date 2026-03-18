@@ -20,7 +20,7 @@ export default async function handler(req) {
         
         for (let i = 1; i < itemChunks.length; i++) {
     // 💡 Vercel 防超时终极策略：每次只抓取处理最顶部的 1 到 2 条新新闻
-    if (items.length >= 2) break; 
+    if (items.length >= 1) break; 
     const chunk = itemChunks[i];
             let title = '', desc = '', link = '';
             
