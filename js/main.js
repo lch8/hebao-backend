@@ -289,6 +289,48 @@ async function loadRealMarketData() {
 
 // 页面加载时调用
 loadRealMarketData();
+
+// ==========================================
+// 🌟 自动唤醒大盘卡片：拉取真实数据并渲染外显数字
+// ==========================================
+window.App.initMarketCards = async function() {
+    try {
+        const res = await fetch('/api/get-market');
+        const result = await res.json();
+        
+        if (result.success) {
+            const data = result.data;
+            
+            // 1. 自动更新汇率卡片
+            const exEl = document.getElementById('market-exchange');
+            if (exEl) {
+                const sign = data.exchange.change >= 0 ? '↑' : '↓';
+                const color = data.exchange.change >= 0 ? '#EF4444' : '#10B981';
+                // 拼接当前汇率和涨跌幅 (例如: 7.92 ↑0.02)
+                exEl.innerHTML = `${data.exchange.current} <span style="font-size:12px; color:${color}; margin-left:2px;">${sign}${Math.abs(data.exchange.change)}</span>`;
+                // 根据涨跌改变主数字颜色
+                exEl.style.color = color;
+            }
+            
+            // 2. 自动更新电价卡片
+            const enEl = document.getElementById('market-energy');
+            if (enEl) enEl.innerText = `€${data.energy.current}`;
+            
+            // 3. 自动更新房贷卡片
+            const moEl = document.getElementById('market-mortgage');
+            if (moEl) moEl.innerText = `${data.mortgage.current}%`;
+        }
+    } catch (e) {
+        console.error("加载卡片真实数据失败", e);
+    }
+};
+
+// 页面加载完毕后，延迟 300 毫秒静默获取数据，不卡顿页面
+setTimeout(() => {
+    if (window.App.initMarketCards) {
+        window.App.initMarketCards();
+    }
+}, 300);
 // ============================================================================
 // 🚀 全局启动器 (页面加载完毕后自动拉取数据)
 // ============================================================================
