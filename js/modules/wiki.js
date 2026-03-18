@@ -392,6 +392,19 @@ if (typeof window !== 'undefined') {
         }
     });
 
+    // 🌟 原生发音引擎 (Text-to-Speech)
+    window.App.speak = function(text, lang) {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel(); // 停止上一句
+            const msg = new SpeechSynthesisUtterance(text);
+            msg.lang = lang; // 'nl-NL' 或 'en-US'
+            msg.rate = 0.85; // 放慢语速，方便留学生跟读
+            window.speechSynthesis.speak(msg);
+        } else {
+            alert('抱歉，您的浏览器不支持语音播报哦~');
+        }
+    };
+
     // 🌟 全新挂载弹窗唤起函数 (无视框架，原生 JS 构建)
     window.App.openNewsDetail = function(title, htmlContent) {
         // 1. 如果有旧的，先清理掉，防止叠罗汉
