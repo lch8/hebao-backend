@@ -1,5 +1,5 @@
 // ============================================================================
-// js/modules/wiki.js - 红宝书与生存百科引擎 (极度防御全量版 + Pro 新闻对接)
+// js/modules/wiki.js - 红宝书与生存百科引擎 (深度解读抽屉弹窗版)
 // ============================================================================
 import { ModalManager } from '../components/modals.js';
 import { showToast } from '../core/toast.js';
@@ -104,15 +104,13 @@ export const WikiEngine = {
     },
 
     // ============================================================================
-// 🗞️ 架构师高定：Pro 玩家 24h AI 新闻速报渲染引擎
-// ============================================================================
-// ============================================================================
+    // 🗞️ 架构师高定：Pro 玩家 24h AI 新闻速报渲染引擎 (内部弹窗版)
+    // ============================================================================
     async renderProNews() {
         const container = document.getElementById('proNewsList');
         if (!container) return;
 
         try {
-            // 先显示一个优雅的加载状态
             container.innerHTML = '<div style="text-align:center; padding: 40px 20px; color: #9CA3AF; font-size: 13px;">📡 正在连接全网情报中心...</div>';
 
             const res = await fetch('/api/get-news');
@@ -127,18 +125,19 @@ export const WikiEngine = {
             let html = '';
             
             newsData.forEach((item, index) => {
-                // 1. 动态判断是否“爆款”：只有红色系标签或特大新闻才标红🔥
                 const isHot = item.tagColor === '#EF4444' || item.hot === true;
                 const hotBadge = isHot ? `<span style="background:#FEE2E2; color:#DC2626; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold; margin-right:6px;">🔥 爆</span>` : '';
 
-                // 2. 清洗数据：剥离【标题】，让摘要清清爽爽
                 let cleanSummary = item.content || '';
                 if (item.title && cleanSummary.includes(`【${item.title}】`)) {
                     cleanSummary = cleanSummary.replace(`【${item.title}】`, '').trim();
                 }
 
-                // 为了让最后一条新闻的时间轴竖线不“露底”，判断是不是最后一条
                 const isLast = index === newsData.length - 1;
+
+                // 🌟 安全编码：防止标题或内容里的特殊字符搞坏了 onclick 结构
+                const safeTitle = encodeURIComponent(item.title || '情报详情');
+                const safeDetail = encodeURIComponent(item.detailContent || '');
 
                 html += `
                 <div class="news-item" style="display:flex; margin-bottom: 20px; position:relative; break-inside: avoid;">
@@ -164,9 +163,9 @@ export const WikiEngine = {
                         </div>
 
                         <div style="text-align: right;">
-                            <span onclick="window.open('${item.url}', '_blank')" style="background: #F9FAFB; border: 1px solid #E5E7EB; color: #374151; padding: 5px 12px; border-radius: 12px; font-size: 11px; font-weight: bold; cursor: pointer; display: inline-block; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
-    ${item.actionText || '查看详情'} ⚡️
-</span>
+                            <span onclick="window.App.openNewsDetail(decodeURIComponent('${safeTitle}'), decodeURIComponent('${safeDetail}'))" style="background: #F9FAFB; border: 1px solid #E5E7EB; color: #374151; padding: 5px 12px; border-radius: 12px; font-size: 11px; font-weight: bold; cursor: pointer; display: inline-block; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                                ${item.actionText || '查看解读'} ⚡️
+                            </span>
                         </div>
                     </div>
                 </div>`;
@@ -355,12 +354,63 @@ export const WikiEngine = {
     }
 };
 
-// 💥 暴力绑定机制
+// 💥 暴力绑定机制 + 注入详情抽屉弹窗引擎
 if (typeof window !== 'undefined') {
+    window.App = window.App || {};
+    
+    // 批量绑定 WikiEngine 的所有函数
     Object.keys(WikiEngine).forEach(key => {
         if (typeof WikiEngine[key] === 'function') {
-            window.App = window.App || {};
             window.App[key] = WikiEngine[key].bind(WikiEngine);
         }
     });
+
+    // 🌟 全新挂载弹窗唤起函数 (无视框架，原生 JS 构建)
+    window.App.openNewsDetail = function(title, htmlContent) {
+        // 1. 如果有旧的，先清理掉，防止叠罗汉
+        const existing = document.getElementById('hebaoNewsOverlay');
+        if (existing) existing.remove();
+
+        // 2. 创建黑色半透明遮罩
+        const overlay = document.createElement('div');
+        overlay.id = 'hebaoNewsOverlay';
+        overlay.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:99999; display:flex; justify-content:center; align-items:flex-end; backdrop-filter:blur(2px); transition: opacity 0.3s; opacity: 0;';
+        
+        // 3. 创建白色底部卡片 (带圆角和小灰条，支持滚动)
+        const card = document.createElement('div');
+        card.style.cssText = 'width:100%; max-width:500px; background:#FFF; border-radius:24px 24px 0 0; padding:24px 20px 40px 20px; box-sizing:border-box; max-height:85vh; overflow-y:auto; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative;';
+
+        // 4. 将 AI 生成的深度情报内容塞入卡片
+        card.innerHTML = `
+            <div style="width:40px; height:4px; background:#E5E7EB; border-radius:2px; margin:0 auto 20px auto;"></div>
+            <div style="font-size:18px; font-weight:900; color:#111827; margin-bottom:16px; line-height:1.4;">${title}</div>
+            
+            <div style="font-size:14px; color:#374151; line-height:1.7;">
+                ${htmlContent}
+            </div>
+            
+            <div style="margin-top:30px; text-align:center;">
+                <button id="closeNewsModalBtn" style="background:#F3F4F6; color:#4B5563; border:none; padding:12px 40px; border-radius:20px; font-weight:bold; font-size:14px; cursor:pointer;">关 闭</button>
+            </div>
+        `;
+
+        overlay.appendChild(card);
+        document.body.appendChild(overlay);
+
+        // 5. 极度丝滑的动画入场
+        requestAnimationFrame(() => {
+            overlay.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        });
+        
+        // 6. 关闭逻辑 (点击背景或关闭按钮)
+        const closeModals = () => {
+            overlay.style.opacity = '0';
+            card.style.transform = 'translateY(100%)';
+            setTimeout(() => overlay.remove(), 300); // 等待动画结束销毁 DOM
+        };
+
+        document.getElementById('closeNewsModalBtn').addEventListener('click', closeModals);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModals(); });
+    };
 }
