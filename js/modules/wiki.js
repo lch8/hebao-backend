@@ -106,6 +106,9 @@ export const WikiEngine = {
     // ============================================================================
     // 🗞️ 架构师高定：Pro 玩家 24h AI 新闻速报渲染引擎 (内部弹窗版)
     // ============================================================================
+   // ============================================================================
+    // 🗞️ 架构师高定：Pro 玩家 24h AI 新闻速报渲染引擎 (修复崩溃 & 去重版)
+    // ============================================================================
     async renderProNews() {
         const container = document.getElementById('proNewsList');
         if (!container) return;
@@ -123,7 +126,7 @@ export const WikiEngine = {
 
             const newsData = data.data;
             
-            // 🌟 修复 Bug：只声明一次 html
+            // 🌟 修复崩溃：这里只声明一次 let html，彻底消灭报错！
             // ================= ☕️ 新增：今日 Small Talk 话题榜 =================
             const top3 = newsData.slice(0, 3);
             let html = `
@@ -150,8 +153,9 @@ export const WikiEngine = {
             });
             html += `</div></div>`;
             
+            // 🌟 修复重复：使用 remainingNews 截取掉前 3 条，底下不再展示
             const remainingNews = newsData.slice(3);
-            
+
             remainingNews.forEach((item, index) => {
                 const isHot = item.tagColor === '#EF4444' || item.hot === true;
                 const hotBadge = isHot ? `<span style="background:#FEE2E2; color:#DC2626; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold; margin-right:6px;">🔥 爆</span>` : '';
@@ -161,10 +165,8 @@ export const WikiEngine = {
                     cleanSummary = cleanSummary.replace(`【${item.title}】`, '').trim();
                 }
 
-                // 🌟 这里也同步改成了 remainingNews.length，防止最后一条新闻的时间轴多出一条竖线
                 const isLast = index === remainingNews.length - 1;
 
-                // 💡 终极安全编码：不仅 encode，还要把单引号强制替换为 %27，彻底杜绝语法冲突！
                 const safeTitle = encodeURIComponent(item.title || '情报详情').replace(/'/g, "%27");
                 const safeDetail = encodeURIComponent(item.detailContent || '').replace(/'/g, "%27");
 
@@ -207,7 +209,6 @@ export const WikiEngine = {
             container.innerHTML = '<div style="text-align:center; padding: 40px; color: #EF4444; font-size: 13px;">情报中心暂时失联了，请刷新重试...</div>';
         }
     },
-
     checkSafetyCode() {
         const input = safeDOM.getValue('postcodeInput').trim(); 
         if (input.length !== 4) return showToast("请输入准确的4位数字邮编哦！(例如：2512)", "warning"); 
