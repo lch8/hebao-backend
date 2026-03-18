@@ -19,8 +19,9 @@ export default async function handler(req) {
         const itemChunks = xml.split('<item>'); 
         
         for (let i = 1; i < itemChunks.length; i++) {
-            if (items.length >= 5) break; // 每次最多看 5 条
-            const chunk = itemChunks[i];
+    // 💡 Vercel 防超时终极策略：每次只抓取处理最顶部的 1 到 2 条新新闻
+    if (items.length >= 2) break; 
+    const chunk = itemChunks[i];
             let title = '', desc = '', link = '';
             
             if (chunk.includes('<title>') && chunk.includes('</title>')) title = chunk.split('<title>')[1].split('</title>')[0].replace('<![CDATA[', '').replace(']]>', '').trim();
