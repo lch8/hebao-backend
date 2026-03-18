@@ -136,8 +136,9 @@ export const WikiEngine = {
                 const isLast = index === newsData.length - 1;
 
                 // 🌟 安全编码：防止标题或内容里的特殊字符搞坏了 onclick 结构
-                const safeTitle = encodeURIComponent(item.title || '情报详情');
-                const safeDetail = encodeURIComponent(item.detailContent || '');
+               // 💡 终极安全编码：不仅 encode，还要把单引号强制替换为 %27，彻底杜绝语法冲突！
+const safeTitle = encodeURIComponent(item.title || '情报详情').replace(/'/g, "%27");
+const safeDetail = encodeURIComponent(item.detailContent || '').replace(/'/g, "%27");
 
                 html += `
                 <div class="news-item" style="display:flex; margin-bottom: 20px; position:relative; break-inside: avoid;">
