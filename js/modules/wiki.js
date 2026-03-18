@@ -164,9 +164,9 @@ export const WikiEngine = {
                         </div>
 
                         <div style="text-align: right;">
-                            <span onclick="alert('即将上线：一键转发给搭子！')" style="background: #F9FAFB; border: 1px solid #E5E7EB; color: #374151; padding: 5px 12px; border-radius: 12px; font-size: 11px; font-weight: bold; cursor: pointer; display: inline-block; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
-                                ${item.actionText || '去看看'} ⚡️
-                            </span>
+                            <span onclick="window.open('${item.url}', '_blank')" style="background: #F9FAFB; border: 1px solid #E5E7EB; color: #374151; padding: 5px 12px; border-radius: 12px; font-size: 11px; font-weight: bold; cursor: pointer; display: inline-block; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+    ${item.actionText || '查看详情'} ⚡️
+</span>
                         </div>
                     </div>
                 </div>`;
