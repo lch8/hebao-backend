@@ -142,51 +142,69 @@ window.switchRbMode = window.App.switchRbMode;
 // ============================================================================
 let currentProChart = null; // 记录当前的图表实例，防止重叠污染
 
-window.App.showProChart = function(type) {
-    // 1. 调起我们刚写好的画板弹窗
+window.App.showProChart = async function(type) {
+    // 1. 先唤起弹窗，并显示加载状态
     window.App.openModal('proChartModal');
+    const titleEl = document.getElementById('chartModalTitle');
+    const subEl = document.getElementById('chartModalSub');
     
-    // 2. 延迟 100ms 渲染图表（必须等弹窗完全显示，Canvas 才有宽高）
-    setTimeout(() => {
-        const ctx = document.getElementById('proTrendCanvas').getContext('2d');
+    // 假设你的 canvas ID 叫 proChartCanvas (如果不是，请根据你的 HTML 修改)
+    const ctx = document.getElementById('proChartCanvas'); 
+    if (!ctx) return console.error("找不到图表 Canvas 容器！");
+
+    if (titleEl) titleEl.innerText = '📡 正在连接大盘数据...';
+
+    try {
+        // 2. 拉取我们刚写好的真实数据 API
+        const res = await fetch('/api/get-market');
+        const result = await res.json();
         
-        // 如果之前画过图，必须先销毁，否则鼠标放上去会疯狂闪烁
+        if (!result.success) throw new Error("接口返回错误");
+        
+        const data = result.data;
+        let targetLabels, targetData, targetTitle, targetSub, lineColor, bgColor;
+
+        // 3. 根据点击的不同卡片，分配不同的数据和主题色
+        if (type === 'exchange') {
+            targetLabels = data.exchange.chartLabels;
+            targetData = data.exchange.chartData;
+            targetTitle = '💶 欧元/人民币 (近14天走势)';
+            targetSub = '数据仅供参考，不构成投资建议';
+            lineColor = '#EF4444'; // 红色系 (涨跌幅大)
+            bgColor = 'rgba(239, 68, 68, 0.1)';
+        } else if (type === 'energy') {
+            targetLabels = data.energy.chartLabels;
+            targetData = data.energy.chartData;
+            targetTitle = '⚡️ 荷兰今日电价走势';
+            targetSub = '24小时动态电价 (€/kWh)，负数可薅羊毛！';
+            lineColor = '#10B981'; // 绿色系 (环保能源)
+            bgColor = 'rgba(16, 185, 129, 0.1)';
+        } else if (type === 'mortgage') {
+            targetLabels = data.mortgage.chartLabels;
+            targetData = data.mortgage.chartData;
+            targetTitle = '🏠 10年期房贷利率走势';
+            targetSub = '近6个月模拟趋势 (%)';
+            lineColor = '#F59E0B'; // 橙色系 (稳健)
+            bgColor = 'rgba(245, 158, 11, 0.1)';
+        }
+
+        // 4. 更新弹窗里的文字标题
+        if (titleEl) titleEl.innerText = targetTitle;
+        if (subEl) subEl.innerText = targetSub;
+
+        // 5. 销毁旧图表 (极其重要！否则鼠标放上去会疯狂闪烁闪现旧数据)
         if (currentProChart) {
             currentProChart.destroy();
         }
 
-        let title = '', labels = [], dataPoints = [], lineColor = '', bgColor = '';
-
-        // 3. 根据点击的不同卡片，装载不同的模拟数据和情绪配色
-        if (type === 'exchange') {
-            title = '💶 欧元/人民币 (近7天走势)';
-            labels = ['周一', '周二', '周三', '周四', '周五', '周六', '今日'];
-            dataPoints = [7.75, 7.78, 7.81, 7.79, 7.80, 7.82, 7.82];
-            lineColor = '#EF4444'; // 红色代表上涨
-            bgColor = 'rgba(239, 68, 68, 0.1)';
-        } else if (type === 'power') {
-            title = '⚡ 荷兰日均电价走势 (€/kWh)';
-            labels = ['10-01', '10-02', '10-03', '10-04', '10-05', '10-06', '今日'];
-            dataPoints = [0.15, 0.16, 0.14, 0.12, 0.11, 0.13, 0.12];
-            lineColor = '#10B981'; // 绿色代表电价下降
-            bgColor = 'rgba(16, 185, 129, 0.1)';
-        } else if (type === 'mortgage') {
-            title = '🏠 荷兰10年期房贷利率 (%)';
-            labels = ['4月', '5月', '6月', '7月', '8月', '9月', '本月'];
-            dataPoints = [4.12, 4.05, 3.98, 3.95, 3.90, 3.88, 3.85];
-            lineColor = '#3B82F6'; // 稳重的金融蓝
-            bgColor = 'rgba(59, 130, 246, 0.1)';
-        }
-
-        document.getElementById('chartModalTitle').innerText = title;
-
-        // 4. 调用 Chart.js 绘制丝滑的高级曲线
-        currentProChart = new Chart(ctx, {
+        // 6. 用 Chart.js 画出极其平滑且带底色渐变的绝美曲线
+        currentProChart = new Chart(ctx.getContext('2d'), {
             type: 'line',
             data: {
-                labels: labels,
+                labels: targetLabels,
                 datasets: [{
-                    data: dataPoints,
+                    label: '数值',
+                    data: targetData,
                     borderColor: lineColor,
                     backgroundColor: bgColor,
                     borderWidth: 3,
@@ -194,22 +212,38 @@ window.App.showProChart = function(type) {
                     pointBorderColor: lineColor,
                     pointBorderWidth: 2,
                     pointRadius: 4,
-                    fill: true, // 开启下方渐变填充
-                    tension: 0.4 // 贝塞尔曲线，让线条极其圆润丝滑
+                    pointHoverRadius: 6,
+                    fill: true, // 开启下方底色填充，对标你截图里的效果
+                    tension: 0.4 // 0.4 是神仙参数，让折线变成丝滑的波浪线
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
-                scales: {
-                    x: { grid: { display: false }, ticks: { font: { size: 10, family: 'sans-serif' }, color: '#9CA3AF' } },
-                    y: { grid: { color: '#F3F4F6', drawBorder: false }, ticks: { font: { size: 10 }, color: '#9CA3AF' } }
+                plugins: {
+                    legend: { display: false }, // 隐藏多余的图例
+                    tooltip: {
+                        backgroundColor: 'rgba(17, 24, 39, 0.9)', // 黑色高级提示框
+                        padding: 10,
+                        titleFont: { size: 13 },
+                        bodyFont: { size: 14, weight: 'bold' },
+                        displayColors: false
+                    }
                 },
-                interaction: { mode: 'nearest', axis: 'x', intersect: false }
+                scales: {
+                    x: { grid: { display: false } }, // 隐藏竖向网格线，更清爽
+                    y: { 
+                        grid: { borderDash: [5, 5] }, // 横向网格线做成虚线
+                        ticks: { maxTicksLimit: 6 } 
+                    }
+                }
             }
         });
-    }, 150); // 留出充足时间让 Modal 动画播放完
+
+    } catch (error) {
+        console.error("图表数据加载失败", error);
+        if (titleEl) titleEl.innerText = '❌ 数据加载失败，请重试';
+    }
 };
 
 async function loadRealMarketData() {
