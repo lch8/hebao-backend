@@ -122,7 +122,8 @@ export const WikiEngine = {
             }
 
             const newsData = data.data;
-            let html = '';
+            
+            // 🌟 修复 Bug：只声明一次 html
             // ================= ☕️ 新增：今日 Small Talk 话题榜 =================
             const top3 = newsData.slice(0, 3);
             let html = `
