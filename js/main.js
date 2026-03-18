@@ -246,49 +246,34 @@ window.App.showProChart = async function(type) {
     }
 };
 
-async function loadRealMarketData() {
+// js/main.js 里的 market 初始化部分
+window.App.initMarketCards = async function() {
     try {
         const res = await fetch('/api/get-market');
-        const { data } = await res.json();
+        const result = await res.json();
         
-        if (data) {
-            // 1. 渲染【汇率卡片】外显数字
-            document.querySelector('#exchange-rate-value').innerText = data.exchange.current;
-            const exChangeEl = document.querySelector('#exchange-rate-change');
-            if (data.exchange.change >= 0) {
-                exChangeEl.innerText = `↑${data.exchange.change}`;
-                exChangeEl.style.color = '#EF4444'; // 涨是红色
-            } else {
-                exChangeEl.innerText = `↓${Math.abs(data.exchange.change)}`;
-                exChangeEl.style.color = '#10B981'; // 跌是绿色
-            }
-
-            // 2. 渲染【电价卡片】外显数字
-            document.querySelector('#energy-price-value').innerText = `€${data.energy.current}`;
-
-            // 3. 渲染【房贷卡片】外显数字
-            document.querySelector('#mortgage-rate-value').innerText = data.mortgage.current;
-
-            // ========================================================
-            // ⚠️ 重点：当你用户点击卡片，弹窗显示曲线图时，把对应的数组传给图表库！
-            // ========================================================
+        if (result.success && result.data) {
+            const data = result.data;
             
-            // 假设用户点击了汇率卡片：
-            // 图表横坐标 (X轴) 使用： data.exchange.chartLabels  (如: ["03-01", "03-02", ...])
-            // 图表纵坐标 (Y轴) 使用： data.exchange.chartData    (如: [7.81, 7.82, ...])
-
-            // 假设用户点击了电价卡片：
-            // 图表横坐标 (X轴) 使用： data.energy.chartLabels  (如: ["0:00", "1:00", ...])
-            // 图表纵坐标 (Y轴) 使用： data.energy.chartData    (如: [0.12, 0.10, -0.01, ...]) 
-            // （注：荷兰电价有时会出现负数，留学生超爱看这个薅羊毛！）
+            // 🌟 核心修复：使用最新的 HTML ID
+            const exEl = document.getElementById('market-exchange');
+            if (exEl) {
+                const color = data.exchange.change >= 0 ? '#EF4444' : '#10B981';
+                const sign = data.exchange.change >= 0 ? '↑' : '↓';
+                exEl.innerHTML = `${data.exchange.current} <span style="font-size:12px; color:${color}; margin-left:2px;">${sign}${Math.abs(data.exchange.change)}</span>`;
+                exEl.style.color = color;
+            }
+            
+            const enEl = document.getElementById('market-energy');
+            if (enEl) enEl.innerText = `€${data.energy.current}`;
+            
+            const moEl = document.getElementById('market-mortgage');
+            if (moEl) moEl.innerText = `${data.mortgage.current}%`;
         }
-    } catch (error) {
-        console.error("加载真实大盘数据失败", error);
+    } catch (e) {
+        console.warn("大盘数据加载跳过（可能不在Pro页面）:", e.message);
     }
-}
-
-// 页面加载时调用
-loadRealMarketData();
+};
 
 // ==========================================
 // 🌟 自动唤醒大盘卡片：拉取真实数据并渲染外显数字
