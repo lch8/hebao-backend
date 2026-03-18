@@ -393,13 +393,38 @@ if (typeof window !== 'undefined') {
     });
 
     // 🌟 原生发音引擎 (Text-to-Speech)
+    // 🌟 原生发音引擎 (Text-to-Speech) - 修复 Chrome 哑巴 Bug 满血版
     window.App.speak = function(text, lang) {
         if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel(); // 停止上一句
-            const msg = new SpeechSynthesisUtterance(text);
-            msg.lang = lang; // 'nl-NL' 或 'en-US'
-            msg.rate = 0.85; // 放慢语速，方便留学生跟读
-            window.speechSynthesis.speak(msg);
+            // 1. 暴力唤醒 Chrome 的休眠语音引擎
+            window.speechSynthesis.resume();
+            
+            // 2. 清除队列中的旧语音
+            window.speechSynthesis.cancel(); 
+
+            // 3. 用 setTimeout 缓冲 50 毫秒！极其关键！防止 Chrome 误杀新句子
+            setTimeout(() => {
+                const msg = new SpeechSynthesisUtterance(text);
+                msg.lang = lang; // 'nl-NL' 或 'en-US'
+                msg.rate = 0.85; // 放慢语速，方便留学生跟读
+                
+                // 4. 强制为 Chrome 匹配发音人 (解决部分安卓 Chrome 找不到声卡的问题)
+                const voices = window.speechSynthesis.getVoices();
+                if (voices.length > 0) {
+                    // 寻找包含 nl 或是 en 的系统发音人
+                    const targetVoice = voices.find(v => v.lang.includes(lang) || v.lang.includes(lang.split('-')[0]));
+                    if (targetVoice) {
+                        msg.voice = targetVoice;
+                    }
+                }
+
+                // 为了防止安卓 Chrome 偶尔的长句子自动中断 Bug，绑定一个空事件维持存活
+                msg.onresume = () => {}; 
+                msg.onend = () => {};
+
+                window.speechSynthesis.speak(msg);
+            }, 50);
+            
         } else {
             alert('抱歉，您的浏览器不支持语音播报哦~');
         }
