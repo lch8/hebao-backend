@@ -1,3 +1,4 @@
+// api/cron-news.js
 export const config = { runtime: 'edge' };
 
 export default async function handler(req) {
@@ -88,13 +89,18 @@ export default async function handler(req) {
                     body: JSON.stringify({
                         requests: [
                             { type: "execute", stmt: { 
-                                sql: `INSERT INTO pro_news                                 sql: `INSERT INTO(title, ai_summary, source, tag, tag_color, action_text, dutch_title, url, detail_content) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
+                                // 🌟 语法已完美修复
+                                sql: `INSERT INTO pro_news (title, ai_summary, source, tag, tag_color, action_text, dutch_title, url, detail_content) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
                                 args: [
-                                    { type: "text", value: String(result.title) }, { type: "text", value: String(result.aiSummary) },
-                                    { type: "text", value: 'NOS.nl' }, { type: "text", value: String(result.tag) },
-                                    { type: "text", value: String(result.tagColor) }, { type: "text", value: String(result.actionText) },
-                                    { type: "text", value: String(item.nlTitle) }, { type: "text", value: String(item.url || '') } // 存入链接！
-                                    , { type: "text", value: String(result.detailContent) }
+                                    { type: "text", value: String(result.title) }, 
+                                    { type: "text", value: String(result.aiSummary) },
+                                    { type: "text", value: 'NOS.nl' }, 
+                                    { type: "text", value: String(result.tag) },
+                                    { type: "text", value: String(result.tagColor) }, 
+                                    { type: "text", value: String(result.actionText) },
+                                    { type: "text", value: String(item.nlTitle) }, 
+                                    { type: "text", value: String(item.url || '') }, 
+                                    { type: "text", value: String(result.detailContent || '') }
                                 ] 
                             } },
                             { type: "close" }
