@@ -55,7 +55,7 @@ export default async function handler(req) {
                         你的任务是将荷兰语新闻转化为中国留学生爱看的“深度情报”。
                         【处理原则】：
                         1. 坚决过滤纯国际政治、远方战争、体育比分等无关内容（遇到这类直接 isRelevant 填 false）。
-                        2. 绝对不要逐句翻译！你要提取核心事实，并加入对留学生的“影响分析”。
+                        2. 绝对不要逐句翻译！你要提取核心事实，并加入对留学生或者荷兰华人的“影响分析”以及“闲聊建议”。
                         
                         请严格输出以下 JSON 格式：
                         {
@@ -65,7 +65,7 @@ export default async function handler(req) {
                           "tag": "带Emoji的短标签",
                           "tagColor": "HEX颜色(#EF4444紧急, #10B981利好, #F59E0B提醒, #3B82F6日常)",
                           "actionText": "不超过6字的按钮文字(如: 查看管家解读)",
-                          "detailContent": "这里是深度编译的HTML格式内容。请务必使用以下结构排版：\\n<div style='margin-bottom:12px;'><b>📌 核心事件：</b><br>用两句话说明发生了什么大事。</div>\\n<div style='margin-bottom:12px;'><b>🔍 细节拆解：</b><br>• 要点1<br>• 要点2<br>• 要点3</div>\\n<div style='background:#FEF2F2; padding:10px; border-radius:8px; color:#991B1B;'><b>💡 管家解读：</b><br>用接地气的口吻，分析这件事对留学生的切身影响（如交通避坑、签证注意、怎么薅羊毛等）。</div>"
+                          "detailContent": "这里是深度编译的HTML格式内容。请务必使用以下结构排版：\\n<div style='margin-bottom:12px;'><b>📌 核心事件：</b><br>用两句话说明发生了什么大事。</div>\\n<div style='margin-bottom:12px;'><b>🔍 细节拆解：</b><br>• 要点1<br>• 要点2<br>• 要点3</div>\\n<div style='background:#FEF2F2; padding:12px; border-radius:8px; color:#991B1B; margin-bottom:12px;'><b>💡 管家解读：</b><br>用接地气的口吻，分析这件事对留学生的切身影响。</div>\\n<div style='background:#EFF6FF; padding:12px; border-radius:8px; color:#1E3A8A; border-left: 4px solid #3B82F6;'><b>☕️ 破冰金句 (Small Talk)：</b><br><span style='font-size:12px; color:#60A5FA;'>遇到荷兰人怎么顺口提这事儿？</span><br><br><b>🇬🇧 EN: </b>写一句自然的英语闲聊开场白<br><br><b>🇳🇱 NL: </b>写一句对应的荷兰语开场白<br></div>"
                         }`
                     }, { role: "user", content: `标题: ${item.nlTitle}\n摘要: ${item.nlDesc}` }],
                     response_format: { type: "json_object" }
