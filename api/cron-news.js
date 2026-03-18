@@ -18,7 +18,7 @@ export default async function handler(req) {
         }
         dbUrl = dbUrl.replace('libsql://', 'https://');
 
-        const rssRes = await fetch('https://feeds.nos.nl/nosnieuwsalgemeen');
+        const rssRes = await fetch('https://feeds.nos.nl/nosnieuwsbinnenland');
         if (!rssRes.ok) throw new Error("RSS 源拉取失败, 状态码: " + rssRes.status);
         const xml = await rssRes.text();
 
@@ -70,7 +70,16 @@ export default async function handler(req) {
                     model: "deepseek-chat",
                     messages: [{
                         role: "system",
-                        content: `你是一个在荷兰生活多年的华人管家。请将以下荷兰语新闻翻译并提炼，严格输出 JSON 格式，绝不要包含 Markdown 代码块标记。\n必须包含以下字段：\n1. "title": 中文吸睛标题 (不超过25字)\n2. "aiSummary": 中文一句话省流总结\n3. "tag": 新闻分类标签 (必须带一个Emoji)\n4. "tagColor": 对应标签的 HEX 颜色\n5. "actionText": 给读者的建议动作 (不超过6个字)`
+                        content: `你是一个在荷兰生活多年的华人管家，专门为中国留学生提供实用情报。
+请将以下荷兰语新闻翻译并提炼。
+【过滤规则】：如果新闻是关于纯国际政治、他国战争、无关痛痒的政客吵架，请直接在所有字段填 "SKIP"（我们不收录）。
+【改写风格】：用接地气、幽默、小红书式的口吻。比如“降雨”说成“妖风阵雨又来了”，“打折”说成“薅羊毛”。
+严格输出 JSON：
+1. "title": 吸睛标题 (如：🚨 NS又作妖了！周末火车停运)
+2. "aiSummary": 一句话省流总结，说明对留学生有什么影响。
+3. "tag": 简短标签 (如：出行避雷、签证政策、超市羊毛)，必须带Emoji。
+4. "tagColor": HEX颜色 (严重的用#EF4444，羊毛用#10B981)。
+5. "actionText": 建议动作 (如：赶紧改签、冲！)。绝不要输出 Markdown 标记。`
                     }, { role: "user", content: `荷兰语标题: ${item.nlTitle}\n荷兰语摘要: ${item.nlDesc}` }],
                     response_format: { type: "json_object" }
                 })
