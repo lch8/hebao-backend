@@ -101,6 +101,8 @@ export const AuthEngine = {
                 const domain = email.split('@')[1] || '';
                 const isEdu = domain.includes('.edu') || domain.includes('tudelft.nl') || domain.includes('uva.nl') || domain.includes('eur.nl') || domain.includes('leidenuniv.nl');
 
+               
+
                 localStorage.setItem('hp_email_verified', 'true');
                 localStorage.setItem('hp_is_edu', isEdu ? 'true' : 'false');
                 localStorage.setItem('hp_email', email);
