@@ -280,30 +280,148 @@ export const WikiEngine = {
         this.renderStarterTasks(); 
     },
 
-    hSwipeStart(e, id) { swipeStartX = e.touches[0].clientX; isSwiping = true; isDraggingClickPrevent = false; activeSwipeId = id; safeDOM.execute(`front_${id}`, frontCard => frontCard.style.transition = 'none'); },
-    hSwipeMove(e, id) {
-        if (!isSwiping || activeSwipeId !== id) return;
-        swipeCurrentX = e.touches[0].clientX; const diffX = swipeCurrentX - swipeStartX;
-        if (Math.abs(diffX) > 10) isDraggingClickPrevent = true; 
-        safeDOM.execute(`front_${id}`, frontCard => frontCard.style.transform = `translateX(${diffX}px)`);
-        
-        const saveBg = document.querySelector(`#swipe_${id} .save-bg`); const deleteBg = document.querySelector(`#swipe_${id} .delete-bg`);
-        if (diffX > 0) { if(saveBg) saveBg.style.opacity = Math.min(diffX / 80, 1); if(deleteBg) deleteBg.style.opacity = 0; } 
-        else { if(saveBg) saveBg.style.opacity = 0; if(deleteBg) deleteBg.style.opacity = Math.min(Math.abs(diffX) / 80, 1); }
+    // ==========================================
+    // 🛡️ 智能防误触：探探滑动引擎
+    // ==========================================
+    swipeState: {}, // 记录每张卡片的滑动状态
+
+    hSwipeStart(e, id) {
+        this.swipeState[id] = {
+            startX: e.touches[0].clientX,
+            startY: e.touches[0].clientY,
+            isScrolling: undefined // undefined 表示还不确定用户的意图
+        };
+        const card = document.getElementById(`front_${id}`);
+        if(card) card.style.transition = 'none'; // 移除动画，让拖拽更跟手
     },
+
+    hSwipeMove(e, id) {
+        const state = this.swipeState[id];
+        if (!state) return;
+
+        const deltaX = e.touches[0].clientX - state.startX;
+        const deltaY = e.touches[0].clientY - state.startY;
+
+        // 🌟 核心防误触逻辑：判断用户的真实意图
+        if (typeof state.isScrolling === 'undefined') {
+            // 如果 Y 轴移动距离大于 X 轴，说明是在上下翻页
+            state.isScrolling = Math.abs(deltaY) > Math.abs(deltaX);
+        }
+
+        // 如果用户是在上下滚动网页，直接放行，完全锁死左右拖拽！
+        if (state.isScrolling) return;
+
+        // 如果确定是左右滑，则阻止默认的网页上下滚动 (防止斜向滑动的怪异手感)
+        if (e.cancelable) e.preventDefault();
+        
+        const card = document.getElementById(`front_${id}`);
+        if (card) {
+            // 加入阻尼效果，最大只允许拖动 150px
+            const moveX = deltaX > 0 ? Math.min(deltaX, 150) : Math.max(deltaX, -150);
+            card.style.transform = `translateX(${moveX}px)`;
+        }
+    },
+
     hSwipeEnd(e, id) {
-        if (!isSwiping || activeSwipeId !== id) return;
-        isSwiping = false; const diffX = swipeCurrentX - swipeStartX; 
-        safeDOM.execute(`front_${id}`, frontCard => {
-            frontCard.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
-            const threshold = window.innerWidth * 0.35;
-            if (Math.abs(diffX) > 10) {
-                if (diffX > threshold) { frontCard.style.transform = `translateX(${window.innerWidth}px)`; setTimeout(() => this.handleWikiAction(id, 'saved'), 300); } 
-                else if (diffX < -threshold) { frontCard.style.transform = `translateX(-${window.innerWidth}px)`; setTimeout(() => this.handleWikiAction(id, 'deleted'), 300); } 
-                else { frontCard.style.transform = `translateX(0px)`; this.resetSwipeBg(id); }
-            } else { frontCard.style.transform = `translateX(0px)`; this.resetSwipeBg(id); }
+        const state = this.swipeState[id];
+        if (!state) return;
+        
+        const card = document.getElementById(`front_${id}`);
+        if (!card) return;
+        
+        card.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'; // 恢复丝滑弹簧动画
+
+        // 如果之前是上下滚动，直接回弹归位并退出
+        if (state.isScrolling) {
+            card.style.transform = `translateX(0px)`;
+            this.swipeState[id] = null;
+            return;
+        }
+
+        const deltaX = e.changedTouches[0].clientX - state.startX;
+        
+        if (deltaX > 80) {
+            // 右滑收藏
+            card.style.transform = `translateX(100%)`;
+            setTimeout(() => { if(window.App.handleWikiSwipe) window.App.handleWikiSwipe(id, 'save'); }, 300);
+        } else if (deltaX < -80) {
+            // 左滑懂了
+            card.style.transform = `translateX(-100%)`;
+            setTimeout(() => { if(window.App.handleWikiSwipe) window.App.handleWikiSwipe(id, 'delete'); }, 300);
+        } else {
+            // 没滑够距离，弹回原位
+            card.style.transform = `translateX(0px)`;
+        }
+        this.swipeState[id] = null;
+    },
+    // ==========================================
+    // 💖 独立收藏夹抽屉引擎
+    // ==========================================
+    showMyCollections() {
+        const savedIds = JSON.parse(localStorage.getItem('hp_wiki_saved') || '[]');
+        
+        // 1. 清理旧弹窗
+        const existing = document.getElementById('collectionsOverlay');
+        if (existing) existing.remove();
+
+        // 2. 创建半透明遮罩
+        const overlay = document.createElement('div');
+        overlay.id = 'collectionsOverlay';
+        overlay.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:99999; display:flex; justify-content:center; align-items:flex-end; backdrop-filter:blur(2px); transition: opacity 0.3s; opacity: 0;';
+
+        // 3. 创建极简风抽屉
+        const card = document.createElement('div');
+        card.style.cssText = 'width:100%; max-width:500px; background:#F9FAFB; border-radius:24px 24px 0 0; display:flex; flex-direction:column; height: 85vh; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);';
+
+        let listHtml = '';
+        if (savedIds.length === 0) {
+            listHtml = `<div style="text-align:center; padding: 100px 20px; color:#9CA3AF;">这里空空如也~<br><br>快去红宝书进阶篇 <br> <b>👉 向右滑动</b> 卡片收藏干货吧！</div>`;
+        } else {
+            // 匹配刚才的 wikiData 数据池
+            const mySavedItems = wikiData.filter(w => savedIds.includes(w.id));
+            
+            mySavedItems.forEach(w => {
+                const displayDesc = w.desc || w.summary || '';
+                listHtml += `
+                <div style="background:#FFF; padding:16px; border-radius:16px; margin-bottom:12px; box-shadow:0 2px 8px rgba(0,0,0,0.02); border: 1px solid #F3F4F6;">
+                    <div style="display:flex; align-items:center; margin-bottom:10px;">
+                        <span style="font-size:24px; margin-right:10px;">${w.icon}</span>
+                        <div style="font-weight:900; color:#111827; flex:1; font-size:15px;">${w.title}</div>
+                        <span style="font-size:10px; color:${w.tagColor || '#3B82F6'}; background:${w.tagColor ? w.tagColor+'1A' : '#EFF6FF'}; padding:4px 8px; border-radius:6px; font-weight:bold;">${w.tag}</span>
+                    </div>
+                    <div style="font-size:13px; color:#4B5563; line-height:1.6; margin-bottom:12px;">${displayDesc}</div>
+                    <div style="font-size:12px; color:#10B981; background:#ECFDF5; padding:10px 12px; border-radius:8px; font-weight:bold;">💡 详细攻略：${w.detailContent || w.details || ''}</div>
+                </div>`;
+            });
+        }
+
+        card.innerHTML = `
+            <div style="padding: 20px; background:#FFF; border-radius:24px 24px 0 0; display:flex; justify-content:space-between; align-items:center; box-shadow:0 4px 15px rgba(0,0,0,0.02); z-index:2;">
+                <div style="font-size:18px; font-weight:900; color:#111827;">💖 我的收藏 (${savedIds.length})</div>
+                <div id="closeColBtn" style="color:#9CA3AF; cursor:pointer; font-size:20px; font-weight:bold; padding:0 10px;">✕</div>
+            </div>
+            <div style="flex:1; overflow-y:auto; padding:20px;">
+                ${listHtml}
+            </div>
+        `;
+
+        overlay.appendChild(card);
+        document.body.appendChild(overlay);
+
+        // 4. 动画入场
+        requestAnimationFrame(() => {
+            overlay.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
         });
-        setTimeout(() => { isDraggingClickPrevent = false; activeSwipeId = null; }, 100);
+
+        // 5. 绑定关闭事件
+        const close = () => {
+            overlay.style.opacity = '0';
+            card.style.transform = 'translateY(100%)';
+            setTimeout(() => overlay.remove(), 300);
+        };
+        document.getElementById('closeColBtn').addEventListener('click', close);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
     },
     resetSwipeBg(id) { const sBg = document.querySelector(`#swipe_${id} .save-bg`); const dBg = document.querySelector(`#swipe_${id} .delete-bg`); if(sBg) sBg.style.opacity = 0; if(dBg) dBg.style.opacity = 0; },
     toggleWikiCard(el) { if (isSwiping || isDraggingClickPrevent) return; const transform = window.getComputedStyle(el).transform; const matrix = new WebKitCSSMatrix(transform); if (Math.abs(matrix.m41) < 5) el.classList.toggle('open'); },
