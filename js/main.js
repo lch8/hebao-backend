@@ -678,19 +678,16 @@ window.App.toggleTask = function(id) {
 setTimeout(() => { if(window.App.renderStarterTasks) window.App.renderStarterTasks(); }, 500);
 
 // ==========================================
-// 🎮 荷村生存模拟器 (题库分离 + 动态结算 + 随机抽取5题)
+// 🎮 荷村生存模拟器 (亮色质感 + 动态战绩卡片)
 // ==========================================
-
-// 1. 引入刚才写好的外置高定题库！
 import { sgQuestions } from './data/sgQuestions.js';
 
 window.App.sgEngine = {
     balance: 500,
     currentIndex: 0,
     wrongTags: [], 
-    activeQuestions: [], // 存放每次随机抽出来的 5 道题
+    activeQuestions: [],
 
-    // 音效引擎保持不变
     playTone(type) {
         try {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -715,17 +712,62 @@ window.App.sgEngine = {
     }
 };
 
+// 🌟 核心：动态渲染首页 Banner (战绩 / 初始状态)
+window.App.renderSurvivalBanner = function() {
+    const container = document.getElementById('survivalBannerContainer');
+    if (!container) return;
+
+    // 从本地存储读取上次的战绩
+    const record = JSON.parse(localStorage.getItem('hp_sg_record'));
+
+    if (!record) {
+        // 状态一：从未玩过 (清爽的橘黄色引诱卡片)
+        container.innerHTML = `
+        <div onclick="window.App.startSurvivalGame()" style="background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%); border-radius: 20px; padding: 20px; position: relative; overflow: hidden; cursor: pointer; box-shadow: 0 4px 15px rgba(245,158,11,0.1); border: 1px solid #FDE68A; transition: transform 0.1s;" onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform='scale(1)'">
+            <div style="display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 1;">
+                <div style="flex: 1; padding-right: 15px;">
+                    <div style="font-size: 16px; font-weight: 900; color: #B45309; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                        <span style="font-size: 20px;">🚨</span> 落地荷兰，你的钱包保得住吗？
+                    </div>
+                    <div style="font-size: 11px; color: #78350F; line-height: 1.5; margin-bottom: 12px; opacity: 0.8;">已有 5,231 位新生完成挑战，平均因为不懂规矩损失 <span style="color: #EF4444; font-weight: bold;">€150</span>。</div>
+                    <div style="display: inline-block; background: #F59E0B; color: #FFF; font-size: 12px; font-weight: 900; padding: 6px 14px; border-radius: 12px; box-shadow: 0 2px 8px rgba(245,158,11,0.3);">🕹️ 启动生存模拟</div>
+                </div>
+                <div style="font-size: 45px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); transform: rotate(-10deg);">🦆</div>
+            </div>
+        </div>`;
+    } else {
+        // 状态二：已通关战绩卡片 (炫耀 + 再次挑战)
+        const isGood = record.balance >= 100;
+        const bgColor = isGood ? 'linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%)' : 'linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%)';
+        const borderColor = isGood ? '#BBF7D0' : '#FECACA';
+        const textColor = isGood ? '#065F46' : '#991B1B';
+        
+        container.innerHTML = `
+        <div style="background: ${bgColor}; border-radius: 20px; padding: 16px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid ${borderColor};">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <div style="font-size: 12px; font-weight: bold; color: ${textColor}; opacity: 0.7;">🎮 荷村生存摸底考战绩</div>
+                <div onclick="window.App.startSurvivalGame()" style="background: #FFF; color: ${textColor}; font-size: 11px; font-weight: 900; padding: 4px 10px; border-radius: 10px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">↻ 再玩一次</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div style="font-size: 40px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));">${record.icon}</div>
+                <div>
+                    <div style="font-size: 16px; font-weight: 900; color: ${textColor}; margin-bottom: 2px;">${record.title}</div>
+                    <div style="font-size: 12px; color: ${textColor}; opacity: 0.8; font-family: monospace;">最终钱包余额: 💶 ${record.balance}</div>
+                </div>
+            </div>
+        </div>`;
+    }
+};
+
 window.App.startSurvivalGame = function() {
     document.getElementById('survivalGameModal').style.display = 'flex';
     document.getElementById('sgQuestionArea').style.display = 'flex';
     document.getElementById('sgResultArea').style.display = 'none';
     
-    // 初始化状态
     window.App.sgEngine.balance = 500;
     window.App.sgEngine.currentIndex = 0;
     window.App.sgEngine.wrongTags = [];
     
-    // 🌟 核心机制：每次洗牌，随机抽取 5 道题！
     const shuffled = [...sgQuestions].sort(() => 0.5 - Math.random());
     window.App.sgEngine.activeQuestions = shuffled.slice(0, 5);
 
@@ -734,15 +776,14 @@ window.App.startSurvivalGame = function() {
 
 window.App.renderSgQuestion = function() {
     const engine = window.App.sgEngine;
-    const q = engine.activeQuestions[engine.currentIndex]; // 从抽取的题库里拿题
+    const q = engine.activeQuestions[engine.currentIndex]; 
     
     document.getElementById('sgProgress').innerText = `关卡 ${engine.currentIndex + 1}/${engine.activeQuestions.length}`;
     document.getElementById('sgWalletBalance').innerText = engine.balance;
     document.getElementById('sgWalletBox').className = ''; 
     
     document.getElementById('sgTag').innerText = `#${q.tag}`;
-    // 把标题和场景拼接在一起
-    document.getElementById('sgScene').innerHTML = `<div style="font-weight:900; font-size:18px; color:#FBBF24; margin-bottom:10px;">${q.title}</div>${q.scene}`;
+    document.getElementById('sgScene').innerHTML = `<div style="font-weight:900; font-size:18px; color:#111827; margin-bottom:10px;">${q.title}</div>${q.scene}`;
     
     document.getElementById('sgAnalysis').style.display = 'none';
     document.getElementById('sgNextBtn').style.display = 'none';
@@ -752,7 +793,8 @@ window.App.renderSgQuestion = function() {
     
     q.options.forEach((opt, index) => {
         const btn = document.createElement('div');
-        btn.style.cssText = "background: #1F2937; border: 2px solid #4B5563; color: #E5E7EB; padding: 16px; border-radius: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; line-height: 1.5;";
+        // 🌟 选项改版：明亮、干净的苹果风白卡
+        btn.style.cssText = "background: #FFF; border: 2px solid #E2E8F0; color: #334155; padding: 16px; border-radius: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; line-height: 1.5; box-shadow: 0 2px 4px rgba(0,0,0,0.02);";
         btn.innerText = opt.text;
         btn.onclick = () => window.App.handleSgAnswer(index, btn);
         optionsBox.appendChild(btn);
@@ -762,9 +804,8 @@ window.App.renderSgQuestion = function() {
 window.App.handleSgAnswer = function(selectedIndex, btnElement) {
     const engine = window.App.sgEngine;
     const q = engine.activeQuestions[engine.currentIndex];
-    const selectedOpt = q.options[selectedIndex]; // 拿到用户具体点的那一个选项
+    const selectedOpt = q.options[selectedIndex]; 
     
-    // 禁用所有按钮
     const allBtns = document.getElementById('sgOptions').children;
     for(let b of allBtns) b.onclick = null;
 
@@ -772,30 +813,28 @@ window.App.handleSgAnswer = function(selectedIndex, btnElement) {
     analysisBox.style.display = 'block';
 
     if (!selectedOpt.isCorrect) {
-        // ❌ 答错：扣选定选项的专属金额！
+        // ❌ 答错状态 (柔和的红色预警)
         engine.balance -= selectedOpt.cost;
         if (!engine.wrongTags.includes(q.tag)) engine.wrongTags.push(q.tag);
         
-        btnElement.style.background = '#7F1D1D'; 
-        btnElement.style.borderColor = '#DC2626';
+        btnElement.style.background = '#FEF2F2'; 
+        btnElement.style.borderColor = '#FCA5A5';
+        btnElement.style.color = '#991B1B';
         
         const walletBox = document.getElementById('sgWalletBox');
         document.getElementById('sgWalletBalance').innerText = engine.balance;
-        walletBox.classList.add('shake-hard');
+        walletBox.classList.add('shake-hard-light');
         
-        // 🌟 动态加载专属结算文案
-        analysisBox.innerHTML = `<div style="color: #EF4444; font-size: 18px; font-weight: 900; margin-bottom: 8px;">🩸 扣款 -€${selectedOpt.cost}</div><div style="color: #D1D5DB; font-size: 14px; line-height: 1.6;">${selectedOpt.result}</div>`;
-        
+        analysisBox.innerHTML = `<div style="color: #EF4444; font-size: 18px; font-weight: 900; margin-bottom: 8px;">🩸 扣款 -€${selectedOpt.cost}</div><div style="color: #475569; font-size: 14px; line-height: 1.6;">${selectedOpt.result}</div>`;
         engine.playTone('wrong');
         if (navigator.vibrate) navigator.vibrate([200, 100, 200]); 
-        
     } else {
-        // ✅ 答对
-        btnElement.style.background = '#064E3B'; 
-        btnElement.style.borderColor = '#10B981';
+        // ✅ 答对状态 (护眼的薄荷绿)
+        btnElement.style.background = '#F0FDF4'; 
+        btnElement.style.borderColor = '#6EE7B7';
+        btnElement.style.color = '#065F46';
         
-        analysisBox.innerHTML = `<div style="color: #10B981; font-size: 18px; font-weight: 900; margin-bottom: 8px;">✨ 完美闪避 +€0</div><div style="color: #D1D5DB; font-size: 14px; line-height: 1.6;">${selectedOpt.result}</div>`;
-        
+        analysisBox.innerHTML = `<div style="color: #10B981; font-size: 18px; font-weight: 900; margin-bottom: 8px;">✨ 完美闪避 +€0</div><div style="color: #475569; font-size: 14px; line-height: 1.6;">${selectedOpt.result}</div>`;
         engine.playTone('correct');
         if (navigator.vibrate) navigator.vibrate(50);
     }
@@ -811,8 +850,6 @@ window.App.nextSgQuestion = function() {
         window.App.renderSgQuestion();
     }
 };
-
-// ... showSgResult 函数保持上一回合的代码不变 ...
 
 window.App.showSgResult = function() {
     document.getElementById('sgQuestionArea').style.display = 'none';
@@ -832,24 +869,24 @@ window.App.showSgResult = function() {
         desc = '警报拉响！落地 24 小时，底裤都要被骗光了！听管家一句劝，千万别自己瞎闯了，先把下面推荐的干货背诵再出门吧！';
     }
 
-    // 填充海报内容
+    // 🌟 将战绩存入本地，实现闭环展示！
+    localStorage.setItem('hp_sg_record', JSON.stringify({ balance, icon, title }));
+
     document.getElementById('sgResIcon').innerText = icon;
     document.getElementById('sgResTitle').innerText = title;
     document.getElementById('sgResBalance').innerText = balance;
     document.getElementById('sgResDesc').innerText = desc;
 
-    // 🎯 闭环：根据错题精准推送卡片
     let recHtml = `<div style="font-size: 16px; font-weight: 900; color: #111827; margin-bottom: 15px;">🎁 你的专属查漏补缺包</div>`;
     if (window.App.sgEngine.wrongTags.length === 0) {
-        recHtml += `<div onclick="window.App.switchRbMode('pro'); document.getElementById('survivalGameModal').style.display='none'" style="background: #FFF; padding: 16px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 12px; cursor:pointer;"><span style="font-size: 24px;">🏆</span><div><div style="font-weight: 900; color: #111827;">满级玩家解锁</div><div style="font-size: 12px; color: #64748B;">去看看大盘与房贷利率吧</div></div></div>`;
+        recHtml += `<div onclick="window.App.switchRbMode('pro'); document.getElementById('survivalGameModal').style.display='none'; window.App.renderSurvivalBanner();" style="background: #FFF; padding: 16px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 12px; cursor:pointer;"><span style="font-size: 24px;">🏆</span><div><div style="font-weight: 900; color: #111827;">满级玩家解锁</div><div style="font-size: 12px; color: #64748B;">去看看大盘与房贷利率吧</div></div></div>`;
     } else {
         window.App.sgEngine.wrongTags.forEach(tag => {
-            recHtml += `<div onclick="window.App.switchRbMode('advanced'); document.getElementById('survivalGameModal').style.display='none'" style="background: #FFF; padding: 16px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 10px; display: flex; align-items: center; gap: 12px; cursor:pointer;"><span style="font-size: 24px;">🚨</span><div><div style="font-weight: 900; color: #EF4444;">${tag} 补考指南</div><div style="font-size: 12px; color: #64748B;">点击前往进阶篇查看防坑详解</div></div></div>`;
+            recHtml += `<div onclick="window.App.switchRbMode('advanced'); document.getElementById('survivalGameModal').style.display='none'; window.App.renderSurvivalBanner();" style="background: #FFF; padding: 16px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 10px; display: flex; align-items: center; gap: 12px; cursor:pointer;"><span style="font-size: 24px;">🚨</span><div><div style="font-weight: 900; color: #EF4444;">${tag} 补考指南</div><div style="font-size: 12px; color: #64748B;">点击前往进阶篇查看防坑详解</div></div></div>`;
         });
     }
     document.getElementById('sgRecommendation').innerHTML = recHtml;
 
-    // 📸 使用 html2canvas 将隐藏的 DOM 生成绝美图片
     setTimeout(() => {
         const posterDOM = document.getElementById('sgPosterContent');
         if (window.html2canvas) {
@@ -864,6 +901,10 @@ window.App.showSgResult = function() {
         }
     }, 100);
 };
+
+// 页面加载完毕后自动渲染首页的战绩Banner
+setTimeout(() => { if(window.App.renderSurvivalBanner) window.App.renderSurvivalBanner(); }, 300);
+
 
 // ============================================================================
 // 🚀 全局启动器 (确保所有页面一打开就有数据！)
