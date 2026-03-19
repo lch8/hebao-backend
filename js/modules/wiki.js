@@ -353,37 +353,120 @@ export const WikiEngine = {
         });
     },
 
+    // ==========================================
+    // 🌟 原生防弹版：干货区网友评论抽屉弹窗引擎
+    // ==========================================
     openWikiComments(wikiId, wikiTitle) {
-        ModalManager.injectIfNeeded('wikiCommentModal');
         currentWikiIdForComment = wikiId;
-        const titleEl = document.querySelector('#wikiCommentModal .fm-title'); if (titleEl) titleEl.innerText = wikiTitle + ' 的评论';
-        this.renderWikiComments(); ModalManager.open('wikiCommentModal');
-    },
+        
+        // 1. 清理旧弹窗防重叠
+        const existing = document.getElementById('wikiCommentOverlay');
+        if (existing) existing.remove();
 
-    renderWikiComments() {
-        safeDOM.execute('wikiCommentList', list => {
-            const allComments = JSON.parse(localStorage.getItem('hp_wiki_comments') || '{}'); const comments = allComments[currentWikiIdForComment] || [];
-            if (comments.length === 0) { list.innerHTML = `<div style="text-align:center; color:#9CA3AF; padding:40px 0;">还没有人分享踩坑经验，你来抢沙发吧！</div>`; return; }
-            let html = ''; comments.forEach(c => { html += `<div class="wc-item"><div class="wc-avatar">${c.avatar}</div><div class="wc-content"><div class="wc-name"><span>${c.name}</span> <span style="color:#9CA3AF; font-weight:normal;">刚刚</span></div><div class="wc-text">${c.text}</div></div></div>`; });
-            list.innerHTML = html; list.scrollTop = list.scrollHeight;
+        // 2. 创建半透明遮罩
+        const overlay = document.createElement('div');
+        overlay.id = 'wikiCommentOverlay';
+        overlay.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:99999; display:flex; justify-content:center; align-items:flex-end; backdrop-filter:blur(2px); transition: opacity 0.3s; opacity: 0;';
+
+        // 3. 创建极简风评论抽屉
+        const card = document.createElement('div');
+        card.style.cssText = 'width:100%; max-width:500px; background:#F9FAFB; border-radius:24px 24px 0 0; display:flex; flex-direction:column; height: 75vh; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);';
+
+        card.innerHTML = `
+            <div style="padding: 20px 20px 15px 20px; background:#FFF; border-radius:24px 24px 0 0; border-bottom:1px solid #F3F4F6;">
+                <div style="width:40px; height:4px; background:#E5E7EB; border-radius:2px; margin:0 auto 15px auto;"></div>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div style="font-size:16px; font-weight:900; color:#111827;">${wikiTitle} 的排雷经验</div>
+                    <div id="closeCommentBtn" style="color:#9CA3AF; cursor:pointer; font-size:20px; font-weight:bold; padding:0 10px;">✕</div>
+                </div>
+            </div>
+            <div id="wikiCommentList" style="flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:20px;">
+                </div>
+            <div style="padding: 15px 20px; background:#FFF; border-top:1px solid #F3F4F6; display:flex; gap:10px; padding-bottom: max(15px, env(safe-area-inset-bottom));">
+                <input type="text" id="wikiCommentInput" placeholder="分享你的避坑或省钱经验..." style="flex:1; padding:12px 16px; border-radius:24px; border:1px solid #E5E7EB; background:#F9FAFB; outline:none; font-size:14px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+                <button onclick="window.App.submitWikiComment()" style="background:#111827; color:#FFF; border:none; padding:0 24px; border-radius:24px; font-weight:bold; cursor:pointer; font-size:14px; box-shadow: 0 4px 10px rgba(17,24,39,0.2);">发送</button>
+            </div>
+        `;
+
+        overlay.appendChild(card);
+        document.body.appendChild(overlay);
+
+        // 4. 动画入场
+        requestAnimationFrame(() => {
+            overlay.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        });
+
+        // 5. 渲染历史评论
+        this.renderWikiComments();
+
+        // 6. 绑定关闭事件
+        const close = () => {
+            overlay.style.opacity = '0';
+            card.style.transform = 'translateY(100%)';
+            setTimeout(() => overlay.remove(), 300);
+        };
+        document.getElementById('closeCommentBtn').addEventListener('click', close);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+        
+        // 支持回车发送
+        document.getElementById('wikiCommentInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.submitWikiComment();
         });
     },
 
+    renderWikiComments() {
+        const list = document.getElementById('wikiCommentList');
+        if (!list) return;
+        const allComments = JSON.parse(localStorage.getItem('hp_wiki_comments') || '{}'); 
+        const comments = allComments[currentWikiIdForComment] || [];
+        
+        if (comments.length === 0) { 
+            list.innerHTML = `<div style="text-align:center; color:#9CA3AF; padding:60px 0; font-size:14px;">沙发空缺中<br><br>快来分享你的真实踩坑经验吧！</div>`; 
+            return; 
+        }
+        
+        let html = ''; 
+        comments.forEach(c => { 
+            html += `
+            <div style="display:flex; gap:12px; animation: fadeIn 0.3s ease;">
+                <div style="width:38px; height:38px; flex-shrink:0; border-radius:50%; background:#F3F4F6; display:flex; align-items:center; justify-content:center; font-size:20px; border:2px solid #FFF; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">${c.avatar}</div>
+                <div style="flex:1;">
+                    <div style="font-size:12px; font-weight:bold; color:#6B7280; margin-bottom:6px; display:flex; align-items:center;">${c.name} <span style="font-size:10px; color:#D1D5DB; font-weight:normal; margin-left:8px;">刚刚</span></div>
+                    <div style="font-size:14px; color:#111827; line-height:1.6; background:#FFF; padding:12px 16px; border-radius:4px 16px 16px 16px; display:inline-block; border: 1px solid #F3F4F6; box-shadow: 0 4px 10px rgba(0,0,0,0.02);">${c.text}</div>
+                </div>
+            </div>`; 
+        });
+        list.innerHTML = html; 
+        list.scrollTop = list.scrollHeight; // 自动滚动到底部看最新评论
+    },
+
     submitWikiComment() {
-        const text = safeDOM.getValue('wikiCommentInput').trim(); 
-        if (!text) return showToast("写点什么再发送吧！", "warning");
+        const input = document.getElementById('wikiCommentInput');
+        if (!input) return;
+        const text = input.value.trim(); 
+        if (!text) {
+            if(window.App.showToast) window.App.showToast("写点什么再发送吧！", "warning");
+            else alert("写点什么再发送吧！");
+            return;
+        }
         
         const allComments = JSON.parse(localStorage.getItem('hp_wiki_comments') || '{}'); 
         if (!allComments[currentWikiIdForComment]) allComments[currentWikiIdForComment] = [];
-        allComments[currentWikiIdForComment].push({ name: localStorage.getItem('hp_name') || '管家热心用户', avatar: '😎', text: text });
+        
+        // 存入本地存储
+        allComments[currentWikiIdForComment].push({ 
+            name: localStorage.getItem('hp_name') || '管家热心用户', 
+            avatar: '😎', 
+            text: text 
+        });
         
         localStorage.setItem('hp_wiki_comments', JSON.stringify(allComments)); 
-        safeDOM.execute('wikiCommentInput', el => el.value = ''); 
-        this.renderWikiComments(); 
-        showToast("💡 分享干货，信用分 +2", "success");
-    }
-};
-
+        input.value = ''; 
+        this.renderWikiComments(); // 重新渲染列表
+        
+        if(window.App.showToast) window.App.showToast("💡 分享干货，信用分 +2", "success");
+    };
 // 💥 暴力绑定机制 + 注入详情抽屉弹窗引擎
 if (typeof window !== 'undefined') {
     window.App = window.App || {};
