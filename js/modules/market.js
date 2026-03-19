@@ -95,13 +95,26 @@ window.App.onFilterChange = function(tab, key, value) {
 export const MarketEngine = {
     // 1. 社区数据拉取 (适配最新的数据结构与缓存引擎)
    // 1. 社区数据拉取 (破除浏览器缓存版)
+    // 1. 社区数据拉取 (破除浏览器缓存 + 照妖镜报警版)
     async loadCommunityPosts() {
         try {
-            // 🌟 核心破窗魔法：加上 t=时间戳，强行打穿浏览器本地 304 缓存！
             const res = await fetch('/api/get-community?t=' + Date.now()); 
             const data = await res.json();
+            
+            // 🚨 抓虫魔法：如果后端报错，直接弹在屏幕上！
+            if (!data.success) {
+                console.error("🚨 后端传回的致命死因:", data.error);
+                if (window.App && window.App.showToast) {
+                    window.App.showToast("集市加载失败: " + data.error, "error");
+                } else {
+                    alert("集市加载失败: " + data.error);
+                }
+                return; // 终止渲染
+            }
+
             if (data.success && data.posts) {
                 let idleItems = [];
+                // ... (下面原有的解析与渲染代码保持完全不变) ...
                 let helpItems = [];
                 let partnerItems = [];
                 
