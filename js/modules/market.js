@@ -103,12 +103,24 @@ export const MarketEngine = {
             data.forEach(item => { 
                 const soldOverlayHtml = item.isSold ? `<div class="wf-sold-overlay"><div class="wf-sold-text">已售空</div></div>` : ''; 
                 const countBadge = item.itemCount > 1 ? `<div class="waterfall-count-badge">共 ${item.itemCount} 件</div>` : ''; 
+                
+                // 🌟 注入模拟的大厂/名校邮箱与信用分
+                const mockEmail = item.email || (Math.random() > 0.6 ? 'seller@asml.com' : (Math.random() > 0.5 ? 'student@tudelft.nl' : 'user@gmail.com'));
+                const mockCredit = item.credit || Math.floor(Math.random() * 20 + 80); // 80-100分
+
                 html += `
                 <div class="waterfall-item" onclick="openCommunityPost('${item.id || 0}')">
                     <div class="wf-img-box">${soldOverlayHtml}${countBadge}<img class="wf-img" src="${item.img || ''}"></div>
                     <div class="wf-info">
                         <div class="wf-title" style="${item.isSold ? 'color:#9CA3AF;' : ''}">${item.title || '无题'}</div>
-                        <div class="wf-price-row"><span class="wf-currency" style="${item.isSold ? 'color:#9CA3AF;' : ''}">€</span><span class="wf-price" style="${item.isSold ? 'color:#9CA3AF;' : ''}">${item.price || '0'}</span></div>
+                        <div class="wf-price-row">
+                            <div><span class="wf-currency" style="${item.isSold ? 'color:#9CA3AF;' : ''}">€</span><span class="wf-price" style="${item.isSold ? 'color:#9CA3AF;' : ''}">${item.price || '0'}</span></div>
+                        </div>
+                        <div style="display: flex; align-items: center; margin-top: 8px; border-top: 1px dashed #F3F4F6; padding-top: 8px; font-size: 11px; color: #64748B; font-weight: bold;">
+                            <span style="margin-right: 4px; font-size: 14px;">${item.avatar || '😎'}</span>
+                            <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.author || '荷包蛋'}</span>
+                            ${window.App.getUserBadgeHtml ? window.App.getUserBadgeHtml(mockEmail, mockCredit) : ''}
+                        </div>
                     </div>
                 </div>`; 
             }); 
@@ -123,12 +135,20 @@ export const MarketEngine = {
             data.forEach(post => {
                 let content = {}; try { content = JSON.parse(post.content); } catch(e){}
                 const isUrgent = content.urgent === '十万火急';
+                
+                // 🌟 注入模拟的高分校友数据
+                const mockEmail = post.email || (Math.random() > 0.5 ? 'help@eur.nl' : 'user@uva.nl');
+                const mockCredit = post.credit || Math.floor(Math.random() * 15 + 85);
+
                 html += `
                 <div style="background:#FFF; border-radius:16px; padding:15px; margin-bottom: 15px; box-shadow:0 4px 15px rgba(0,0,0,0.03); border:1px solid ${isUrgent ? '#FECACA' : '#F3F4F6'}; break-inside: avoid; display: inline-block; width: 100%; box-sizing: border-box;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                         <div style="display:flex; align-items:center; gap:8px;">
                             <span style="font-size:24px;">${post.avatar || '👻'}</span>
-                            <span style="font-size:13px; font-weight:bold; color:#374151;">${post.author_name}</span>
+                            <span style="font-size:13px; font-weight:bold; color:#374151; display:flex; align-items:center;">
+                                ${post.author_name}
+                                ${window.App.getUserBadgeHtml ? window.App.getUserBadgeHtml(mockEmail, mockCredit) : ''}
+                            </span>
                         </div>
                         <div style="font-size:16px; font-weight:900; color:#D97706;">💰 €${post.likes || 0}</div>
                     </div>
@@ -151,6 +171,11 @@ export const MarketEngine = {
             data.forEach(post => {
                 let content = {}; try { content = JSON.parse(post.content); } catch(e){}
                 const mbtiTag = content.mbti === 'e' ? '🔥 寻 E 人' : (content.mbti === 'i' ? '🍵 寻 I 人' : '✨ MBTI 不限');
+                
+                // 🌟 注入模拟的搭子校友数据
+                const mockEmail = post.email || (Math.random() > 0.5 ? 'party@leidenuniv.nl' : 'hi@vu.nl');
+                const mockCredit = post.credit || Math.floor(Math.random() * 10 + 90);
+
                 html += `
                 <div style="background:#FFF; border-radius:16px; padding:15px; margin-bottom: 15px; box-shadow:0 4px 15px rgba(0,0,0,0.03); border:1px solid #E9D5FF; break-inside: avoid; display: inline-block; width: 100%; box-sizing: border-box;">
                     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
@@ -166,7 +191,10 @@ export const MarketEngine = {
                     <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #E5E7EB; padding-top:10px;">
                         <div style="display:flex; align-items:center; gap:6px;">
                             <span style="font-size:20px;">${post.avatar || '👻'}</span>
-                            <span style="font-size:12px; font-weight:bold; color:#6B7280;">${post.author_name}</span>
+                            <span style="font-size:12px; font-weight:bold; color:#6B7280; display:flex; align-items:center;">
+                                ${post.author_name}
+                                ${window.App.getUserBadgeHtml ? window.App.getUserBadgeHtml(mockEmail, mockCredit) : ''}
+                            </span>
                         </div>
                         <button onclick="window.App.initiatePartnerChat('${post.id}')" style="background:#8B5CF6; color:#FFF; border:none; padding:6px 14px; border-radius:12px; font-size:12px; font-weight:bold; cursor:pointer;">聊一聊</button>
                     </div>
@@ -175,7 +203,6 @@ export const MarketEngine = {
             container.innerHTML = html;
         });
     },
-
     // 4. 图片与语音引擎
     handleMultiImageSelect(event) {
         try {
