@@ -730,17 +730,22 @@ window.App.submitPost = async function() {
             payloadContent = { desc, mbti: mbti, tag: cleanCat };
         }
 
-        // 4. 将数据打包，呼叫 Vercel 后端！
+        // 4. 将数据打包，带上 Token 呼叫后端！
+        const token = localStorage.getItem('hebao_token') || '';
+        
         const res = await fetch('/api/publish-community', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`   // 🌟 核心：把通行证交给后端
+            },
             body: JSON.stringify({
                 userId: uuid,
                 authorName: localStorage.getItem('hp_name') || '热心荷包蛋',
                 avatar: localStorage.getItem('hp_avatar') || '😎',
                 title: title,
                 content: JSON.stringify(payloadContent),
-                likes: price, // 借用 likes 字段存储赏金/价格
+                likes: price, 
                 isUrgent: isUrgent
             })
         });
