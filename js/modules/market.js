@@ -93,9 +93,9 @@ export const MarketEngine = {
     },
 
     // 3. 渲染引擎
-    renderMarketIdle(data = mockIdleItems) { 
+    renderMarketIdle(data) { 
         safeDOM.execute('idleWaterfall', container => {
-            if(data.length === 0) { 
+            if(!data || data.length === 0) { 
                 container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:60px 0; grid-column:span 2;">空空如也，快去发一个吧！</div>'; 
                 return; 
             } 
@@ -104,10 +104,10 @@ export const MarketEngine = {
                 const soldOverlayHtml = item.isSold ? `<div class="wf-sold-overlay"><div class="wf-sold-text">已售空</div></div>` : ''; 
                 const countBadge = item.itemCount > 1 ? `<div class="waterfall-count-badge">共 ${item.itemCount} 件</div>` : ''; 
                 
-                // 🌟 注入模拟的大厂/名校邮箱与信用分
-                const realEmail = item.email; 
-        const realCredit = item.credit || 100; // 兜底 100 分
-                
+                // 🌟 使用后端真实的脱敏邮箱和信用分
+                const realEmail = item.email || '';
+                const realCredit = item.credit !== undefined ? item.credit : 100;
+
                 html += `
                 <div class="waterfall-item" onclick="openCommunityPost('${item.id || 0}')">
                     <div class="wf-img-box">${soldOverlayHtml}${countBadge}<img class="wf-img" src="${item.img || ''}"></div>
@@ -130,15 +130,15 @@ export const MarketEngine = {
 
     renderMarketHelp(data) {
         safeDOM.execute('helpListContainer', container => {
-            if(data.length === 0) return container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:60px 0;">暂无悬赏，太和平了~</div>';
+            if(!data || data.length === 0) return container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:60px 0;">暂无悬赏，太和平了~</div>';
             let html = '';
             data.forEach(post => {
                 let content = {}; try { content = JSON.parse(post.content); } catch(e){}
                 const isUrgent = content.urgent === '十万火急';
                 
-                // 🌟 注入模拟的高分校友数据
-                const mockEmail = post.email;
-                const mockCredit = post.credit || 100;
+                // 🌟 使用后端真实的脱敏邮箱和信用分
+                const realEmail = post.email || '';
+                const realCredit = post.credit !== undefined ? post.credit : 100;
 
                 html += `
                 <div style="background:#FFF; border-radius:16px; padding:15px; margin-bottom: 15px; box-shadow:0 4px 15px rgba(0,0,0,0.03); border:1px solid ${isUrgent ? '#FECACA' : '#F3F4F6'}; break-inside: avoid; display: inline-block; width: 100%; box-sizing: border-box;">
@@ -147,7 +147,7 @@ export const MarketEngine = {
                             <span style="font-size:24px;">${post.avatar || '👻'}</span>
                             <span style="font-size:13px; font-weight:bold; color:#374151; display:flex; align-items:center;">
                                 ${post.author_name}
-                                ${window.App.getUserBadgeHtml ? window.App.getUserBadgeHtml(mockEmail, mockCredit) : ''}
+                                ${window.App.getUserBadgeHtml ? window.App.getUserBadgeHtml(realEmail, realCredit) : ''}
                             </span>
                         </div>
                         <div style="font-size:16px; font-weight:900; color:#D97706;">💰 €${post.likes || 0}</div>
@@ -166,15 +166,15 @@ export const MarketEngine = {
 
     renderMarketPartner(data) {
         safeDOM.execute('partnerListContainer', container => {
-            if(data.length === 0) return container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:60px 0;">目前还没有人找搭子，快去发一个吧！</div>';
+            if(!data || data.length === 0) return container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:60px 0;">目前还没有人找搭子，快去发一个吧！</div>';
             let html = '';
             data.forEach(post => {
                 let content = {}; try { content = JSON.parse(post.content); } catch(e){}
                 const mbtiTag = content.mbti === 'e' ? '🔥 寻 E 人' : (content.mbti === 'i' ? '🍵 寻 I 人' : '✨ MBTI 不限');
                 
-                // 🌟 注入模拟的搭子校友数据
-                const mockEmail = post.email;
-                const mockCredit = post.credit || 100;
+                // 🌟 使用后端真实的脱敏邮箱和信用分
+                const realEmail = post.email || '';
+                const realCredit = post.credit !== undefined ? post.credit : 100;
 
                 html += `
                 <div style="background:#FFF; border-radius:16px; padding:15px; margin-bottom: 15px; box-shadow:0 4px 15px rgba(0,0,0,0.03); border:1px solid #E9D5FF; break-inside: avoid; display: inline-block; width: 100%; box-sizing: border-box;">
@@ -193,7 +193,7 @@ export const MarketEngine = {
                             <span style="font-size:20px;">${post.avatar || '👻'}</span>
                             <span style="font-size:12px; font-weight:bold; color:#6B7280; display:flex; align-items:center;">
                                 ${post.author_name}
-                                ${window.App.getUserBadgeHtml ? window.App.getUserBadgeHtml(mockEmail, mockCredit) : ''}
+                                ${window.App.getUserBadgeHtml ? window.App.getUserBadgeHtml(realEmail, realCredit) : ''}
                             </span>
                         </div>
                         <button onclick="window.App.initiatePartnerChat('${post.id}')" style="background:#8B5CF6; color:#FFF; border:none; padding:6px 14px; border-radius:12px; font-size:12px; font-weight:bold; cursor:pointer;">聊一聊</button>
