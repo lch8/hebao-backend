@@ -105,9 +105,9 @@ export const MarketEngine = {
                 const countBadge = item.itemCount > 1 ? `<div class="waterfall-count-badge">共 ${item.itemCount} 件</div>` : ''; 
                 
                 // 🌟 注入模拟的大厂/名校邮箱与信用分
-                const mockEmail = item.email || (Math.random() > 0.6 ? 'seller@asml.com' : (Math.random() > 0.5 ? 'student@tudelft.nl' : 'user@gmail.com'));
-                const mockCredit = item.credit || Math.floor(Math.random() * 20 + 80); // 80-100分
-
+                const realEmail = item.email; 
+        const realCredit = item.credit || 100; // 兜底 100 分
+                
                 html += `
                 <div class="waterfall-item" onclick="openCommunityPost('${item.id || 0}')">
                     <div class="wf-img-box">${soldOverlayHtml}${countBadge}<img class="wf-img" src="${item.img || ''}"></div>
@@ -119,7 +119,7 @@ export const MarketEngine = {
                         <div style="display: flex; align-items: center; margin-top: 8px; border-top: 1px dashed #F3F4F6; padding-top: 8px; font-size: 11px; color: #64748B; font-weight: bold;">
                             <span style="margin-right: 4px; font-size: 14px;">${item.avatar || '😎'}</span>
                             <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.author || '荷包蛋'}</span>
-                            ${window.App.getUserBadgeHtml ? window.App.getUserBadgeHtml(mockEmail, mockCredit) : ''}
+                            ${window.App.getUserBadgeHtml ? window.App.getUserBadgeHtml(realEmail, realCredit) : ''}
                         </div>
                     </div>
                 </div>`; 
@@ -137,8 +137,8 @@ export const MarketEngine = {
                 const isUrgent = content.urgent === '十万火急';
                 
                 // 🌟 注入模拟的高分校友数据
-                const mockEmail = post.email || (Math.random() > 0.5 ? 'help@eur.nl' : 'user@uva.nl');
-                const mockCredit = post.credit || Math.floor(Math.random() * 15 + 85);
+                const mockEmail = post.email;
+                const mockCredit = post.credit || 100;
 
                 html += `
                 <div style="background:#FFF; border-radius:16px; padding:15px; margin-bottom: 15px; box-shadow:0 4px 15px rgba(0,0,0,0.03); border:1px solid ${isUrgent ? '#FECACA' : '#F3F4F6'}; break-inside: avoid; display: inline-block; width: 100%; box-sizing: border-box;">
@@ -173,8 +173,8 @@ export const MarketEngine = {
                 const mbtiTag = content.mbti === 'e' ? '🔥 寻 E 人' : (content.mbti === 'i' ? '🍵 寻 I 人' : '✨ MBTI 不限');
                 
                 // 🌟 注入模拟的搭子校友数据
-                const mockEmail = post.email || (Math.random() > 0.5 ? 'party@leidenuniv.nl' : 'hi@vu.nl');
-                const mockCredit = post.credit || Math.floor(Math.random() * 10 + 90);
+                const mockEmail = post.email;
+                const mockCredit = post.credit || 100;
 
                 html += `
                 <div style="background:#FFF; border-radius:16px; padding:15px; margin-bottom: 15px; box-shadow:0 4px 15px rgba(0,0,0,0.03); border:1px solid #E9D5FF; break-inside: avoid; display: inline-block; width: 100%; box-sizing: border-box;">
