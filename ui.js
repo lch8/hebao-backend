@@ -492,3 +492,83 @@ window.switchAssetTab = function(tabId, element) {
         if(fp && !fp.innerHTML.includes('暂无')) fp.innerHTML = '<div style="text-align:center; padding:40px 0; color:#9CA3AF;">暂无扫码避雷记录</div>';
     }
 };
+
+// ============================================================================
+// 🚀 发布抽屉 (Publish Sheet) 内部控制逻辑
+// ============================================================================
+
+window.App = window.App || {};
+
+// 1. 版块切换逻辑
+window.App.switchPublishTab = function(type) {
+    // 切换 Tab 视觉
+    document.querySelectorAll('.pub-tab').forEach(el => {
+        el.style.background = 'transparent';
+        el.style.color = '#64748B';
+        el.style.boxShadow = 'none';
+        el.classList.remove('active');
+    });
+    
+    const activeTab = document.getElementById('pubTab' + type.charAt(0).toUpperCase() + type.slice(1));
+    if (activeTab) {
+        activeTab.style.background = '#FFF';
+        activeTab.style.color = '#111827';
+        activeTab.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)';
+        activeTab.classList.add('active');
+    }
+
+    // 动态修改标题
+    const titleEl = document.getElementById('publishModalTitle');
+    if (type === 'idle') titleEl.innerText = '发布闲置物品';
+    if (type === 'help') titleEl.innerText = '发布求助悬赏';
+    if (type === 'partner') titleEl.innerText = '发起搭子组局';
+
+    // (后续可以在这里写逻辑：如果是 idle，就隐藏 help 的表单，显示 idle 的表单)
+};
+
+// 2. 胶囊单选切换逻辑
+window.App.togglePublishCapsule = function(clickedEl) {
+    const parent = clickedEl.parentElement;
+    const allCapsules = parent.querySelectorAll('.publish-capsule');
+    allCapsules.forEach(el => el.classList.remove('active'));
+    clickedEl.classList.add('active');
+};
+
+// 3. 商业化：十万火急卡片切换逻辑
+window.App.selectUrgentLevel = function(level) {
+    const cardNormal = document.getElementById('cardNormal');
+    const cardUrgent = document.getElementById('cardUrgent');
+    const urgentCheck = document.getElementById('urgentCheck');
+
+    if (level === 'normal') {
+        cardNormal.classList.add('active-normal');
+        cardUrgent.classList.remove('active-urgent');
+        cardNormal.querySelector('div:last-child').innerText = '✅';
+        urgentCheck.innerText = '⭕️';
+        urgentCheck.style.opacity = '0.3';
+    } else {
+        cardNormal.classList.remove('active-normal');
+        cardUrgent.classList.add('active-urgent');
+        cardNormal.querySelector('div:last-child').innerText = '⭕️';
+        urgentCheck.innerText = '✅';
+        urgentCheck.style.opacity = '1';
+    }
+};
+
+// 4. 重写唤起逻辑，确保每次打开默认切到“悬赏”并且鉴权
+const originalOpenPublishSheet = window.App.openPublishSheet;
+window.App.openPublishSheet = function() {
+    // 强制鉴权
+    if (localStorage.getItem('hebao_logged_in') !== 'true') {
+        if(window.App.showToast) window.App.showToast("发帖前需要先登录并完成实名认证哦！", "warning");
+        setTimeout(() => { window.App.openModal('loginModal'); }, 500);
+        return;
+    }
+    
+    // 调用 main-4.js 里原生的炫酷滑出动画
+    if (originalOpenPublishSheet) {
+        originalOpenPublishSheet();
+        // 默认激活悬赏 Tab
+        window.App.switchPublishTab('help');
+    }
+};
