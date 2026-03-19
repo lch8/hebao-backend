@@ -456,7 +456,7 @@ export const WikiEngine = {
         
         // 存入本地存储
         allComments[currentWikiIdForComment].push({ 
-            name: localStorage.getItem('hp_name') || '管家热心用户', 
+            name: localStorage.getItem('hp_name') || '热心荷包蛋', 
             avatar: '😎', 
             text: text 
         });
