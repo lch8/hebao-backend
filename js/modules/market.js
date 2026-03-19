@@ -94,9 +94,11 @@ window.App.onFilterChange = function(tab, key, value) {
 
 export const MarketEngine = {
     // 1. 社区数据拉取 (适配最新的数据结构与缓存引擎)
+   // 1. 社区数据拉取 (破除浏览器缓存版)
     async loadCommunityPosts() {
         try {
-            const res = await fetch('/api/get-community'); 
+            // 🌟 核心破窗魔法：加上 t=时间戳，强行打穿浏览器本地 304 缓存！
+            const res = await fetch('/api/get-community?t=' + Date.now()); 
             const data = await res.json();
             if (data.success && data.posts) {
                 let idleItems = [];
@@ -111,13 +113,12 @@ export const MarketEngine = {
                     let payload; 
                     try { payload = JSON.parse(post.content); } catch(e) { payload = { oldText: post.content }; }
 
-                    // 🌟 组装携带真实身份与信用分的统一对象
                     const commonData = {
                         ...post,
                         author: post.author_name,
                         avatar: post.avatar || '😎',
-                        email: post.email,    // 后端已经脱敏好
-                        credit: post.credit,  // 后端传来的信用分
+                        email: post.email,    
+                        credit: post.credit,  
                         contentObj: payload
                     };
 
@@ -127,7 +128,7 @@ export const MarketEngine = {
                             id: post.id, 
                             title: title.replace('[闲置] ', ''), 
                             img: post.image_url, 
-                            price: post.likes || 0, // 借用 likes 字段存价格
+                            price: post.likes || 0,
                             timestamp: time, 
                             isSold: payload.isSold || false, 
                             itemCount: payload.itemCount || 1 
@@ -137,8 +138,6 @@ export const MarketEngine = {
                     else if (title.includes('[找搭子]')) partnerItems.push(commonData);
                 });
 
-                // 🌟 将数据直接喂给刚才升级的神级渲染引擎
-                // 它们会自动接管数据缓存，并立刻触发过滤与渲染！
                 if (window.App && window.App.renderMarketIdle) {
                     window.App.renderMarketIdle(idleItems); 
                     window.App.renderMarketHelp(helpItems);
