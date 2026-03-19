@@ -539,6 +539,37 @@
         </div>
     </div>
 </div>
+
+    <div class="full-modal" id="editProfileModal" style="display: none; background: rgba(0,0,0,0.6); position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 999999; justify-content: center; align-items: flex-end; backdrop-filter: blur(2px);">
+    <div style="background: #F8FAFC; width: 100%; border-radius: 24px 24px 0 0; display: flex; flex-direction: column; transform: translateY(0); transition: 0.3s; padding-bottom: max(20px, env(safe-area-inset-bottom));">
+        
+        <div style="padding: 20px; background: #FFF; border-radius: 24px 24px 0 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #F1F5F9;">
+            <div style="color: #9CA3AF; cursor: pointer; font-size: 16px; font-weight: bold; padding: 0 10px;" onclick="document.getElementById('editProfileModal').style.display='none'">取消</div>
+            <div style="font-size: 18px; font-weight: 900; color: #111827;">编辑资料</div>
+            <div style="color: #10B981; cursor: pointer; font-size: 16px; font-weight: 900; padding: 0 10px;" onclick="window.App.saveProfile()">保存</div>
+        </div>
+
+        <div style="padding: 30px 20px;">
+            <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 30px;">
+                <div style="position: relative;">
+                    <input type="text" id="editAvatarInput" maxlength="2" style="width: 80px; height: 80px; border-radius: 50%; border: 3px solid #FFF; box-shadow: 0 4px 15px rgba(0,0,0,0.08); background: #FFF; font-size: 40px; text-align: center; outline: none; padding: 0; cursor: pointer;" title="点击更换Emoji">
+                    <div style="position: absolute; bottom: 0; right: 0; background: #111827; color: #FFF; width: 24px; height: 24px; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 2px solid #FFF; font-size: 12px; pointer-events: none;">✏️</div>
+                </div>
+                <div style="font-size: 12px; color: #94A3B8; margin-top: 10px; font-weight: bold;">点击上方更换专属 Emoji</div>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <div style="font-size: 13px; font-weight: bold; color: #64748B; margin-bottom: 8px; margin-left: 4px;">你的昵称</div>
+                <input type="text" id="editNameInput" placeholder="起个好听的昵称吧" maxlength="12" style="width: 100%; box-sizing: border-box; padding: 16px; border-radius: 16px; border: 1px solid #E2E8F0; background: #FFF; font-size: 16px; font-weight: bold; color: #111827; outline: none;">
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <div style="font-size: 13px; font-weight: bold; color: #64748B; margin-bottom: 8px; margin-left: 4px;">认证邮箱 (不可修改)</div>
+                <div id="editEmailDisplay" style="width: 100%; box-sizing: border-box; padding: 16px; border-radius: 16px; border: 1px solid #F1F5F9; background: #F8FAFC; font-size: 14px; font-weight: bold; color: #94A3B8;"></div>
+            </div>
+        </div>
+    </div>
+</div>
     
 <script>
         window.addEventListener('error', function(e) {
