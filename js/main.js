@@ -678,53 +678,19 @@ window.App.toggleTask = function(id) {
 setTimeout(() => { if(window.App.renderStarterTasks) window.App.renderStarterTasks(); }, 500);
 
 // ==========================================
-// 🎮 荷村生存模拟器 (带扣血/震动/音效/海报生成)
+// 🎮 荷村生存模拟器 (题库分离 + 动态结算 + 随机抽取5题)
 // ==========================================
+
+// 1. 引入刚才写好的外置高定题库！
+import { sgQuestions } from './data/sgQuestions.js';
 
 window.App.sgEngine = {
     balance: 500,
     currentIndex: 0,
-    wrongTags: [], // 记录错题，用于最后精准推送
-    questions: [
-        {
-            tag: "交通防坑",
-            scene: "刚下飞机，拖着两个28寸大箱子累得半死。一辆没顶灯的黑车停在你面前，司机用流利的英语说：“去阿姆市区吗？只要50欧，不用排队。”",
-            options: [
-                { text: "A. 赶紧上车，太累了不想等火车。", cost: 150, isCorrect: false },
-                { text: "B. 严词拒绝，自己去负一层刷卡坐火车。", cost: 0, isCorrect: true }
-            ],
-            analysis: "❌ 经典杀猪盘！上车报50，下车计价器变200欧，不给钱锁车门不给拿行李。永远只坐正规火车或去官方Taxi点排队！"
-        },
-        {
-            tag: "租房防骗",
-            scene: "微信群里有人转租鹿特丹市中心大单间，每月只要 €500！对方发来了他的护照照片，让你用西联汇款先交押金锁房。",
-            options: [
-                { text: "A. 护照都发了还能有假？赶紧打钱抢房！", cost: 500, isCorrect: false },
-                { text: "B. 价格低得离谱，反手一个举报。", cost: 0, isCorrect: true }
-            ],
-            analysis: "❌ 诈骗重灾区！骗子发给你的护照是上一个受害者的！在荷兰没实地看房前，要求西联汇款或转账到非NL账户的，1000%是骗子。"
-        },
-        {
-            tag: "生活常识",
-            scene: "你在 AH 超市买了 €18 的半成品菜。结账时，你自信地掏出一张崭新的 €100 纸币递给收银员。",
-            options: [
-                { text: "A. 收银员会找你 €82。", cost: 18, isCorrect: false },
-                { text: "B. 收银员指着牌子说：“Sorry, no €100.”", cost: 0, isCorrect: true }
-            ],
-            analysis: "❌ 荷兰几乎所有超市和街边小店拒收 €100 及以上面值的现金！请务必在国内换好 €50 及以下的零钱，或迅速办好双币信用卡。"
-        },
-        {
-            tag: "交规避雷",
-            scene: "晚上 8 点从图书馆出来，天已经黑透了。你的二手自行车没有装车灯。",
-            options: [
-                { text: "A. 借着路灯的光，单手拿手机照亮骑回家。", cost: 220, isCorrect: false },
-                { text: "B. 下车，推着自行车走回家。", cost: 0, isCorrect: true }
-            ],
-            analysis: "❌ 荷兰交警最爱抓留学生！夜间骑车不开前后灯罚款 €70，骑车手里拿手机再罚 €150。老老实实买个2欧的夹子灯保平安！"
-        }
-    ],
+    wrongTags: [], 
+    activeQuestions: [], // 存放每次随机抽出来的 5 道题
 
-    // 纯原生 Web Audio 生成器 (无需外接MP3)
+    // 音效引擎保持不变
     playTone(type) {
         try {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -753,22 +719,31 @@ window.App.startSurvivalGame = function() {
     document.getElementById('survivalGameModal').style.display = 'flex';
     document.getElementById('sgQuestionArea').style.display = 'flex';
     document.getElementById('sgResultArea').style.display = 'none';
+    
+    // 初始化状态
     window.App.sgEngine.balance = 500;
     window.App.sgEngine.currentIndex = 0;
     window.App.sgEngine.wrongTags = [];
+    
+    // 🌟 核心机制：每次洗牌，随机抽取 5 道题！
+    const shuffled = [...sgQuestions].sort(() => 0.5 - Math.random());
+    window.App.sgEngine.activeQuestions = shuffled.slice(0, 5);
+
     window.App.renderSgQuestion();
 };
 
 window.App.renderSgQuestion = function() {
     const engine = window.App.sgEngine;
-    const q = engine.questions[engine.currentIndex];
+    const q = engine.activeQuestions[engine.currentIndex]; // 从抽取的题库里拿题
     
-    document.getElementById('sgProgress').innerText = `关卡 ${engine.currentIndex + 1}/${engine.questions.length}`;
+    document.getElementById('sgProgress').innerText = `关卡 ${engine.currentIndex + 1}/${engine.activeQuestions.length}`;
     document.getElementById('sgWalletBalance').innerText = engine.balance;
-    document.getElementById('sgWalletBox').className = ''; // 移除震动动画
+    document.getElementById('sgWalletBox').className = ''; 
     
     document.getElementById('sgTag').innerText = `#${q.tag}`;
-    document.getElementById('sgScene').innerText = q.scene;
+    // 把标题和场景拼接在一起
+    document.getElementById('sgScene').innerHTML = `<div style="font-weight:900; font-size:18px; color:#FBBF24; margin-bottom:10px;">${q.title}</div>${q.scene}`;
+    
     document.getElementById('sgAnalysis').style.display = 'none';
     document.getElementById('sgNextBtn').style.display = 'none';
 
@@ -777,7 +752,7 @@ window.App.renderSgQuestion = function() {
     
     q.options.forEach((opt, index) => {
         const btn = document.createElement('div');
-        btn.style.cssText = "background: #1F2937; border: 2px solid #4B5563; color: #E5E7EB; padding: 16px; border-radius: 16px; font-weight: bold; cursor: pointer; transition: 0.2s;";
+        btn.style.cssText = "background: #1F2937; border: 2px solid #4B5563; color: #E5E7EB; padding: 16px; border-radius: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; line-height: 1.5;";
         btn.innerText = opt.text;
         btn.onclick = () => window.App.handleSgAnswer(index, btn);
         optionsBox.appendChild(btn);
@@ -786,8 +761,8 @@ window.App.renderSgQuestion = function() {
 
 window.App.handleSgAnswer = function(selectedIndex, btnElement) {
     const engine = window.App.sgEngine;
-    const q = engine.questions[engine.currentIndex];
-    const selectedOpt = q.options[selectedIndex];
+    const q = engine.activeQuestions[engine.currentIndex];
+    const selectedOpt = q.options[selectedIndex]; // 拿到用户具体点的那一个选项
     
     // 禁用所有按钮
     const allBtns = document.getElementById('sgOptions').children;
@@ -797,29 +772,29 @@ window.App.handleSgAnswer = function(selectedIndex, btnElement) {
     analysisBox.style.display = 'block';
 
     if (!selectedOpt.isCorrect) {
-        // ❌ 答错：扣血、震动、发声
+        // ❌ 答错：扣选定选项的专属金额！
         engine.balance -= selectedOpt.cost;
         if (!engine.wrongTags.includes(q.tag)) engine.wrongTags.push(q.tag);
         
-        btnElement.style.background = '#7F1D1D'; // 暗红色
+        btnElement.style.background = '#7F1D1D'; 
         btnElement.style.borderColor = '#DC2626';
         
-        // 钱包扣血动画与声音
         const walletBox = document.getElementById('sgWalletBox');
         document.getElementById('sgWalletBalance').innerText = engine.balance;
         walletBox.classList.add('shake-hard');
         
-        analysisBox.innerHTML = `<div style="color: #EF4444; font-size: 20px; font-weight: 900; margin-bottom: 8px;">🩸 扣款 -€${selectedOpt.cost}</div><div style="color: #D1D5DB; font-size: 14px; line-height: 1.6;">${q.analysis}</div>`;
+        // 🌟 动态加载专属结算文案
+        analysisBox.innerHTML = `<div style="color: #EF4444; font-size: 18px; font-weight: 900; margin-bottom: 8px;">🩸 扣款 -€${selectedOpt.cost}</div><div style="color: #D1D5DB; font-size: 14px; line-height: 1.6;">${selectedOpt.result}</div>`;
         
         engine.playTone('wrong');
-        if (navigator.vibrate) navigator.vibrate([200, 100, 200]); // 手机震动 API
+        if (navigator.vibrate) navigator.vibrate([200, 100, 200]); 
         
     } else {
-        // ✅ 答对：加钱、发声
+        // ✅ 答对
         btnElement.style.background = '#064E3B'; 
         btnElement.style.borderColor = '#10B981';
         
-        analysisBox.innerHTML = `<div style="color: #10B981; font-size: 20px; font-weight: 900; margin-bottom: 8px;">✨ 完美闪避 +€0</div><div style="color: #D1D5DB; font-size: 14px; line-height: 1.6;">思路清晰！${q.analysis.replace('❌ ', '')}</div>`;
+        analysisBox.innerHTML = `<div style="color: #10B981; font-size: 18px; font-weight: 900; margin-bottom: 8px;">✨ 完美闪避 +€0</div><div style="color: #D1D5DB; font-size: 14px; line-height: 1.6;">${selectedOpt.result}</div>`;
         
         engine.playTone('correct');
         if (navigator.vibrate) navigator.vibrate(50);
@@ -830,12 +805,14 @@ window.App.handleSgAnswer = function(selectedIndex, btnElement) {
 
 window.App.nextSgQuestion = function() {
     window.App.sgEngine.currentIndex++;
-    if (window.App.sgEngine.currentIndex >= window.App.sgEngine.questions.length) {
+    if (window.App.sgEngine.currentIndex >= window.App.sgEngine.activeQuestions.length) {
         window.App.showSgResult();
     } else {
         window.App.renderSgQuestion();
     }
 };
+
+// ... showSgResult 函数保持上一回合的代码不变 ...
 
 window.App.showSgResult = function() {
     document.getElementById('sgQuestionArea').style.display = 'none';
