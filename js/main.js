@@ -1175,6 +1175,43 @@ if (!document.getElementById('vipStyles')) {
     style.innerHTML = `@keyframes popIn { 0% { transform: scale(0); } 80% { transform: scale(1.2); } 100% { transform: scale(1); } }`;
     document.head.appendChild(style);
 }
+
+// ==========================================
+// 🛡️ 全局身份与信用标识引擎 (供全站调用)
+// ==========================================
+window.App.getUserBadgeHtml = function(email, creditScore = 100) {
+    // 1. 如果没有绑定邮箱，显示游客
+    if (!email || email === '未绑定邮箱') {
+        return `<span style="background: #F1F5F9; color: #64748B; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-left: 6px;">Lv.0 游客</span>`;
+    }
+    
+    // 2. 百变厂牌匹配
+    const domain = email.toLowerCase().split('@')[1] || '';
+    let badge = { grad: 'linear-gradient(135deg, #FDE68A 0%, #F59E0B 100%)', icon: '🎓', text: '实名校友', textColor: '#78350F' };
+
+    if (domain.includes('tudelft.nl')) badge = { grad: 'linear-gradient(135deg, #E0F2FE 0%, #0EA5E9 100%)', icon: '🏛️', text: 'TUD 认证', textColor: '#FFF' };
+    else if (domain.includes('uva.nl')) badge = { grad: 'linear-gradient(135deg, #FEE2E2 0%, #DC2626 100%)', icon: '❌', text: 'UvA 认证', textColor: '#FFF' };
+    else if (domain.includes('vu.nl')) badge = { grad: 'linear-gradient(135deg, #DBEAFE 0%, #2563EB 100%)', icon: '🦅', text: 'VU 认证', textColor: '#FFF' };
+    else if (domain.includes('eur.nl')) badge = { grad: 'linear-gradient(135deg, #D1FAE5 0%, #10B981 100%)', icon: '📈', text: 'EUR 认证', textColor: '#FFF' };
+    else if (domain.includes('leidenuniv.nl')) badge = { grad: 'linear-gradient(135deg, #E0E7FF 0%, #4F46E5 100%)', icon: '📜', text: 'Leiden 认证', textColor: '#FFF' };
+    else if (domain.includes('wur.nl')) badge = { grad: 'linear-gradient(135deg, #ECFCCB 0%, #65A30D 100%)', icon: '🌱', text: 'WUR 认证', textColor: '#FFF' };
+    else if (domain.includes('asml.com')) badge = { grad: 'linear-gradient(135deg, #475569 0%, #0F172A 100%)', icon: '⚙️', text: 'ASML 认证', textColor: '#FFF' };
+    else if (domain.includes('ing.com') || domain.includes('ing.nl')) badge = { grad: 'linear-gradient(135deg, #FFEDD5 0%, #EA580C 100%)', icon: '🦁', text: 'ING 认证', textColor: '#FFF' };
+    else if (domain.includes('booking.com')) badge = { grad: 'linear-gradient(135deg, #93C5FD 0%, #003B95 100%)', icon: '🧳', text: 'Booking', textColor: '#FFF' };
+    else if (!domain.includes('gmail.com') && !domain.includes('hotmail.com') && !domain.includes('outlook.com') && !domain.includes('qq.com') && !domain.includes('163.com')) {
+        badge = { grad: 'linear-gradient(135deg, #F3F4F6 0%, #4B5563 100%)', icon: '💼', text: '名企认证', textColor: '#FFF' };
+    }
+
+    const badgeHtml = `<span style="background: ${badge.grad}; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 900; color: ${badge.textColor}; margin-left: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">${badge.icon} ${badge.text}</span>`;
+    
+    // 3. 信用分红绿灯系统 (90以上绿，70以上黄，低于70红)
+    const creditColor = creditScore >= 90 ? '#059669' : (creditScore >= 70 ? '#D97706' : '#DC2626');
+    const creditBg = creditScore >= 90 ? '#D1FAE5' : (creditScore >= 70 ? '#FEF3C7' : '#FEE2E2');
+    const creditHtml = `<span style="background: ${creditBg}; color: ${creditColor}; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 900; margin-left: 4px; border: 1px solid ${creditColor}40;">信用 ${creditScore}</span>`;
+    
+    return badgeHtml + creditHtml;
+};
+
 // ============================================================================
 // 🚀 全局启动器 (确保所有页面一打开就有数据！)
 document.addEventListener('DOMContentLoaded', () => {
