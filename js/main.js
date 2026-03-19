@@ -510,6 +510,51 @@ window.App.voteSafety = async function(type) {
         console.error("投票失败", e);
     }
 };
+// ==========================================
+// 🚀 一键发帖联动引擎 (从攻略卡片直达社区集市)
+// ==========================================
+window.App.quickPost = function(tab, encodedTitle, encodedContent) {
+    // 1. 调用底部的发布按钮事件，展开你的发布界面
+    if (window.App.openPublishSheet) {
+        window.App.openPublishSheet();
+    } else {
+        alert("发布模块正在加载中...");
+        return;
+    }
+
+    // 2. 解密文本 (防止回车符、引号把代码搞崩溃)
+    const title = decodeURIComponent(encodedTitle);
+    const content = decodeURIComponent(encodedContent);
+
+    // 3. 延迟 400 毫秒，等待发布弹窗的 HTML 彻底渲染完毕
+    setTimeout(() => {
+        // 💡 注意：这里的 ID (publishType, publishTitle) 需要和你真实发布弹窗里的 input/select ID 一致！
+        // 如果你的 ID 叫别的名字，请在这里改一下。
+        
+        const typeSelect = document.getElementById('publishType'); // 分类下拉框
+        if (typeSelect) {
+            typeSelect.value = tab; 
+            typeSelect.dispatchEvent(new Event('change')); // 触发切换事件
+        }
+
+        const titleInput = document.getElementById('publishTitle'); // 标题输入框
+        if (titleInput) {
+            titleInput.value = title;
+            titleInput.dispatchEvent(new Event('input'));
+        }
+
+        const contentInput = document.getElementById('publishContent'); // 正文文本域
+        if (contentInput) {
+            contentInput.value = content;
+            contentInput.dispatchEvent(new Event('input'));
+        }
+
+        // 弹出一个极其舒服的用户提示
+        if (window.App.showToast) {
+            window.App.showToast("✨ 模板已加载，请补充【括号】里的时间地点！", "success");
+        }
+    }, 400);
+};
 // ============================================================================
 // 🚀 全局启动器 (页面加载完毕后自动拉取数据)
 // ============================================================================
