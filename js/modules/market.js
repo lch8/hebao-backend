@@ -93,238 +93,195 @@ window.App.onFilterChange = function(tab, key, value) {
 };
 
 export const MarketEngine = {
-    // 1. 社区数据拉取 (适配最新的数据结构与缓存引擎)
-   // 1. 社区数据拉取 (破除浏览器缓存版)
-    // 1. 社区数据拉取 (破除浏览器缓存 + 照妖镜报警版)
-    // 🚀 核弹级诊断探针版：打穿一切阻碍，寻找消失的帖子
+    // 🚀 上帝模式：防弹级拉取引擎
     async loadCommunityPosts() {
         try {
-            // 探针 1：强力打穿缓存并获取原始文本
             const res = await fetch('/api/get-community?t=' + Date.now()); 
-            const text = await res.text(); 
-
-            let data;
-            try {
-                data = JSON.parse(text);
-            } catch (e) {
-                alert("🚨 【探针1报错：接口崩溃】\n后端返回的根本不是正常数据，可能是Vercel挂了，原始返回是：\n" + text.substring(0, 100));
-                return;
-            }
-
+            const data = await res.json();
+            
             if (!data.success) {
-                alert("🚨 【探针2报错：数据库拒绝】\n" + data.error);
+                if(window.App.showToast) window.App.showToast("集市加载失败: " + data.error, "error");
                 return;
             }
 
-            if (!data.posts || data.posts.length === 0) {
-                alert("📭 【探针3空仓：数据库没东西】\n后端通了，但数据库里 0 条帖子！是不是刚才压根没发进数据库？");
-                return;
-            }
+            let idleItems = [], helpItems = [], partnerItems = [];
+            
+            // 🛡️ 百毒不侵的数据分拣
+            (data.posts || []).forEach(post => {
+                const title = post.title || ''; 
+                let payload = {}; 
+                try { payload = JSON.parse(post.content || '{}'); } catch(e) {}
+                if (!payload) payload = {};
 
-            let idleItems = [];
-            let helpItems = [];
-            let partnerItems = [];
+                const commonData = {
+                    ...post,
+                    author: post.author_name || '匿名荷包蛋',
+                    avatar: post.avatar || '😎',
+                    email: post.email || '',    
+                    credit: post.credit || 100,  
+                    contentObj: payload
+                };
 
-            // 仔细分拣数据
-            data.posts.forEach(post => {
-                const title = post.title || '';
-                let payload = {};
-                try { payload = JSON.parse(post.content); } catch(e) { payload = { oldText: post.content }; }
-
-                const commonData = { ...post, author: post.author_name, avatar: post.avatar || '😎', email: post.email, credit: post.credit, contentObj: payload };
-
-                if (title.includes('[闲置]')) idleItems.push(commonData);
+                if (title.includes('[闲置]')) {
+                    commonData.title = title.replace('[闲置] ', '');
+                    commonData.img = post.image_url || '';
+                    commonData.price = post.likes || 0;
+                    idleItems.push(commonData);
+                }
                 else if (title.includes('[互助]')) helpItems.push(commonData);
                 else if (title.includes('[找搭子]')) partnerItems.push(commonData);
             });
 
-            // 🌟 探针 4：核心战果汇报 (如果在屏幕上看到了这个，说明后端完美没问题！)
-            alert(`✅ 【探针4汇报：数据已到达前线】\n总共收到: ${data.posts.length} 条\n悬赏: ${helpItems.length} 条\n闲置: ${idleItems.length} 条\n搭子: ${partnerItems.length} 条\n\n📌 如果看完这条弹窗后，页面依然是空白的，说明绝对是【前端渲染器】或【分类下拉框】把它们隐藏了！`);
+            // 存入全局缓存
+            window.App.marketDataCache = { idle: idleItems, help: helpItems, partner: partnerItems };
 
-            // 投喂给渲染引擎
-            if (window.App && window.App.renderMarketIdle) {
-                window.App.marketDataCache = { idle: idleItems, help: helpItems, partner: partnerItems };
-                window.App.renderMarketIdle(); 
-                window.App.renderMarketHelp();
-                window.App.renderMarketPartner();
-            } else {
-                alert("🚨 【探针5报错：找不到渲染引擎】");
-            }
+            // 强制渲染三大版块
+            this.renderMarketIdle(); 
+            this.renderMarketHelp();
+            this.renderMarketPartner();
+
+            // 🌟 强行激活当前 Tab，防止 display:none 导致不可见
+            const currentTab = window.App.currentMarketTab || 'idle';
+            if (window.switchMarketTab) window.switchMarketTab(currentTab);
 
         } catch (error) {
-            alert("🚨 【终极探针报错：JS彻底崩溃】\n" + error.message);
+            console.error("🚨 致命加载失败:", error);
         }
     },
 
-    // 2. 过滤器 (代理模式)
-    applyFilters(type) {
-        // 🌟 旧的 DOM 查找逻辑（导致报错的罪魁祸首）已全部干掉！
-        // 现在的过滤逻辑已经完美内聚在了 render 函数里。
-        // 如果外部有旧代码调用了 applyFilters，直接让它触发不带参数的 render 函数即可（会自动读取缓存过滤）。
-        if (window.App) {
-            if (type === 'idle' && window.App.renderMarketIdle) window.App.renderMarketIdle();
-            if (type === 'help' && window.App.renderMarketHelp) window.App.renderMarketHelp();
-            if (type === 'partner' && window.App.renderMarketPartner) window.App.renderMarketPartner();
+    // ==========================================
+    // 🛠️ 自愈型容器生成器 (防止 DOM 丢失导致白屏)
+    // ==========================================
+    getContainer(id, isGrid = false) {
+        let el = document.getElementById(id);
+        if (!el) {
+            const parent = document.getElementById('page-market');
+            if (parent) {
+                el = document.createElement('div');
+                el.id = id;
+                el.style.display = isGrid ? 'grid' : 'none';
+                el.style.padding = '0 20px 100px';
+                if (isGrid) {
+                    el.style.gridTemplateColumns = '1fr 1fr';
+                    el.style.gap = '12px';
+                }
+                parent.appendChild(el);
+                console.log(`[上帝模式] 自动为您补齐了丢失的容器: #${id}`);
+            }
         }
+        return el;
     },
 
-    renderMarketIdle(data) { 
-        if (data) window.App.marketDataCache.idle = data; 
-        window.App.renderFilterBar('idle'); 
+    // ==========================================
+    // 📦 渲染器
+    // ==========================================
+    renderMarketIdle() {
+        const container = this.getContainer('idleWaterfall', true);
+        if (!container) return;
 
-        let processData = [...(window.App.marketDataCache.idle || [])];
-        const state = window.App.currentMarketFilter.idle;
+        let processData = [...(window.App.marketDataCache?.idle || [])];
+        const state = window.App.currentMarketFilter?.idle || { loc: 'all', cat: 'all', sort: 'newest' };
 
-        // 🌟 1. 弹性距离过滤 (神仙逻辑：利用邮箱后缀匹配同城)
-        if (state.loc === 'city') {
-            const myDomain = (localStorage.getItem('hp_email') || '').split('@')[1];
-            if (myDomain) processData = processData.filter(item => (item.email || '').includes(myDomain));
-        } else if (state.loc === 'nearby') {
-            processData = processData.filter(() => Math.random() > 0.4); // 模拟精确定位筛选
-        }
-
-        // 🌟 2. 分类过滤 (利用正则模糊匹配标题模拟，后期接真实字段)
+        // 简化版安全过滤
         if (state.cat === 'digital') processData = processData.filter(i => /手机|电脑|显示器|耳机|pad|线|卡/i.test(i.title));
-        else if (state.cat === 'home') processData = processData.filter(i => /床|柜|锅|椅|桌|灯|锅|碗/i.test(i.title));
-        else if (state.cat === 'transport') processData = processData.filter(i => /车|卡|票|代步/i.test(i.title));
+        else if (state.cat === 'home') processData = processData.filter(i => /床|柜|桌|椅|灯|锅/i.test(i.title));
 
-        // 🌟 3. 排序
-        if (state.sort === 'nearest') processData.sort(() => Math.random() - 0.5); // 模拟距离排序
-
-        safeDOM.execute('idleWaterfall', container => {
-            if(!processData || processData.length === 0) return container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:60px 0; grid-column:span 2;">没有找到符合该条件的闲置哦~ 调整筛选试试</div>'; 
-            let html = ''; 
-            processData.forEach(item => { 
-                const soldOverlayHtml = item.isSold ? `<div class="wf-sold-overlay"><div class="wf-sold-text">已售空</div></div>` : ''; 
-                const countBadge = item.itemCount > 1 ? `<div class="waterfall-count-badge">共 ${item.itemCount} 件</div>` : ''; 
-                const realEmail = item.email || '';
-                const realCredit = item.credit !== undefined ? item.credit : 100;
-
-                html += `
-                <div class="waterfall-item" onclick="openCommunityPost('${item.id || 0}')">
-                    <div class="wf-img-box">${soldOverlayHtml}${countBadge}<img class="wf-img" src="${item.img || ''}"></div>
-                    <div class="wf-info">
-                        <div class="wf-title" style="${item.isSold ? 'color:#9CA3AF;' : ''}">${item.title || '无题'}</div>
-                        <div class="wf-price-row">
-                            <div><span class="wf-currency" style="${item.isSold ? 'color:#9CA3AF;' : ''}">€</span><span class="wf-price" style="${item.isSold ? 'color:#9CA3AF;' : ''}">${item.price || '0'}</span></div>
-                        </div>
-                        <div style="display: flex; align-items: center; margin-top: 8px; border-top: 1px dashed #F3F4F6; padding-top: 8px; font-size: 11px; color: #64748B; font-weight: bold;">
-                            <span style="margin-right: 4px; font-size: 14px;">${item.avatar || '😎'}</span>
-                            <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${item.author || '荷包蛋'}</span>
-                            ${window.App.getUserBadgeHtml ? window.App.getUserBadgeHtml(realEmail, realCredit) : ''}
-                        </div>
-                    </div>
-                </div>`; 
-            }); 
-            container.innerHTML = html; 
-        });
-    },
-
-    renderMarketHelp(data) {
-        if (data) window.App.marketDataCache.help = data;
-        window.App.renderFilterBar('help');
-
-        let processData = [...(window.App.marketDataCache.help || [])];
-        const state = window.App.currentMarketFilter.help;
-
-        // 过滤链
-        if (state.loc === 'city') {
-            const myDomain = (localStorage.getItem('hp_email') || '').split('@')[1];
-            if (myDomain) processData = processData.filter(p => (p.email || '').includes(myDomain));
-        } else if (state.loc === 'online') {
-            processData = processData.filter(p => { try{ return JSON.parse(p.content).location.includes('线上'); }catch(e){return false;} });
+        if (processData.length === 0) {
+            container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:60px 0; grid-column:span 2;">该分类下暂无闲置，快去发布第一个吧！</div>';
+            return;
         }
 
-        if (state.status === 'urgent') processData = processData.filter(p => { try{ return JSON.parse(p.content).urgent === '十万火急'; }catch(e){return false;} });
+        let html = '';
+        processData.forEach(item => {
+            html += `
+            <div class="waterfall-item" style="background:#FFF; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.04); margin-bottom:12px;">
+                <div style="height:150px; background:#F3F4F6; position:relative;">
+                    <img src="${item.img || 'data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'100%\\' height=\\'100%\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23F3F4F6\\'/><text x=\\'50%\\' y=\\'50%\\' font-size=\\'12\\' fill=\\'%239CA3AF\\' text-anchor=\\'middle\\'>暂无图</text></svg>'}" style="width:100%; height:100%; object-fit:cover;">
+                </div>
+                <div style="padding:10px;">
+                    <div style="font-size:13px; font-weight:900; color:#111827; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${item.title}</div>
+                    <div style="color:#EF4444; font-size:14px; font-weight:bold; margin-top:6px;">€ ${item.price}</div>
+                </div>
+            </div>`;
+        });
+        container.innerHTML = html;
+    },
+
+    renderMarketHelp() {
+        const container = this.getContainer('helpListContainer', false);
+        if (!container) return;
+
+        let processData = [...(window.App.marketDataCache?.help || [])];
+        const state = window.App.currentMarketFilter?.help || { loc: 'all', status: 'all', sort: 'newest' };
+
+        if (state.status === 'urgent') processData = processData.filter(p => p.contentObj?.urgent === '十万火急');
+
+        if (processData.length === 0) {
+            container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:60px 0;">暂无符合条件的悬赏哦~</div>';
+            return;
+        }
+
+        let html = '';
+        processData.forEach(post => {
+            const isUrgent = post.contentObj?.urgent === '十万火急';
+            const titleStr = post.title.replace('[互助] ', '');
+            
+            html += `
+            <div style="background:#FFF; border-radius:16px; padding:15px; margin-bottom: 15px; box-shadow:0 4px 15px rgba(0,0,0,0.03); border:1px solid ${isUrgent ? '#FECACA' : '#F3F4F6'};">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:24px;">${post.avatar}</span>
+                        <span style="font-size:13px; font-weight:bold; color:#374151; display:flex; align-items:center;">
+                            ${post.author}
+                            ${window.App.getUserBadgeHtml ? window.App.getUserBadgeHtml(post.email, post.credit) : ''}
+                        </span>
+                    </div>
+                    <div style="font-size:16px; font-weight:900; color:#D97706;">💰 €${post.likes || 0}</div>
+                </div>
+                <div style="font-size:14px; font-weight:bold; color:#111827; margin-bottom:6px;">${isUrgent ? '🚨 ' : ''}${titleStr}</div>
+                <div style="font-size:13px; color:#4B5563; line-height:1.5; margin-bottom:10px;">${post.contentObj?.desc || ''}</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #E5E7EB; padding-top:10px;">
+                    <div style="font-size:11px; color:#6B7280;">📍 ${post.contentObj?.location || '线上/面交'}</div>
+                    <button style="background:#111827; color:#FFF; border:none; padding:6px 14px; border-radius:12px; font-size:12px; font-weight:bold;">接单</button>
+                </div>
+            </div>`;
+        });
+        container.innerHTML = html;
+    },
+
+    renderMarketPartner() {
+        const container = this.getContainer('partnerListContainer', false);
+        if (!container) return;
+
+        let processData = [...(window.App.marketDataCache?.partner || [])];
         
-        if (state.sort === 'reward') processData.sort((a,b) => (b.likes || 0) - (a.likes || 0));
-
-        safeDOM.execute('helpListContainer', container => {
-            if(!processData || processData.length === 0) return container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:60px 0;">暂无符合条件的悬赏哦~</div>';
-            let html = '';
-            processData.forEach(post => {
-                let content = {}; try { content = JSON.parse(post.content); } catch(e){}
-                const isUrgent = content.urgent === '十万火急';
-                const realEmail = post.email || '';
-                const realCredit = post.credit !== undefined ? post.credit : 100;
-
-                html += `
-                <div style="background:#FFF; border-radius:16px; padding:15px; margin-bottom: 15px; box-shadow:0 4px 15px rgba(0,0,0,0.03); border:1px solid ${isUrgent ? '#FECACA' : '#F3F4F6'}; break-inside: avoid; display: inline-block; width: 100%; box-sizing: border-box;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <span style="font-size:24px;">${post.avatar || '👻'}</span>
-                            <span style="font-size:13px; font-weight:bold; color:#374151; display:flex; align-items:center;">
-                                ${post.author_name}
-                                ${window.App.getUserBadgeHtml ? window.App.getUserBadgeHtml(realEmail, realCredit) : ''}
-                            </span>
-                        </div>
-                        <div style="font-size:16px; font-weight:900; color:#D97706;">💰 €${post.likes || 0}</div>
-                    </div>
-                    <div style="font-size:14px; font-weight:bold; color:#111827; margin-bottom:6px;">${post.title.replace('[互助] ', '')}</div>
-                    <div style="font-size:13px; color:#4B5563; line-height:1.5; margin-bottom:10px;">${content.desc || ''}</div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #E5E7EB; padding-top:10px;">
-                        <div style="font-size:11px; color:#6B7280;">⏰ ${content.time ? content.time.replace('T', ' ') : '越快越好'} | 📍 ${content.location || '线上/面交'}</div>
-                        <button onclick="window.App.initiateHelpChat('${post.id}')" style="background:#111827; color:#FFF; border:none; padding:6px 14px; border-radius:12px; font-size:12px; font-weight:bold; cursor:pointer;">接单</button>
-                    </div>
-                </div>`;
-            });
-            container.innerHTML = html;
-        });
-    },
-
-    renderMarketPartner(data) {
-        if (data) window.App.marketDataCache.partner = data;
-        window.App.renderFilterBar('partner');
-
-        let processData = [...(window.App.marketDataCache.partner || [])];
-        const state = window.App.currentMarketFilter.partner;
-
-        // 过滤链
-        if (state.loc === 'city') {
-            const myDomain = (localStorage.getItem('hp_email') || '').split('@')[1];
-            if (myDomain) processData = processData.filter(p => (p.email || '').includes(myDomain));
+        if (processData.length === 0) {
+            container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:60px 0;">目前还没有搭子哦~</div>';
+            return;
         }
 
-        if (state.type === 'mbti_e') processData = processData.filter(p => { try { return JSON.parse(p.content).mbti === 'e'; } catch(e) { return false; } });
-        else if (state.type === 'mbti_i') processData = processData.filter(p => { try { return JSON.parse(p.content).mbti === 'i'; } catch(e) { return false; } });
-        else if (state.type === 'food') processData = processData.filter(p => { try { return JSON.parse(p.content).tag === '饭搭子'; } catch(e) { return false; } });
-
-        safeDOM.execute('partnerListContainer', container => {
-            if(!processData || processData.length === 0) return container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:60px 0;">目前还没有符合该条件的搭子哦~</div>';
-            let html = '';
-            processData.forEach(post => {
-                let content = {}; try { content = JSON.parse(post.content); } catch(e){}
-                const mbtiTag = content.mbti === 'e' ? '🔥 寻 E 人' : (content.mbti === 'i' ? '🍵 寻 I 人' : '✨ MBTI 不限');
-                const realEmail = post.email || '';
-                const realCredit = post.credit !== undefined ? post.credit : 100;
-
-                html += `
-                <div style="background:#FFF; border-radius:16px; padding:15px; margin-bottom: 15px; box-shadow:0 4px 15px rgba(0,0,0,0.03); border:1px solid #E9D5FF; break-inside: avoid; display: inline-block; width: 100%; box-sizing: border-box;">
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
-                        <div style="font-size:15px; font-weight:900; color:#4C1D95; flex:1;">${post.title.replace('[找搭子] ', '')}</div>
-                        <div style="background:#F3E8FF; color:#7E22CE; padding:4px 8px; border-radius:8px; font-size:11px; font-weight:bold;">${content.tag || '组局'}</div>
+        let html = '';
+        processData.forEach(post => {
+            const titleStr = post.title.replace('[找搭子] ', '');
+            html += `
+            <div style="background:#FFF; border-radius:16px; padding:15px; margin-bottom: 15px; box-shadow:0 4px 15px rgba(0,0,0,0.03); border:1px solid #E9D5FF;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                    <div style="font-size:15px; font-weight:900; color:#4C1D95; flex:1;">${titleStr}</div>
+                    <div style="background:#F3E8FF; color:#7E22CE; padding:4px 8px; border-radius:8px; font-size:11px; font-weight:bold;">${post.contentObj?.tag || '组局'}</div>
+                </div>
+                <div style="font-size:13px; color:#4B5563; line-height:1.5; margin-bottom:12px;">${post.contentObj?.desc || ''}</div>
+                <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #E5E7EB; padding-top:10px;">
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <span style="font-size:20px;">${post.avatar}</span>
+                        <span style="font-size:12px; font-weight:bold; color:#6B7280;">${post.author}</span>
                     </div>
-                    <div style="font-size:13px; color:#4B5563; line-height:1.5; margin-bottom:12px;">${content.desc || ''}</div>
-                    <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;">
-                        <span style="font-size:11px; color:#6B7280; background:#F3F4F6; padding:4px 8px; border-radius:6px;">⏰ ${content.date || '商议'}</span>
-                        <span style="font-size:11px; color:#6B7280; background:#F3F4F6; padding:4px 8px; border-radius:6px;">📍 ${content.location || '随缘'}</span>
-                        <span style="font-size:11px; color:#D97706; background:#FEF3C7; padding:4px 8px; border-radius:6px;">${mbtiTag}</span>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #E5E7EB; padding-top:10px;">
-                        <div style="display:flex; align-items:center; gap:6px;">
-                            <span style="font-size:20px;">${post.avatar || '👻'}</span>
-                            <span style="font-size:12px; font-weight:bold; color:#6B7280; display:flex; align-items:center;">
-                                ${post.author_name}
-                                ${window.App.getUserBadgeHtml ? window.App.getUserBadgeHtml(realEmail, realCredit) : ''}
-                            </span>
-                        </div>
-                        <button onclick="window.App.initiatePartnerChat('${post.id}')" style="background:#8B5CF6; color:#FFF; border:none; padding:6px 14px; border-radius:12px; font-size:12px; font-weight:bold; cursor:pointer;">聊一聊</button>
-                    </div>
-                </div>`;
-            });
-            container.innerHTML = html;
+                    <button style="background:#8B5CF6; color:#FFF; border:none; padding:6px 14px; border-radius:12px; font-size:12px; font-weight:bold;">聊一聊</button>
+                </div>
+            </div>`;
         });
-    },
+        container.innerHTML = html;
+    }
+};
     // 4. 图片与语音引擎
     handleMultiImageSelect(event) {
         try {
