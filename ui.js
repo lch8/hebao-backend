@@ -494,13 +494,13 @@ window.switchAssetTab = function(tabId, element) {
 };
 
 // ============================================================================
-// 🚀 发布抽屉 (Publish Sheet) 内部控制逻辑
+// 1. 完善版：版块切换逻辑 (控制三个表单的显示/隐藏)
 // ============================================================================
+window.App.currentPublishType = 'help'; // 记录当前发帖类型
 
-window.App = window.App || {};
-
-// 1. 版块切换逻辑
 window.App.switchPublishTab = function(type) {
+    window.App.currentPublishType = type;
+    
     // 切换 Tab 视觉
     document.querySelectorAll('.pub-tab').forEach(el => {
         el.style.background = 'transparent';
@@ -523,9 +523,88 @@ window.App.switchPublishTab = function(type) {
     if (type === 'help') titleEl.innerText = '发布求助悬赏';
     if (type === 'partner') titleEl.innerText = '发起搭子组局';
 
-    // (后续可以在这里写逻辑：如果是 idle，就隐藏 help 的表单，显示 idle 的表单)
+    // 🌟 核心修复：根据类型显示对应的表单，隐藏其他表单
+    ['idle', 'help', 'partner'].forEach(t => {
+        const form = document.getElementById('publishForm' + t.charAt(0).toUpperCase() + t.slice(1));
+        if (form) {
+            form.style.display = (t === type) ? 'block' : 'none';
+        }
+    });
 };
 
+
+// ============================================================================
+// 2. ✨ AI 一句话智能填表引擎 (核心魔法)
+// ============================================================================
+window.App.triggerAIFill = function() {
+    const inputEl = document.getElementById('aiPublishInput');
+    const text = inputEl.value.trim();
+    
+    if (!text) {
+        if(window.App.showToast) window.App.showToast("写点什么再让管家识别吧！", "warning");
+        return;
+    }
+
+    // 播放加载动画
+    const btn = event.currentTarget;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '⏳ DeepSeek 解析中...';
+    btn.style.pointerEvents = 'none';
+    btn.style.opacity = '0.8';
+
+    // 模拟 AI 处理延迟 (0.8秒，制造仪式感)
+    setTimeout(() => {
+        const type = window.App.currentPublishType;
+        
+        // 简单的前端 NLP 关键词匹配引擎 (后期可接真实后端大模型)
+        if (type === 'help') {
+            // 匹配金额
+            const priceMatch = text.match(/(\d+)(欧|块|元|euro|€)/i);
+            if (priceMatch) document.getElementById('helpPrice').value = priceMatch[1];
+            
+            // 匹配类别
+            const capsules = document.getElementById('helpCategoryCapsules').children;
+            if (/机场|接送|火车站|接机/i.test(text)) window.App.togglePublishCapsule(capsules[0]);
+            else if (/搬家|床|柜子|宜家|搬/i.test(text)) window.App.togglePublishCapsule(capsules[1]);
+            else if (/猫|狗|喂|宠物/i.test(text)) window.App.togglePublishCapsule(capsules[2]);
+            else if (/题|作业|辅导|代码|bug/i.test(text)) window.App.togglePublishCapsule(capsules[3]);
+            
+            // 填入正文
+            document.getElementById('helpDesc').value = text;
+        } 
+        else if (type === 'partner') {
+            // 匹配气场
+            const mbtiCapsules = document.getElementById('partnerMbtiCapsules').children;
+            if (/e人|外向|热闹|带飞/i.test(text)) window.App.togglePublishCapsule(mbtiCapsules[1]);
+            else if (/i人|社恐|内向|安静/i.test(text)) window.App.togglePublishCapsule(mbtiCapsules[2]);
+            
+            // 填入正文
+            document.getElementById('partnerDesc').value = text;
+        }
+        else if (type === 'idle') {
+            // 匹配金额
+            const priceMatch = text.match(/(\d+)(欧|块|元|euro|€)/i);
+            if (priceMatch) document.getElementById('idlePrice').value = priceMatch[1];
+            
+            // 填入正文
+            document.getElementById('idleDesc').value = text;
+        }
+
+        // 恢复按钮状态并提示成功
+        btn.innerHTML = originalText;
+        btn.style.pointerEvents = 'auto';
+        btn.style.opacity = '1';
+        
+        // 清空 AI 输入框，防止重复点击
+        inputEl.value = '';
+
+        if(window.App.showToast) window.App.showToast("🪄 魔法填表完成！请核对细节", "success");
+        
+        // 手机端震动反馈 (支持的设备)
+        if (navigator.vibrate) navigator.vibrate(50);
+
+    }, 800);
+};
 // 2. 胶囊单选切换逻辑
 window.App.togglePublishCapsule = function(clickedEl) {
     const parent = clickedEl.parentElement;
