@@ -905,7 +905,88 @@ window.App.showSgResult = function() {
 // 页面加载完毕后自动渲染首页的战绩Banner
 setTimeout(() => { if(window.App.renderSurvivalBanner) window.App.renderSurvivalBanner(); }, 300);
 
+// ==========================================
+// 🎓 尊贵校友认证：视觉蜕变引擎
+// ==========================================
+window.App.upgradeToVerifiedAlumni = function(email) {
+    // 1. 关闭验证弹窗
+    const modal = document.getElementById('emailVerifyModal') || document.getElementById('loginModal');
+    if (modal) modal.style.display = 'none';
 
+    // 2. 播放全屏撒花特效 (极其提升爽感)
+    if (window.App.showToast) {
+        window.App.showToast("🎉 认证成功！尊贵校友特权已激活", "success");
+    }
+
+    // 3. 升级头像区域：镶金边 + 专属 V 标志
+    const avatarBox = document.querySelector('.p-avatar');
+    if (avatarBox) {
+        avatarBox.style.border = '3px solid #F59E0B'; // 黄金边框
+        avatarBox.style.boxShadow = '0 0 20px rgba(245,158,11,0.4)'; // 黄金发光
+        avatarBox.style.position = 'relative';
+        
+        // 移除旧的 V 标（如果有）
+        const oldV = document.getElementById('vipBadge');
+        if (oldV) oldV.remove();
+
+        // 加上右下角的 🎓 认证角标
+        const vBadge = document.createElement('div');
+        vBadge.id = 'vipBadge';
+        vBadge.innerHTML = '🎓';
+        vBadge.style.cssText = 'position: absolute; bottom: -5px; right: -5px; background: #111827; border: 2px solid #FFF; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);';
+        avatarBox.appendChild(vBadge);
+    }
+
+    // 4. 升级用户名与等级标签
+    const infoBox = document.querySelector('.p-info');
+    if (infoBox) {
+        const nameEl = infoBox.querySelector('div:first-child');
+        const levelBox = infoBox.querySelector('div:last-child');
+        
+        if (nameEl) {
+            nameEl.innerHTML = `荷包蛋东家 <span style="color:#F59E0B; font-size:14px;">✔</span>`;
+            nameEl.style.color = '#111827';
+        }
+        if (levelBox) {
+            levelBox.innerHTML = `
+                <span>ID: ${email.split('@')[0]}</span>
+                <span style="background: linear-gradient(135deg, #FDE68A 0%, #F59E0B 100%); padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 900; color: #78350F; box-shadow: 0 2px 4px rgba(245,158,11,0.2);">🎓 实名校友</span>
+            `;
+        }
+    }
+
+    // 5. 改造未登录横幅 (彻底隐藏)
+    const guestBlock = document.querySelector('.guest-login-block');
+    if (guestBlock) guestBlock.style.display = 'none';
+
+    // 6. 改造 VIP 认证 Banner：从“去点亮”变成“已点亮的数字名片”
+    const vipBanner = document.querySelector('.vip-banner');
+    if (vipBanner) {
+        vipBanner.onclick = null; // 取消点击弹窗事件
+        vipBanner.style.background = 'linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%)';
+        vipBanner.style.border = '1px solid #A7F3D0';
+        vipBanner.style.boxShadow = '0 4px 15px rgba(16,185,129,0.1)';
+        
+        vipBanner.innerHTML = `
+            <div style="position: relative; z-index: 1;">
+                <div style="font-size: 15px; font-weight: 900; color: #065F46; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">🎓 荷兰高校校友认证</div>
+                <div style="font-size: 11px; color: #047857; font-weight: bold;">已绑定：${email}</div>
+            </div>
+            <div style="background: #059669; color: #FFF; font-size: 12px; font-weight: 900; padding: 6px 14px; border-radius: 20px; z-index: 1; box-shadow: 0 2px 8px rgba(5,150,105,0.3);">✅ 特权已生效</div>
+        `;
+    }
+
+    // 记录到本地缓存，下次打开 App 自动保持认证状态
+    localStorage.setItem('hp_verified_email', email);
+};
+
+// 🌟 加入一段 CSS 动画
+if (!document.getElementById('vipStyles')) {
+    const style = document.createElement('style');
+    style.id = 'vipStyles';
+    style.innerHTML = `@keyframes popIn { 0% { transform: scale(0); } 80% { transform: scale(1.2); } 100% { transform: scale(1); } }`;
+    document.head.appendChild(style);
+}
 // ============================================================================
 // 🚀 全局启动器 (确保所有页面一打开就有数据！)
 document.addEventListener('DOMContentLoaded', () => {
