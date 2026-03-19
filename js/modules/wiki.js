@@ -466,7 +466,9 @@ export const WikiEngine = {
         this.renderWikiComments(); // 重新渲染列表
         
         if(window.App.showToast) window.App.showToast("💡 分享干货，信用分 +2", "success");
-    };
+    }
+};
+    
 // 💥 暴力绑定机制 + 注入详情抽屉弹窗引擎
 if (typeof window !== 'undefined') {
     window.App = window.App || {};
