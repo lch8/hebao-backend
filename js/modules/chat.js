@@ -82,19 +82,18 @@ export const ChatEngine = {
                     const timeStr = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
                     const shortId = conv.partner_id.substring(0, 4); 
                     
-                    // 🌟 模拟大厂/名校邮箱与高信用分
-                    const mockEmail = (Math.random() > 0.5 ? 'hr@asml.com' : 'alumni@eur.nl');
-                    const mockCredit = Math.floor(Math.random() * 10 + 90);
+                    const partnerEmail = conv.partner_email;
+    const partnerCredit = conv.partner_credit || 100;
 
                     html += `
                     <div style="display:flex; align-items:center; background:#FFF; padding:15px; border-radius: 16px; margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.02); border: 1px solid #E5E7EB; cursor:pointer; transition: transform 0.1s;" 
-                         onclick="window.App.openChat('${conv.partner_id}', '校友_${shortId}', '😎')">
+                         <div onclick="window.App.openChat('${conv.partner_id}', '${conv.partner_name}', '${conv.partner_avatar}', null, null, null, null, null, '${partnerEmail}', ${partnerCredit})">
                         <div style="font-size:40px; margin-right:12px; background: #F3F4F6; border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">😎</div>
                         <div style="flex:1; overflow:hidden;">
                             <div style="display:flex; justify-content:space-between; margin-bottom:6px; align-items: center;">
                                 <div style="display:flex; align-items:center;">
                                     <span style="font-weight:900; font-size:15px; color:#111827;">校友_${shortId}</span>
-                                    ${window.App.getUserBadgeHtml ? window.App.getUserBadgeHtml(mockEmail, mockCredit) : ''}
+                                    ${window.App.getUserBadgeHtml(partnerEmail, partnerCredit)}
                                 </div>
                                 <span style="font-size:11px; color:#9CA3AF; margin-left:6px; flex-shrink:0;">${timeStr}</span>
                             </div>
@@ -125,7 +124,7 @@ export const ChatEngine = {
         }
     },
 
-    _initChatWindow(targetId, targetName, targetAvatar, postId, postTitle, postPrice, postImg, isSold) {
+    _initChatWindow(targetId, targetName, targetAvatar, postId, postTitle, postPrice, postImg, isSold, targetEmail, targetCredit) {
         const uid = window.userUUID || localStorage.getItem('hebao_uuid');
         if (targetId === String(uid)) return showToast("💡 管家提示：这是你自己的帖子哦，不能跟自己聊天~", "warning");
 
@@ -143,9 +142,9 @@ export const ChatEngine = {
             
             el.innerHTML = `
                 <div style="display: flex; align-items: center; justify-content: center; width: 100%;">
-                    <span>${targetName || '校友'}</span>
-                    ${window.App.getUserBadgeHtml ? window.App.getUserBadgeHtml(mockEmail, mockCredit) : ''}
-                </div>
+                <span>${targetName || '校友'}</span>
+                ${window.App.getUserBadgeHtml(targetEmail, targetCredit || 100)}
+            </div>
             `;
         });
         safeDOM.execute('chatPostCard', card => {
