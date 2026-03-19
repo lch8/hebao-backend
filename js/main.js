@@ -378,104 +378,133 @@ setTimeout(() => {
 }, 300);
 
 // ==========================================
-// 🛡️ 治安避雷针引擎：真实黑名单 + 校友 UGC 投票
+// 🛡️ 治安避雷针：Politie警察局直连 + 云端定位 + 实时投票
 // ==========================================
 window.App.currentCheckCode = '';
 
-window.App.checkSafetyCode = function() {
+// 📍 新增功能：GPS 无感逆向解析荷兰邮编
+window.App.locatePostcode = function() {
+    const input = document.getElementById('postcodeInput');
+    if (!("geolocation" in navigator)) return alert("当前设备不支持定位功能");
+    
+    input.placeholder = "📡 正在请求卫星定位...";
+    input.value = "";
+    
+    navigator.geolocation.getCurrentPosition(async position => {
+        try {
+            const { latitude, longitude } = position.coords;
+            // 使用开源地图接口逆向解析 GPS 坐标
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`);
+            const data = await res.json();
+            if (data && data.address && data.address.postcode) {
+                // 荷兰邮编通常为 "1234 AB"，截取前四位
+                const code = data.address.postcode.substring(0, 4);
+                input.value = code;
+                input.placeholder = "输入荷兰4位邮编 (如: 2512)";
+                window.App.checkSafetyCode(); // 自动执行查询
+            } else {
+                alert("位置解析失败，请手动输入邮编");
+                input.placeholder = "输入荷兰4位邮编 (如: 2512)";
+            }
+        } catch(e) { 
+            alert("定位服务连接失败"); 
+            input.placeholder = "输入荷兰4位邮编 (如: 2512)";
+        }
+    }, () => { 
+        alert("请允许浏览器获取位置权限"); 
+        input.placeholder = "输入荷兰4位邮编 (如: 2512)";
+    });
+};
+
+// 🔍 查询功能：直连 Vercel 后端获取警局与投票双重数据
+window.App.checkSafetyCode = async function() {
     const input = document.getElementById('postcodeInput');
     const code = input.value.trim();
-    
-    if(!code || code.length !== 4 || isNaN(code)) {
-        if(window.App.showToast) window.App.showToast("请输入正确的 4 位数字邮编", "warning");
-        return;
-    }
+    if(!code || code.length !== 4 || isNaN(code)) return window.App.showToast ? window.App.showToast("请输入 4 位数字邮编", "warning") : alert("请输入4位数字邮编");
 
     window.App.currentCheckCode = code;
     const resultArea = document.getElementById('safetyResultArea');
     const content = document.getElementById('safetyResultContent');
     
-    // 1. 获取本地 UGC 投票数据 (目前用 localStorage 模拟云端数据库)
-    const allVotes = JSON.parse(localStorage.getItem('hp_safety_votes') || '{}');
-    const areaVotes = allVotes[code] || { safe: 0, warning: 0, danger: 0 };
-    const totalVotes = areaVotes.safe + areaVotes.warning + areaVotes.danger;
-
-    // 2. 荷兰真实高危邮编黑名单 (基于 CBS 犯罪率数据兜底)
-    // 鹿特丹 Zuid (3081-3083), 海牙 Schilderswijk (2525-2526), 阿姆 Bijlmer (1102-1104) 等
-    const dangerZones = ['3081', '3082', '3083', '1104', '1102', '2525', '2526', '2531'];
-    // 游客/繁华区，小偷较多
-    const warningZones = ['1012', '1013', '3011', '3012', '3511']; 
-
-    let baseStatus = '🟢 暂无恶性犯罪记录，常规防范即可。';
-    let baseColor = '#10B981';
-    let bgColor = '#ECFDF5';
-
-    if (dangerZones.includes(code)) {
-        baseStatus = '🔴 荷兰著名高危区！强烈建议避免在此长租或深夜独行，偷窃/抢劫率较高。';
-        baseColor = '#EF4444'; bgColor = '#FEF2F2';
-    } else if (warningZones.includes(code)) {
-        baseStatus = '🟡 繁华/游客区，治安环境复杂，长租需仔细看房，日常谨防小偷和醉汉。';
-        baseColor = '#F59E0B'; bgColor = '#FFFBEB';
-    }
-
-    // 3. 组装 UGC 校友共创数据条
-    let ugcHtml = '';
-    if (totalVotes > 0) {
-        const safePct = Math.round((areaVotes.safe / totalVotes) * 100);
-        const dangerPct = Math.round((areaVotes.danger / totalVotes) * 100);
-        ugcHtml = `
-            <div style="margin-top: 12px; font-size: 12px; color: #4B5563; background: #F8FAFC; padding: 10px 12px; border-radius: 8px; display: flex; align-items: flex-start; gap: 8px;">
-                <span style="font-size: 16px;">📊</span>
-                <div>共有 <b>${totalVotes}</b> 位留学生打分，其中 <b style="color:#10B981;">${safePct}%</b> 认为安全，<b style="color:#EF4444;">${dangerPct}%</b> 提示危险。</div>
-            </div>`;
-    } else {
-        ugcHtml = `<div style="margin-top: 10px; font-size: 11px; color: #9CA3AF; text-align: right;">* 暂无校友评价，快来投下第一票！</div>`;
-    }
-
-    // 4. 渲染动画并展示
-    content.innerHTML = `
-        <div style="padding: 12px 14px; background: ${bgColor}; border-left: 4px solid ${baseColor}; border-radius: 4px 8px 8px 4px; font-size: 14px; font-weight: bold; color: ${baseColor}; line-height: 1.6;">
-            ${baseStatus}
-        </div>
-        ${ugcHtml}
-    `;
-
+    // 显示加载状态
+    content.innerHTML = `<div style="text-align:center; font-size:12px; padding:15px; color:#6B7280; display:flex; flex-direction:column; align-items:center; gap:8px;"><span style="font-size:24px; animation: pulse 1s infinite;">📡</span>正在连接荷兰警局 Politie.nl <br> 与全网留学生评价库...</div>`;
     resultArea.style.display = 'block';
-    
-    // 给点小动画反馈
-    resultArea.style.animation = 'none';
-    resultArea.offsetHeight; // 触发回流
-    resultArea.style.animation = 'fadeIn 0.4s ease';
+
+    try {
+        const res = await fetch(`/api/safety?code=${code}`);
+        const data = await res.json();
+        
+        if (!data.success) throw new Error("API返回错误");
+
+        // 1. 处理官方警情通报
+        let policeHtml = '';
+        if (data.policeIncidents > 0) {
+            let newsList = data.policeNews.map(n => `<div style="margin-top:6px; font-weight:normal; font-size:12px;">🚨 ${n}</div>`).join('');
+            policeHtml = `
+            <div style="padding: 12px 14px; background: #FEF2F2; border-left: 4px solid #EF4444; border-radius: 4px 8px 8px 4px; color: #B91C1C; margin-bottom:12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                <div style="font-size: 14px; font-weight: 900; margin-bottom:4px;">👮‍♂️ Politie 警局案底警告</div>
+                <div style="font-size: 12px;">近期该区域有 <b>${data.policeIncidents}</b> 起严重警情通报：</div>
+                ${newsList}
+            </div>`;
+        } else {
+            policeHtml = `
+            <div style="padding: 12px 14px; background: #F0FDF4; border-left: 4px solid #10B981; border-radius: 4px 8px 8px 4px; color: #065F46; font-size:14px; font-weight:900; margin-bottom:12px;">
+                🟢 警局档案清白：近期无恶性案件通报
+            </div>`;
+        }
+
+        // 2. 处理 UGC 全网投票数据
+        let ugcHtml = '';
+        const totalVotes = data.votes.safe + data.votes.warning + data.votes.danger;
+        if (totalVotes > 0) {
+            const safePct = Math.round((data.votes.safe / totalVotes) * 100);
+            const dangerPct = Math.round((data.votes.danger / totalVotes) * 100);
+            ugcHtml = `
+                <div style="font-size: 12px; color: #4B5563; background: #F8FAFC; padding: 10px 12px; border-radius: 8px; display: flex; align-items: center; gap: 8px; border: 1px solid #E5E7EB;">
+                    <span style="font-size: 16px;">📊</span>
+                    <div>全网 <b>${totalVotes}</b> 位留学生打分，<b style="color:#10B981;">${safePct}%</b> 认为安全，<b style="color:#EF4444;">${dangerPct}%</b> 提示危险。</div>
+                </div>`;
+        } else {
+            ugcHtml = `<div style="font-size: 11px; color: #9CA3AF; text-align: right;">* 暂无校友评价，快来投下第一票！</div>`;
+        }
+
+        content.innerHTML = policeHtml + ugcHtml;
+
+    } catch (error) {
+        content.innerHTML = `<div style="color:#EF4444; font-size:12px; text-align:center;">数据加载失败，请检查网络或刷新重试。</div>`;
+    }
 };
 
-// ==========================================
-// 🙋‍♂️ 用户投票功能
-// ==========================================
-window.App.voteSafety = function(type) {
+// 🙋‍♂️ 投票功能：同步到云端数据库，实现多设备共享
+window.App.voteSafety = async function(type) {
     const code = window.App.currentCheckCode;
     if(!code) return;
 
-    // 防刷票机制：一台设备对一个邮编只能投一次
+    // 前端防刷机制
     const votedObj = JSON.parse(localStorage.getItem('hp_voted_codes') || '{}');
     if (votedObj[code]) {
-        if(window.App.showToast) window.App.showToast("你已经为该街区投过票啦，感谢参与！", "warning");
-        return;
+        return window.App.showToast ? window.App.showToast("你已经为该街区投过票啦！", "warning") : alert("已经投过票啦");
     }
 
-    // 写入本地存储 (未来可无缝迁移至 Turso 数据库)
-    const allVotes = JSON.parse(localStorage.getItem('hp_safety_votes') || '{}');
-    if (!allVotes[code]) allVotes[code] = { safe: 0, warning: 0, danger: 0 };
-    
-    allVotes[code][type]++;
-    votedObj[code] = true; // 记录已投票
+    try {
+        // 向 Vercel 接口发送全局投票
+        await fetch('/api/safety', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'vote', code: code, type: type })
+        });
 
-    localStorage.setItem('hp_safety_votes', JSON.stringify(allVotes));
-    localStorage.setItem('hp_voted_codes', JSON.stringify(votedObj));
+        // 记录本地，防止重复投
+        votedObj[code] = true; 
+        localStorage.setItem('hp_voted_codes', JSON.stringify(votedObj));
 
-    if(window.App.showToast) window.App.showToast("✅ 投票成功！数据已同步至留学生防坑数据库", "success");
-    
-    // 静默刷新结果
-    window.App.checkSafetyCode(); 
+        if(window.App.showToast) window.App.showToast("✅ 投票成功！已同步至云端数据库", "success");
+        
+        // 自动刷新数据，让用户立刻看到自己投的那一票
+        window.App.checkSafetyCode(); 
+    } catch(e) {
+        console.error("投票失败", e);
+    }
 };
 // ============================================================================
 // 🚀 全局启动器 (页面加载完毕后自动拉取数据)
