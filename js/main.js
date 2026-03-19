@@ -555,8 +555,129 @@ window.App.quickPost = function(tab, encodedTitle, encodedContent) {
         }
     }, 400);
 };
-// ============================================================================
-// 🚀 全局启动器 (页面加载完毕后自动拉取数据)
+// ==========================================
+// 🗺️ 新手村主线任务引擎 (iOS 极简风)
+// ==========================================
+
+window.App.currentTaskPhase = 'pre'; 
+
+// 1. 丝滑切换 Tab 效果
+window.App.switchTaskPhase = function(phase) {
+    window.App.currentTaskPhase = phase;
+    ['pre', 'day7', 'month1'].forEach(p => {
+        const el = document.getElementById('tab_' + p);
+        if(el) {
+            if(p === phase) {
+                el.style.background = '#FFF';
+                el.style.color = '#0F172A';
+                el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)';
+            } else {
+                el.style.background = 'transparent';
+                el.style.color = '#64748B';
+                el.style.boxShadow = 'none';
+            }
+        }
+    });
+    window.App.renderStarterTasks();
+};
+
+// 2. 核心任务数据与绝美渲染
+window.App.renderStarterTasks = function() {
+    const list = document.getElementById('starterTaskList');
+    if(!list) return;
+
+    // 🏆 留学生真实避雷通关数据
+    const tasksData = {
+        pre: [
+            { id: 't1', title: '核心文件随身带', desc: '护照、MVV签证信、录取通知书、出生双认证。放随身包，万一行李丢了也能办手续！', actionBtn: '👉 护照包推荐', actionLink: '#' },
+            { id: 't2', title: '提前预约市政厅 (Gemeente)', desc: '落地再约可能要等一个月！没有 BSN 号不能办银行卡，在国内就要提前抢号。', actionBtn: '🔗 直达市政厅', actionLink: '#' },
+            { id: 't3', title: '下载并注册 NS App', desc: '荷兰火车必备，提前注册好账号，落地就能买电子票。' }
+        ],
+        day7: [
+            { id: 't4', title: '办理个人 OV-chipkaart', desc: '去官网传照片办黄色的实名卡，配合 NS Flex 才能享受非高峰期 6 折。', actionBtn: '🔗 去办卡', actionLink: '#' },
+            { id: 't5', title: '市政厅注册拿 BSN', desc: '带齐租房合同和双认证，注册后 1-2 周内会把 BSN 号码邮寄到你家信箱。' },
+            { id: 't6', title: '开通荷兰银行卡 (ABN / ING)', desc: '拿到 BSN 后立刻去开卡。平时付钱认准 iDEAL 标志。' }
+        ],
+        month1: [
+            { id: 't7', title: '注册家庭医生 (Huisarts)', desc: '荷兰看病必须先找家庭医生，诊所名额极其有限，必须就近立刻抢注！' },
+            { id: 't8', title: '买医疗保险 (Zorgverzekering)', desc: '法律规定落地 4 个月内必须买医保，打工同学买 Basic，全职学生买 AON。' },
+            { id: 't9', title: '申请各类补贴 (Toeslag)', desc: '符合条件即可每月白领大几百欧的租房补贴和医疗补贴！' }
+        ]
+    };
+
+    const tasks = tasksData[window.App.currentTaskPhase] || [];
+    const completedTasks = JSON.parse(localStorage.getItem('hp_completed_tasks') || '[]');
+    
+    let html = '';
+    let completedCount = 0;
+
+    tasks.forEach(t => {
+        const isDone = completedTasks.includes(t.id);
+        if(isDone) completedCount++;
+
+        // 状态变色龙逻辑
+        const circleColor = isDone ? '#10B981' : '#CBD5E1';
+        const circleFill = isDone ? '#10B981' : 'transparent';
+        const checkMark = isDone ? `<span style="color:white; font-size:14px; margin-top:2px;">✓</span>` : '';
+        const titleColor = isDone ? '#9CA3AF' : '#111827';
+        const titleStrike = isDone ? 'line-through' : 'none';
+
+        // 精致的内嵌 Tag (取代原来的大笨按钮)
+        let actionHtml = '';
+        if(t.actionBtn && !isDone) {
+            actionHtml = `
+            <div style="margin-top: 10px;">
+                <span onclick="event.stopPropagation(); window.App.showToast('链接跳转即将开放...')" style="background: #EFF6FF; color: #2563EB; font-size: 11px; font-weight: 900; padding: 4px 10px; border-radius: 6px; border: 1px solid #BFDBFE;">${t.actionBtn}</span>
+            </div>`;
+        }
+
+        html += `
+        <div onclick="window.App.toggleTask('${t.id}')" style="background: #FFF; border-radius: 16px; padding: 16px; margin-bottom: 12px; display: flex; gap: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.02); border: 1px solid #F3F4F6; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; ${isDone ? 'opacity: 0.6;' : ''}">
+            
+            <div style="flex-shrink: 0; padding-top: 2px;">
+                <div style="width: 22px; height: 22px; border-radius: 50%; border: 2px solid ${circleColor}; background: ${circleFill}; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
+                    ${checkMark}
+                </div>
+            </div>
+            
+            <div style="flex: 1;">
+                <div style="font-size: 15px; font-weight: 900; color: ${titleColor}; margin-bottom: 4px; text-decoration: ${titleStrike}; transition: all 0.2s;">${t.title}</div>
+                <div style="font-size: 13px; color: #64748B; line-height: 1.5;">${t.desc}</div>
+                ${actionHtml}
+            </div>
+        </div>`;
+    });
+
+    list.innerHTML = html;
+
+    // 酷炫的进度条动画连动
+    const progressPct = tasks.length === 0 ? 0 : Math.round((completedCount / tasks.length) * 100);
+    const pb = document.getElementById('taskProgressBar');
+    const pt = document.getElementById('taskProgressText');
+    if(pb) pb.style.width = progressPct + '%';
+    if(pt) {
+        pt.innerText = `${completedCount}/${tasks.length}`;
+        pt.style.color = completedCount === tasks.length ? '#10B981' : '#111827';
+    }
+};
+
+// 3. 丝滑的打勾音效与反馈
+window.App.toggleTask = function(id) {
+    let completedTasks = JSON.parse(localStorage.getItem('hp_completed_tasks') || '[]');
+    if(completedTasks.includes(id)) {
+        completedTasks = completedTasks.filter(item => item !== id); // 取消勾选
+    } else {
+        completedTasks.push(id); // 勾选
+        if(window.App.showToast) window.App.showToast('🎉 阶段任务 +1', 'success');
+    }
+    localStorage.setItem('hp_completed_tasks', JSON.stringify(completedTasks));
+    window.App.renderStarterTasks(); // 重新渲染触发动画
+};
+
+// 延迟 500ms 自动渲染首页任务
+setTimeout(() => { if(window.App.renderStarterTasks) window.App.renderStarterTasks(); }, 500);
+
+
 // ============================================================================
 // 🚀 全局启动器 (确保所有页面一打开就有数据！)
 document.addEventListener('DOMContentLoaded', () => {
