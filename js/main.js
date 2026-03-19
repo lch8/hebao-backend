@@ -469,7 +469,7 @@ window.App.checkSafetyCode = async function() {
                     <div>全网 <b>${totalVotes}</b> 位荷包蛋打分，<b style="color:#10B981;">${safePct}%</b> 认为安全，<b style="color:#EF4444;">${dangerPct}%</b> 提示危险。</div>
                 </div>`;
         } else {
-            ugcHtml = `<div style="font-size: 11px; color: #9CA3AF; text-align: right;">* 暂无校友评价，快来投下第一票！</div>`;
+            ugcHtml = `<div style="font-size: 11px; color: #9CA3AF; text-align: right;">* 暂无荷包蛋评价，快来投下第一票！</div>`;
         }
 
         content.innerHTML = policeHtml + ugcHtml;
