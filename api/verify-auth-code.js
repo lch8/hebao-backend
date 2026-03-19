@@ -20,7 +20,7 @@ async function signJwt(payload, secret) {
 export default async function handler(req) {
     if (req.method === 'OPTIONS') return new Response(null, { status: 200, headers: { 'Access-Control-Allow-Origin': '*' }});
 
-    const { email, code, userId } = await req.json(); // 前端传来的默认新 userId
+    const { email, code, userId } = await req.json(); 
     if (!email || !code || !userId) {
         return new Response(JSON.stringify({ error: '参数不全' }), { status: 400, headers: { 'Access-Control-Allow-Origin': '*' } });
     }
@@ -51,13 +51,13 @@ export default async function handler(req) {
         if (dbCode !== code) throw new Error('验证码错误');
         if (new Date() > new Date(dbExpiresAt)) throw new Error('验证码已过期');
 
-        // 🌟 2. 核心修复：检查邮箱是否已经是老用户
+        // 🌟 2. 核心修改：连带查询用户的信用分 (credit)
         const userCheckRes = await fetch(`${dbUrl}/v2/pipeline`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 requests: [
-                    { type: "execute", stmt: { sql: "SELECT id FROM users WHERE verified_email = ?", args: [{type:"text", value:email}] } },
+                    { type: "execute", stmt: { sql: "SELECT id, credit FROM users WHERE verified_email = ?", args: [{type:"text", value:email}] } },
                     { type: "close" }
                 ]
             })
@@ -65,19 +65,23 @@ export default async function handler(req) {
         const userCheckData = await userCheckRes.json();
         const userRows = userCheckData.results[0].response.result.rows;
 
-        let finalUserId = userId; // 默认使用前端生成的 ID (假设是新用户)
+        let finalUserId = userId; 
         let isNewUser = true;
+        let userCredit = 100; // 默认信用分
 
         if (userRows && userRows.length > 0) {
-            // 老用户回归！使用数据库里存的旧 ID
+            // 老用户回归！
             finalUserId = userRows[0][0].value; 
+            // 如果数据库查出来有分数就用，没有就给默认100
+            userCredit = userRows[0][1].value !== null ? parseInt(userRows[0][1].value) : 100; 
             isNewUser = false;
         }
 
         // 3. 注册新用户，并销毁验证码
         const sqlRequests = [];
         if (isNewUser) {
-            sqlRequests.push({ type: "execute", stmt: { sql: "INSERT INTO users (id, verified_email, email_verified) VALUES (?, ?, 1)", args: [{type:"text", value:finalUserId}, {type:"text", value:email}] } });
+            // 新用户默认给100分
+            sqlRequests.push({ type: "execute", stmt: { sql: "INSERT INTO users (id, verified_email, email_verified, credit) VALUES (?, ?, 1, 100)", args: [{type:"text", value:finalUserId}, {type:"text", value:email}] } });
         }
         sqlRequests.push({ type: "execute", stmt: { sql: "DELETE FROM verification_codes WHERE email = ?", args: [{type:"text", value:email}] } });
         sqlRequests.push({ type: "close" });
@@ -88,11 +92,11 @@ export default async function handler(req) {
             body: JSON.stringify({ requests: sqlRequests })
         });
 
-        // 4. 签发 JWT (使用 finalUserId，确保多设备同账号)
         const now = Math.floor(Date.now() / 1000);
         const token = await signJwt({ userId: finalUserId, email, iat: now, exp: now + 7 * 24 * 3600 }, jwtSecret);
 
-        return new Response(JSON.stringify({ success: true, token, isNewUser }), {
+        // 🌟 返回给前端的数据带上 credit，让前端去存在 localStorage
+        return new Response(JSON.stringify({ success: true, token, isNewUser, credit: userCredit }), {
             status: 200,
             headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
         });
