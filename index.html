@@ -63,29 +63,71 @@
        <div id="rbStarterMode" style="padding-bottom: 80px;">
             
             <div style="padding: 0 20px; margin-bottom: 30px; margin-top: 10px;">
-                <div style="font-size: 16px; font-weight: 900; color: #111827; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
-                    <span>🧰 留子百宝箱</span>
-                </div>
-                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
-                    <div onclick="window.App.showToast('正在开发打折日历...')" style="background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%); border-radius: 16px; padding: 16px 0; text-align: center; cursor: pointer; box-shadow: 0 4px 10px rgba(251, 191, 36, 0.1); border: 1px solid #FDE68A; transition: transform 0.1s;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">
-                        <div style="font-size: 26px; margin-bottom: 8px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));">🛒</div>
-                        <div style="font-size: 12px; font-weight: 900; color: #B45309;">超市羊毛</div>
-                    </div>
-                    <div onclick="window.App.showToast('交通攻略加载中...')" style="background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%); border-radius: 16px; padding: 16px 0; text-align: center; cursor: pointer; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.1); border: 1px solid #BFDBFE; transition: transform 0.1s;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">
-                        <div style="font-size: 26px; margin-bottom: 8px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));">🚆</div>
-                        <div style="font-size: 12px; font-weight: 900; color: #1D4ED8;">交通出行</div>
-                    </div>
-                    <div onclick="window.switchTab('market')" style="background: linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%); border-radius: 16px; padding: 16px 0; text-align: center; cursor: pointer; box-shadow: 0 4px 10px rgba(139, 92, 246, 0.1); border: 1px solid #DDD6FE; transition: transform 0.1s;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">
-                        <div style="font-size: 26px; margin-bottom: 8px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));">📦</div>
-                        <div style="font-size: 12px; font-weight: 900; color: #6D28D9;">二手集市</div>
-                    </div>
-                    <div onclick="window.App.showToast('急救手册弹窗即将上线...')" style="background: linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%); border-radius: 16px; padding: 16px 0; text-align: center; cursor: pointer; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.1); border: 1px solid #FECACA; transition: transform 0.1s;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">
-                        <div style="font-size: 26px; margin-bottom: 8px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));">🚨</div>
-                        <div style="font-size: 12px; font-weight: 900; color: #B91C1C;">急救手册</div>
+                <style>
+                    @keyframes sirenPulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.1); text-shadow: 0 0 10px #EF4444; } 100% { opacity: 1; transform: scale(1); } }
+                    @keyframes walletDamage { 0% { transform: translateX(0); color: #EF4444; } 25% { transform: translateX(-5px) scale(1.1); } 50% { transform: translateX(5px) scale(1.1); } 75% { transform: translateX(-5px) scale(1.1); } 100% { transform: translateX(0); color: #34D399; } }
+                    .shake-hard { animation: walletDamage 0.4s ease-in-out; }
+                </style>
+                
+                <div onclick="window.App.startSurvivalGame()" style="background: linear-gradient(135deg, #111827 0%, #374151 100%); border-radius: 20px; padding: 20px; position: relative; overflow: hidden; cursor: pointer; box-shadow: 0 8px 25px rgba(17,24,39,0.3); border: 1px solid #4B5563; transition: transform 0.1s;" onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform='scale(1)'">
+                    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 6px; background: repeating-linear-gradient(45deg, #F59E0B, #F59E0B 10px, #111827 10px, #111827 20px);"></div>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 1;">
+                        <div style="flex: 1; padding-right: 15px;">
+                            <div style="font-size: 16px; font-weight: 900; color: #FBBF24; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                                <span style="animation: sirenPulse 1s infinite; font-size: 20px;">🚨</span> 摸底考：落地荷兰，你的钱包保得住吗？
+                            </div>
+                            <div style="font-size: 11px; color: #9CA3AF; line-height: 1.5; margin-bottom: 12px;">已有 5,231 位新生完成挑战，平均因为不懂规矩损失 <span style="color: #EF4444; font-weight: bold;">€150</span>。</div>
+                            <div style="display: inline-block; background: #FBBF24; color: #78350F; font-size: 12px; font-weight: 900; padding: 6px 14px; border-radius: 12px; box-shadow: 0 2px 8px rgba(245,158,11,0.4);">🕹️ 启动生存模拟</div>
+                        </div>
+                        <div style="font-size: 45px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4)); transform: rotate(-10deg);">🦆</div>
                     </div>
                 </div>
             </div>
 
+            <div class="full-modal" id="survivalGameModal" style="display: none; background: #111827; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 999999; flex-direction: column;">
+                
+                <div style="padding: 15px 20px; padding-top: max(15px, env(safe-area-inset-top)); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #374151; background: #1F2937; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
+                    <div style="color: #9CA3AF; font-size: 14px; font-weight: bold;" id="sgProgress">关卡 1/4</div>
+                    <div id="sgWalletBox" style="background: #064E3B; border: 1px solid #10B981; color: #34D399; padding: 6px 16px; border-radius: 20px; font-weight: 900; font-size: 18px; font-family: monospace; display: flex; align-items: center; gap: 6px; transition: all 0.3s;">
+                        💶 <span id="sgWalletBalance">500</span>
+                    </div>
+                    <div onclick="document.getElementById('survivalGameModal').style.display='none'" style="color: #6B7280; font-size: 24px; cursor: pointer; padding: 0 10px;">✕</div>
+                </div>
+
+                <div id="sgQuestionArea" style="flex: 1; padding: 25px 20px; overflow-y: auto; display: flex; flex-direction: column;">
+                    <div style="font-size: 12px; color: #60A5FA; font-weight: bold; margin-bottom: 8px;" id="sgTag">#交通防骗</div>
+                    <div id="sgScene" style="background: #1F2937; border-radius: 16px; padding: 20px; margin-bottom: 25px; color: #F3F4F6; font-size: 16px; line-height: 1.6; border-left: 4px solid #3B82F6; box-shadow: 0 4px 15px rgba(0,0,0,0.2);"></div>
+                    <div id="sgOptions" style="display: flex; flex-direction: column; gap: 12px;"></div>
+                    <div id="sgAnalysis" style="display: none; margin-top: 25px; background: rgba(31, 41, 55, 0.8); border-radius: 16px; padding: 16px; border: 1px solid #4B5563;"></div>
+                    <button id="sgNextBtn" onclick="window.App.nextSgQuestion()" style="display: none; margin-top: 25px; width: 100%; background: #3B82F6; color: #FFF; border: none; padding: 16px; border-radius: 16px; font-size: 16px; font-weight: 900; cursor: pointer; box-shadow: 0 4px 15px rgba(59,130,246,0.3);">继续下一关 ›</button>
+                </div>
+
+                <div id="sgResultArea" style="display: none; flex: 1; padding: 20px; overflow-y: auto; flex-direction: column; align-items: center; background: #F7F8FA;">
+                    <div id="sgPosterContent" style="width: 320px; background: #FFF; border-radius: 20px; padding: 25px; box-sizing: border-box; position: absolute; left: -9999px;">
+                        <div style="text-align: center; margin-bottom: 20px;">
+                            <div style="font-size: 12px; color: #64748B; font-weight: bold;">荷包管家 · 荷村生存模拟器</div>
+                            <div style="font-size: 24px; font-weight: 900; color: #0F172A; margin-top: 5px;">我的生存评级</div>
+                        </div>
+                        <div style="background: #F8FAFC; border-radius: 16px; padding: 20px; text-align: center; margin-bottom: 20px; border: 1px solid #E2E8F0;">
+                            <div style="font-size: 40px; margin-bottom: 10px;" id="sgResIcon">🛡️</div>
+                            <div style="font-size: 18px; font-weight: 900; color: #111827; margin-bottom: 5px;" id="sgResTitle">零损耗生存大师</div>
+                            <div style="font-size: 14px; color: #10B981; font-weight: bold; font-family: monospace;">剩余资金: 💶 <span id="sgResBalance">500</span></div>
+                        </div>
+                        <div style="font-size: 13px; color: #475569; line-height: 1.6; text-align: justify;" id="sgResDesc"></div>
+                        <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #CBD5E1; display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 40px; height: 40px; background: #E2E8F0; border-radius: 8px; font-size:10px; display:flex; align-items:center; justify-content:center;">扫码<br>测试</div>
+                            <div style="font-size: 11px; color: #94A3B8; font-weight: bold;">快来测测你在荷兰能活几天？<br>微信搜索小程序：荷包管家</div>
+                        </div>
+                    </div>
+                    
+                    <div id="sgPosterDisplay" style="width: 100%; max-width: 320px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-radius: 20px; overflow: hidden; margin-top: 10px;"></div>
+                    <div style="color: #9CA3AF; font-size: 12px; margin-top: 15px; font-weight: bold;">📸 长按上方图片可保存分享至小红书</div>
+                    
+                    <div id="sgRecommendation" style="width: 100%; max-width: 320px; margin-top: 30px; text-align: left;"></div>
+                    <button onclick="document.getElementById('survivalGameModal').style.display='none'" style="margin-top: 30px; margin-bottom: 30px; background: #E5E7EB; color: #4B5563; border: none; padding: 12px 30px; border-radius: 20px; font-size: 14px; font-weight: bold;">退出模拟器</button>
+                </div>
+            </div>
             <div style="padding: 0 20px;">
                 <div style="font-size: 16px; font-weight: 900; color: #111827; margin-bottom: 16px;">🗺️ 主线通关任务</div>
                 
