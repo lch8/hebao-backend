@@ -904,6 +904,51 @@ window.App.showSgResult = function() {
 
 // 页面加载完毕后自动渲染首页的战绩Banner
 setTimeout(() => { if(window.App.renderSurvivalBanner) window.App.renderSurvivalBanner(); }, 300);
+// ==========================================
+// ✏️ 编辑个人资料引擎
+// ==========================================
+
+// 1. 唤起编辑弹窗并回填数据
+window.App.openEditProfile = function() {
+    // 关掉设置弹窗
+    document.getElementById('settingsModal').style.display = 'none'; 
+    
+    // 获取当前数据并填充
+    const currentName = localStorage.getItem('hp_name') || '新晋荷包蛋';
+    const currentAvatar = localStorage.getItem('hp_avatar') || '😎';
+    const currentEmail = localStorage.getItem('hp_email') || '未绑定邮箱';
+
+    document.getElementById('editNameInput').value = currentName;
+    document.getElementById('editAvatarInput').value = currentAvatar;
+    document.getElementById('editEmailDisplay').innerText = currentEmail;
+
+    // 显示编辑弹窗
+    document.getElementById('editProfileModal').style.display = 'flex';
+};
+
+// 2. 保存资料并触发全局刷新
+window.App.saveProfile = function() {
+    const newName = document.getElementById('editNameInput').value.trim();
+    const newAvatar = document.getElementById('editAvatarInput').value.trim();
+
+    if (!newName) {
+        return window.App.showToast ? window.App.showToast("昵称不能为空哦！", "warning") : alert("昵称不能为空");
+    }
+
+    // 存入本地缓存
+    localStorage.setItem('hp_name', newName);
+    if (newAvatar) {
+        localStorage.setItem('hp_avatar', newAvatar);
+    }
+
+    // 关闭弹窗并提示
+    document.getElementById('editProfileModal').style.display = 'none';
+    if (window.App.showToast) window.App.showToast("✨ 资料修改成功！", "success");
+
+    // 🚀 核心：立刻调用状态渲染函数，让外面的页面瞬间更新！
+    if (window.App.renderProfileState) window.App.renderProfileState();
+};
+
 
 // ==========================================
 // 👤 个人中心：状态渲染引擎与安全退出
@@ -942,9 +987,12 @@ window.App.renderProfileState = function() {
             `;
         }
         
+        // 🌟 核心修改：动态读取用户自定义的 Emoji 头像
+        const customAvatar = localStorage.getItem('hp_avatar') || '😎';
+
         // 头像状态恢复
         if (avatarEl && isVerified) {
-            avatarEl.innerText = '😎';
+            avatarEl.innerText = customAvatar; // 👈 使用自定义头像
             avatarEl.style.border = '3px solid #F59E0B';
             if (!document.getElementById('vipBadge')) {
                 const vBadge = document.createElement('div');
@@ -954,7 +1002,8 @@ window.App.renderProfileState = function() {
                 avatarEl.appendChild(vBadge);
             }
         } else if (avatarEl) {
-            avatarEl.innerText = '😎';
+            avatarEl.innerText = customAvatar; // 👈 非 VIP 也要使用自定义头像
+            avatarEl.style.border = '3px solid #FFF'; 
         }
         
     } else {
