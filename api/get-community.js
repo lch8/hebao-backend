@@ -13,27 +13,35 @@ export default async function handler(req) {
     if (req.method === 'OPTIONS') return new Response(null, { status: 200, headers: { 'Access-Control-Allow-Origin': '*' }});
 
     try {
-        let dbUrl = process.env.TURSO_DATABASE_URL.replace('libsql://', 'https://');
+        let dbUrl = process.env.TURSO_DATABASE_URL;
+        if (!dbUrl) throw new Error("Vercel 环境变量缺失: TURSO_DATABASE_URL");
+        dbUrl = dbUrl.replace('libsql://', 'https://');
         const authToken = process.env.TURSO_AUTH_TOKEN;
+
+        // 🌟 防爆修复：使用 p.* 兼容所有字段；强制转换 id 类型防止匹配失败
+        const sql = "SELECT p.*, u.email AS verified_email, u.credit FROM community_posts p LEFT JOIN users u ON p.user_id = CAST(u.id AS TEXT) ORDER BY p.created_at DESC LIMIT 50";
 
         const response = await fetch(`${dbUrl}/v2/pipeline`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 requests: [
-                    // 🌟 核心修复：将 u.verified_email 改为 u.email，防止数据库报错！
-                    { type: "execute", stmt: { sql: "SELECT p.id, p.author_name, p.image_url, p.title, p.content, p.likes, p.created_at, p.user_id, u.email AS verified_email, u.credit FROM community_posts p LEFT JOIN users u ON p.user_id = u.id ORDER BY p.created_at DESC LIMIT 50" } },                    
+                    { type: "execute", stmt: { sql: sql } },
                     { type: "close" }
                 ]
-            }),
-            cache: 'no-store'
+            })
         });
+
+        if (!response.ok) {
+            const text = await response.text();
+            throw new Error(`Turso 拒绝连接 (${response.status}): ${text}`);
+        }
 
         const result = await response.json();
         
-        // 捕捉数据库底层的列名错误
-        if (result.results[0].type === 'error') {
-            throw new Error("Turso报错: " + result.results[0].error.message);
+        // 拦截 Turso 底层 SQL 报错 (比如哪一列不存在)
+        if (result.results && result.results[0].type === 'error') {
+            throw new Error(`Turso SQL 报错: ${result.results[0].error.message}`);
         }
 
         const resData = result.results[0].response.result;
@@ -60,15 +68,13 @@ export default async function handler(req) {
 
         return new Response(JSON.stringify({ success: true, posts }), { 
             status: 200, 
-            headers: { 
-                'Content-Type': 'application/json', 
-                'Access-Control-Allow-Origin': '*',
-                'Cache-Control': 'no-cache, no-store, must-revalidate',
-                'Pragma': 'no-cache'
-            }
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'no-store' }
         });
     } catch (error) {
-        // 将具体的错误信息返回给前端
-        return new Response(JSON.stringify({ success: false, error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
+        // 🚨 终极大招：故意返回 HTTP 200，但把真凶的名字装进 JSON 传给前端！
+        return new Response(JSON.stringify({ success: false, error: error.message }), { 
+            status: 200, 
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } 
+        });
     }
 }
