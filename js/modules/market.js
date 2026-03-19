@@ -96,69 +96,63 @@ export const MarketEngine = {
     // 1. 社区数据拉取 (适配最新的数据结构与缓存引擎)
    // 1. 社区数据拉取 (破除浏览器缓存版)
     // 1. 社区数据拉取 (破除浏览器缓存 + 照妖镜报警版)
+    // 🚀 核弹级诊断探针版：打穿一切阻碍，寻找消失的帖子
     async loadCommunityPosts() {
         try {
+            // 探针 1：强力打穿缓存并获取原始文本
             const res = await fetch('/api/get-community?t=' + Date.now()); 
-            const data = await res.json();
-            
-            // 🚨 抓虫魔法：如果后端报错，直接弹在屏幕上！
+            const text = await res.text(); 
+
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                alert("🚨 【探针1报错：接口崩溃】\n后端返回的根本不是正常数据，可能是Vercel挂了，原始返回是：\n" + text.substring(0, 100));
+                return;
+            }
+
             if (!data.success) {
-                console.error("🚨 后端传回的致命死因:", data.error);
-                if (window.App && window.App.showToast) {
-                    window.App.showToast("集市加载失败: " + data.error, "error");
-                } else {
-                    alert("集市加载失败: " + data.error);
-                }
-                return; // 终止渲染
+                alert("🚨 【探针2报错：数据库拒绝】\n" + data.error);
+                return;
             }
 
-            if (data.success && data.posts) {
-                let idleItems = [];
-                // ... (下面原有的解析与渲染代码保持完全不变) ...
-                let helpItems = [];
-                let partnerItems = [];
-                
-                window.allCommunityPostsCache = data.posts; 
-                
-                data.posts.forEach(post => {
-                    const title = post.title || ''; 
-                    const time = post.created_at ? new Date(post.created_at).getTime() : Date.now(); 
-                    let payload; 
-                    try { payload = JSON.parse(post.content); } catch(e) { payload = { oldText: post.content }; }
-
-                    const commonData = {
-                        ...post,
-                        author: post.author_name,
-                        avatar: post.avatar || '😎',
-                        email: post.email,    
-                        credit: post.credit,  
-                        contentObj: payload
-                    };
-
-                    if (title.includes('[闲置]')) {
-                        idleItems.push({ 
-                            ...commonData,
-                            id: post.id, 
-                            title: title.replace('[闲置] ', ''), 
-                            img: post.image_url, 
-                            price: post.likes || 0,
-                            timestamp: time, 
-                            isSold: payload.isSold || false, 
-                            itemCount: payload.itemCount || 1 
-                        });
-                    }
-                    else if (title.includes('[互助]')) helpItems.push(commonData);
-                    else if (title.includes('[找搭子]')) partnerItems.push(commonData);
-                });
-
-                if (window.App && window.App.renderMarketIdle) {
-                    window.App.renderMarketIdle(idleItems); 
-                    window.App.renderMarketHelp(helpItems);
-                    window.App.renderMarketPartner(partnerItems);
-                }
+            if (!data.posts || data.posts.length === 0) {
+                alert("📭 【探针3空仓：数据库没东西】\n后端通了，但数据库里 0 条帖子！是不是刚才压根没发进数据库？");
+                return;
             }
+
+            let idleItems = [];
+            let helpItems = [];
+            let partnerItems = [];
+
+            // 仔细分拣数据
+            data.posts.forEach(post => {
+                const title = post.title || '';
+                let payload = {};
+                try { payload = JSON.parse(post.content); } catch(e) { payload = { oldText: post.content }; }
+
+                const commonData = { ...post, author: post.author_name, avatar: post.avatar || '😎', email: post.email, credit: post.credit, contentObj: payload };
+
+                if (title.includes('[闲置]')) idleItems.push(commonData);
+                else if (title.includes('[互助]')) helpItems.push(commonData);
+                else if (title.includes('[找搭子]')) partnerItems.push(commonData);
+            });
+
+            // 🌟 探针 4：核心战果汇报 (如果在屏幕上看到了这个，说明后端完美没问题！)
+            alert(`✅ 【探针4汇报：数据已到达前线】\n总共收到: ${data.posts.length} 条\n悬赏: ${helpItems.length} 条\n闲置: ${idleItems.length} 条\n搭子: ${partnerItems.length} 条\n\n📌 如果看完这条弹窗后，页面依然是空白的，说明绝对是【前端渲染器】或【分类下拉框】把它们隐藏了！`);
+
+            // 投喂给渲染引擎
+            if (window.App && window.App.renderMarketIdle) {
+                window.App.marketDataCache = { idle: idleItems, help: helpItems, partner: partnerItems };
+                window.App.renderMarketIdle(); 
+                window.App.renderMarketHelp();
+                window.App.renderMarketPartner();
+            } else {
+                alert("🚨 【探针5报错：找不到渲染引擎】");
+            }
+
         } catch (error) {
-            console.error("🚨 [Market] 社区数据拉取失败:", error);
+            alert("🚨 【终极探针报错：JS彻底崩溃】\n" + error.message);
         }
     },
 
