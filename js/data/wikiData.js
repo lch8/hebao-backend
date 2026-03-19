@@ -15,8 +15,16 @@ export const wikiData = [
         category: "交通出行", icon: "🎫",
         title: "没打折卡？找人蹭 40% 优惠！",
         tag: "立省几十欧", tagColor: "#10B981",
-        desc: "非高峰期坐火车，只要同行的朋友有 NS 折扣卡，你就可以在 App 里开启 Samenreiskorting（同行优惠），立享 6 折！",
-        detailContent: "操作步骤：在 NS App 输入行程 -> 购买电子票 -> 选择带有 Samenreiskorting 的选项。查票时，你必须和有打折卡的朋友坐在一起。"
+        desc: "非高峰期坐火车，只要同行的朋友有 NS 折扣卡，就可以享受 6 折！",
+        detailContent: "操作步骤：在 NS App 输入行程 -> 购买电子票 -> 选择带有 Samenreiskorting 的选项。查票时，你必须和有打折卡的朋友坐在一起。",
+        
+        // 🌟 新增：一键发帖模板引擎数据
+        postTemplate: {
+            tab: "partner", // 对应集市里的“搭子”分类
+            btnText: "🤝 一键发帖找火车搭子",
+            title: "蹲一个 NS 火车同行搭子 (凑6折)",
+            content: "【出发地】\n【目的地】\n【出发日期/时间】\n\n【补充说明】我没有打折卡，求一个有 NS Flex 的搭子带带，我请喝咖啡！"
+        }
     },
     {
         id: "w_ov_refund",
