@@ -54,12 +54,9 @@ export const ChatEngine = {
 
             const conversations = data.conversations || [];
             
-            // 💡 核心逻辑：检测是否有“新消息”到达！
             if (conversations.length > 0) {
                 const topConvTime = conversations[0].last_time;
                 if (latestConversationTime !== null && topConvTime !== latestConversationTime) {
-                    // 时间戳变了，说明有新消息！(且发送人不是自己)
-                    // 如果你正打开着那个人的聊天框，就不弹通知了，避免打扰
                     if (currentChatPartnerId !== conversations[0].partner_id) {
                         showToast("📩 您收到了一条新私信，快去看看吧！", "info");
                     }
@@ -76,24 +73,28 @@ export const ChatEngine = {
 
                 safeDOM.execute('msgEmptyState', el => el.style.display = 'none');
                 let html = '';
-                    
-                    conversations.forEach(conv => {
+                
+                conversations.forEach(conv => {
                     const date = new Date(conv.last_time + 'Z');
                     const timeStr = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
                     const shortId = conv.partner_id.substring(0, 4); 
                     
-                    const partnerEmail = conv.partner_email;
-    const partnerCredit = conv.partner_credit || 100;
+                    // 🌟 使用后端返回的真实搭档信息
+                    const partnerEmail = conv.partner_email || '';
+                    const partnerCredit = conv.partner_credit !== undefined ? conv.partner_credit : 100;
+                    const partnerName = conv.partner_name || `校友_${shortId}`;
+                    const partnerAvatar = conv.partner_avatar || '😎';
 
+                    // 传入真实 email 和 credit 给 openChat
                     html += `
                     <div style="display:flex; align-items:center; background:#FFF; padding:15px; border-radius: 16px; margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.02); border: 1px solid #E5E7EB; cursor:pointer; transition: transform 0.1s;" 
-                         <div onclick="window.App.openChat('${conv.partner_id}', '${conv.partner_name}', '${conv.partner_avatar}', null, null, null, null, null, '${partnerEmail}', ${partnerCredit})">
-                        <div style="font-size:40px; margin-right:12px; background: #F3F4F6; border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">😎</div>
+                         onclick="window.App.openChat('${conv.partner_id}', '${partnerName}', '${partnerAvatar}', null, null, null, null, null, '${partnerEmail}', ${partnerCredit})">
+                        <div style="font-size:40px; margin-right:12px; background: #F3F4F6; border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">${partnerAvatar}</div>
                         <div style="flex:1; overflow:hidden;">
                             <div style="display:flex; justify-content:space-between; margin-bottom:6px; align-items: center;">
                                 <div style="display:flex; align-items:center;">
-                                    <span style="font-weight:900; font-size:15px; color:#111827;">校友_${shortId}</span>
-                                    ${window.App.getUserBadgeHtml(partnerEmail, partnerCredit)}
+                                    <span style="font-weight:900; font-size:15px; color:#111827;">${partnerName}</span>
+                                    ${window.App.getUserBadgeHtml ? window.App.getUserBadgeHtml(partnerEmail, partnerCredit) : ''}
                                 </div>
                                 <span style="font-size:11px; color:#9CA3AF; margin-left:6px; flex-shrink:0;">${timeStr}</span>
                             </div>
@@ -101,22 +102,20 @@ export const ChatEngine = {
                         </div>
                     </div>`;
                 });
-                    list.innerHTML = html;
+                list.innerHTML = html;
             });
         } catch(e) {
             console.error("🚨 拉取会话列表失败:", e);
         }
     },
 
-    // ------------------------------------------------------------------------
-    // 2. 安全唤起聊天室
-    // ------------------------------------------------------------------------
-    openChat(targetId, targetName, targetAvatar, postId, postTitle, postPrice, postImg, isSold, postType = 'idle') {
+    // 🌟 在形参末尾增加 targetEmail, targetCredit
+    openChat(targetId, targetName, targetAvatar, postId, postTitle, postPrice, postImg, isSold, targetEmail, targetCredit) {
         try {
             if(window.App && typeof window.App.requireAuth === 'function') {
-                window.App.requireAuth(() => this._initChatWindow(targetId, targetName, targetAvatar, postId, postTitle, postPrice, postImg, isSold));
+                window.App.requireAuth(() => this._initChatWindow(targetId, targetName, targetAvatar, postId, postTitle, postPrice, postImg, isSold, targetEmail, targetCredit));
             } else {
-                this._initChatWindow(targetId, targetName, targetAvatar, postId, postTitle, postPrice, postImg, isSold);
+                this._initChatWindow(targetId, targetName, targetAvatar, postId, postTitle, postPrice, postImg, isSold, targetEmail, targetCredit);
             }
         } catch (error) {
             console.error("🚨 [Chat] 聊天室唤起失败:", error);
@@ -124,6 +123,7 @@ export const ChatEngine = {
         }
     },
 
+    // 🌟 同样在这里接收 targetEmail, targetCredit
     _initChatWindow(targetId, targetName, targetAvatar, postId, postTitle, postPrice, postImg, isSold, targetEmail, targetCredit) {
         const uid = window.userUUID || localStorage.getItem('hebao_uuid');
         if (targetId === String(uid)) return showToast("💡 管家提示：这是你自己的帖子哦，不能跟自己聊天~", "warning");
@@ -134,19 +134,19 @@ export const ChatEngine = {
 
         ModalManager.injectIfNeeded('chatModal');
 
+        // 🌟 渲染对方真实徽章
         safeDOM.execute('chatPartnerName', el => {
-            // 用传入的 targetId 生成固定的假邮箱（后期接后端传真实email）
-            const isAsml = targetId.charCodeAt(0) % 2 === 0;
-            const mockEmail = isAsml ? 'tech@asml.com' : 'student@tudelft.nl';
-            const mockCredit = 98;
+            const realEmail = targetEmail || '';
+            const realCredit = targetCredit !== undefined ? targetCredit : 100;
             
             el.innerHTML = `
                 <div style="display: flex; align-items: center; justify-content: center; width: 100%;">
-                <span>${targetName || '校友'}</span>
-                ${window.App.getUserBadgeHtml(targetEmail, targetCredit || 100)}
-            </div>
+                    <span>${targetName || '校友'}</span>
+                    ${window.App.getUserBadgeHtml ? window.App.getUserBadgeHtml(realEmail, realCredit) : ''}
+                </div>
             `;
         });
+        
         safeDOM.execute('chatPostCard', card => {
             if (postId) {
                 card.style.display = 'flex';
