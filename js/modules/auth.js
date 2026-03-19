@@ -1,5 +1,5 @@
 // ============================================================================
-// js/modules/auth.js - 用户鉴权与登录引擎 (防弹升级版)
+// js/modules/auth.js - 用户鉴权与登录引擎 (防弹升级版 + 隐私脱敏闭环)
 // ============================================================================
 import { showToast } from '../core/toast.js';
 import { safeDOM } from '../core/dom.js';
@@ -72,7 +72,7 @@ export const AuthEngine = {
         }
     },
 
-    // 🌟 验证验证码 (新增 VIP 视觉蜕变引擎)
+    // 🌟 验证验证码 (获取后端真实信用分 + 邮箱前端脱敏)
     async verifyCode() {
         const email = safeDOM.getValue('hebaoAuthEmail').trim();
         const code = safeDOM.getValue('hebaoAuthCode').trim();
@@ -101,13 +101,27 @@ export const AuthEngine = {
                 const domain = email.split('@')[1] || '';
                 const isEdu = domain.includes('.edu') || domain.includes('tudelft.nl') || domain.includes('uva.nl') || domain.includes('eur.nl') || domain.includes('leidenuniv.nl');
 
-               
-
                 localStorage.setItem('hp_email_verified', 'true');
                 localStorage.setItem('hp_is_edu', isEdu ? 'true' : 'false');
-                localStorage.setItem('hp_email', email);
                 
-                // 💥 核心修复：关掉旧的硬编码特效，直接依赖我们强大的全局引擎！
+                // 💥 核心新增 1：存储后端的真实信用分 (防断层)
+                localStorage.setItem('hp_credit', data.credit !== undefined ? data.credit : 100);
+
+                // 💥 核心新增 2：邮箱前端脱敏存储，保护隐私
+                const rawEmail = email;
+                const [namePart, domainPart] = rawEmail.split('@');
+                let maskedName = '';
+                if (namePart && namePart.length <= 2) {
+                    maskedName = `${namePart[0]}***`;
+                } else if (namePart) {
+                    maskedName = `${namePart[0]}***${namePart[namePart.length - 1]}`;
+                }
+                const safeEmailForFrontend = `${maskedName}@${domainPart}`;
+                
+                // 存入脱敏邮箱，发评论时直接调用这个安全版本
+                localStorage.setItem('hp_email', safeEmailForFrontend);
+                
+                // 💥 关掉登录弹窗
                 safeDOM.execute('loginModal', el => el.style.display = 'none');
                 
                 // 弹窗提示
