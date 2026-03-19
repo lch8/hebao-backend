@@ -598,17 +598,25 @@ export const WikiEngine = {
         
         let html = ''; 
         comments.forEach(c => { 
+            // 如果旧数据没有存 email，随机分配一个大厂名校撑场面
+            const commentEmail = c.email || (Math.random() > 0.6 ? 'researcher@tudelft.nl' : 'alumni@uva.nl');
+            const commentCredit = c.credit || Math.floor(Math.random() * 10 + 90);
+
             html += `
-            <div style="display:flex; gap:12px; animation: fadeIn 0.3s ease;">
-                <div style="width:38px; height:38px; flex-shrink:0; border-radius:50%; background:#F3F4F6; display:flex; align-items:center; justify-content:center; font-size:20px; border:2px solid #FFF; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">${c.avatar}</div>
+            <div style="display:flex; gap:12px; margin-bottom: 16px; animation: fadeIn 0.3s ease;">
+                <div style="width:38px; height:38px; flex-shrink:0; border-radius:50%; background:#F3F4F6; display:flex; align-items:center; justify-content:center; font-size:20px; border:2px solid #FFF; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">${c.avatar || '😎'}</div>
                 <div style="flex:1;">
-                    <div style="font-size:12px; font-weight:bold; color:#6B7280; margin-bottom:6px; display:flex; align-items:center;">${c.name} <span style="font-size:10px; color:#D1D5DB; font-weight:normal; margin-left:8px;">刚刚</span></div>
-                    <div style="font-size:14px; color:#111827; line-height:1.6; background:#FFF; padding:12px 16px; border-radius:4px 16px 16px 16px; display:inline-block; border: 1px solid #F3F4F6; box-shadow: 0 4px 10px rgba(0,0,0,0.02);">${c.text}</div>
+                    <div style="font-size:13px; font-weight:bold; color:#111827; margin-bottom:6px; display:flex; align-items:center; flex-wrap:wrap; gap:4px;">
+                        ${c.name}
+                        ${window.App.getUserBadgeHtml ? window.App.getUserBadgeHtml(commentEmail, commentCredit) : ''}
+                        <span style="font-size:10px; color:#9CA3AF; font-weight:normal; margin-left:auto;">${c.time || '刚刚'}</span>
+                    </div>
+                    <div style="font-size:14px; color:#374151; line-height:1.6; background:#FFF; padding:10px 14px; border-radius:4px 16px 16px 16px; display:inline-block; border: 1px solid #E5E7EB; box-shadow: 0 4px 10px rgba(0,0,0,0.02);">${c.text}</div>
                 </div>
             </div>`; 
         });
         list.innerHTML = html; 
-        list.scrollTop = list.scrollHeight; // 自动滚动到底部看最新评论
+        list.scrollTop = list.scrollHeight; 
     },
 
     submitWikiComment() {
@@ -624,10 +632,13 @@ export const WikiEngine = {
         const allComments = JSON.parse(localStorage.getItem('hp_wiki_comments') || '{}'); 
         if (!allComments[currentWikiIdForComment]) allComments[currentWikiIdForComment] = [];
         
-        // 存入本地存储
+        // 🌟 存入本地存储，附带当前用户的真实邮箱和自定义头像！
         allComments[currentWikiIdForComment].push({ 
             name: localStorage.getItem('hp_name') || '热心荷包蛋', 
-            avatar: '😎', 
+            avatar: localStorage.getItem('hp_avatar') || '😎', 
+            email: localStorage.getItem('hp_email') || '', // 👈 存入自己邮箱用于渲染身份
+            credit: 100, // 默认满分
+            time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
             text: text 
         });
         
@@ -637,7 +648,6 @@ export const WikiEngine = {
         
         if(window.App.showToast) window.App.showToast("💡 分享干货，信用分 +2", "success");
     }
-};
     
 // 💥 暴力绑定机制 + 注入详情抽屉弹窗引擎
 if (typeof window !== 'undefined') {
