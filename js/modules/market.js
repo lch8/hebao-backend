@@ -24,12 +24,11 @@ if (SpeechRecognition) {
     recognition.interimResults = false; 
 }
 
-// ==========================================
-// 🎛️ 集市多维矩阵过滤引擎 (带弹性隐私定位)
-// ==========================================
 window.App.marketDataCache = { idle: [], help: [], partner: [] };
 
-// 核心状态机：现在每个版块都有 3 个维度的独立状态
+// 🌟 新增：记住当前所在的是哪个 Tab（默认是闲置）
+window.App.currentMarketTab = 'idle';
+
 window.App.currentMarketFilter = {
     idle: { loc: 'all', cat: 'all', sort: 'newest' },
     help: { loc: 'all', status: 'all', sort: 'newest' },
@@ -38,6 +37,9 @@ window.App.currentMarketFilter = {
 
 // 渲染原生下拉胶囊 UI
 window.App.renderFilterBar = function(tab) {
+    // 🌟 核心修复：如果传进来的 tab 不是当前正在看的 tab，直接拦截！防止互相覆盖！
+    if (tab !== window.App.currentMarketTab) return;
+
     const container = document.getElementById('dynamicFilterBar');
     if (!container) return;
 
