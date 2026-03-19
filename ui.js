@@ -750,9 +750,8 @@ window.App.submitPost = async function() {
             })
         });
 
+        // ... 前面的 fetch 代码不变 ...
         const data = await res.json();
-        
-        // 如果后端因为“积分不足”拦截了请求，直接抛出错误
         if (!data.success) throw new Error(data.error || "发布失败，请稍后重试");
 
         // 5. 发布成功的爽感反馈！
@@ -763,13 +762,21 @@ window.App.submitPost = async function() {
         // 自动关掉抽屉
         if (window.App.closePublishSheet) window.App.closePublishSheet();
         
-        // 如果扣了积分，前端顺手把本地缓存的积分减掉（为了UI显示）
         if (isUrgent) {
             let currentPts = parseInt(localStorage.getItem('hp_points') || 0);
             localStorage.setItem('hp_points', Math.max(0, currentPts - 5));
         }
 
-        // 🚀 终极联动：重新拉取集市列表，让用户立刻看到自己刚发的帖子！
+        // 🌟 新增：强制把页面切换到“集市”对应的模块！
+        if (typeof window.switchTab === 'function') {
+            const marketTabBtn = document.querySelector('.tab-item[onclick*="market"]');
+            window.switchTab('market', marketTabBtn);
+        }
+        if (typeof window.switchMarketTab === 'function') {
+            window.switchMarketTab(type); // 闲置切到闲置，悬赏切到悬赏
+        }
+
+        // 🚀 重新拉取列表！
         if (window.App.loadCommunityPosts) {
             window.App.loadCommunityPosts();
         }
