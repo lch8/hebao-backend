@@ -10,7 +10,6 @@ export default async function handler(req) {
     const token = req.headers.get('Authorization')?.slice(7);
     const authPayload = token ? await verifyJwt(token, process.env.JWT_SECRET) : null;
     
-    // 🌟 修复 1：精准提取 userId，防止变成 [object Object]
     const realUserId = authPayload ? (authPayload.userId || authPayload) : null;
     if (!realUserId) return new Response(JSON.stringify({ error: '请先登录或 Token 已过期' }), { status: 401, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
 
@@ -30,7 +29,6 @@ export default async function handler(req) {
 
         const finalName = authorName && authorName.trim() !== '' ? authorName.trim() : '匿名管家' + Math.floor(Math.random() * 9999); 
         
-        // 🌟 修复 2：强制生成明确的时间戳和 ID，彻底解决排序沉底问题！
         const postId = 'post_' + Math.random().toString(36).substr(2, 9);
         const now = new Date().toISOString();
 
@@ -69,7 +67,7 @@ export default async function handler(req) {
             });
         }
 
-        // 🌟 修复 3：补齐完整的 id 和 created_at 字段
+        // 📦 插入新帖子
         sqlRequests.push({ 
             type: "execute", 
             stmt: { 
@@ -81,7 +79,10 @@ export default async function handler(req) {
                     { type: "text", value: String(title) },
                     { type: "text", value: String(content) },
                     { type: "text", value: String(imageUrl) },
-                    { type: "integer", value: parseInt(likes) || 0 }, 
+                    
+                    // 💥 修复暗坑：强转为 String，绕过 Turso 400 校验！
+                    { type: "integer", value: String(parseInt(likes) || 0) }, 
+                    
                     { type: "text", value: now }
                 ]
             }
@@ -95,7 +96,10 @@ export default async function handler(req) {
             body: JSON.stringify({ requests: sqlRequests })
         });
 
-        if (!response.ok) throw new Error(`Turso 拒绝连接 (${response.status})`);
+        if (!response.ok) {
+            const errTxt = await response.text();
+            throw new Error(`Turso 拒绝连接 (${response.status}): ${errTxt}`);
+        }
 
         const result = await response.json(); 
         if (result.results) {
