@@ -7,10 +7,12 @@ export default async function handler(req) {
     if (req.method === 'OPTIONS') return new Response(null, { status: 200, headers: { 'Access-Control-Allow-Origin': '*' }});
     if (req.method !== 'POST') return new Response(JSON.stringify({ error: '只允许 POST' }), { status: 405 });
 
-    // 1. 🛡️ 核心鉴权层 (防伪造发帖)
     const token = req.headers.get('Authorization')?.slice(7);
-    const authUserId = token ? await verifyJwt(token, process.env.JWT_SECRET) : null;
-    if (!authUserId) return new Response(JSON.stringify({ error: '请先登录或 Token 已过期' }), { status: 401, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
+    const authPayload = token ? await verifyJwt(token, process.env.JWT_SECRET) : null;
+    
+    // 🌟 修复 1：精准提取 userId，防止变成 [object Object]
+    const realUserId = authPayload ? (authPayload.userId || authPayload) : null;
+    if (!realUserId) return new Response(JSON.stringify({ error: '请先登录或 Token 已过期' }), { status: 401, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
 
     try {
         const body = await req.json();
@@ -19,86 +21,74 @@ export default async function handler(req) {
         const authorName = body.author_name || body.authorName || '';
         const imageUrl = body.image_url || body.imageUrl || '';
         const likes = body.likes || 0; 
-        
-        // 🌟 接收前端传来的特权标识
         const isUrgent = body.isUrgent || false; 
 
-        if (!title || !content) {
-            return new Response(JSON.stringify({ error: '标题和正文不能为空哦！' }), { status: 400 });
-        }
+        if (!title || !content) return new Response(JSON.stringify({ error: '标题和正文不能为空哦！' }), { status: 400 });
 
-        let dbUrl = process.env.TURSO_DATABASE_URL; 
+        let dbUrl = process.env.TURSO_DATABASE_URL.replace('libsql://', 'https://'); 
         const authToken = process.env.TURSO_AUTH_TOKEN; 
-        if (!dbUrl || !authToken) return new Response(JSON.stringify({ error: '环境变量未配置！' }), { status: 500 }); 
-        dbUrl = dbUrl.replace('libsql://', 'https://'); 
 
         const finalName = authorName && authorName.trim() !== '' ? authorName.trim() : '匿名管家' + Math.floor(Math.random() * 9999); 
         
+        // 🌟 修复 2：强制生成明确的时间戳和 ID，彻底解决排序沉底问题！
+        const postId = 'post_' + Math.random().toString(36).substr(2, 9);
+        const now = new Date().toISOString();
+
         let sqlRequests = [];
 
-        // ==================================================
         // 🚨 核心商业化：十万火急拦截与扣款
-        // ==================================================
         if (isUrgent) {
-            // 1. 先去数据库查这个人的积分够不够
             const checkRes = await fetch(`${dbUrl}/v2/pipeline`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     requests: [
-                        { type: "execute", stmt: { sql: "SELECT points FROM users WHERE id = ?", args: [{type:"text", value: String(authUserId)}] } },
+                        { type: "execute", stmt: { sql: "SELECT points FROM users WHERE id = ?", args: [{type:"text", value: String(realUserId)}] } },
                         { type: "close" }
                     ]
                 })
             });
             const pointsData = await checkRes.json();
-            
-            // 拦截查分报错 (比如 points 字段不存在)
-            if (pointsData.results && pointsData.results[0].type === 'error') {
-                throw new Error("查分失败: " + pointsData.results[0].error.message);
-            }
+            if (pointsData.results && pointsData.results[0].type === 'error') throw new Error("查分失败: " + pointsData.results[0].error.message);
 
             const rows = pointsData.results[0].response.result.rows;
             const currentPoints = (rows && rows.length > 0 && rows[0][0].value !== null) ? parseInt(rows[0][0].value) : 0;
 
-            // 🌟 如果积分不够，直接拒绝执行
             if (currentPoints < 5) {
                 return new Response(JSON.stringify({ success: false, error: "您的荷包币不足 5 点，无法使用【十万火急】特权哦！" }), { 
                     status: 200, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } 
                 });
             }
 
-            // 2. 积分足够，装载扣款 SQL
             sqlRequests.push({
                 type: "execute",
                 stmt: {
                     sql: "UPDATE users SET points = points - 5 WHERE id = ?",
-                    args: [{type: "text", value: String(authUserId)}]
+                    args: [{type: "text", value: String(realUserId)}]
                 }
             });
         }
 
-        // ==================================================
-        // 📦 插入新帖子 (兼容你原有的 SQL 结构)
-        // ==================================================
+        // 🌟 修复 3：补齐完整的 id 和 created_at 字段
         sqlRequests.push({ 
             type: "execute", 
             stmt: { 
-                sql: "INSERT INTO community_posts (user_id, author_name, title, content, image_url, likes) VALUES (?, ?, ?, ?, ?, ?)", 
+                sql: "INSERT INTO community_posts (id, user_id, author_name, title, content, image_url, likes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 
                 args: [
-                    { type: "text", value: String(authUserId) },
+                    { type: "text", value: postId },
+                    { type: "text", value: String(realUserId) },
                     { type: "text", value: String(finalName) },
                     { type: "text", value: String(title) },
                     { type: "text", value: String(content) },
                     { type: "text", value: String(imageUrl) },
-                    { type: "text", value: String(likes || 0) } 
+                    { type: "integer", value: parseInt(likes) || 0 }, 
+                    { type: "text", value: now }
                 ]
             }
         });
         
         sqlRequests.push({ type: "close" }); 
 
-        // 统一发车执行
         const response = await fetch(`${dbUrl}/v2/pipeline`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
@@ -108,8 +98,6 @@ export default async function handler(req) {
         if (!response.ok) throw new Error(`Turso 拒绝连接 (${response.status})`);
 
         const result = await response.json(); 
-        
-        // 防爆盾：遍历检查有没有 SQL 报错
         if (result.results) {
             for (let r of result.results) {
                 if (r.type === 'error') throw new Error(`Turso SQL 报错: ${r.error.message}`);
