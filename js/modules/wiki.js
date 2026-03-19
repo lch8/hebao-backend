@@ -304,21 +304,31 @@ export const WikiEngine = {
 
         // 🌟 核心防误触逻辑：判断用户的真实意图
         if (typeof state.isScrolling === 'undefined') {
-            // 如果 Y 轴移动距离大于 X 轴，说明是在上下翻页
             state.isScrolling = Math.abs(deltaY) > Math.abs(deltaX);
         }
 
-        // 如果用户是在上下滚动网页，直接放行，完全锁死左右拖拽！
         if (state.isScrolling) return;
 
-        // 如果确定是左右滑，则阻止默认的网页上下滚动 (防止斜向滑动的怪异手感)
         if (e.cancelable) e.preventDefault();
         
         const card = document.getElementById(`front_${id}`);
         if (card) {
-            // 加入阻尼效果，最大只允许拖动 150px
+            // 加入阻尼效果，最大拖动 150px
             const moveX = deltaX > 0 ? Math.min(deltaX, 150) : Math.max(deltaX, -150);
             card.style.transform = `translateX(${moveX}px)`;
+
+            // 🌟 修复1：滑动时，动态改变底层背景文字的透明度 (呈现渐显效果)
+            const saveBg = document.querySelector(`#swipe_${id} .save-bg`);
+            const deleteBg = document.querySelector(`#swipe_${id} .delete-bg`);
+            if (deltaX > 0) {
+                // 右滑：显示收藏，隐藏懂了
+                if (saveBg) saveBg.style.opacity = Math.min(deltaX / 80, 1);
+                if (deleteBg) deleteBg.style.opacity = 0;
+            } else {
+                // 左滑：显示懂了，隐藏收藏
+                if (saveBg) saveBg.style.opacity = 0;
+                if (deleteBg) deleteBg.style.opacity = Math.min(Math.abs(deltaX) / 80, 1);
+            }
         }
     },
 
@@ -341,16 +351,20 @@ export const WikiEngine = {
         const deltaX = e.changedTouches[0].clientX - state.startX;
         
         if (deltaX > 80) {
-            // 右滑收藏
-            card.style.transform = `translateX(100%)`;
-            setTimeout(() => { if(window.App.handleWikiSwipe) window.App.handleWikiSwipe(id, 'save'); }, 300);
+            // 右滑收藏：卡片直接飞出屏幕右侧
+            card.style.transform = `translateX(150%)`;
+            // 🌟 修复2：调用正确的 handleWikiAction 函数，并且传参必须是 'saved'
+            setTimeout(() => { if(window.App.handleWikiAction) window.App.handleWikiAction(id, 'saved'); }, 300);
         } else if (deltaX < -80) {
-            // 左滑懂了
-            card.style.transform = `translateX(-100%)`;
-            setTimeout(() => { if(window.App.handleWikiSwipe) window.App.handleWikiSwipe(id, 'delete'); }, 300);
+            // 左滑懂了：卡片直接飞出屏幕左侧
+            card.style.transform = `translateX(-150%)`;
+            // 🌟 修复2：调用正确的 handleWikiAction 函数，并且传参必须是 'deleted'
+            setTimeout(() => { if(window.App.handleWikiAction) window.App.handleWikiAction(id, 'deleted'); }, 300);
         } else {
             // 没滑够距离，弹回原位
             card.style.transform = `translateX(0px)`;
+            // 🌟 修复3：如果没有滑出去，要把背景文字的透明度重置为0
+            if(this.resetSwipeBg) this.resetSwipeBg(id);
         }
         this.swipeState[id] = null;
     },
