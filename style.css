@@ -2002,3 +2002,48 @@ body, .page-section, .container {
 #page-tips.theme-pro {
     background: linear-gradient(180deg, #FAF5FF 0%, #F8FAFC 100%) !important;
 }
+
+/* 发帖选项胶囊按钮 */
+.publish-capsule {
+    display: inline-block;
+    background: #F3F4F6;
+    color: #4B5563;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+    margin-right: 8px;
+    margin-bottom: 8px;
+    user-select: none;
+}
+/* 选中状态 */
+.publish-capsule.active {
+    background: #111827;
+    color: #FFFFFF;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+
+/* 🚨 十万火急特权卡片 */
+.urgent-card {
+    border: 2px solid #E5E7EB;
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.urgent-card.active-normal {
+    border-color: #111827;
+    background: #F8FAFC;
+}
+.urgent-card.active-urgent {
+    border-color: #EF4444;
+    background: #FEF2F2;
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.15);
+}
