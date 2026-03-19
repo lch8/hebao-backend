@@ -1,5 +1,5 @@
 // api/cron-news.js
-export const config = { runtime: 'edge' };
+export const maxDuration = 60; // 💡 强行把 Vercel 的 10 秒断头台延长到 60 秒！
 
 export default async function handler(req) {
     const authHeader = req.headers.get('authorization');
