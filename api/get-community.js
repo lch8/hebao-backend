@@ -19,8 +19,7 @@ export default async function handler(req) {
         const authToken = process.env.TURSO_AUTH_TOKEN;
 
         // 🌟 防爆修复：使用 p.* 兼容所有字段；强制转换 id 类型防止匹配失败
-        const sql = "SELECT p.*, u.email AS verified_email, u.credit FROM community_posts p LEFT JOIN users u ON p.user_id = CAST(u.id AS TEXT) ORDER BY p.created_at DESC LIMIT 50";
-
+const sql = "SELECT p.*, u.credit FROM community_posts p LEFT JOIN users u ON p.user_id = CAST(u.id AS TEXT) ORDER BY p.created_at DESC LIMIT 50";
         const response = await fetch(`${dbUrl}/v2/pipeline`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
