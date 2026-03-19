@@ -455,14 +455,18 @@ window.App.checkSafetyCode = async function() {
 
         // 2. 处理 UGC 全网投票数据
         let ugcHtml = '';
-        const totalVotes = data.votes.safe + data.votes.warning + data.votes.danger;
+        // 🌟 核心修复：强制转换为数字 (Number)，彻底消灭 '0'+'2'+'0'='020' 的字符串拼接 Bug！
+        const safeCount = Number(data.votes.safe) || 0;
+        const warningCount = Number(data.votes.warning) || 0;
+        const dangerCount = Number(data.votes.danger) || 0;
+        const totalVotes = safeCount + warningCount + dangerCount;
         if (totalVotes > 0) {
             const safePct = Math.round((data.votes.safe / totalVotes) * 100);
             const dangerPct = Math.round((data.votes.danger / totalVotes) * 100);
             ugcHtml = `
                 <div style="font-size: 12px; color: #4B5563; background: #F8FAFC; padding: 10px 12px; border-radius: 8px; display: flex; align-items: center; gap: 8px; border: 1px solid #E5E7EB;">
                     <span style="font-size: 16px;">📊</span>
-                    <div>全网 <b>${totalVotes}</b> 位留学生打分，<b style="color:#10B981;">${safePct}%</b> 认为安全，<b style="color:#EF4444;">${dangerPct}%</b> 提示危险。</div>
+                    <div>全网 <b>${totalVotes}</b> 位荷包蛋打分，<b style="color:#10B981;">${safePct}%</b> 认为安全，<b style="color:#EF4444;">${dangerPct}%</b> 提示危险。</div>
                 </div>`;
         } else {
             ugcHtml = `<div style="font-size: 11px; color: #9CA3AF; text-align: right;">* 暂无校友评价，快来投下第一票！</div>`;
