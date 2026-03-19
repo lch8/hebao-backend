@@ -962,64 +962,113 @@ window.App.renderProfileState = function() {
     const nameEl = document.getElementById('profileName');
     const subInfoEl = document.getElementById('profileSubInfo');
     const avatarEl = document.querySelector('.p-avatar');
+    const vipBanner = document.querySelector('.vip-banner'); 
 
     if (isLoggedIn) {
-        // 登录状态：隐藏引导块，显示数据看板
         if (guestBlock) guestBlock.style.display = 'none';
         if (statsPanel) statsPanel.style.display = 'flex';
         
-        // 填充用户数据
         const userName = localStorage.getItem('hp_name') || '荷包蛋';
         const userEmail = localStorage.getItem('hp_email') || '未知邮箱';
         const isVerified = localStorage.getItem('hp_email_verified') === 'true';
         
-        // 获取真实收藏数量
+        if (vipBanner) vipBanner.style.display = isVerified ? 'none' : 'flex'; 
+
         const savedIds = JSON.parse(localStorage.getItem('hp_wiki_saved') || '[]');
         const statSavedEl = document.getElementById('statSaved');
         if (statSavedEl) statSavedEl.innerText = savedIds.length;
 
-        if (nameEl) nameEl.innerHTML = `${userName} ${isVerified ? '<span style="color:#F59E0B; font-size:14px;">✔</span>' : ''}`;
+        // 🌟 百变身份引擎：根据邮箱后缀自动匹配专属 UI
+        const domain = (userEmail.split('@')[1] || '').toLowerCase();
         
-        if (subInfoEl) {
-            subInfoEl.innerHTML = `
-                <span>ID: ${userEmail.split('@')[0] || Math.floor(Math.random()*10000)}</span>
-                ${isVerified ? '<span style="background: linear-gradient(135deg, #FDE68A 0%, #F59E0B 100%); padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 900; color: #78350F;">🎓 实名校友</span>' : '<span style="background: #E2E8F0; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; color: #475569;">Lv.1</span>'}
-            `;
+        // 默认兜底：金色普通认证
+        let badge = { 
+            color: '#F59E0B', 
+            grad: 'linear-gradient(135deg, #FDE68A 0%, #F59E0B 100%)', 
+            icon: '🎓', 
+            text: '实名校友',
+            textColor: '#78350F'
+        };
+
+        if (isVerified) {
+            if (domain.includes('tudelft.nl')) {
+                badge = { color: '#0EA5E9', grad: 'linear-gradient(135deg, #E0F2FE 0%, #0EA5E9 100%)', icon: '🏛️', text: 'TUD 认证', textColor: '#FFF' };
+            } else if (domain.includes('uva.nl')) {
+                badge = { color: '#DC2626', grad: 'linear-gradient(135deg, #FEE2E2 0%, #DC2626 100%)', icon: '❌', text: 'UvA 认证', textColor: '#FFF' };
+            } else if (domain.includes('vu.nl')) {
+                badge = { color: '#2563EB', grad: 'linear-gradient(135deg, #DBEAFE 0%, #2563EB 100%)', icon: '🦅', text: 'VU 认证', textColor: '#FFF' };
+            } else if (domain.includes('eur.nl')) {
+                badge = { color: '#10B981', grad: 'linear-gradient(135deg, #D1FAE5 0%, #10B981 100%)', icon: '📈', text: 'EUR 认证', textColor: '#FFF' };
+            } else if (domain.includes('leidenuniv.nl')) {
+                badge = { color: '#4F46E5', grad: 'linear-gradient(135deg, #E0E7FF 0%, #4F46E5 100%)', icon: '📜', text: 'Leiden 认证', textColor: '#FFF' };
+            } else if (domain.includes('wur.nl')) {
+                badge = { color: '#65A30D', grad: 'linear-gradient(135deg, #ECFCCB 0%, #65A30D 100%)', icon: '🌱', text: 'WUR 认证', textColor: '#FFF' };
+            } else if (domain.includes('asml.com')) {
+                badge = { color: '#0F172A', grad: 'linear-gradient(135deg, #475569 0%, #0F172A 100%)', icon: '⚙️', text: 'ASML 认证', textColor: '#FFF' };
+            } else if (domain.includes('ing.com') || domain.includes('ing.nl')) {
+                badge = { color: '#EA580C', grad: 'linear-gradient(135deg, #FFEDD5 0%, #EA580C 100%)', icon: '🦁', text: 'ING 认证', textColor: '#FFF' };
+            } else if (domain.includes('booking.com')) {
+                badge = { color: '#003B95', grad: 'linear-gradient(135deg, #93C5FD 0%, #003B95 100%)', icon: '🧳', text: 'Booking', textColor: '#FFF' };
+            } else if (!domain.includes('gmail.com') && !domain.includes('hotmail.com') && !domain.includes('outlook.com') && !domain.includes('qq.com') && !domain.includes('163.com')) {
+                // 如果不是常见个人邮箱，统归为名企/机构
+                badge = { color: '#4B5563', grad: 'linear-gradient(135deg, #F3F4F6 0%, #4B5563 100%)', icon: '💼', text: '名企认证', textColor: '#FFF' };
+            }
+        }
+
+        // 渲染名字旁的彩色对勾
+        if (nameEl) {
+            nameEl.innerHTML = `${userName} ${isVerified ? `<span style="color:${badge.color}; font-size:14px;">✔</span>` : ''}`;
         }
         
-        // 🌟 核心修改：动态读取用户自定义的 Emoji 头像
+        // 渲染下方的专属徽章
+        if (subInfoEl) {
+            let badgeHtml = '<span style="background: #E2E8F0; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; color: #475569;">Lv.1</span>';
+            if (isVerified) {
+                badgeHtml = `<span style="background: ${badge.grad}; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 900; color: ${badge.textColor}; box-shadow: 0 2px 4px rgba(0,0,0,0.15);">${badge.icon} ${badge.text}</span>`;
+            }
+            subInfoEl.innerHTML = `<span>ID: ${userEmail.split('@')[0] || Math.floor(Math.random()*10000)}</span>${badgeHtml}`;
+        }
+        
         const customAvatar = localStorage.getItem('hp_avatar') || '😎';
 
-        // 头像状态恢复
+        // 渲染头像框的发光颜色与角标
         if (avatarEl && isVerified) {
-            avatarEl.innerText = customAvatar; // 👈 使用自定义头像
-            avatarEl.style.border = '3px solid #F59E0B';
+            avatarEl.innerText = customAvatar; 
+            avatarEl.style.border = `3px solid ${badge.color}`;
+            avatarEl.style.boxShadow = `0 0 20px ${badge.color}40`; // 40代表25%的透明度
+
             if (!document.getElementById('vipBadge')) {
                 const vBadge = document.createElement('div');
                 vBadge.id = 'vipBadge';
-                vBadge.innerHTML = '🎓';
-                vBadge.style.cssText = 'position: absolute; bottom: -5px; right: -5px; background: #111827; border: 2px solid #FFF; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px;';
+                vBadge.style.cssText = `position: absolute; bottom: -5px; right: -5px; background: #111827; border: 2px solid #FFF; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px;`;
                 avatarEl.appendChild(vBadge);
             }
+            document.getElementById('vipBadge').innerHTML = badge.icon;
         } else if (avatarEl) {
-            avatarEl.innerText = customAvatar; // 👈 非 VIP 也要使用自定义头像
+            avatarEl.innerText = customAvatar; 
             avatarEl.style.border = '3px solid #FFF'; 
+            avatarEl.style.boxShadow = '0 4px 15px rgba(0,0,0,0.08)';
+            const oldV = document.getElementById('vipBadge');
+            if (oldV) oldV.remove();
         }
         
     } else {
-        // 未登录状态：恢复原状
         if (guestBlock) guestBlock.style.display = 'flex';
         if (statsPanel) statsPanel.style.display = 'none';
+        if (vipBanner) vipBanner.style.display = 'flex'; 
+
         if (nameEl) nameEl.innerHTML = '新晋荷包蛋';
         if (subInfoEl) subInfoEl.innerHTML = `<span>ID: 未登录</span><span style="background: #E2E8F0; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; color: #475569;">Lv.0</span>`;
         if (avatarEl) {
             avatarEl.innerText = '👻';
             avatarEl.style.border = '3px solid #FFF';
+            avatarEl.style.boxShadow = '0 4px 15px rgba(0,0,0,0.08)';
             const oldV = document.getElementById('vipBadge');
             if (oldV) oldV.remove();
         }
     }
 };
+
 
 // 2. 带有二次确认的安全退出功能
 window.App.handleLogout = function() {
