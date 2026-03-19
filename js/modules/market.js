@@ -286,8 +286,7 @@ export const MarketEngine = {
             </div>`;
         });
         container.innerHTML = html;
-    }
-},
+    },
     // 4. 图片与语音引擎
     handleMultiImageSelect(event) {
         try {
