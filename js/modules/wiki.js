@@ -598,9 +598,9 @@ export const WikiEngine = {
         
         let html = ''; 
         comments.forEach(c => { 
-            // 如果旧数据没有存 email，随机分配一个大厂名校撑场面
-            const commentEmail = c.email || (Math.random() > 0.6 ? 'researcher@tudelft.nl' : 'alumni@uva.nl');
-            const commentCredit = c.credit || Math.floor(Math.random() * 10 + 90);
+            // 🌟 提取已存储的真实邮箱和信用分
+            const realEmail = c.email || '';
+            const realCredit = c.credit !== undefined ? c.credit : 100;
 
             html += `
             <div style="display:flex; gap:12px; margin-bottom: 16px; animation: fadeIn 0.3s ease;">
@@ -608,7 +608,7 @@ export const WikiEngine = {
                 <div style="flex:1;">
                     <div style="font-size:13px; font-weight:bold; color:#111827; margin-bottom:6px; display:flex; align-items:center; flex-wrap:wrap; gap:4px;">
                         ${c.name}
-                        ${window.App.getUserBadgeHtml ? window.App.getUserBadgeHtml(commentEmail, commentCredit) : ''}
+                        ${window.App.getUserBadgeHtml ? window.App.getUserBadgeHtml(realEmail, realCredit) : ''}
                         <span style="font-size:10px; color:#9CA3AF; font-weight:normal; margin-left:auto;">${c.time || '刚刚'}</span>
                     </div>
                     <div style="font-size:14px; color:#374151; line-height:1.6; background:#FFF; padding:10px 14px; border-radius:4px 16px 16px 16px; display:inline-block; border: 1px solid #E5E7EB; box-shadow: 0 4px 10px rgba(0,0,0,0.02);">${c.text}</div>
@@ -632,19 +632,21 @@ export const WikiEngine = {
         const allComments = JSON.parse(localStorage.getItem('hp_wiki_comments') || '{}'); 
         if (!allComments[currentWikiIdForComment]) allComments[currentWikiIdForComment] = [];
         
-        // 🌟 存入本地存储，附带当前用户的真实邮箱和自定义头像！
+        // 🌟 读取当前本地存储中的真实状态（需确保auth.js已写入 hp_credit 和 脱敏的 hp_email）
+        const userCredit = parseInt(localStorage.getItem('hp_credit') || '100');
+
         allComments[currentWikiIdForComment].push({ 
             name: localStorage.getItem('hp_name') || '热心荷包蛋', 
             avatar: localStorage.getItem('hp_avatar') || '😎', 
-            email: localStorage.getItem('hp_email') || '', // 👈 存入自己邮箱用于渲染身份
-            credit: 100, // 默认满分
+            email: localStorage.getItem('hp_email') || '', 
+            credit: userCredit, 
             time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
             text: text 
         });
         
         localStorage.setItem('hp_wiki_comments', JSON.stringify(allComments)); 
         input.value = ''; 
-        this.renderWikiComments(); // 重新渲染列表
+        this.renderWikiComments(); 
         
         if(window.App.showToast) window.App.showToast("💡 分享干货，信用分 +2", "success");
     }
