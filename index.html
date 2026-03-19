@@ -609,6 +609,62 @@
             </div>
         </div>
 
+        <div id="publishFormIdle" style="display: none;">
+            <div style="margin-bottom: 20px;">
+                <div style="font-size: 13px; font-weight: 900; color: #111827; margin-bottom: 10px;">物品分类</div>
+                <div id="idleCategoryCapsules">
+                    <span class="publish-capsule active" onclick="window.App.togglePublishCapsule(this)">📱 电子数码</span>
+                    <span class="publish-capsule" onclick="window.App.togglePublishCapsule(this)">🛏️ 家具家电</span>
+                    <span class="publish-capsule" onclick="window.App.togglePublishCapsule(this)">🚲 交通出行</span>
+                    <span class="publish-capsule" onclick="window.App.togglePublishCapsule(this)">💄 美妆服饰</span>
+                    <span class="publish-capsule" onclick="window.App.togglePublishCapsule(this)">📦 其他闲置</span>
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <div style="font-size: 13px; font-weight: 900; color: #111827; margin-bottom: 10px;">交易方式</div>
+                <div id="idleLocationCapsules">
+                    <span class="publish-capsule active" onclick="window.App.togglePublishCapsule(this)">📍 同城自提 (推荐)</span>
+                    <span class="publish-capsule" onclick="window.App.togglePublishCapsule(this)">📦 全荷兰邮寄</span>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 20px; position: relative;">
+                <div style="font-size: 13px; font-weight: 900; color: #111827; margin-bottom: 10px;">出物价格 (💶)</div>
+                <input type="number" id="idlePrice" placeholder="0.00" style="width: 100%; box-sizing: border-box; border: 1px solid #E5E7EB; border-radius: 12px; padding: 12px 12px 12px 35px; font-size: 16px; font-weight: bold; outline: none; background: #F9FAFB;">
+                <span style="position: absolute; left: 14px; top: 38px; font-size: 16px; color: #64748B;">€</span>
+            </div>
+
+            <textarea id="idleDesc" placeholder="几成新？有什么瑕疵吗？带不带小票..." style="width: 100%; box-sizing: border-box; border: 1px solid #E5E7EB; border-radius: 12px; padding: 12px; font-size: 14px; height: 90px; margin-bottom: 20px; outline: none; background: #F9FAFB;"></textarea>
+            
+            <div style="background: #F3F4F6; border: 1px dashed #CBD5E1; border-radius: 12px; padding: 20px; text-align: center; color: #9CA3AF; font-size: 13px; font-weight: bold; cursor: pointer; margin-bottom: 20px;">
+                📸 点击上传实物图 (最多 9 张)
+            </div>
+        </div>
+
+        <div id="publishFormPartner" style="display: none;">
+            <div style="margin-bottom: 20px;">
+                <div style="font-size: 13px; font-weight: 900; color: #111827; margin-bottom: 10px;">局的类型</div>
+                <div id="partnerTypeCapsules">
+                    <span class="publish-capsule active" onclick="window.App.togglePublishCapsule(this)">🍔 饭搭子</span>
+                    <span class="publish-capsule" onclick="window.App.togglePublishCapsule(this)">✈️ 旅游看展</span>
+                    <span class="publish-capsule" onclick="window.App.togglePublishCapsule(this)">🏋️ 运动健身</span>
+                    <span class="publish-capsule" onclick="window.App.togglePublishCapsule(this)">📚 图书馆自习</span>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <div style="font-size: 13px; font-weight: 900; color: #111827; margin-bottom: 10px;">MBTI / 气场偏好</div>
+                <div id="partnerMbtiCapsules">
+                    <span class="publish-capsule active" onclick="window.App.togglePublishCapsule(this)">✨ 属性不限</span>
+                    <span class="publish-capsule" onclick="window.App.togglePublishCapsule(this)">🔥 寻 E 人带飞</span>
+                    <span class="publish-capsule" onclick="window.App.togglePublishCapsule(this)">🍵 寻 I 人慢摇</span>
+                </div>
+            </div>
+
+            <textarea id="partnerDesc" placeholder="简单介绍一下你的计划，或者希望找个什么样的搭子..." style="width: 100%; box-sizing: border-box; border: 1px solid #E5E7EB; border-radius: 12px; padding: 12px; font-size: 14px; height: 100px; margin-bottom: 20px; outline: none; background: #F9FAFB;"></textarea>
+        </div>
+
         <button onclick="window.App.submitPost()" style="width: 100%; background: #111827; color: white; border: none; padding: 14px; border-radius: 12px; font-weight: 900; font-size: 16px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); margin-top: 10px;">🚀 立即发布</button>
     </div>
 </div>
