@@ -310,6 +310,66 @@ window.App.initMarketCards = async function() {
     }
 };
 
+// ==========================================
+// 🌟 纯正荷兰血统：Buienradar 动态天气雷达引擎
+// ==========================================
+window.App.initWeatherRadar = async function() {
+    try {
+        const root = document.getElementById('weatherWidgetRoot');
+        const icon = document.getElementById('weatherIcon');
+        const title = document.getElementById('weatherTitle');
+        const status = document.getElementById('weatherStatus');
+        if (!root) return;
+
+        // 1. 无感获取城市定位 (通过 IP 静默获取，不弹窗打扰用户)
+        let lat = 52.3676, lon = 4.9041, city = '阿姆斯特丹'; 
+        try {
+            const locRes = await fetch('https://ipapi.co/json/');
+            const locData = await locRes.json();
+            if (locData.latitude) {
+                lat = locData.latitude;
+                lon = locData.longitude;
+                city = locData.city ? locData.city.substring(0, 4) : '本地'; 
+            }
+        } catch(e) { console.log('IP定位跳过，使用默认坐标'); }
+
+        title.innerText = `${city} 雷达`;
+
+        // 2. 召唤我们刚才写好的 Buienradar Vercel 接口！
+        const weatherRes = await fetch(`/api/get-weather?lat=${lat}&lon=${lon}`);
+        const weatherData = await weatherRes.json();
+        
+        if (weatherData.success && weatherData.isRainingSoon) {
+            // 🌧️ 坏天气警报模式：带精确到分钟的 Buienradar 预测
+            root.style.background = '#EFF6FF'; 
+            root.style.borderColor = '#BFDBFE';
+            // 如果是大雨，图标变电闪雷鸣
+            icon.innerText = weatherData.rainLevel >= 3 ? '⛈️' : '🌧️';
+            
+            status.innerText = `🔴 ${weatherData.rainMsg}`;
+            status.style.color = '#DC2626';
+            status.style.background = '#FEE2E2';
+        } else {
+            // 🌤️ 放心骑模式
+            root.style.background = '#FFF';
+            root.style.borderColor = '#F3F4F6';
+            icon.innerText = '🌤️';
+            status.innerText = '🟢 放心骑 (未来2h无雨)';
+            status.style.color = '#10B981';
+            status.style.background = '#ECFDF5';
+        }
+
+    } catch (error) {
+        console.error("雷达连接失败", error);
+        const title = document.getElementById('weatherTitle');
+        if(title) title.innerText = 'Buienradar (连接中)';
+    }
+};
+
+setTimeout(() => {
+    if (window.App.initWeatherRadar) window.App.initWeatherRadar();
+}, 800);
+
 // 页面加载完毕后，延迟 300 毫秒静默获取数据，不卡顿页面
 setTimeout(() => {
     if (window.App.initMarketCards) {
