@@ -135,8 +135,19 @@ export const ChatEngine = {
 
         ModalManager.injectIfNeeded('chatModal');
 
-        safeDOM.execute('chatPartnerName', el => el.innerText = targetName || '校友');
-        
+        safeDOM.execute('chatPartnerName', el => {
+            // 用传入的 targetId 生成固定的假邮箱（后期接后端传真实email）
+            const isAsml = targetId.charCodeAt(0) % 2 === 0;
+            const mockEmail = isAsml ? 'tech@asml.com' : 'student@tudelft.nl';
+            const mockCredit = 98;
+            
+            el.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; width: 100%;">
+                    <span>${targetName || '校友'}</span>
+                    ${window.App.getUserBadgeHtml ? window.App.getUserBadgeHtml(mockEmail, mockCredit) : ''}
+                </div>
+            `;
+        });
         safeDOM.execute('chatPostCard', card => {
             if (postId) {
                 card.style.display = 'flex';
