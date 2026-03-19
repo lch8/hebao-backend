@@ -44,11 +44,59 @@ function goBack() {
     }
     switchTab(lastTab, document.querySelector(`.tab-item[onclick*="${lastTab}"]`)); 
 }
-function switchMarketTab(type, element) { 
-    document.querySelectorAll('.market-content').forEach(el => el.classList.remove('active')); 
-    document.getElementById('market-' + type).classList.add('active'); 
-    document.querySelectorAll('.m-tab').forEach(el => el.classList.remove('active')); 
-    if(element) element.classList.add('active'); 
+// ==========================================
+// 🔄 满血版 Tab 切换引擎 (高容错自愈)
+// ==========================================
+function switchMarketTab(type) {
+    // 1. 同步全局状态（告诉过滤引擎我们切到哪个版块了）
+    if (window.App) window.App.currentMarketTab = type;
+
+    // 2. 切换 Tab 按钮的视觉高亮
+    ['idle', 'help', 'partner'].forEach(t => {
+        const btn = document.getElementById('tab-' + t) || document.getElementById('tabBtn' + t.charAt(0).toUpperCase() + t.slice(1));
+        if (btn) {
+            if (t === type) btn.classList.add('active'); // 或者你的高亮 class
+            else btn.classList.remove('active');
+        }
+    });
+
+    // 3. 切换内容容器的显示/隐藏（带自动纠错机制）
+    ['idle', 'help', 'partner'].forEach(t => {
+        // 尝试寻找你报错的旧 ID 容器
+        let container = document.getElementById('market-' + t);
+        
+        // 🌟 如果找不到旧 ID（可能被误删），自动降级寻找内层的列表容器！
+        if (!container) {
+            if (t === 'idle') container = document.getElementById('idleWaterfall');
+            if (t === 'help') container = document.getElementById('helpListContainer');
+            if (t === 'partner') container = document.getElementById('partnerListContainer');
+        }
+
+        if (container) {
+            if (t === type) {
+                // 显示当前容器 (闲置瀑布流需要 grid，其他用 block)
+                container.style.display = (t === 'idle') ? 'grid' : 'block';
+                // 容错：如果有 hidden 类则移除
+                if (container.classList && container.classList.contains('hidden')) {
+                    container.classList.remove('hidden');
+                }
+            } else {
+                // 隐藏非当前容器
+                container.style.display = 'none';
+            }
+        }
+    });
+
+    // 4. 🌟 核心联动：切换完页面后，立刻呼叫引擎生成对应版块的高级筛选菜单！
+    if (window.App && window.App.renderFilterBar) {
+        window.App.renderFilterBar(type);
+    }
+}
+
+// 确保挂载到全局，供 HTML 的 onclick 调用
+if (typeof window !== 'undefined') {
+    window.switchMarketTab = switchMarketTab;
+    if (window.App) window.App.switchMarketTab = switchMarketTab;
 }
 
 // 渲染个人主页状态 (登录前/登录后)
