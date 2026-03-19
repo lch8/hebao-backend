@@ -375,7 +375,7 @@ const ModalTemplates = {
         <div class="full-modal" id="wikiCommentModal" style="display: none; background: #F9FAFB; z-index: 3500;">
             <div class="fm-header" style="background: #FFF; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
                 <div class="fm-close" onclick="document.getElementById('wikiCommentModal').style.display='none'">‹ 返回</div>
-                <div class="fm-title">网友补充 & 踩坑</div>
+                <div class="fm-title">荷包蛋补充 & 踩坑</div>
                 <div style="width: 40px;"></div>
             </div>
             <div style="padding: 15px; overflow-y: auto; height: calc(100vh - 130px);" id="wikiCommentList"></div>
