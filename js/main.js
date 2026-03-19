@@ -677,6 +677,216 @@ window.App.toggleTask = function(id) {
 // 延迟 500ms 自动渲染首页任务
 setTimeout(() => { if(window.App.renderStarterTasks) window.App.renderStarterTasks(); }, 500);
 
+// ==========================================
+// 🎮 荷村生存模拟器 (带扣血/震动/音效/海报生成)
+// ==========================================
+
+window.App.sgEngine = {
+    balance: 500,
+    currentIndex: 0,
+    wrongTags: [], // 记录错题，用于最后精准推送
+    questions: [
+        {
+            tag: "交通防坑",
+            scene: "刚下飞机，拖着两个28寸大箱子累得半死。一辆没顶灯的黑车停在你面前，司机用流利的英语说：“去阿姆市区吗？只要50欧，不用排队。”",
+            options: [
+                { text: "A. 赶紧上车，太累了不想等火车。", cost: 150, isCorrect: false },
+                { text: "B. 严词拒绝，自己去负一层刷卡坐火车。", cost: 0, isCorrect: true }
+            ],
+            analysis: "❌ 经典杀猪盘！上车报50，下车计价器变200欧，不给钱锁车门不给拿行李。永远只坐正规火车或去官方Taxi点排队！"
+        },
+        {
+            tag: "租房防骗",
+            scene: "微信群里有人转租鹿特丹市中心大单间，每月只要 €500！对方发来了他的护照照片，让你用西联汇款先交押金锁房。",
+            options: [
+                { text: "A. 护照都发了还能有假？赶紧打钱抢房！", cost: 500, isCorrect: false },
+                { text: "B. 价格低得离谱，反手一个举报。", cost: 0, isCorrect: true }
+            ],
+            analysis: "❌ 诈骗重灾区！骗子发给你的护照是上一个受害者的！在荷兰没实地看房前，要求西联汇款或转账到非NL账户的，1000%是骗子。"
+        },
+        {
+            tag: "生活常识",
+            scene: "你在 AH 超市买了 €18 的半成品菜。结账时，你自信地掏出一张崭新的 €100 纸币递给收银员。",
+            options: [
+                { text: "A. 收银员会找你 €82。", cost: 18, isCorrect: false },
+                { text: "B. 收银员指着牌子说：“Sorry, no €100.”", cost: 0, isCorrect: true }
+            ],
+            analysis: "❌ 荷兰几乎所有超市和街边小店拒收 €100 及以上面值的现金！请务必在国内换好 €50 及以下的零钱，或迅速办好双币信用卡。"
+        },
+        {
+            tag: "交规避雷",
+            scene: "晚上 8 点从图书馆出来，天已经黑透了。你的二手自行车没有装车灯。",
+            options: [
+                { text: "A. 借着路灯的光，单手拿手机照亮骑回家。", cost: 220, isCorrect: false },
+                { text: "B. 下车，推着自行车走回家。", cost: 0, isCorrect: true }
+            ],
+            analysis: "❌ 荷兰交警最爱抓留学生！夜间骑车不开前后灯罚款 €70，骑车手里拿手机再罚 €150。老老实实买个2欧的夹子灯保平安！"
+        }
+    ],
+
+    // 纯原生 Web Audio 生成器 (无需外接MP3)
+    playTone(type) {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain); gain.connect(ctx.destination);
+            if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.4);
+                gain.gain.setValueAtTime(0.5, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+            } else {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, ctx.currentTime);
+                osc.frequency.setValueAtTime(1200, ctx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+            }
+            osc.start(); osc.stop(ctx.currentTime + 0.4);
+        } catch(e) {}
+    }
+};
+
+window.App.startSurvivalGame = function() {
+    document.getElementById('survivalGameModal').style.display = 'flex';
+    document.getElementById('sgQuestionArea').style.display = 'flex';
+    document.getElementById('sgResultArea').style.display = 'none';
+    window.App.sgEngine.balance = 500;
+    window.App.sgEngine.currentIndex = 0;
+    window.App.sgEngine.wrongTags = [];
+    window.App.renderSgQuestion();
+};
+
+window.App.renderSgQuestion = function() {
+    const engine = window.App.sgEngine;
+    const q = engine.questions[engine.currentIndex];
+    
+    document.getElementById('sgProgress').innerText = `关卡 ${engine.currentIndex + 1}/${engine.questions.length}`;
+    document.getElementById('sgWalletBalance').innerText = engine.balance;
+    document.getElementById('sgWalletBox').className = ''; // 移除震动动画
+    
+    document.getElementById('sgTag').innerText = `#${q.tag}`;
+    document.getElementById('sgScene').innerText = q.scene;
+    document.getElementById('sgAnalysis').style.display = 'none';
+    document.getElementById('sgNextBtn').style.display = 'none';
+
+    const optionsBox = document.getElementById('sgOptions');
+    optionsBox.innerHTML = '';
+    
+    q.options.forEach((opt, index) => {
+        const btn = document.createElement('div');
+        btn.style.cssText = "background: #1F2937; border: 2px solid #4B5563; color: #E5E7EB; padding: 16px; border-radius: 16px; font-weight: bold; cursor: pointer; transition: 0.2s;";
+        btn.innerText = opt.text;
+        btn.onclick = () => window.App.handleSgAnswer(index, btn);
+        optionsBox.appendChild(btn);
+    });
+};
+
+window.App.handleSgAnswer = function(selectedIndex, btnElement) {
+    const engine = window.App.sgEngine;
+    const q = engine.questions[engine.currentIndex];
+    const selectedOpt = q.options[selectedIndex];
+    
+    // 禁用所有按钮
+    const allBtns = document.getElementById('sgOptions').children;
+    for(let b of allBtns) b.onclick = null;
+
+    const analysisBox = document.getElementById('sgAnalysis');
+    analysisBox.style.display = 'block';
+
+    if (!selectedOpt.isCorrect) {
+        // ❌ 答错：扣血、震动、发声
+        engine.balance -= selectedOpt.cost;
+        if (!engine.wrongTags.includes(q.tag)) engine.wrongTags.push(q.tag);
+        
+        btnElement.style.background = '#7F1D1D'; // 暗红色
+        btnElement.style.borderColor = '#DC2626';
+        
+        // 钱包扣血动画与声音
+        const walletBox = document.getElementById('sgWalletBox');
+        document.getElementById('sgWalletBalance').innerText = engine.balance;
+        walletBox.classList.add('shake-hard');
+        
+        analysisBox.innerHTML = `<div style="color: #EF4444; font-size: 20px; font-weight: 900; margin-bottom: 8px;">🩸 扣款 -€${selectedOpt.cost}</div><div style="color: #D1D5DB; font-size: 14px; line-height: 1.6;">${q.analysis}</div>`;
+        
+        engine.playTone('wrong');
+        if (navigator.vibrate) navigator.vibrate([200, 100, 200]); // 手机震动 API
+        
+    } else {
+        // ✅ 答对：加钱、发声
+        btnElement.style.background = '#064E3B'; 
+        btnElement.style.borderColor = '#10B981';
+        
+        analysisBox.innerHTML = `<div style="color: #10B981; font-size: 20px; font-weight: 900; margin-bottom: 8px;">✨ 完美闪避 +€0</div><div style="color: #D1D5DB; font-size: 14px; line-height: 1.6;">思路清晰！${q.analysis.replace('❌ ', '')}</div>`;
+        
+        engine.playTone('correct');
+        if (navigator.vibrate) navigator.vibrate(50);
+    }
+
+    document.getElementById('sgNextBtn').style.display = 'block';
+};
+
+window.App.nextSgQuestion = function() {
+    window.App.sgEngine.currentIndex++;
+    if (window.App.sgEngine.currentIndex >= window.App.sgEngine.questions.length) {
+        window.App.showSgResult();
+    } else {
+        window.App.renderSgQuestion();
+    }
+};
+
+window.App.showSgResult = function() {
+    document.getElementById('sgQuestionArea').style.display = 'none';
+    document.getElementById('sgResultArea').style.display = 'flex';
+    
+    const balance = window.App.sgEngine.balance;
+    let icon, title, desc;
+
+    if (balance >= 400) {
+        icon = '🛡️'; title = '零损耗生存大师';
+        desc = '太强了！荷兰的妖风吹不倒你，杀猪盘骗不到你。你不是来历劫的，你是来给NPC上课的。这波操作安全感拉满！';
+    } else if (balance >= 100) {
+        icon = '🩹'; title = '交过学费的进阶留子';
+        desc = '有惊无险！虽然因为没搞懂规矩交了一点“学费”，但在致命的杀猪盘前踩住了刹车。含泪多看《荷包管家》补课吧！';
+    } else {
+        icon = '💸'; title = '荷村行走的提款机';
+        desc = '警报拉响！落地 24 小时，底裤都要被骗光了！听管家一句劝，千万别自己瞎闯了，先把下面推荐的干货背诵再出门吧！';
+    }
+
+    // 填充海报内容
+    document.getElementById('sgResIcon').innerText = icon;
+    document.getElementById('sgResTitle').innerText = title;
+    document.getElementById('sgResBalance').innerText = balance;
+    document.getElementById('sgResDesc').innerText = desc;
+
+    // 🎯 闭环：根据错题精准推送卡片
+    let recHtml = `<div style="font-size: 16px; font-weight: 900; color: #111827; margin-bottom: 15px;">🎁 你的专属查漏补缺包</div>`;
+    if (window.App.sgEngine.wrongTags.length === 0) {
+        recHtml += `<div onclick="window.App.switchRbMode('pro'); document.getElementById('survivalGameModal').style.display='none'" style="background: #FFF; padding: 16px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 12px; cursor:pointer;"><span style="font-size: 24px;">🏆</span><div><div style="font-weight: 900; color: #111827;">满级玩家解锁</div><div style="font-size: 12px; color: #64748B;">去看看大盘与房贷利率吧</div></div></div>`;
+    } else {
+        window.App.sgEngine.wrongTags.forEach(tag => {
+            recHtml += `<div onclick="window.App.switchRbMode('advanced'); document.getElementById('survivalGameModal').style.display='none'" style="background: #FFF; padding: 16px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 10px; display: flex; align-items: center; gap: 12px; cursor:pointer;"><span style="font-size: 24px;">🚨</span><div><div style="font-weight: 900; color: #EF4444;">${tag} 补考指南</div><div style="font-size: 12px; color: #64748B;">点击前往进阶篇查看防坑详解</div></div></div>`;
+        });
+    }
+    document.getElementById('sgRecommendation').innerHTML = recHtml;
+
+    // 📸 使用 html2canvas 将隐藏的 DOM 生成绝美图片
+    setTimeout(() => {
+        const posterDOM = document.getElementById('sgPosterContent');
+        if (window.html2canvas) {
+            html2canvas(posterDOM, { scale: 2, backgroundColor: null }).then(canvas => {
+                const img = document.createElement('img');
+                img.src = canvas.toDataURL("image/jpeg");
+                img.style.width = '100%';
+                img.style.display = 'block';
+                document.getElementById('sgPosterDisplay').innerHTML = '';
+                document.getElementById('sgPosterDisplay').appendChild(img);
+            });
+        }
+    }, 100);
+};
 
 // ============================================================================
 // 🚀 全局启动器 (确保所有页面一打开就有数据！)
