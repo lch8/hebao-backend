@@ -175,6 +175,9 @@ export const MarketEngine = {
     // ==========================================
     // 📦 渲染器
     // ==========================================
+    // ==========================================
+    // 📦 渲染器：闲置 (修复了 SVG 引号报错)
+    // ==========================================
     renderMarketIdle() {
         const container = this.getContainer('idleWaterfall', true);
         if (!container) return;
@@ -192,11 +195,14 @@ export const MarketEngine = {
         }
 
         let html = '';
+        // 🌟 修复：使用纯净的 Base64 或者安全的内外层引号隔离兜底图，彻底告别语法报错
+        const defaultImg = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><rect width="100%" height="100%" fill="%23F3F4F6"/><text x="50%" y="50%" font-size="12" fill="%239CA3AF" text-anchor="middle">暂无图</text></svg>';
+
         processData.forEach(item => {
             html += `
             <div class="waterfall-item" style="background:#FFF; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.04); margin-bottom:12px;">
                 <div style="height:150px; background:#F3F4F6; position:relative;">
-                    <img src="${item.img || 'data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'100%\\' height=\\'100%\\'><rect width=\\'100%\\' height=\\'100%\\' fill=\\'%23F3F4F6\\'/><text x=\\'50%\\' y=\\'50%\\' font-size=\\'12\\' fill=\\'%239CA3AF\\' text-anchor=\\'middle\\'>暂无图</text></svg>'}" style="width:100%; height:100%; object-fit:cover;">
+                    <img src="${item.img || defaultImg}" style="width:100%; height:100%; object-fit:cover;">
                 </div>
                 <div style="padding:10px;">
                     <div style="font-size:13px; font-weight:900; color:#111827; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${item.title}</div>
