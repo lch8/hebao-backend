@@ -1,5 +1,5 @@
 // ============================================================================
-// js/modules/auth.js - 用户鉴权与登录引擎 (防弹版)
+// js/modules/auth.js - 用户鉴权与登录引擎 (防弹升级版)
 // ============================================================================
 import { showToast } from '../core/toast.js';
 import { safeDOM } from '../core/dom.js';
@@ -21,7 +21,6 @@ export const AuthEngine = {
     requireAuth(actionFunction) { 
         if (!isLoggedIn) { 
             currentPendingAction = actionFunction; 
-            // 🛡️ 核心修复：使用全局大总管来安全唤起登录弹窗！
             if (window.App && window.App.openModal) {
                 window.App.openModal('loginModal');
             } else {
@@ -32,7 +31,7 @@ export const AuthEngine = {
         } 
     },
 
-    // 发送验证码
+    // 🌟 发送验证码 (新增 Spam 垃圾箱强提醒)
     async sendAuthCode() {
         const email = safeDOM.getValue('hebaoAuthEmail').trim();
         if (!email || !email.includes('@')) return showToast("请输入有效的邮箱！", "warning");
@@ -48,7 +47,10 @@ export const AuthEngine = {
             const data = await res.json();
             
             if (data.success) {
-                showToast("验证码已发送，请查收邮件！", "success");
+                // 💥 核心修复 1：强力阻断式提示，解决用户干等的问题！
+                alert("✉️ 验证码已发送！\n\n⚠️ 重要提示：由于是系统自动发信，邮件极大概率会被误判进【垃圾邮件(Spam / Junk)】文件夹，请务必前往垃圾箱查看！");
+                showToast("请前往垃圾箱(Spam)查找验证码！", "success");
+
                 let countdown = 60;
                 const timer = setInterval(() => {
                     countdown--;
@@ -70,7 +72,7 @@ export const AuthEngine = {
         }
     },
 
-    // 验证验证码
+    // 🌟 验证验证码 (新增 VIP 视觉蜕变引擎)
     async verifyCode() {
         const email = safeDOM.getValue('hebaoAuthEmail').trim();
         const code = safeDOM.getValue('hebaoAuthCode').trim();
@@ -90,7 +92,11 @@ export const AuthEngine = {
                 localStorage.setItem('hebao_token', data.token);
                 isLoggedIn = true;
                 localStorage.setItem('hebao_logged_in', 'true');
-                if (!localStorage.getItem('hp_name')) localStorage.setItem('hp_name', '管家新人_' + Math.floor(Math.random() * 1000));
+                
+                // 💥 核心修复 2：统一社区称呼，默认随机名改为“荷包蛋”
+                if (!localStorage.getItem('hp_name')) {
+                    localStorage.setItem('hp_name', '荷包蛋_' + Math.floor(Math.random() * 1000));
+                }
 
                 const domain = email.split('@')[1] || '';
                 const isEdu = domain.includes('.edu') || domain.includes('tudelft.nl') || domain.includes('uva.nl') || domain.includes('eur.nl') || domain.includes('leidenuniv.nl');
@@ -99,12 +105,15 @@ export const AuthEngine = {
                 localStorage.setItem('hp_is_edu', isEdu ? 'true' : 'false');
                 localStorage.setItem('hp_email', email);
                 
-                showToast(isEdu ? "🎊 认证成功！专属校友勋章已点亮！" : "✅ 验证成功！已为您点亮【实名认证】勋章。", "success");
-
-                safeDOM.execute('loginModal', el => el.style.display = 'none');
-                
-                // 刷新 UI (如果挂载了 UI引擎)
-                if (window.App && window.App.renderProfileState) window.App.renderProfileState();
+                // 💥 核心修复 3：调用刚才写在 main.js 里的 VIP 蜕变引擎！
+                if (window.App && window.App.upgradeToVerifiedAlumni) {
+                    window.App.upgradeToVerifiedAlumni(email);
+                } else {
+                    // 兜底逻辑
+                    showToast(isEdu ? "🎊 认证成功！专属校友勋章已点亮！" : "✅ 验证成功！已为您点亮【实名认证】勋章。", "success");
+                    safeDOM.execute('loginModal', el => el.style.display = 'none');
+                    if (window.App && window.App.renderProfileState) window.App.renderProfileState();
+                }
                 
                 if (currentPendingAction) { currentPendingAction(); currentPendingAction = null; }
             } else {
