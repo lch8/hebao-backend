@@ -906,6 +906,96 @@ window.App.showSgResult = function() {
 setTimeout(() => { if(window.App.renderSurvivalBanner) window.App.renderSurvivalBanner(); }, 300);
 
 // ==========================================
+// 👤 个人中心：状态渲染引擎与安全退出
+// ==========================================
+
+// 1. 动态渲染个人中心状态
+window.App.renderProfileState = function() {
+    const isLoggedIn = localStorage.getItem('hebao_logged_in') === 'true';
+    const guestBlock = document.querySelector('.guest-login-block');
+    const statsPanel = document.getElementById('userStatsPanel');
+    const nameEl = document.getElementById('profileName');
+    const subInfoEl = document.getElementById('profileSubInfo');
+    const avatarEl = document.querySelector('.p-avatar');
+
+    if (isLoggedIn) {
+        // 登录状态：隐藏引导块，显示数据看板
+        if (guestBlock) guestBlock.style.display = 'none';
+        if (statsPanel) statsPanel.style.display = 'flex';
+        
+        // 填充用户数据
+        const userName = localStorage.getItem('hp_name') || '荷包蛋';
+        const userEmail = localStorage.getItem('hp_email') || '未知邮箱';
+        const isVerified = localStorage.getItem('hp_email_verified') === 'true';
+        
+        // 获取真实收藏数量
+        const savedIds = JSON.parse(localStorage.getItem('hp_wiki_saved') || '[]');
+        const statSavedEl = document.getElementById('statSaved');
+        if (statSavedEl) statSavedEl.innerText = savedIds.length;
+
+        if (nameEl) nameEl.innerHTML = `${userName} ${isVerified ? '<span style="color:#F59E0B; font-size:14px;">✔</span>' : ''}`;
+        
+        if (subInfoEl) {
+            subInfoEl.innerHTML = `
+                <span>ID: ${userEmail.split('@')[0] || Math.floor(Math.random()*10000)}</span>
+                ${isVerified ? '<span style="background: linear-gradient(135deg, #FDE68A 0%, #F59E0B 100%); padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 900; color: #78350F;">🎓 实名校友</span>' : '<span style="background: #E2E8F0; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; color: #475569;">Lv.1</span>'}
+            `;
+        }
+        
+        // 头像状态恢复
+        if (avatarEl && isVerified) {
+            avatarEl.innerText = '😎';
+            avatarEl.style.border = '3px solid #F59E0B';
+            if (!document.getElementById('vipBadge')) {
+                const vBadge = document.createElement('div');
+                vBadge.id = 'vipBadge';
+                vBadge.innerHTML = '🎓';
+                vBadge.style.cssText = 'position: absolute; bottom: -5px; right: -5px; background: #111827; border: 2px solid #FFF; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px;';
+                avatarEl.appendChild(vBadge);
+            }
+        } else if (avatarEl) {
+            avatarEl.innerText = '😎';
+        }
+        
+    } else {
+        // 未登录状态：恢复原状
+        if (guestBlock) guestBlock.style.display = 'flex';
+        if (statsPanel) statsPanel.style.display = 'none';
+        if (nameEl) nameEl.innerHTML = '新晋荷包蛋';
+        if (subInfoEl) subInfoEl.innerHTML = `<span>ID: 未登录</span><span style="background: #E2E8F0; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; color: #475569;">Lv.0</span>`;
+        if (avatarEl) {
+            avatarEl.innerText = '👻';
+            avatarEl.style.border = '3px solid #FFF';
+            const oldV = document.getElementById('vipBadge');
+            if (oldV) oldV.remove();
+        }
+    }
+};
+
+// 2. 带有二次确认的安全退出功能
+window.App.handleLogout = function() {
+    if (confirm('确定要退出当前账号吗？退出后部分功能将受限。')) {
+        // 清除核心登录态 (保留基础浏览缓存)
+        localStorage.removeItem('hebao_logged_in');
+        localStorage.removeItem('hebao_token');
+        localStorage.removeItem('hp_email');
+        localStorage.removeItem('hp_email_verified');
+        
+        document.getElementById('settingsModal').style.display = 'none';
+        
+        if (window.App.showToast) {
+            window.App.showToast('已安全退出登录', 'success');
+        }
+        
+        // 重新渲染页面状态
+        window.App.renderProfileState();
+    }
+};
+
+// 页面加载完毕时自动执行一次状态渲染
+setTimeout(() => { if(window.App.renderProfileState) window.App.renderProfileState(); }, 500);
+
+// ==========================================
 // 🎓 尊贵校友认证：视觉蜕变引擎
 // ==========================================
 window.App.upgradeToVerifiedAlumni = function(email) {
