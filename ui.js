@@ -651,3 +651,130 @@ window.App.openPublishSheet = function() {
         window.App.switchPublishTab('help');
     }
 };
+
+// ============================================================================
+// 🚀 发布引擎：提取表单 -> 拦截校验 -> 请求后端
+// ============================================================================
+window.App = window.App || {};
+
+window.App.submitPost = async function() {
+    // 1. 基础防呆校验
+    const uuid = localStorage.getItem('hebao_uuid');
+    if (!uuid || localStorage.getItem('hebao_logged_in') !== 'true') {
+        return window.App.showToast ? window.App.showToast("请先登录并完成实名认证哦！", "warning") : alert("请先登录");
+    }
+
+    const type = window.App.currentPublishType || 'help';
+    let title = '';
+    let desc = '';
+    let price = 0;
+    let isUrgent = false;
+    let payloadContent = {};
+
+    // 2. 锁定发布按钮状态 (防手抖连击)
+    const btn = event.currentTarget || document.querySelector('#publishSheet button');
+    const originalBtnText = btn.innerText;
+    btn.innerText = "🚀 正在发送宇宙电波...";
+    btn.style.pointerEvents = 'none';
+
+    try {
+        // 3. 根据不同版块，精准提取胶囊数据
+        if (type === 'help') {
+            const catEl = document.querySelector('#helpCategoryCapsules .active');
+            const locEl = document.querySelector('#helpLocationCapsules .active');
+            if(!catEl || !locEl) throw new Error("请选择互助类别和范围");
+            
+            const cat = catEl.innerText;
+            const loc = locEl.innerText;
+            price = document.getElementById('helpPrice').value || 0;
+            desc = document.getElementById('helpDesc').value.trim();
+            isUrgent = document.getElementById('cardUrgent').classList.contains('active-urgent');
+
+            if (!desc) throw new Error("请填写具体的求助内容哦");
+
+            // 净化标题（去掉Emoji，方便后端排序）
+            const cleanCat = cat.replace(/[^a-zA-Z\u4e00-\u9fa5\/]/g, '').trim();
+            title = `[互助] ${cleanCat}`;
+            // 组装结构化 JSON
+            payloadContent = { desc, location: loc, urgent: isUrgent ? '十万火急' : '普通', type: cleanCat };
+        } 
+        else if (type === 'idle') {
+            const catEl = document.querySelector('#idleCategoryCapsules .active');
+            const locEl = document.querySelector('#idleLocationCapsules .active');
+            if(!catEl || !locEl) throw new Error("请选择闲置分类");
+            
+            const cat = catEl.innerText;
+            const loc = locEl.innerText;
+            price = document.getElementById('idlePrice').value || 0;
+            desc = document.getElementById('idleDesc').value.trim();
+            
+            if (!desc) throw new Error("请简单描述一下你的闲置物品");
+            
+            const cleanCat = cat.replace(/[^a-zA-Z\u4e00-\u9fa5\/]/g, '').trim();
+            title = `[闲置] ${cleanCat}`;
+            payloadContent = { desc, location: loc, type: cleanCat };
+        } 
+        else if (type === 'partner') {
+            const catEl = document.querySelector('#partnerTypeCapsules .active');
+            const mbtiEl = document.querySelector('#partnerMbtiCapsules .active');
+            if(!catEl || !mbtiEl) throw new Error("请选择搭子类型");
+            
+            const cat = catEl.innerText;
+            const mbti = mbtiEl.innerText;
+            desc = document.getElementById('partnerDesc').value.trim();
+            
+            if (!desc) throw new Error("请介绍一下你的计划");
+            
+            const cleanCat = cat.replace(/[^a-zA-Z\u4e00-\u9fa5\/]/g, '').trim();
+            title = `[找搭子] ${cleanCat}`;
+            payloadContent = { desc, mbti: mbti, tag: cleanCat };
+        }
+
+        // 4. 将数据打包，呼叫 Vercel 后端！
+        const res = await fetch('/api/publish-community', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userId: uuid,
+                authorName: localStorage.getItem('hp_name') || '热心荷包蛋',
+                avatar: localStorage.getItem('hp_avatar') || '😎',
+                title: title,
+                content: JSON.stringify(payloadContent),
+                likes: price, // 借用 likes 字段存储赏金/价格
+                isUrgent: isUrgent
+            })
+        });
+
+        const data = await res.json();
+        
+        // 如果后端因为“积分不足”拦截了请求，直接抛出错误
+        if (!data.success) throw new Error(data.error || "发布失败，请稍后重试");
+
+        // 5. 发布成功的爽感反馈！
+        if (window.App.showToast) {
+            window.App.showToast(isUrgent ? "🚨 紧急求助已置顶发布！扣除 5 积分" : "✨ 帖子发布成功！", "success");
+        }
+        
+        // 自动关掉抽屉
+        if (window.App.closePublishSheet) window.App.closePublishSheet();
+        
+        // 如果扣了积分，前端顺手把本地缓存的积分减掉（为了UI显示）
+        if (isUrgent) {
+            let currentPts = parseInt(localStorage.getItem('hp_points') || 0);
+            localStorage.setItem('hp_points', Math.max(0, currentPts - 5));
+        }
+
+        // 🚀 终极联动：重新拉取集市列表，让用户立刻看到自己刚发的帖子！
+        if (window.App.loadCommunityPosts) {
+            window.App.loadCommunityPosts();
+        }
+
+    } catch (err) {
+        if (window.App.showToast) window.App.showToast(err.message, "error");
+        else alert(err.message);
+    } finally {
+        // 无论成功失败，恢复按钮状态
+        btn.innerText = originalBtnText;
+        btn.style.pointerEvents = 'auto';
+    }
+};
