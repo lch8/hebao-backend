@@ -88,12 +88,12 @@ export const AuthEngine = {
             });
             const data = await res.json();
             
-            if (data.success) {
+           if (data.success) {
                 localStorage.setItem('hebao_token', data.token);
                 isLoggedIn = true;
                 localStorage.setItem('hebao_logged_in', 'true');
                 
-                // 💥 核心修复 2：统一社区称呼，默认随机名改为“荷包蛋”
+                // 统一社区称呼
                 if (!localStorage.getItem('hp_name')) {
                     localStorage.setItem('hp_name', '荷包蛋_' + Math.floor(Math.random() * 1000));
                 }
@@ -105,14 +105,15 @@ export const AuthEngine = {
                 localStorage.setItem('hp_is_edu', isEdu ? 'true' : 'false');
                 localStorage.setItem('hp_email', email);
                 
-                // 💥 核心修复 3：调用刚才写在 main.js 里的 VIP 蜕变引擎！
-                if (window.App && window.App.upgradeToVerifiedAlumni) {
-                    window.App.upgradeToVerifiedAlumni(email);
-                } else {
-                    // 兜底逻辑
-                    showToast(isEdu ? "🎊 认证成功！专属校友勋章已点亮！" : "✅ 验证成功！已为您点亮【实名认证】勋章。", "success");
-                    safeDOM.execute('loginModal', el => el.style.display = 'none');
-                    if (window.App && window.App.renderProfileState) window.App.renderProfileState();
+                // 💥 核心修复：关掉旧的硬编码特效，直接依赖我们强大的全局引擎！
+                safeDOM.execute('loginModal', el => el.style.display = 'none');
+                
+                // 弹窗提示
+                showToast(isEdu ? "🎊 认证成功！专属校友勋章已点亮！" : "✅ 验证成功！已为您点亮【实名认证】勋章。", "success");
+                
+                // 🚀 让百变厂牌引擎接管页面渲染！
+                if (window.App && window.App.renderProfileState) {
+                    window.App.renderProfileState();
                 }
                 
                 if (currentPendingAction) { currentPendingAction(); currentPendingAction = null; }
