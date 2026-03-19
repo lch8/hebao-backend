@@ -110,10 +110,15 @@
 
             <div id="rbWikiMode" style="display: none;">
                 <div id="rbWidgetsArea" style="padding: 0 20px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px;">
-                    <div class="widget-card widget-weather glass-card" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: #FFF; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #F3F4F6;">
-                        <div class="wg-left" style="font-weight: 900; color: #111827; font-size: 15px;"><span style="font-size:18px; margin-right: 6px;">🌧️</span>降雨雷达</div>
-                        <div class="wg-right"><span class="wg-status green" style="color: #10B981; font-weight: 900; font-size: 13px; background: #ECFDF5; padding: 4px 10px; border-radius: 8px;">🟢 放心骑 (未来2h无雨)</span></div>
-                    </div>
+                    <div id="weatherWidgetRoot" class="widget-card glass-card" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: #FFF; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #F3F4F6; transition: all 0.3s ease;">
+    <div class="wg-left" style="font-weight: 900; color: #111827; font-size: 15px;">
+        <span id="weatherIcon" style="font-size:18px; margin-right: 6px;">📡</span>
+        <span id="weatherTitle">降雨雷达 (测算中...)</span>
+    </div>
+    <div class="wg-right">
+        <span id="weatherStatus" style="color: #6B7280; font-weight: 900; font-size: 13px; background: #F3F4F6; padding: 4px 10px; border-radius: 8px;">获取中...</span>
+    </div>
+</div>
                     <div class="widget-card widget-alert glass-card" id="supermarketWidget" style="display: none; justify-content: space-between; align-items: center; padding: 14px 16px; background: #FEF2F2; border-radius: 16px; border: 1px solid #FECACA;">
                         <div class="wg-left" style="font-weight: 900; color: #EF4444; font-size: 15px;"><span style="font-size:18px; margin-right: 6px;">🚨</span>断粮预警</div>
                         <div class="wg-right" style="color:#EF4444; font-weight:900; font-size: 13px;" id="supermarketAlertText">距提早关门仅剩 X 分钟</div>
