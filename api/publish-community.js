@@ -29,7 +29,7 @@ export default async function handler(req) {
 
         const finalName = authorName && authorName.trim() !== '' ? authorName.trim() : '匿名管家' + Math.floor(Math.random() * 9999); 
         
-        const postId = 'post_' + Math.random().toString(36).substr(2, 9);
+        // 记录当前精准时间戳，保证帖子不沉底
         const now = new Date().toISOString();
 
         let sqlRequests = [];
@@ -67,23 +67,26 @@ export default async function handler(req) {
             });
         }
 
-        // 📦 插入新帖子
+        // ==========================================================
+        // 📦 插入新帖子 (💥 核心修复区：移除了自定义 ID)
+        // ==========================================================
         sqlRequests.push({ 
             type: "execute", 
             stmt: { 
-                sql: "INSERT INTO community_posts (id, user_id, author_name, title, content, image_url, likes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 
+                // 只保留这 7 个字段，id 由数据库自动分配
+                sql: "INSERT INTO community_posts (user_id, author_name, title, content, image_url, likes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)", 
                 args: [
-                    { type: "text", value: postId },
                     { type: "text", value: String(realUserId) },
                     { type: "text", value: String(finalName) },
                     { type: "text", value: String(title) },
                     { type: "text", value: String(content) },
                     { type: "text", value: String(imageUrl) },
                     
-                    // 💥 修复暗坑：强转为 String，绕过 Turso 400 校验！
+                    // 金额必须是 integer 且套上 String，这是 Turso Hrana API 的死规定
                     { type: "integer", value: String(parseInt(likes) || 0) }, 
                     
-                    { type: "text", value: now }
+                    // 填入刚刚生成的时间，防止页面查不到
+                    { type: "text", value: now } 
                 ]
             }
         });
