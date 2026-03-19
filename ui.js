@@ -351,7 +351,7 @@ window.renderProfileState = function() {
     // 🌟 核心：每次都实时从浏览器的记忆库里掏数据！
     const isRealLoggedIn = localStorage.getItem('hebao_logged_in') === 'true';
     const realUUID = localStorage.getItem('hebao_uuid') || '';
-    const realName = localStorage.getItem('hp_name') || '管家新人';
+    const realName = localStorage.getItem('hp_name') || '荷包蛋';
 
     if (isRealLoggedIn) {
         if (guestBlock) guestBlock.style.display = 'none'; 
@@ -362,7 +362,7 @@ window.renderProfileState = function() {
         if (levelBadge) levelBadge.innerText = 'Lv.1';
     } else {
         if (guestBlock) guestBlock.style.display = 'flex'; 
-        nameText.innerText = '管家游客'; 
+        nameText.innerText = '荷包蛋'; 
         if (uidText) uidText.innerText = 'ID: 未登录'; 
         if (avatar) avatar.innerText = '👻';
         if (avatar) avatar.style.border = '3px solid #FFF';
@@ -418,6 +418,40 @@ window.App.verifyCode = async function() {
         if(btn) { btn.innerText = "立即验证"; btn.style.pointerEvents = 'auto'; }
     }
 };
+
+// 胶囊单选切换逻辑
+function togglePublishCapsule(clickedEl) {
+    // 找到同一组内的所有胶囊
+    const parent = clickedEl.parentElement;
+    const allCapsules = parent.querySelectorAll('.publish-capsule');
+    
+    // 移除其他人的 active
+    allCapsules.forEach(el => el.classList.remove('active'));
+    
+    // 给自己加上 active
+    clickedEl.classList.add('active');
+}
+
+// 商业化：十万火急卡片切换逻辑
+function selectUrgentLevel(level) {
+    const cardNormal = document.getElementById('cardNormal');
+    const cardUrgent = document.getElementById('cardUrgent');
+    const urgentCheck = document.getElementById('urgentCheck');
+
+    if (level === 'normal') {
+        cardNormal.classList.add('active-normal');
+        cardUrgent.classList.remove('active-urgent');
+        cardNormal.querySelector('div:last-child').innerText = '✅';
+        urgentCheck.innerText = '⭕️';
+        urgentCheck.style.opacity = '0.3';
+    } else {
+        cardNormal.classList.remove('active-normal');
+        cardUrgent.classList.add('active-urgent');
+        cardNormal.querySelector('div:last-child').innerText = '⭕️';
+        urgentCheck.innerText = '✅';
+        urgentCheck.style.opacity = '1';
+    }
+}
 
 // 3. 每次切换到“我的”页面，主动唤醒一次渲染
 const originalSwitchTabAuth = window.switchTab;
