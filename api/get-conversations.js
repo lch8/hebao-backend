@@ -3,6 +3,14 @@ import { verifyJwt } from './_auth.js';
 
 export const config = { runtime: 'edge' };
 
+// 🌟 新增邮箱脱敏引擎 (保护欧洲 GDPR 隐私)
+function maskEmail(email) {
+    if (!email || !email.includes('@')) return '';
+    const [name, domain] = email.split('@');
+    if (name.length <= 2) return `${name[0]}***@${domain}`;
+    return `${name[0]}***${name[name.length - 1]}@${domain}`;
+}
+
 export default async function handler(req) {
     if (req.method === 'OPTIONS') return new Response(null, { status: 200, headers: { 'Access-Control-Allow-Origin': '*' }});
     
@@ -15,16 +23,21 @@ export default async function handler(req) {
         let dbUrl = process.env.TURSO_DATABASE_URL.replace('libsql://', 'https://');
         const authToken = process.env.TURSO_AUTH_TOKEN;
 
-        // 核心 SQL：找出会话并按最新时间排序
+        // 🌟 核心修改：使用 CTE 连表查询对方的邮箱和信用分
         const sql = `
-            SELECT 
-                CASE WHEN sender_id = ? THEN receiver_id ELSE sender_id END as partner_id,
-                MAX(created_at) as last_time,
-                content as last_message
-            FROM messages 
-            WHERE sender_id = ? OR receiver_id = ?
-            GROUP BY partner_id
-            ORDER BY last_time DESC
+            WITH LatestMsgs AS (
+                SELECT 
+                    CASE WHEN sender_id = ? THEN receiver_id ELSE sender_id END as partner_id,
+                    MAX(created_at) as last_time,
+                    content as last_message
+                FROM messages 
+                WHERE sender_id = ? OR receiver_id = ?
+                GROUP BY partner_id
+            )
+            SELECT l.*, u.verified_email as partner_email, u.credit as partner_credit 
+            FROM LatestMsgs l
+            LEFT JOIN users u ON l.partner_id = u.id
+            ORDER BY l.last_time DESC
         `;
 
         const response = await fetch(`${dbUrl}/v2/pipeline`, {
@@ -48,7 +61,6 @@ export default async function handler(req) {
             })
         });
 
-        // 🌟 终极防爆盾
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(`Turso 拒绝连接 (${response.status}): ${errorText}`);
@@ -61,15 +73,21 @@ export default async function handler(req) {
 
         const resData = result.results[0].response.result;
         const cols = resData.cols.map(c => c.name);
+        
+        // 🌟 数据组装与隐私脱敏
         const conversations = resData.rows.map(row => {
             let obj = {};
             row.forEach((val, i) => obj[cols[i]] = val.value);
+            
+            // 将查询到的真实邮箱打码，同时给信用分赋默认值
+            obj.partner_email = maskEmail(obj.partner_email);
+            obj.partner_credit = obj.partner_credit !== null ? obj.partner_credit : 100;
+            
             return obj;
         });
 
         return new Response(JSON.stringify({ success: true, conversations }), { status: 200, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }});
     } catch (error) {
-        // 将真实错误抛给前端
         return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }});
     }
 }
