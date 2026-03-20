@@ -168,7 +168,7 @@ export const MarketEngine = {
     // 3. 🎨 三大版块纯净渲染器
     // ==========================================
    // ==========================================
-    // 📦 渲染器：闲置瀑布流 (极致排版、去除冗余)
+    // 📦 渲染器：闲置瀑布流 (无字画廊版、左右滑动)
     // ==========================================
     renderMarketIdle() {
         const container = this.getContainer('idleWaterfall', true);
@@ -189,28 +189,46 @@ export const MarketEngine = {
         const defaultImg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23F3F4F6'/%3E%3Ctext x='50%25' y='50%25' font-size='12' fill='%239CA3AF' text-anchor='middle' dominant-baseline='middle'%3E暂无图%3C/text%3E%3C/svg%3E";
 
         processData.forEach(item => {
-            const itemCount = item.contentObj?.items?.length || 1;
-            const multiBadge = itemCount > 1 ? `<div style="position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.65); color:#FFF; font-size:10px; padding:3px 8px; border-radius:12px; font-weight:bold; backdrop-filter:blur(4px);">📸 ${itemCount}件</div>` : '';
+            // 🌟 获取当前帖子的所有图片列表
+            let itemsList = item.contentObj?.items;
+            if (!itemsList || itemsList.length === 0) {
+                itemsList = [{ url: item.img || defaultImg }];
+            }
+
+            const itemCount = itemsList.length;
+            const multiBadge = itemCount > 1 ? `<div style="position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.65); color:#FFF; font-size:10px; padding:3px 8px; border-radius:12px; font-weight:bold; backdrop-filter:blur(4px); pointer-events:none; z-index:10;">📸 ${itemCount}件</div>` : '';
             
-            // 🌟 核心：去重！只保留一个极其干净的城市名字
+            // 城市去重处理
             let city = item.contentObj?.city || '';
             if (!city) {
                 const locStr = (item.contentObj?.location || '').replace('📍', '').trim();
                 city = locStr.includes('同城') ? '荷兰' : locStr;
             }
-            
             const creditStr = item.credit ? `${item.credit}分` : '100分';
 
+            // 🌟 核心引擎：生成横向滑动图片流
+            let imagesHtml = '';
+            itemsList.forEach(subItem => {
+                const imgUrl = subItem.url || defaultImg;
+                imagesHtml += `
+                <div style="flex-shrink:0; width:100%; height:180px; scroll-snap-align:start; position:relative;">
+                    <img src="${imgUrl}" style="width:100%; height:100%; object-fit:cover; display:block;">
+                    ${subItem.is_sold ? `<div style="position:absolute; top:8px; left:8px; background:rgba(0,0,0,0.6); color:white; padding:2px 6px; border-radius:4px; font-size:10px;">已售出</div>` : ''}
+                </div>`;
+            });
+
             html += `
-            <div class="waterfall-item" onclick="window.App.openCommunityPost('${item.id}')" style="background:#FFF; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.04); margin-bottom:12px; cursor:pointer;">
-                <div style="height:150px; background:#F3F4F6; position:relative;">
-                    <img src="${item.img || defaultImg}" style="width:100%; height:100%; object-fit:cover;">
+            <div class="waterfall-item" style="background:#FFF; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.04); margin-bottom:12px; cursor:pointer;" onclick="window.App.openCommunityPost('${item.id}')">
+                
+                <div style="position:relative; width:100%;">
+                    <div style="display:flex; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; -webkit-overflow-scrolling:touch; width:100%;">
+                        ${imagesHtml}
+                    </div>
                     ${multiBadge}
                 </div>
+                
                 <div style="padding:10px;">
-                    <div style="font-size:13px; font-weight:900; color:#111827; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height: 36px;">${item.title}</div>
-                    
-                    <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
+                    <div style="display:flex; align-items:center; justify-content:space-between;">
                         <div style="color:#EF4444; font-size:16px; font-weight:900;">€ ${item.price}</div>
                         <div style="font-size:10px; color:#D97706; font-weight:bold; background:#FFFBEB; border:1px solid #FDE68A; padding:2px 6px; border-radius:6px;">⭐ ${creditStr}</div>
                     </div>
