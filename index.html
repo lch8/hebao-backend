@@ -607,13 +607,16 @@
                 </div>
             </div>
             
-            <div style="margin-bottom: 20px;">
-                <div style="font-size: 13px; font-weight: 900; color: #111827; margin-bottom: 10px;">交易方式</div>
-                <div id="idleLocationCapsules">
-                    <span class="publish-capsule active" onclick="window.App.togglePublishCapsule(this)">📍 同城自提 (推荐)</span>
-                    <span class="publish-capsule" onclick="window.App.togglePublishCapsule(this)">📦 全荷兰邮寄</span>
-                </div>
+            <div style="margin-bottom: 20px; display: flex; gap: 10px; border-top: 1px solid #E5E7EB; padding-top: 15px;">
+            <div style="flex: 1;">
+                <div style="font-size: 13px; font-weight: 900; color: #111827; margin-bottom: 8px;">所在城市 <span style="color:#EF4444">*</span></div>
+                <input type="text" id="postCity" placeholder="如: Delft" style="width: 100%; box-sizing: border-box; border: 1px solid #E5E7EB; border-radius: 8px; padding: 10px; font-size: 14px; outline: none; background: #F8FAFC; transition: border-color 0.2s;">
             </div>
+            <div style="flex: 1;">
+                <div style="font-size: 13px; font-weight: 900; color: #111827; margin-bottom: 8px;">邮编 (选填)</div>
+                <input type="text" id="postZip" placeholder="如: 2628CD" style="width: 100%; box-sizing: border-box; border: 1px solid #E5E7EB; border-radius: 8px; padding: 10px; font-size: 14px; outline: none; background: #F8FAFC;">
+            </div>
+        </div>
 
             <div style="margin-bottom: 20px;">
                 <div style="font-size: 13px; font-weight: 900; color: #111827; margin-bottom: 10px;">添加物品照片 (最多9张)</div>
