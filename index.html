@@ -592,25 +592,7 @@
 
             <textarea id="helpDesc" placeholder="具体需要帮什么忙？有特殊要求吗..." style="width: 100%; box-sizing: border-box; border: 1px solid #E5E7EB; border-radius: 12px; padding: 12px; font-size: 14px; height: 90px; margin-bottom: 20px; outline: none; background: #F9FAFB;"></textarea>
 
-            <div style="margin-bottom: 10px;">
-                <div style="font-size: 13px; font-weight: 900; color: #111827; margin-bottom: 10px;">曝光与加急服务</div>
-                
-                <div class="urgent-card active-normal" id="cardNormal" onclick="window.App.selectUrgentLevel('normal')">
-                    <div>
-                        <div style="font-weight: 900; font-size: 14px; color: #111827;">📦 普通发布 <span style="font-size:10px; font-weight:normal; color:#6B7280; background:#E5E7EB; padding:2px 6px; border-radius:4px;">免费</span></div>
-                        <div style="font-size: 11px; color: #6B7280; margin-top: 4px;">按时间顺序自然曝光</div>
-                    </div>
-                    <div style="font-size: 18px;">✅</div>
-                </div>
-
-                <div class="urgent-card" id="cardUrgent" onclick="window.App.selectUrgentLevel('urgent')">
-                    <div>
-                        <div style="font-weight: 900; font-size: 14px; color: #EF4444;">🚨 十万火急 <span style="font-size:10px; font-weight:bold; color:#B91C1C; background:#FEE2E2; padding:2px 6px; border-radius:4px;">💎 5 积分</span></div>
-                        <div style="font-size: 11px; color: #EF4444; margin-top: 4px;">全站置顶 5 小时，红色强警示！</div>
-                    </div>
-                    <div style="font-size: 18px; opacity: 0.3;" id="urgentCheck">⭕️</div>
-                </div>
-            </div>
+            
         </div>
 
         <div id="publishFormIdle" style="display: none;">
@@ -670,6 +652,25 @@
             <textarea id="partnerDesc" placeholder="简单介绍一下你的计划，或者希望找个什么样的搭子..." style="width: 100%; box-sizing: border-box; border: 1px solid #E5E7EB; border-radius: 12px; padding: 12px; font-size: 14px; height: 100px; margin-bottom: 20px; outline: none; background: #F9FAFB;"></textarea>
         </div>
 
+        <div style="margin-bottom: 10px;">
+                <div style="font-size: 13px; font-weight: 900; color: #111827; margin-bottom: 10px;">曝光与加急服务</div>
+                
+                <div class="urgent-card active-normal" id="cardNormal" onclick="window.App.selectUrgentLevel('normal')">
+                    <div>
+                        <div style="font-weight: 900; font-size: 14px; color: #111827;">📦 普通发布 <span style="font-size:10px; font-weight:normal; color:#6B7280; background:#E5E7EB; padding:2px 6px; border-radius:4px;">免费</span></div>
+                        <div style="font-size: 11px; color: #6B7280; margin-top: 4px;">按时间顺序自然曝光</div>
+                    </div>
+                    <div style="font-size: 18px;">✅</div>
+                </div>
+
+                <div class="urgent-card" id="cardUrgent" onclick="window.App.selectUrgentLevel('urgent')">
+                    <div>
+                        <div style="font-weight: 900; font-size: 14px; color: #EF4444;">🚨 十万火急 <span style="font-size:10px; font-weight:bold; color:#B91C1C; background:#FEE2E2; padding:2px 6px; border-radius:4px;">💎 5 积分</span></div>
+                        <div style="font-size: 11px; color: #EF4444; margin-top: 4px;">全站置顶 5 小时，红色强警示！</div>
+                    </div>
+                    <div style="font-size: 18px; opacity: 0.3;" id="urgentCheck">⭕️</div>
+                </div>
+            </div>
         <button onclick="window.App.submitPost()" style="width: 100%; background: #111827; color: white; border: none; padding: 14px; border-radius: 12px; font-weight: 900; font-size: 16px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.2); margin-top: 10px;">🚀 立即发布</button>
     </div>
 </div>
