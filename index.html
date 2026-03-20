@@ -556,13 +556,13 @@
             <div onclick="window.App.switchPublishTab('partner')" class="pub-tab" id="pubTabPartner" style="flex: 1; text-align: center; padding: 10px 0; font-size: 14px; font-weight: bold; border-radius: 10px; cursor: pointer; color: #64748B; transition: 0.2s;">🏕️ 搭子</div>
         </div>
 
-        <div style="background: linear-gradient(135deg, #FDF4FF 0%, #F3E8FF 100%); padding: 16px; border-radius: 16px; margin-bottom: 20px; box-shadow: inset 0 2px 4px rgba(255,255,255,0.5);">
+
+        <div id="publishFormHelp" style="display: block;">
+                    <div style="background: linear-gradient(135deg, #FDF4FF 0%, #F3E8FF 100%); padding: 16px; border-radius: 16px; margin-bottom: 20px; box-shadow: inset 0 2px 4px rgba(255,255,255,0.5);">
             <div style="font-weight: 900; color: #7E22CE; margin-bottom: 10px; font-size: 14px; display: flex; align-items: center;"><span style="font-size: 16px; margin-right: 6px;">✨</span> 一句话召唤管家自动填表</div>
             <textarea id="aiPublishInput" placeholder="例如：明天早上7点，从海牙带两个大箱子去机场，赏金50欧..." style="width: 100%; box-sizing: border-box; border: none; border-radius: 12px; padding: 12px; font-size: 14px; resize: none; height: 70px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); outline: none;"></textarea>
             <button onclick="window.App.triggerAIFill()" style="width: 100%; background: #9333EA; color: white; border: none; padding: 12px; border-radius: 12px; font-weight: bold; margin-top: 10px; cursor: pointer; box-shadow: 0 4px 12px rgba(147,51,234,0.2);">🪄 智能识别并填充</button>
         </div>
-
-        <div id="publishFormHelp" style="display: block;">
             
             <div style="margin-bottom: 20px;">
                 <div style="font-size: 13px; font-weight: 900; color: #111827; margin-bottom: 10px;">帮我做什么？</div>
@@ -633,6 +633,11 @@
         </div>
 
         <div id="publishFormPartner" style="display: none;">
+                    <div style="background: linear-gradient(135deg, #FDF4FF 0%, #F3E8FF 100%); padding: 16px; border-radius: 16px; margin-bottom: 20px; box-shadow: inset 0 2px 4px rgba(255,255,255,0.5);">
+            <div style="font-weight: 900; color: #7E22CE; margin-bottom: 10px; font-size: 14px; display: flex; align-items: center;"><span style="font-size: 16px; margin-right: 6px;">✨</span> 一句话召唤管家自动填表</div>
+            <textarea id="aiPublishInput" placeholder="约个小伙伴一起周末去阿姆斯特丹逛博物馆" style="width: 100%; box-sizing: border-box; border: none; border-radius: 12px; padding: 12px; font-size: 14px; resize: none; height: 70px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); outline: none;"></textarea>
+            <button onclick="window.App.triggerAIFill()" style="width: 100%; background: #9333EA; color: white; border: none; padding: 12px; border-radius: 12px; font-weight: bold; margin-top: 10px; cursor: pointer; box-shadow: 0 4px 12px rgba(147,51,234,0.2);">🪄 智能识别并填充</button>
+        </div>
             <div style="margin-bottom: 20px;">
                 <div style="font-size: 13px; font-weight: 900; color: #111827; margin-bottom: 10px;">局的类型</div>
                 <div id="partnerTypeCapsules">
