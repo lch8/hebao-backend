@@ -228,6 +228,9 @@ export const MarketEngine = {
         container.innerHTML = html;
     },
 
+    // ==========================================
+    // 🤝 渲染器：悬赏 (极简信任排版、增加城市与信用分)
+    // ==========================================
     renderMarketHelp() {
         const container = this.getContainer('helpListContainer', false);
         if (!container) return;
@@ -246,32 +249,48 @@ export const MarketEngine = {
         processData.forEach(post => {
             const isUrgent = post.contentObj?.urgent === '十万火急';
             const titleStr = post.title.replace('[互助] ', '');
-            // 🌟 精准提取正文：确保不会把 JSON 暴漏给用户
             const descStr = post.contentObj?.desc || post.contentObj?.text || '点击查看详情...';
             
+            // 🌟 清洗与提取数据
+            const city = post.contentObj?.city || '荷兰';
+            const loc = (post.contentObj?.location || '线上/面交').replace(/📍/g, '').trim(); // 清理掉所有的📍防止双黄蛋
+            const creditStr = post.credit ? `${post.credit}分` : '100分';
+
             html += `
-            <div style="background:#FFF; border-radius:16px; padding:15px; margin-bottom: 15px; box-shadow:0 4px 15px rgba(0,0,0,0.03); border:1px solid ${isUrgent ? '#FECACA' : '#F3F4F6'};">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <span style="font-size:24px;">${post.avatar}</span>
-                        <span style="font-size:13px; font-weight:bold; color:#374151; display:flex; align-items:center;">
-                            ${post.author}
-                            ${window.App.getUserBadgeHtml ? window.App.getUserBadgeHtml(post.email, post.credit) : ''}
-                        </span>
-                    </div>
-                    <div style="font-size:16px; font-weight:900; color:#D97706;">💰 €${post.likes || 0}</div>
+            <div style="background:#FFF; border-radius:16px; padding:15px; margin-bottom: 15px; box-shadow:0 4px 15px rgba(0,0,0,0.03); border:1px solid ${isUrgent ? '#FECACA' : '#F3F4F6'}; cursor:pointer;" onclick="window.App.initiateHelpChat('${post.id}')">
+                
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                    <div style="font-size:15px; font-weight:900; color:#111827; flex:1; padding-right:10px;">${isUrgent ? '🚨 ' : ''}${titleStr}</div>
+                    <div style="font-size:18px; font-weight:900; color:#D97706; flex-shrink:0;">💰 €${post.likes || 0}</div>
                 </div>
-                <div style="font-size:14px; font-weight:bold; color:#111827; margin-bottom:6px;">${isUrgent ? '🚨 ' : ''}${titleStr}</div>
-                <div style="font-size:13px; color:#4B5563; line-height:1.5; margin-bottom:10px; white-space: pre-wrap;">${descStr}</div>
-                <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #E5E7EB; padding-top:10px;">
-                    <div style="font-size:11px; color:#6B7280;">📍 ${post.contentObj?.location || '线上/面交'}</div>
-                    <button style="background:#111827; color:#FFF; border:none; padding:6px 14px; border-radius:12px; font-size:12px; font-weight:bold; cursor:pointer;" onclick="window.App.initiateHelpChat('${post.id}')">接单</button>
+                
+                <div style="font-size:13px; color:#4B5563; line-height:1.5; margin-bottom:12px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${descStr}</div>
+                
+                <div style="display:flex; justify-content:space-between; align-items:flex-end; border-top:1px dashed #E5E7EB; padding-top:12px;">
+                    <div style="display:flex; align-items:center; gap:8px; flex:1; overflow:hidden;">
+                        <span style="font-size:22px; background:#F8FAFC; width:28px; height:28px; border-radius:14px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">${post.avatar}</span>
+                        <div style="display:flex; flex-direction:column; gap:2px; overflow:hidden;">
+                            <span style="font-size:12px; font-weight:bold; color:#374151; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${post.author}</span>
+                            <span style="font-size:10px; color:#D97706; font-weight:bold; background:#FEF3C7; padding:1px 6px; border-radius:4px; width:fit-content;">⭐ ${creditStr}</span>
+                        </div>
+                    </div>
+                    
+                    <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+                        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px;">
+                            <span style="font-size:11px; font-weight:900; color:#4B5563;">🏙️ ${city}</span>
+                            <span style="font-size:9px; color:#9CA3AF;">${loc}</span>
+                        </div>
+                        <button style="background:#111827; color:#FFF; border:none; padding:8px 16px; border-radius:12px; font-size:12px; font-weight:bold; cursor:pointer;" onclick="event.stopPropagation(); window.App.initiateHelpChat('${post.id}')">接单</button>
+                    </div>
                 </div>
             </div>`;
         });
         container.innerHTML = html;
     },
 
+    // ==========================================
+    // 🏕️ 渲染器：找搭子 (限制字数、增加时间地点)
+    // ==========================================
     renderMarketPartner() {
         const container = this.getContainer('partnerListContainer', false);
         if (!container) return;
@@ -286,22 +305,37 @@ export const MarketEngine = {
         let html = '';
         processData.forEach(post => {
             const titleStr = post.title.replace('[找搭子] ', '');
-            // 🌟 精准提取正文：确保不会把 JSON 暴漏给用户
             const descStr = post.contentObj?.desc || post.contentObj?.text || '点击查看计划详情...';
+            
+            // 🌟 提取新增字段
+            const city = post.contentObj?.city || '荷兰';
+            const date = post.contentObj?.date || '时间待定';
+            const creditStr = post.credit ? `${post.credit}分` : '100分';
 
             html += `
-            <div style="background:#FFF; border-radius:16px; padding:15px; margin-bottom: 15px; box-shadow:0 4px 15px rgba(0,0,0,0.03); border:1px solid #E9D5FF;">
+            <div style="background:#FFF; border-radius:16px; padding:15px; margin-bottom: 15px; box-shadow:0 4px 15px rgba(0,0,0,0.03); border:1px solid #E9D5FF; cursor:pointer;" onclick="window.App.initiatePartnerChat('${post.id}')">
+                
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
-                    <div style="font-size:15px; font-weight:900; color:#4C1D95; flex:1;">${titleStr}</div>
-                    <div style="background:#F3E8FF; color:#7E22CE; padding:4px 8px; border-radius:8px; font-size:11px; font-weight:bold;">${post.contentObj?.tag || '组局'}</div>
+                    <div style="font-size:15px; font-weight:900; color:#4C1D95; flex:1; padding-right:10px;">${titleStr}</div>
+                    <div style="background:#F3E8FF; color:#7E22CE; padding:4px 8px; border-radius:8px; font-size:11px; font-weight:bold; flex-shrink:0;">${post.contentObj?.tag || '组局'}</div>
                 </div>
-                <div style="font-size:13px; color:#4B5563; line-height:1.5; margin-bottom:12px; white-space: pre-wrap;">${descStr}</div>
-                <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #E5E7EB; padding-top:10px;">
-                    <div style="display:flex; align-items:center; gap:6px;">
-                        <span style="font-size:20px;">${post.avatar}</span>
-                        <span style="font-size:12px; font-weight:bold; color:#6B7280;">${post.author}</span>
+                
+                <div style="display:flex; gap:10px; margin-bottom:10px;">
+                    <span style="font-size:11px; color:#6B7280; background:#F3F4F6; padding:2px 6px; border-radius:4px;">⏰ ${date}</span>
+                    <span style="font-size:11px; color:#6B7280; background:#F3F4F6; padding:2px 6px; border-radius:4px;">🏙️ ${city}</span>
+                </div>
+
+                <div style="font-size:13px; color:#4B5563; line-height:1.5; margin-bottom:12px; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;">${descStr}</div>
+                
+                <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #E5E7EB; padding-top:12px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:22px; background:#F5F3FF; width:28px; height:28px; border-radius:14px; display:flex; align-items:center; justify-content:center;">${post.avatar}</span>
+                        <div style="display:flex; flex-direction:column; gap:2px;">
+                            <span style="font-size:12px; font-weight:bold; color:#4B5563;">${post.author}</span>
+                            <span style="font-size:10px; color:#D97706; font-weight:bold; background:#FEF3C7; padding:1px 6px; border-radius:4px; width:fit-content;">⭐ ${creditStr}</span>
+                        </div>
                     </div>
-                    <button style="background:#8B5CF6; color:#FFF; border:none; padding:6px 14px; border-radius:12px; font-size:12px; font-weight:bold; cursor:pointer;" onclick="window.App.initiatePartnerChat('${post.id}')">聊一聊</button>
+                    <button style="background:#8B5CF6; color:#FFF; border:none; padding:8px 16px; border-radius:12px; font-size:12px; font-weight:bold; cursor:pointer; box-shadow:0 2px 8px rgba(139,92,246,0.3);" onclick="event.stopPropagation(); window.App.initiatePartnerChat('${post.id}')">聊一聊</button>
                 </div>
             </div>`;
         });
