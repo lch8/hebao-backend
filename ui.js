@@ -658,7 +658,7 @@ window.App.openPublishSheet = function() {
 window.App = window.App || {};
 
 // ============================================================================
-// 🚀 全能发布引擎：打通多图、智能标签与扣分体系
+// 🚀 全能发布引擎：加入城市强校验
 // ============================================================================
 window.App.submitPost = async function() {
     const uuid = localStorage.getItem('hebao_uuid');
@@ -670,9 +670,16 @@ window.App.submitPost = async function() {
     const type = window.App.currentPublishType || 'idle';
     let title = '', desc = '', price = 0, payloadContent = {};
     
-    // 🌟 全局读取加急特权状态
+    // 🌟 读取加急特权
     const cardUrgent = document.getElementById('cardUrgent');
     const isUrgent = cardUrgent && cardUrgent.classList.contains('active-urgent');
+
+    // 🌟 核心升级：强校验城市与邮编
+    const city = document.getElementById('postCity')?.value.trim();
+    const zip = document.getElementById('postZip')?.value.trim();
+    if (!city) {
+        return window.App.showToast ? window.App.showToast("为了方便大家寻找，请务必填写所在城市哦！", "warning") : alert("请填写所在城市");
+    }
 
     const btn = event.currentTarget || document.querySelector('#publishSheet button');
     const originalBtnText = btn.innerText;
@@ -689,7 +696,8 @@ window.App.submitPost = async function() {
             if (!desc) throw new Error("请填写具体的求助内容哦");
             const cleanCat = catEl.innerText.replace(/[^a-zA-Z\u4e00-\u9fa5\/]/g, '').trim();
             title = `[互助] ${cleanCat}`;
-            payloadContent = { desc, location: locEl.innerText, urgent: isUrgent ? '十万火急' : '普通', type: cleanCat };
+            // 🌟 装载城市邮编
+            payloadContent = { desc, location: locEl.innerText, urgent: isUrgent ? '十万火急' : '普通', type: cleanCat, city: city, zip: zip };
         } 
         else if (type === 'partner') {
             const catEl = document.querySelector('#partnerTypeCapsules .active');
@@ -699,7 +707,8 @@ window.App.submitPost = async function() {
             if (!desc) throw new Error("请介绍一下你的计划哦");
             const cleanCat = catEl.innerText.replace(/[^a-zA-Z\u4e00-\u9fa5\/]/g, '').trim();
             title = `[找搭子] ${cleanCat}`;
-            payloadContent = { desc, mbti: mbtiEl.innerText, tag: cleanCat, urgent: isUrgent ? '十万火急' : '普通' };
+            // 🌟 装载城市邮编
+            payloadContent = { desc, mbti: mbtiEl.innerText, tag: cleanCat, urgent: isUrgent ? '十万火急' : '普通', city: city, zip: zip };
         } 
         else if (type === 'idle') {
             const catEl = document.querySelector('#idleCategoryCapsules .active');
@@ -708,7 +717,6 @@ window.App.submitPost = async function() {
             desc = document.getElementById('idleDesc')?.value.trim();
             if (!desc) throw new Error("请简单描述一下你的闲置物品");
             
-            // 📸 提取所有图片与标签价格
             const imgCards = document.querySelectorAll('#idleImgPreviewContainer .item-edit-card');
             if (imgCards.length === 0) throw new Error("发闲置至少要上传一张图片哦！");
 
@@ -724,13 +732,11 @@ window.App.submitPost = async function() {
                 
                 if (itemPrice) totalIdlePrice += parseFloat(itemPrice);
 
-                // 调用 market.js 的黑科技画布引擎打水印
                 let finalBase64 = previewUrl.split(',')[1];
                 if (window.App.addTagToImage) {
                     finalBase64 = await window.App.addTagToImage(previewUrl, itemName, itemPrice);
                 }
 
-                // 尝试上传到云端，如果失败则直接保存带水印的 Base64
                 let finalUrl = 'data:image/jpeg;base64,' + finalBase64;
                 try {
                     const upRes = await fetch('/api/upload', { 
@@ -740,7 +746,7 @@ window.App.submitPost = async function() {
                     });
                     const upData = await upRes.json();
                     if (upData.success) finalUrl = upData.url;
-                } catch(e) { console.warn("云端图床未连接，使用离线 Base64 模式"); }
+                } catch(e) { console.warn("云端图床未连接"); }
 
                 finalItemsData.push({
                     id: 'item_' + Date.now() + i,
@@ -754,10 +760,10 @@ window.App.submitPost = async function() {
             price = totalIdlePrice;
             const cleanCat = catEl.innerText.replace(/[^a-zA-Z\u4e00-\u9fa5\/]/g, '').trim();
             title = `[闲置] ${cleanCat}`;
-            payloadContent = { desc, location: locEl.innerText, items: finalItemsData, type: cleanCat, urgent: isUrgent ? '十万火急' : '普通' };
+            // 🌟 装载城市邮编
+            payloadContent = { desc, location: locEl.innerText, items: finalItemsData, type: cleanCat, urgent: isUrgent ? '十万火急' : '普通', city: city, zip: zip };
         }
 
-        // 呼叫后端写入
         btn.innerText = "🚀 写入数据库...";
         const res = await fetch('/api/publish-community', {
             method: 'POST',
@@ -779,18 +785,22 @@ window.App.submitPost = async function() {
 
         if (window.App.showToast) window.App.showToast(isUrgent ? "🚨 紧急求助已置顶发布！扣除 5 积分" : "✨ 帖子发布成功！", "success");
         
-        // 收起抽屉
         if (window.App.closePublishSheet) window.App.closePublishSheet();
         
-        // 扣减本地显示的积分
         if (isUrgent) {
             let currentPts = parseInt(localStorage.getItem('hp_points') || 0);
             localStorage.setItem('hp_points', Math.max(0, currentPts - 5));
         }
 
-        // 清空 UI，刷新瀑布流
         const previewContainer = document.getElementById('idleImgPreviewContainer');
         if (previewContainer) previewContainer.innerHTML = `<div class="upload-btn" onclick="document.getElementById('idleImgInput').click()" style="width: 100px; height: 100px; flex-shrink: 0; background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; color: #94A3B8;"><span style="font-size: 24px;">📸</span><span style="font-size: 11px; font-weight: bold; margin-top: 6px;">加图片</span></div>`;
+        
+        // 🌟 清空填写的城市与邮编
+        const cityInput = document.getElementById('postCity');
+        const zipInput = document.getElementById('postZip');
+        if(cityInput) cityInput.value = '';
+        if(zipInput) zipInput.value = '';
+
         if (typeof window.switchTab === 'function') window.switchTab('market', document.querySelector('.tab-item[onclick*="market"]'));
         if (typeof window.switchMarketTab === 'function') window.switchMarketTab(type); 
         if (window.App.loadCommunityPosts) window.App.loadCommunityPosts();
