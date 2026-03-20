@@ -168,7 +168,7 @@ export const MarketEngine = {
     // 3. 🎨 三大版块纯净渲染器
     // ==========================================
    // ==========================================
-    // 📦 渲染器：闲置瀑布流 (带数量角标、信用分、位置)
+    // 📦 渲染器：闲置 (带城市、实名徽章、多图角标)
     // ==========================================
     renderMarketIdle() {
         const container = this.getContainer('idleWaterfall', true);
@@ -189,11 +189,16 @@ export const MarketEngine = {
         const defaultImg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23F3F4F6'/%3E%3Ctext x='50%25' y='50%25' font-size='12' fill='%239CA3AF' text-anchor='middle' dominant-baseline='middle'%3E暂无图%3C/text%3E%3C/svg%3E";
 
         processData.forEach(item => {
-            // 🌟 1. 动态获取图片数量与位置信息
             const itemCount = item.contentObj?.items?.length || 1;
             const multiBadge = itemCount > 1 ? `<div style="position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.65); color:#FFF; font-size:10px; padding:3px 8px; border-radius:12px; font-weight:bold; backdrop-filter:blur(4px);">📸 ${itemCount}件</div>` : '';
-            const loc = item.contentObj?.location || '同城';
+            
+            // 🌟 提取新增的城市与邮编
+            const loc = (item.contentObj?.location || '同城自提').replace('📍', '').trim();
+            const city = item.contentObj?.city || '荷兰';
             const creditStr = item.credit ? `${item.credit}分` : '100分';
+            
+            // 🌟 提取用户实名徽章
+            const badges = window.App.getUserBadgeHtml ? window.App.getUserBadgeHtml(item.email, item.credit) : '';
 
             html += `
             <div class="waterfall-item" onclick="window.App.openCommunityPost('${item.id}')" style="background:#FFF; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.04); margin-bottom:12px; cursor:pointer;">
@@ -205,12 +210,23 @@ export const MarketEngine = {
                     <div style="font-size:13px; font-weight:900; color:#111827; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${item.title}</div>
                     <div style="color:#EF4444; font-size:14px; font-weight:bold; margin-top:6px;">€ ${item.price}</div>
                     
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; border-top:1px dashed #F3F4F6; padding-top:8px;">
-                        <div style="display:flex; align-items:center; gap:4px;">
-                            <span style="font-size:14px;">${item.avatar}</span>
-                            <span style="font-size:10px; color:#6B7280; font-weight:bold; background:#F3F4F6; padding:2px 6px; border-radius:6px;">⭐ ${creditStr}</span>
+                    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:10px; border-top:1px dashed #F3F4F6; padding-top:8px;">
+                        
+                        <div style="display:flex; align-items:center; gap:6px; flex:1; min-width:0;">
+                            <span style="font-size:18px;">${item.avatar}</span>
+                            <div style="display:flex; flex-direction:column; gap:2px; overflow:hidden;">
+                                <div style="display:flex; align-items:center; gap:4px;">
+                                    <span style="font-size:11px; font-weight:bold; color:#374151; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:60px;">${item.author}</span>
+                                    ${badges}
+                                </div>
+                                <span style="font-size:10px; color:#D97706; font-weight:bold; background:#FEF3C7; padding:1px 4px; border-radius:4px; width:fit-content;">⭐ ${creditStr}</span>
+                            </div>
                         </div>
-                        <div style="font-size:10px; color:#9CA3AF; max-width:50%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">📍 ${loc}</div>
+
+                        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; flex-shrink:0;">
+                            <span style="font-size:11px; font-weight:900; color:#4B5563;">🏙️ ${city}</span>
+                            <span style="font-size:9px; color:#9CA3AF;">📍 ${loc}</span>
+                        </div>
                     </div>
                 </div>
             </div>`;
