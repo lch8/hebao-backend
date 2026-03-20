@@ -167,6 +167,9 @@ export const MarketEngine = {
     // ==========================================
     // 3. 🎨 三大版块纯净渲染器
     // ==========================================
+   // ==========================================
+    // 📦 渲染器：闲置瀑布流 (带数量角标、信用分、位置)
+    // ==========================================
     renderMarketIdle() {
         const container = this.getContainer('idleWaterfall', true);
         if (!container) return;
@@ -183,18 +186,32 @@ export const MarketEngine = {
         }
 
         let html = '';
-        // 🌟 修复：安全的 URL 编码，彻底消灭引号冲突导致的 HTML 乱码
         const defaultImg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23F3F4F6'/%3E%3Ctext x='50%25' y='50%25' font-size='12' fill='%239CA3AF' text-anchor='middle' dominant-baseline='middle'%3E暂无图%3C/text%3E%3C/svg%3E";
 
         processData.forEach(item => {
+            // 🌟 1. 动态获取图片数量与位置信息
+            const itemCount = item.contentObj?.items?.length || 1;
+            const multiBadge = itemCount > 1 ? `<div style="position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.65); color:#FFF; font-size:10px; padding:3px 8px; border-radius:12px; font-weight:bold; backdrop-filter:blur(4px);">📸 ${itemCount}件</div>` : '';
+            const loc = item.contentObj?.location || '同城';
+            const creditStr = item.credit ? `${item.credit}分` : '100分';
+
             html += `
             <div class="waterfall-item" onclick="window.App.openCommunityPost('${item.id}')" style="background:#FFF; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.04); margin-bottom:12px; cursor:pointer;">
                 <div style="height:150px; background:#F3F4F6; position:relative;">
                     <img src="${item.img || defaultImg}" style="width:100%; height:100%; object-fit:cover;">
+                    ${multiBadge}
                 </div>
                 <div style="padding:10px;">
                     <div style="font-size:13px; font-weight:900; color:#111827; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${item.title}</div>
                     <div style="color:#EF4444; font-size:14px; font-weight:bold; margin-top:6px;">€ ${item.price}</div>
+                    
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; border-top:1px dashed #F3F4F6; padding-top:8px;">
+                        <div style="display:flex; align-items:center; gap:4px;">
+                            <span style="font-size:14px;">${item.avatar}</span>
+                            <span style="font-size:10px; color:#6B7280; font-weight:bold; background:#F3F4F6; padding:2px 6px; border-radius:6px;">⭐ ${creditStr}</span>
+                        </div>
+                        <div style="font-size:10px; color:#9CA3AF; max-width:50%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">📍 ${loc}</div>
+                    </div>
                 </div>
             </div>`;
         });
@@ -445,7 +462,7 @@ export const MarketEngine = {
                             <div class="pd-seller-avatar" style="font-size:32px;">${post.avatar || '😎'}</div>
                             <div style="display:flex; flex-direction:column; gap:2px;">
                                 <div class="pd-seller-name" style="font-weight:900; font-size:15px;">${post.author_name || post.name || '热心校友'}</div>
-                                <div class="pd-seller-time" style="font-size:11px; color:#9CA3AF;">发布于近期</div>
+                                <div class="pd-seller-time" style="font-size:11px; color:#9CA3AF;">⭐ 信用分: ${post.credit || 100}分</div>
                             </div>
                         </div>
                     </div>`;
@@ -470,12 +487,17 @@ export const MarketEngine = {
                         const cardClass = isSold ? 'pd-item-card sold' : 'pd-item-card';
                         
                         itemsHtml += `
-                        <div class="${cardClass}" onclick="${isSold ? '' : `window.App.toggleItemCard(this, '${item.id}', ${priceNum})`}" style="position:relative; margin-bottom:10px;">
-                            <img class="pd-item-img" src="${item.url || 'https://via.placeholder.com/400'}" style="height: 220px; width: 100%; object-fit: cover; border-radius: 12px;">
-                            <div class="pd-item-overlay" style="position: absolute; bottom: 0; left: 0; right: 0; padding: 15px; background: linear-gradient(transparent, rgba(0,0,0,0.8)); border-radius: 0 0 12px 12px; color: white; display: flex; justify-content: space-between; align-items: flex-end;">
+                        <div class="${cardClass}" style="position:relative; margin-bottom:12px; border-radius:12px; overflow:hidden; box-shadow:0 4px 10px rgba(0,0,0,0.05);" onclick="${isSold ? '' : `window.App.toggleItemCard(this, '${item.id}', ${priceNum})`}">
+                            <img class="pd-item-img" src="${item.url || 'https://via.placeholder.com/400'}" style="height: 240px; width: 100%; object-fit: cover; display:block;">
+                            
+                            <div onclick="event.stopPropagation(); window.App.viewImageFull('${item.url || 'https://via.placeholder.com/400'}')" style="position:absolute; top:12px; left:12px; background:rgba(255,255,255,0.9); color:#111827; width:36px; height:36px; border-radius:18px; display:flex; justify-content:center; align-items:center; box-shadow:0 4px 12px rgba(0,0,0,0.15); cursor:pointer; font-size:18px; z-index:10;">
+                                🔍
+                            </div>
+
+                            <div class="pd-item-overlay" style="position: absolute; bottom: 0; left: 0; right: 0; padding: 15px; background: linear-gradient(transparent, rgba(0,0,0,0.8)); color: white; display: flex; justify-content: space-between; align-items: flex-end;">
                                 <div style="flex:1; overflow:hidden; padding-right:10px;">
-                                    <div class="pd-item-name" style="font-weight:bold; font-size:14px;">${item.name || '闲置好物'}</div>
-                                    <div class="pd-item-price" style="font-weight:900; font-size:18px; color:#FCD34D;">€${item.price}</div>
+                                    <div class="pd-item-name" style="font-weight:bold; font-size:15px; text-shadow:0 1px 2px rgba(0,0,0,0.5);">${item.name || '闲置好物'}</div>
+                                    <div class="pd-item-price" style="font-weight:900; font-size:20px; color:#FCD34D; text-shadow:0 1px 2px rgba(0,0,0,0.5);">€${item.price}</div>
                                 </div>
                                 ${isSold ? '<div class="pd-sold-badge" style="background:rgba(0,0,0,0.6); padding:4px 8px; border-radius:6px; font-size:12px;">已售出</div>' : `<input type="checkbox" class="custom-checkbox" id="chk_${item.id}" onclick="event.stopPropagation(); window.App.toggleItemCheckbox(this, '${item.id}', ${priceNum})" style="transform:scale(1.5); margin:0 5px 5px 0;">`}
                             </div>
@@ -488,6 +510,25 @@ export const MarketEngine = {
         } catch (error) {
             console.error("详情页报错:", error);
         }
+    },
+
+    // 🌟 新增：全屏大图预览引擎 (自带黑色磨砂沉浸背景)
+    viewImageFull(url) {
+        let overlay = document.getElementById('fullImageOverlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'fullImageOverlay';
+            overlay.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.92); z-index:999999; display:flex; justify-content:center; align-items:center; cursor:zoom-out; flex-direction:column; backdrop-filter:blur(5px); opacity:0; transition:opacity 0.2s;';
+            overlay.onclick = () => {
+                overlay.style.opacity = '0';
+                setTimeout(() => { overlay.style.display = 'none'; }, 200);
+            };
+            document.body.appendChild(overlay);
+        }
+        overlay.innerHTML = `<img src="${url}" style="max-width:95vw; max-height:85vh; object-fit:contain; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.5);"><div style="color:rgba(255,255,255,0.7); margin-top:20px; font-size:13px; font-weight:bold; letter-spacing:1px;">点击任意处关闭</div>`;
+        
+        overlay.style.display = 'flex';
+        setTimeout(() => { overlay.style.opacity = '1'; }, 10);
     },
 
     toggleItemCard(cardEl, itemId, price) {
