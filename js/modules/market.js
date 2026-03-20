@@ -1,11 +1,12 @@
 // ============================================================================
-// js/modules/market.js - 集市与发布引擎 (全栖满血完整版 - 终极修复)
+// js/modules/market.js - 集市与发布引擎 (全栖满血完整版 - 修复JSON与补齐多图)
 // ============================================================================
 import { showToast } from '../core/toast.js';
 import { safeDOM } from '../core/dom.js'; 
 import { ModalManager } from '../components/modals.js';
 import { ChatEngine } from './chat.js'; 
 
+// 🌟 全局核心变量区
 let selectedImagesArray = [];
 let mockIdleItems = []; 
 let mockHelpItems = []; 
@@ -32,6 +33,9 @@ window.App.currentMarketFilter = {
     partner: { loc: 'all', type: 'all', sort: 'newest' }
 };
 
+// ==========================================
+// 1. 动态下拉筛选矩阵 (原生 UI)
+// ==========================================
 window.App.renderFilterBar = function(tab) {
     if (tab !== window.App.currentMarketTab) return;
     const container = document.getElementById('dynamicFilterBar');
@@ -80,6 +84,9 @@ window.App.onFilterChange = function(tab, key, value) {
 };
 
 export const MarketEngine = {
+    // ==========================================
+    // 2. 🛡️ 防弹级数据拉取与解析引擎 (修复 JSON 乱码)
+    // ==========================================
     async loadCommunityPosts() {
         try {
             const res = await fetch('/api/get-community?t=' + Date.now()); 
@@ -95,8 +102,14 @@ export const MarketEngine = {
             (data.posts || []).forEach(post => {
                 const title = post.title || ''; 
                 let payload = {}; 
-                try { payload = JSON.parse(post.content || '{}'); } catch(e) {}
-                if (!payload) payload = {};
+                
+                // 🌟 强力解析：防止双重 Stringify 导致的 JSON 乱码外溢
+                try {
+                    payload = JSON.parse(post.content || '{}');
+                    if (typeof payload === 'string') payload = JSON.parse(payload); 
+                } catch(e) {
+                    payload = { desc: post.content }; // 实在解不开，就当做纯文本
+                }
 
                 const commonData = {
                     ...post,
@@ -118,6 +131,7 @@ export const MarketEngine = {
             });
 
             window.App.marketDataCache = { idle: idleItems, help: helpItems, partner: partnerItems };
+            window.allCommunityPostsCache = data.posts || []; // 给详情页用的全局备份
 
             this.renderMarketIdle(); 
             this.renderMarketHelp();
@@ -150,6 +164,9 @@ export const MarketEngine = {
         return el;
     },
 
+    // ==========================================
+    // 3. 🎨 三大版块纯净渲染器
+    // ==========================================
     renderMarketIdle() {
         const container = this.getContainer('idleWaterfall', true);
         if (!container) return;
@@ -170,7 +187,7 @@ export const MarketEngine = {
 
         processData.forEach(item => {
             html += `
-            <div class="waterfall-item" style="background:#FFF; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.04); margin-bottom:12px;">
+            <div class="waterfall-item" onclick="window.App.openCommunityPost('${item.id}')" style="background:#FFF; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.04); margin-bottom:12px; cursor:pointer;">
                 <div style="height:150px; background:#F3F4F6; position:relative;">
                     <img src="${item.img || defaultImg}" style="width:100%; height:100%; object-fit:cover;">
                 </div>
@@ -201,6 +218,8 @@ export const MarketEngine = {
         processData.forEach(post => {
             const isUrgent = post.contentObj?.urgent === '十万火急';
             const titleStr = post.title.replace('[互助] ', '');
+            // 🌟 精准提取正文：确保不会把 JSON 暴漏给用户
+            const descStr = post.contentObj?.desc || post.contentObj?.text || '点击查看详情...';
             
             html += `
             <div style="background:#FFF; border-radius:16px; padding:15px; margin-bottom: 15px; box-shadow:0 4px 15px rgba(0,0,0,0.03); border:1px solid ${isUrgent ? '#FECACA' : '#F3F4F6'};">
@@ -215,10 +234,10 @@ export const MarketEngine = {
                     <div style="font-size:16px; font-weight:900; color:#D97706;">💰 €${post.likes || 0}</div>
                 </div>
                 <div style="font-size:14px; font-weight:bold; color:#111827; margin-bottom:6px;">${isUrgent ? '🚨 ' : ''}${titleStr}</div>
-                <div style="font-size:13px; color:#4B5563; line-height:1.5; margin-bottom:10px;">${post.contentObj?.desc || ''}</div>
+                <div style="font-size:13px; color:#4B5563; line-height:1.5; margin-bottom:10px; white-space: pre-wrap;">${descStr}</div>
                 <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #E5E7EB; padding-top:10px;">
                     <div style="font-size:11px; color:#6B7280;">📍 ${post.contentObj?.location || '线上/面交'}</div>
-                    <button style="background:#111827; color:#FFF; border:none; padding:6px 14px; border-radius:12px; font-size:12px; font-weight:bold;">接单</button>
+                    <button style="background:#111827; color:#FFF; border:none; padding:6px 14px; border-radius:12px; font-size:12px; font-weight:bold; cursor:pointer;" onclick="window.App.initiateHelpChat('${post.id}')">接单</button>
                 </div>
             </div>`;
         });
@@ -239,25 +258,31 @@ export const MarketEngine = {
         let html = '';
         processData.forEach(post => {
             const titleStr = post.title.replace('[找搭子] ', '');
+            // 🌟 精准提取正文：确保不会把 JSON 暴漏给用户
+            const descStr = post.contentObj?.desc || post.contentObj?.text || '点击查看计划详情...';
+
             html += `
             <div style="background:#FFF; border-radius:16px; padding:15px; margin-bottom: 15px; box-shadow:0 4px 15px rgba(0,0,0,0.03); border:1px solid #E9D5FF;">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
                     <div style="font-size:15px; font-weight:900; color:#4C1D95; flex:1;">${titleStr}</div>
                     <div style="background:#F3E8FF; color:#7E22CE; padding:4px 8px; border-radius:8px; font-size:11px; font-weight:bold;">${post.contentObj?.tag || '组局'}</div>
                 </div>
-                <div style="font-size:13px; color:#4B5563; line-height:1.5; margin-bottom:12px;">${post.contentObj?.desc || ''}</div>
+                <div style="font-size:13px; color:#4B5563; line-height:1.5; margin-bottom:12px; white-space: pre-wrap;">${descStr}</div>
                 <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #E5E7EB; padding-top:10px;">
                     <div style="display:flex; align-items:center; gap:6px;">
                         <span style="font-size:20px;">${post.avatar}</span>
                         <span style="font-size:12px; font-weight:bold; color:#6B7280;">${post.author}</span>
                     </div>
-                    <button style="background:#8B5CF6; color:#FFF; border:none; padding:6px 14px; border-radius:12px; font-size:12px; font-weight:bold;">聊一聊</button>
+                    <button style="background:#8B5CF6; color:#FFF; border:none; padding:6px 14px; border-radius:12px; font-size:12px; font-weight:bold; cursor:pointer;" onclick="window.App.initiatePartnerChat('${post.id}')">聊一聊</button>
                 </div>
             </div>`;
         });
         container.innerHTML = html;
     },
 
+    // ==========================================
+    // 4. 📸 满血补齐：多图上传、预览与高级 Canvas 标签
+    // ==========================================
     handleMultiImageSelect(event) {
         try {
             const files = event.target.files; 
@@ -283,21 +308,36 @@ export const MarketEngine = {
     renderIdleItemCards() {
         safeDOM.execute('idleImgPreviewContainer', container => {
             let html = '';
+            
+            // 确保是横向滚动视图
+            container.style.display = 'flex';
+            container.style.gap = '10px';
+            container.style.overflowX = 'auto';
+            container.style.paddingBottom = '10px';
+
             selectedImagesArray.forEach((img) => { 
                 html += `
-                <div class="item-edit-card">
-                    <img src="${img.preview}">
-                    <div class="item-edit-inputs">
-                        <input type="text" placeholder="物品名称 (如: 书桌)" value="${img.name}" onchange="window.App.updateItemData(${img.id}, 'name', this.value)">
-                        <div class="price-input-row">
-                            <span>€</span><input type="number" placeholder="价格" value="${img.price}" onchange="window.App.updateItemData(${img.id}, 'price', this.value)">
+                <div class="item-edit-card" style="width: 100px; flex-shrink: 0; position: relative;">
+                    <img src="${img.preview}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 8px; border: 1px solid #E5E7EB;">
+                    
+                    <div style="margin-top: 6px; display: flex; flex-direction: column; gap: 4px;">
+                        <input type="text" placeholder="品名" value="${img.name}" onchange="window.App.updateItemData(${img.id}, 'name', this.value)" style="width:100%; box-sizing:border-box; padding:4px 6px; border-radius:4px; border:1px solid #CBD5E1; font-size:11px; outline:none;">
+                        <div style="display:flex; align-items:center; background:#F3F4F6; border-radius:4px; padding:0 4px; border:1px solid #CBD5E1;">
+                            <span style="font-size:10px; color:#64748B;">€</span>
+                            <input type="number" placeholder="金额" value="${img.price}" onchange="window.App.updateItemData(${img.id}, 'price', this.value)" style="width:100%; box-sizing:border-box; padding:4px 2px; border:none; background:transparent; font-size:11px; outline:none;">
                         </div>
                     </div>
-                    <div class="item-del-btn" onclick="window.App.removeImage(${img.id})">✕</div>
+                    
+                    <div class="item-del-btn" onclick="window.App.removeImage(${img.id})" style="position: absolute; top: -5px; right: -5px; background: rgba(0,0,0,0.6); color: #FFF; width: 20px; height: 20px; border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 12px; cursor: pointer;">✕</div>
                 </div>`; 
             });
+
             if (selectedImagesArray.length < 9) { 
-                html += `<div class="upload-btn" onclick="window.App.safeDOM.execute('idleImgInput', el => el.click())" style="width: 100%; background: #FFF; border: 1px dashed #D1D5DB; margin-top: 5px;"><span style="font-size: 24px;">📷</span><span style="font-size: 13px; font-weight: bold; margin-left: 8px; color: #374151;">继续添加物品</span></div>`; 
+                html += `
+                <div class="upload-btn" onclick="window.App.safeDOM.execute('idleImgInput', el => el.click())" style="width: 100px; height: 100px; flex-shrink: 0; background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; color: #94A3B8;">
+                    <span style="font-size: 24px;">📸</span>
+                    <span style="font-size: 11px; font-weight: bold; margin-top: 6px;">加图片</span>
+                </div>`; 
             }
             container.innerHTML = html;
         });
@@ -313,6 +353,7 @@ export const MarketEngine = {
         this.renderIdleItemCards();
     },
 
+    // Canvas 高级黑科技：将文字和价格动态合成到图片左下角，生成带标签的水印大图
     addTagToImage(previewUrl, name, price) {
         return new Promise((resolve) => {
             try {
@@ -329,8 +370,12 @@ export const MarketEngine = {
                     ctx.font = `bold ${fontSize}px sans-serif`;
                     
                     const paddingX = fontSize * 0.8; const paddingY = fontSize * 0.5; const textWidth = ctx.measureText(tagText).width; const x = img.width * 0.05; const y = img.height - img.width * 0.05 - fontSize;
+                    
+                    // 画个带圆角的黑色半透明背景框
                     ctx.fillStyle = 'rgba(0, 0, 0, 0.65)'; ctx.beginPath(); if(ctx.roundRect) { ctx.roundRect(x, y, textWidth + paddingX * 2.2, fontSize + paddingY * 2, (fontSize + paddingY * 2) / 2); } else { ctx.fillRect(x, y, textWidth + paddingX * 2.2, fontSize + paddingY * 2); } ctx.fill();
+                    // 画个小黄点装饰
                     ctx.fillStyle = '#FCD34D'; ctx.beginPath(); ctx.arc(x + paddingX * 0.9, y + (fontSize + paddingY * 2)/2, fontSize * 0.25, 0, Math.PI * 2); ctx.fill();
+                    // 写白字
                     ctx.fillStyle = '#FFFFFF'; ctx.fillText(tagText, x + paddingX * 1.6, y + fontSize + paddingY * 0.4); 
 
                     resolve(canvas.toDataURL('image/jpeg', 0.85).split(',')[1]);
@@ -344,6 +389,7 @@ export const MarketEngine = {
         });
     },
 
+    // 🎙️ 语音智能录入接口
     toggleVoiceInput(type) {
         if (!recognition) return showToast('您的浏览器不支持语音输入，请手动打字哦~', 'warning');
         safeDOM.execute(`btnVoiceInput_${type}`, btn => {
@@ -362,18 +408,14 @@ export const MarketEngine = {
         });
     },
 
-    async submitIdlePost() {
-        // 保留你原有的逻辑，现已移至最新的抽屉引擎，这里仅作兼容保留
-    },
+    // 兼容原版的旧发帖函数占位 (新架构在 ui-3.js 中通过抽屉提交，保留防止报错)
+    async submitIdlePost() {},
+    async submitHelpPost() {},
+    async submitPartnerPost() {},
 
-    async submitHelpPost() {
-        // 保留你原有的逻辑，现已移至最新的抽屉引擎，这里仅作兼容保留
-    },
-
-    async submitPartnerPost() {
-        // 保留你原有的逻辑，现已移至最新的抽屉引擎，这里仅作兼容保留
-    },
-
+    // ==========================================
+    // 5. 🛍️ 详情页与交易连线引擎
+    // ==========================================
     openCommunityPost(postId) {
         try {
             ModalManager.injectIfNeeded('postDetailModal');
@@ -423,16 +465,14 @@ export const MarketEngine = {
                         const cardClass = isSold ? 'pd-item-card sold' : 'pd-item-card';
                         
                         itemsHtml += `
-                        <div class="${cardClass}" onclick="${isSold ? '' : `window.App.toggleItemCard(this, '${item.id}', ${priceNum})`}">
-                            <img class="pd-item-img" src="${item.url || 'https://via.placeholder.com/400'}" style="height: 220px;">
-                            <div class="pd-item-overlay">
-                                <div style="display:flex; justify-content:space-between; align-items:flex-end; width:100%;">
-                                    <div style="flex:1; overflow:hidden; padding-right:10px;">
-                                        <div class="pd-item-name">${item.name || '闲置好物'}</div>
-                                        <div class="pd-item-price">€${item.price}</div>
-                                    </div>
-                                    ${isSold ? '<div class="pd-sold-badge">已售出</div>' : `<input type="checkbox" class="custom-checkbox" id="chk_${item.id}" onclick="event.stopPropagation(); window.App.toggleItemCheckbox(this, '${item.id}', ${priceNum})">`}
+                        <div class="${cardClass}" onclick="${isSold ? '' : `window.App.toggleItemCard(this, '${item.id}', ${priceNum})`}" style="position:relative; margin-bottom:10px;">
+                            <img class="pd-item-img" src="${item.url || 'https://via.placeholder.com/400'}" style="height: 220px; width: 100%; object-fit: cover; border-radius: 12px;">
+                            <div class="pd-item-overlay" style="position: absolute; bottom: 0; left: 0; right: 0; padding: 15px; background: linear-gradient(transparent, rgba(0,0,0,0.8)); border-radius: 0 0 12px 12px; color: white; display: flex; justify-content: space-between; align-items: flex-end;">
+                                <div style="flex:1; overflow:hidden; padding-right:10px;">
+                                    <div class="pd-item-name" style="font-weight:bold; font-size:14px;">${item.name || '闲置好物'}</div>
+                                    <div class="pd-item-price" style="font-weight:900; font-size:18px; color:#FCD34D;">€${item.price}</div>
                                 </div>
+                                ${isSold ? '<div class="pd-sold-badge" style="background:rgba(0,0,0,0.6); padding:4px 8px; border-radius:6px; font-size:12px;">已售出</div>' : `<input type="checkbox" class="custom-checkbox" id="chk_${item.id}" onclick="event.stopPropagation(); window.App.toggleItemCheckbox(this, '${item.id}', ${priceNum})" style="transform:scale(1.5); margin:0 5px 5px 0;">`}
                             </div>
                         </div>`;
                     });
@@ -477,7 +517,7 @@ export const MarketEngine = {
     },
 
     initiateHelpChat(postId) {
-        const post = mockHelpItems.find(p => String(p.id) === String(postId));
+        const post = (window.allCommunityPostsCache || []).find(p => String(p.id) === String(postId));
         if (!post) return showToast("哎呀，帖子似乎走丢了", "error");
         const cleanTitle = post.title.replace('[互助] ', '');
         ChatEngine.openChat(post.user_id || 'test_id', post.author_name || '悬赏主', post.avatar || '👻', post.id, `悬赏: ${cleanTitle}`, post.likes || 0, '', false, 'help');
@@ -485,7 +525,7 @@ export const MarketEngine = {
     },
 
     initiatePartnerChat(postId) {
-        const post = mockPartnerItems.find(p => String(p.id) === String(postId));
+        const post = (window.allCommunityPostsCache || []).find(p => String(p.id) === String(postId));
         if (!post) return showToast("哎呀，帖子似乎走丢了", "error");
         const cleanTitle = post.title.replace('[找搭子] ', '');
         ChatEngine.openChat(post.user_id || 'test_id', post.author_name || '发起人', post.avatar || '👻', post.id, `搭子局: ${cleanTitle}`, 0, '', false, 'partner');
@@ -493,6 +533,9 @@ export const MarketEngine = {
     }
 };
 
+// ==========================================
+// 🌟 终极暴力防爆：全面覆盖挂载 window.App
+// ==========================================
 if (typeof window !== 'undefined') {
     window.App = window.App || {};
     window.App.safeDOM = safeDOM; 
