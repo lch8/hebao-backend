@@ -168,7 +168,7 @@ export const MarketEngine = {
     // 3. 🎨 三大版块纯净渲染器
     // ==========================================
    // ==========================================
-    // 📦 渲染器：闲置 (带城市、实名徽章、多图角标)
+    // 📦 渲染器：闲置瀑布流 (极致排版、去除冗余)
     // ==========================================
     renderMarketIdle() {
         const container = this.getContainer('idleWaterfall', true);
@@ -192,13 +192,14 @@ export const MarketEngine = {
             const itemCount = item.contentObj?.items?.length || 1;
             const multiBadge = itemCount > 1 ? `<div style="position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.65); color:#FFF; font-size:10px; padding:3px 8px; border-radius:12px; font-weight:bold; backdrop-filter:blur(4px);">📸 ${itemCount}件</div>` : '';
             
-            // 🌟 提取新增的城市与邮编
-            const loc = (item.contentObj?.location || '同城自提').replace('📍', '').trim();
-            const city = item.contentObj?.city || '荷兰';
-            const creditStr = item.credit ? `${item.credit}分` : '100分';
+            // 🌟 核心：去重！只保留一个极其干净的城市名字
+            let city = item.contentObj?.city || '';
+            if (!city) {
+                const locStr = (item.contentObj?.location || '').replace('📍', '').trim();
+                city = locStr.includes('同城') ? '荷兰' : locStr;
+            }
             
-            // 🌟 提取用户实名徽章
-            const badges = window.App.getUserBadgeHtml ? window.App.getUserBadgeHtml(item.email, item.credit) : '';
+            const creditStr = item.credit ? `${item.credit}分` : '100分';
 
             html += `
             <div class="waterfall-item" onclick="window.App.openCommunityPost('${item.id}')" style="background:#FFF; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.04); margin-bottom:12px; cursor:pointer;">
@@ -207,26 +208,19 @@ export const MarketEngine = {
                     ${multiBadge}
                 </div>
                 <div style="padding:10px;">
-                    <div style="font-size:13px; font-weight:900; color:#111827; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${item.title}</div>
-                    <div style="color:#EF4444; font-size:14px; font-weight:bold; margin-top:6px;">€ ${item.price}</div>
+                    <div style="font-size:13px; font-weight:900; color:#111827; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height: 36px;">${item.title}</div>
                     
-                    <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:10px; border-top:1px dashed #F3F4F6; padding-top:8px;">
-                        
-                        <div style="display:flex; align-items:center; gap:6px; flex:1; min-width:0;">
-                            <span style="font-size:18px;">${item.avatar}</span>
-                            <div style="display:flex; flex-direction:column; gap:2px; overflow:hidden;">
-                                <div style="display:flex; align-items:center; gap:4px;">
-                                    <span style="font-size:11px; font-weight:bold; color:#374151; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:60px;">${item.author}</span>
-                                    ${badges}
-                                </div>
-                                <span style="font-size:10px; color:#D97706; font-weight:bold; background:#FEF3C7; padding:1px 4px; border-radius:4px; width:fit-content;">⭐ ${creditStr}</span>
-                            </div>
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
+                        <div style="color:#EF4444; font-size:16px; font-weight:900;">€ ${item.price}</div>
+                        <div style="font-size:10px; color:#D97706; font-weight:bold; background:#FFFBEB; border:1px solid #FDE68A; padding:2px 6px; border-radius:6px;">⭐ ${creditStr}</div>
+                    </div>
+                    
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; border-top:1px dashed #F3F4F6; padding-top:10px;">
+                        <div style="display:flex; align-items:center; gap:6px; overflow:hidden;">
+                            <span style="font-size:16px; background:#F8FAFC; width:22px; height:22px; border-radius:11px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">${item.avatar}</span>
+                            <span style="font-size:11px; font-weight:bold; color:#4B5563; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:65px;">${item.author}</span>
                         </div>
-
-                        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:2px; flex-shrink:0;">
-                            <span style="font-size:11px; font-weight:900; color:#4B5563;">🏙️ ${city}</span>
-                            <span style="font-size:9px; color:#9CA3AF;">📍 ${loc}</span>
-                        </div>
+                        <div style="font-size:10px; color:#475569; font-weight:bold; background:#F1F5F9; padding:3px 8px; border-radius:10px; flex-shrink:0;">📍 ${city}</div>
                     </div>
                 </div>
             </div>`;
