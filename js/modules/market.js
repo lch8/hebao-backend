@@ -183,7 +183,8 @@ export const MarketEngine = {
         }
 
         let html = '';
-        const defaultImg = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><rect width="100%" height="100%" fill="%23F3F4F6"/><text x="50%" y="50%" font-size="12" fill="%239CA3AF" text-anchor="middle">暂无图</text></svg>';
+        // 🌟 修复：安全的 URL 编码，彻底消灭引号冲突导致的 HTML 乱码
+        const defaultImg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23F3F4F6'/%3E%3Ctext x='50%25' y='50%25' font-size='12' fill='%239CA3AF' text-anchor='middle' dominant-baseline='middle'%3E暂无图%3C/text%3E%3C/svg%3E";
 
         processData.forEach(item => {
             html += `
