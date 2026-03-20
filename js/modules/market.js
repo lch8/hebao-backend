@@ -310,40 +310,44 @@ export const MarketEngine = {
         safeDOM.execute('idleImgPreviewContainer', container => {
             let html = '';
             
-            // 确保是横向滚动视图
+            // 🌟 强制赋予容器横向滚动与间距样式，防止被外部 CSS 干扰
             container.style.display = 'flex';
-            container.style.gap = '10px';
+            container.style.gap = '14px';
             container.style.overflowX = 'auto';
-            container.style.paddingBottom = '10px';
+            container.style.padding = '4px 4px 16px 4px';
 
             selectedImagesArray.forEach((img) => { 
                 html += `
-                <div class="item-edit-card" style="width: 100px; flex-shrink: 0; position: relative;">
-                    <img src="${img.preview}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 8px; border: 1px solid #E5E7EB;">
+                <div class="item-edit-card" style="width: 135px; flex-shrink: 0; position: relative; border: 1px solid #E5E7EB; border-radius: 12px; background: #FFF; box-shadow: 0 4px 12px rgba(0,0,0,0.05); display: flex; flex-direction: column; overflow: hidden;">
                     
-                    <div style="margin-top: 6px; display: flex; flex-direction: column; gap: 4px;">
-                        <input type="text" placeholder="品名" value="${img.name}" onchange="window.App.updateItemData(${img.id}, 'name', this.value)" style="width:100%; box-sizing:border-box; padding:4px 6px; border-radius:4px; border:1px solid #CBD5E1; font-size:11px; outline:none;">
-                        <div style="display:flex; align-items:center; background:#F3F4F6; border-radius:4px; padding:0 4px; border:1px solid #CBD5E1;">
-                            <span style="font-size:10px; color:#64748B;">€</span>
-                            <input type="number" placeholder="金额" value="${img.price}" onchange="window.App.updateItemData(${img.id}, 'price', this.value)" style="width:100%; box-sizing:border-box; padding:4px 2px; border:none; background:transparent; font-size:11px; outline:none;">
+                    <img src="${img.preview}" style="width: 100%; height: 120px; object-fit: cover; display: block; border-bottom: 1px solid #F3F4F6;">
+                    
+                    <div style="padding: 12px 10px; display: flex; flex-direction: column; gap: 10px; background: #FFF;">
+                        <input type="text" placeholder="物品名称 (如: 书桌)" value="${img.name}" onchange="window.App.updateItemData(${img.id}, 'name', this.value)" style="width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #D1D5DB; border-radius: 8px; font-size: 13px; font-weight: bold; color: #111827; outline: none; background: #F8FAFC; transition: all 0.2s;">
+                        
+                        <div style="display: flex; align-items: center; border: 1px solid #D1D5DB; border-radius: 8px; padding: 0 10px; background: #F8FAFC; transition: all 0.2s;">
+                            <span style="font-size: 13px; color: #64748B; font-weight: 900;">€</span>
+                            <input type="number" placeholder="价格" value="${img.price}" onchange="window.App.updateItemData(${img.id}, 'price', this.value)" style="width: 100%; box-sizing: border-box; padding: 8px 6px; border: none; background: transparent; font-size: 14px; font-weight: bold; color: #EF4444; outline: none;">
                         </div>
                     </div>
                     
-                    <div class="item-del-btn" onclick="window.App.removeImage(${img.id})" style="position: absolute; top: -5px; right: -5px; background: rgba(0,0,0,0.6); color: #FFF; width: 20px; height: 20px; border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 12px; cursor: pointer;">✕</div>
+                    <div class="item-del-btn" onclick="window.App.removeImage(${img.id})" style="position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,0.65); color: #FFF; width: 26px; height: 26px; border-radius: 13px; display: flex; justify-content: center; align-items: center; font-size: 14px; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.2); backdrop-filter: blur(4px);">✕</div>
                 </div>`; 
             });
 
             if (selectedImagesArray.length < 9) { 
                 html += `
-                <div class="upload-btn" onclick="window.App.safeDOM.execute('idleImgInput', el => el.click())" style="width: 100px; height: 100px; flex-shrink: 0; background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; color: #94A3B8;">
-                    <span style="font-size: 24px;">📸</span>
-                    <span style="font-size: 11px; font-weight: bold; margin-top: 6px;">加图片</span>
+                <div class="upload-btn" onclick="document.getElementById('idleImgInput').click()" style="width: 135px; min-height: 235px; flex-shrink: 0; background: #F8FAFC; border: 2px dashed #CBD5E1; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; color: #64748B; transition: all 0.2s;">
+                    <span style="font-size: 32px; margin-bottom: 8px;">📸</span>
+                    <span style="font-size: 14px; font-weight: 900; color: #334155;">继续加图</span>
+                    <span style="font-size: 11px; margin-top: 4px; font-weight: bold; color: #94A3B8;">(${selectedImagesArray.length}/9)</span>
                 </div>`; 
             }
             container.innerHTML = html;
         });
     },
 
+    
     updateItemData(id, field, value) {
         const item = selectedImagesArray.find(i => i.id === id);
         if (item) item[field] = value;
