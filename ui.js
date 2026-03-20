@@ -657,88 +657,111 @@ window.App.openPublishSheet = function() {
 // ============================================================================
 window.App = window.App || {};
 
+// ============================================================================
+// 🚀 全能发布引擎：打通多图、智能标签与扣分体系
+// ============================================================================
 window.App.submitPost = async function() {
-    // 1. 基础防呆校验
     const uuid = localStorage.getItem('hebao_uuid');
-    if (!uuid || localStorage.getItem('hebao_logged_in') !== 'true') {
+    const token = localStorage.getItem('hebao_token');
+    if (!uuid || !token || localStorage.getItem('hebao_logged_in') !== 'true') {
         return window.App.showToast ? window.App.showToast("请先登录并完成实名认证哦！", "warning") : alert("请先登录");
     }
 
-    const type = window.App.currentPublishType || 'help';
-    let title = '';
-    let desc = '';
-    let price = 0;
-    let isUrgent = false;
-    let payloadContent = {};
+    const type = window.App.currentPublishType || 'idle';
+    let title = '', desc = '', price = 0, payloadContent = {};
+    
+    // 🌟 全局读取加急特权状态
+    const cardUrgent = document.getElementById('cardUrgent');
+    const isUrgent = cardUrgent && cardUrgent.classList.contains('active-urgent');
 
-    // 2. 锁定发布按钮状态 (防手抖连击)
     const btn = event.currentTarget || document.querySelector('#publishSheet button');
     const originalBtnText = btn.innerText;
-    btn.innerText = "🚀 正在发送宇宙电波...";
+    btn.innerText = "🚀 正在打包数据...";
     btn.style.pointerEvents = 'none';
 
     try {
-        // 3. 根据不同版块，精准提取胶囊数据
         if (type === 'help') {
             const catEl = document.querySelector('#helpCategoryCapsules .active');
             const locEl = document.querySelector('#helpLocationCapsules .active');
             if(!catEl || !locEl) throw new Error("请选择互助类别和范围");
-            
-            const cat = catEl.innerText;
-            const loc = locEl.innerText;
-            price = document.getElementById('helpPrice').value || 0;
-            desc = document.getElementById('helpDesc').value.trim();
-            isUrgent = document.getElementById('cardUrgent').classList.contains('active-urgent');
-
+            price = document.getElementById('helpPrice')?.value || 0;
+            desc = document.getElementById('helpDesc')?.value.trim();
             if (!desc) throw new Error("请填写具体的求助内容哦");
-
-            // 净化标题（去掉Emoji，方便后端排序）
-            const cleanCat = cat.replace(/[^a-zA-Z\u4e00-\u9fa5\/]/g, '').trim();
+            const cleanCat = catEl.innerText.replace(/[^a-zA-Z\u4e00-\u9fa5\/]/g, '').trim();
             title = `[互助] ${cleanCat}`;
-            // 组装结构化 JSON
-            payloadContent = { desc, location: loc, urgent: isUrgent ? '十万火急' : '普通', type: cleanCat };
-        } 
-        else if (type === 'idle') {
-            const catEl = document.querySelector('#idleCategoryCapsules .active');
-            const locEl = document.querySelector('#idleLocationCapsules .active');
-            if(!catEl || !locEl) throw new Error("请选择闲置分类");
-            
-            const cat = catEl.innerText;
-            const loc = locEl.innerText;
-            price = document.getElementById('idlePrice').value || 0;
-            desc = document.getElementById('idleDesc').value.trim();
-            
-            if (!desc) throw new Error("请简单描述一下你的闲置物品");
-            
-            const cleanCat = cat.replace(/[^a-zA-Z\u4e00-\u9fa5\/]/g, '').trim();
-            title = `[闲置] ${cleanCat}`;
-            payloadContent = { desc, location: loc, type: cleanCat };
+            payloadContent = { desc, location: locEl.innerText, urgent: isUrgent ? '十万火急' : '普通', type: cleanCat };
         } 
         else if (type === 'partner') {
             const catEl = document.querySelector('#partnerTypeCapsules .active');
             const mbtiEl = document.querySelector('#partnerMbtiCapsules .active');
             if(!catEl || !mbtiEl) throw new Error("请选择搭子类型");
-            
-            const cat = catEl.innerText;
-            const mbti = mbtiEl.innerText;
-            desc = document.getElementById('partnerDesc').value.trim();
-            
-            if (!desc) throw new Error("请介绍一下你的计划");
-            
-            const cleanCat = cat.replace(/[^a-zA-Z\u4e00-\u9fa5\/]/g, '').trim();
+            desc = document.getElementById('partnerDesc')?.value.trim();
+            if (!desc) throw new Error("请介绍一下你的计划哦");
+            const cleanCat = catEl.innerText.replace(/[^a-zA-Z\u4e00-\u9fa5\/]/g, '').trim();
             title = `[找搭子] ${cleanCat}`;
-            payloadContent = { desc, mbti: mbti, tag: cleanCat };
+            payloadContent = { desc, mbti: mbtiEl.innerText, tag: cleanCat, urgent: isUrgent ? '十万火急' : '普通' };
+        } 
+        else if (type === 'idle') {
+            const catEl = document.querySelector('#idleCategoryCapsules .active');
+            const locEl = document.querySelector('#idleLocationCapsules .active');
+            if(!catEl || !locEl) throw new Error("请选择闲置分类");
+            desc = document.getElementById('idleDesc')?.value.trim();
+            if (!desc) throw new Error("请简单描述一下你的闲置物品");
+            
+            // 📸 提取所有图片与标签价格
+            const imgCards = document.querySelectorAll('#idleImgPreviewContainer .item-edit-card');
+            if (imgCards.length === 0) throw new Error("发闲置至少要上传一张图片哦！");
+
+            btn.innerText = "🚀 正在为图片打标签...";
+            let totalIdlePrice = 0;
+            let finalItemsData = [];
+
+            for (let i = 0; i < imgCards.length; i++) {
+                const card = imgCards[i];
+                const previewUrl = card.querySelector('img').src;
+                const itemName = card.querySelector('input[type="text"]').value;
+                const itemPrice = card.querySelector('input[type="number"]').value;
+                
+                if (itemPrice) totalIdlePrice += parseFloat(itemPrice);
+
+                // 调用 market.js 的黑科技画布引擎打水印
+                let finalBase64 = previewUrl.split(',')[1];
+                if (window.App.addTagToImage) {
+                    finalBase64 = await window.App.addTagToImage(previewUrl, itemName, itemPrice);
+                }
+
+                // 尝试上传到云端，如果失败则直接保存带水印的 Base64
+                let finalUrl = 'data:image/jpeg;base64,' + finalBase64;
+                try {
+                    const upRes = await fetch('/api/upload', { 
+                        method: 'POST', 
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        body: JSON.stringify({ imageBase64: finalBase64 }) 
+                    });
+                    const upData = await upRes.json();
+                    if (upData.success) finalUrl = upData.url;
+                } catch(e) { console.warn("云端图床未连接，使用离线 Base64 模式"); }
+
+                finalItemsData.push({
+                    id: 'item_' + Date.now() + i,
+                    name: itemName || '闲置好物',
+                    price: itemPrice || 0,
+                    url: finalUrl,
+                    is_sold: false
+                });
+            }
+
+            price = totalIdlePrice;
+            const cleanCat = catEl.innerText.replace(/[^a-zA-Z\u4e00-\u9fa5\/]/g, '').trim();
+            title = `[闲置] ${cleanCat}`;
+            payloadContent = { desc, location: locEl.innerText, items: finalItemsData, type: cleanCat, urgent: isUrgent ? '十万火急' : '普通' };
         }
 
-        // 4. 将数据打包，带上 Token 呼叫后端！
-        const token = localStorage.getItem('hebao_token') || '';
-        
+        // 呼叫后端写入
+        btn.innerText = "🚀 写入数据库...";
         const res = await fetch('/api/publish-community', {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`   // 🌟 核心：把通行证交给后端
-            },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({
                 userId: uuid,
                 authorName: localStorage.getItem('hp_name') || '热心荷包蛋',
@@ -746,46 +769,36 @@ window.App.submitPost = async function() {
                 title: title,
                 content: JSON.stringify(payloadContent),
                 likes: price, 
-                isUrgent: isUrgent
+                isUrgent: isUrgent,
+                image_url: type === 'idle' && payloadContent.items ? payloadContent.items[0].url : ''
             })
         });
 
-        // ... 前面的 fetch 代码不变 ...
         const data = await res.json();
         if (!data.success) throw new Error(data.error || "发布失败，请稍后重试");
 
-        // 5. 发布成功的爽感反馈！
-        if (window.App.showToast) {
-            window.App.showToast(isUrgent ? "🚨 紧急求助已置顶发布！扣除 5 积分" : "✨ 帖子发布成功！", "success");
-        }
+        if (window.App.showToast) window.App.showToast(isUrgent ? "🚨 紧急求助已置顶发布！扣除 5 积分" : "✨ 帖子发布成功！", "success");
         
-        // 自动关掉抽屉
+        // 收起抽屉
         if (window.App.closePublishSheet) window.App.closePublishSheet();
         
+        // 扣减本地显示的积分
         if (isUrgent) {
             let currentPts = parseInt(localStorage.getItem('hp_points') || 0);
             localStorage.setItem('hp_points', Math.max(0, currentPts - 5));
         }
 
-        // 🌟 新增：强制把页面切换到“集市”对应的模块！
-        if (typeof window.switchTab === 'function') {
-            const marketTabBtn = document.querySelector('.tab-item[onclick*="market"]');
-            window.switchTab('market', marketTabBtn);
-        }
-        if (typeof window.switchMarketTab === 'function') {
-            window.switchMarketTab(type); // 闲置切到闲置，悬赏切到悬赏
-        }
-
-        // 🚀 重新拉取列表！
-        if (window.App.loadCommunityPosts) {
-            window.App.loadCommunityPosts();
-        }
+        // 清空 UI，刷新瀑布流
+        const previewContainer = document.getElementById('idleImgPreviewContainer');
+        if (previewContainer) previewContainer.innerHTML = `<div class="upload-btn" onclick="document.getElementById('idleImgInput').click()" style="width: 100px; height: 100px; flex-shrink: 0; background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; color: #94A3B8;"><span style="font-size: 24px;">📸</span><span style="font-size: 11px; font-weight: bold; margin-top: 6px;">加图片</span></div>`;
+        if (typeof window.switchTab === 'function') window.switchTab('market', document.querySelector('.tab-item[onclick*="market"]'));
+        if (typeof window.switchMarketTab === 'function') window.switchMarketTab(type); 
+        if (window.App.loadCommunityPosts) window.App.loadCommunityPosts();
 
     } catch (err) {
         if (window.App.showToast) window.App.showToast(err.message, "error");
         else alert(err.message);
     } finally {
-        // 无论成功失败，恢复按钮状态
         btn.innerText = originalBtnText;
         btn.style.pointerEvents = 'auto';
     }
