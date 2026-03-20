@@ -633,17 +633,18 @@
                 </div>
             </div>
 
-            <div style="margin-bottom: 20px; position: relative;">
-                <div style="font-size: 13px; font-weight: 900; color: #111827; margin-bottom: 10px;">出物价格 (💶)</div>
-                <input type="number" id="idlePrice" placeholder="0.00" style="width: 100%; box-sizing: border-box; border: 1px solid #E5E7EB; border-radius: 12px; padding: 12px 12px 12px 35px; font-size: 16px; font-weight: bold; outline: none; background: #F9FAFB;">
-                <span style="position: absolute; left: 14px; top: 38px; font-size: 16px; color: #64748B;">€</span>
+            <div style="margin-bottom: 20px;">
+                <div style="font-size: 13px; font-weight: 900; color: #111827; margin-bottom: 10px;">添加物品照片 (最多9张)</div>
+                <div id="idleImgPreviewContainer" style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px;">
+                    <div class="upload-btn" onclick="document.getElementById('idleImgInput').click()" style="width: 100px; height: 100px; flex-shrink: 0; background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; color: #94A3B8;">
+                        <span style="font-size: 24px;">📸</span>
+                        <span style="font-size: 11px; font-weight: bold; margin-top: 6px;">加图片</span>
+                    </div>
+                </div>
+                <input type="file" id="idleImgInput" multiple accept="image/*" style="display:none" onchange="window.App.handleMultiImageSelect(event)">
             </div>
 
             <textarea id="idleDesc" placeholder="几成新？有什么瑕疵吗？带不带小票..." style="width: 100%; box-sizing: border-box; border: 1px solid #E5E7EB; border-radius: 12px; padding: 12px; font-size: 14px; height: 90px; margin-bottom: 20px; outline: none; background: #F9FAFB;"></textarea>
-            
-            <div style="background: #F3F4F6; border: 1px dashed #CBD5E1; border-radius: 12px; padding: 20px; text-align: center; color: #9CA3AF; font-size: 13px; font-weight: bold; cursor: pointer; margin-bottom: 20px;">
-                📸 点击上传实物图 (最多 9 张)
-            </div>
         </div>
 
         <div id="publishFormPartner" style="display: none;">
