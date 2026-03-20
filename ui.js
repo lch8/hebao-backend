@@ -658,7 +658,7 @@ window.App.openPublishSheet = function() {
 window.App = window.App || {};
 
 // ============================================================================
-// 🚀 全能发布引擎：加入城市强校验
+// 🚀 全能发布引擎：解除多余校验，适配精简版闲置表单
 // ============================================================================
 window.App.submitPost = async function() {
     const uuid = localStorage.getItem('hebao_uuid');
@@ -674,7 +674,7 @@ window.App.submitPost = async function() {
     const cardUrgent = document.getElementById('cardUrgent');
     const isUrgent = cardUrgent && cardUrgent.classList.contains('active-urgent');
 
-    // 🌟 核心升级：强校验城市与邮编
+    // 🌟 强校验城市
     const city = document.getElementById('postCity')?.value.trim();
     const zip = document.getElementById('postZip')?.value.trim();
     if (!city) {
@@ -689,31 +689,28 @@ window.App.submitPost = async function() {
     try {
         if (type === 'help') {
             const catEl = document.querySelector('#helpCategoryCapsules .active');
-            const locEl = document.querySelector('#helpLocationCapsules .active');
-            if(!catEl || !locEl) throw new Error("请选择互助类别和范围");
+            if(!catEl) throw new Error("请选择互助类别");
             price = document.getElementById('helpPrice')?.value || 0;
             desc = document.getElementById('helpDesc')?.value.trim();
             if (!desc) throw new Error("请填写具体的求助内容哦");
             const cleanCat = catEl.innerText.replace(/[^a-zA-Z\u4e00-\u9fa5\/]/g, '').trim();
             title = `[互助] ${cleanCat}`;
-            // 🌟 装载城市邮编
-            payloadContent = { desc, location: locEl.innerText, urgent: isUrgent ? '十万火急' : '普通', type: cleanCat, city: city, zip: zip };
+            payloadContent = { desc, location: city, urgent: isUrgent ? '十万火急' : '普通', type: cleanCat, city: city, zip: zip };
         } 
         else if (type === 'partner') {
             const catEl = document.querySelector('#partnerTypeCapsules .active');
-            const mbtiEl = document.querySelector('#partnerMbtiCapsules .active');
-            if(!catEl || !mbtiEl) throw new Error("请选择搭子类型");
+            if(!catEl) throw new Error("请选择搭子类型");
             desc = document.getElementById('partnerDesc')?.value.trim();
             if (!desc) throw new Error("请介绍一下你的计划哦");
             const cleanCat = catEl.innerText.replace(/[^a-zA-Z\u4e00-\u9fa5\/]/g, '').trim();
             title = `[找搭子] ${cleanCat}`;
-            // 🌟 装载城市邮编
-            payloadContent = { desc, mbti: mbtiEl.innerText, tag: cleanCat, urgent: isUrgent ? '十万火急' : '普通', city: city, zip: zip };
+            payloadContent = { desc, tag: cleanCat, urgent: isUrgent ? '十万火急' : '普通', city: city, zip: zip };
         } 
         else if (type === 'idle') {
+            // 🌟 核心修复：只查分类，不再死磕“交易方式”是否选中
             const catEl = document.querySelector('#idleCategoryCapsules .active');
-            const locEl = document.querySelector('#idleLocationCapsules .active');
-            if(!catEl || !locEl) throw new Error("请选择闲置分类");
+            if(!catEl) throw new Error("请选择物品分类");
+            
             desc = document.getElementById('idleDesc')?.value.trim();
             if (!desc) throw new Error("请简单描述一下你的闲置物品");
             
@@ -760,8 +757,8 @@ window.App.submitPost = async function() {
             price = totalIdlePrice;
             const cleanCat = catEl.innerText.replace(/[^a-zA-Z\u4e00-\u9fa5\/]/g, '').trim();
             title = `[闲置] ${cleanCat}`;
-            // 🌟 装载城市邮编
-            payloadContent = { desc, location: locEl.innerText, items: finalItemsData, type: cleanCat, urgent: isUrgent ? '十万火急' : '普通', city: city, zip: zip };
+            // 直接将城市作为主 location 传给数据库
+            payloadContent = { desc, location: city, items: finalItemsData, type: cleanCat, urgent: isUrgent ? '十万火急' : '普通', city: city, zip: zip };
         }
 
         btn.innerText = "🚀 写入数据库...";
@@ -795,7 +792,6 @@ window.App.submitPost = async function() {
         const previewContainer = document.getElementById('idleImgPreviewContainer');
         if (previewContainer) previewContainer.innerHTML = `<div class="upload-btn" onclick="document.getElementById('idleImgInput').click()" style="width: 100px; height: 100px; flex-shrink: 0; background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; color: #94A3B8;"><span style="font-size: 24px;">📸</span><span style="font-size: 11px; font-weight: bold; margin-top: 6px;">加图片</span></div>`;
         
-        // 🌟 清空填写的城市与邮编
         const cityInput = document.getElementById('postCity');
         const zipInput = document.getElementById('postZip');
         if(cityInput) cityInput.value = '';
