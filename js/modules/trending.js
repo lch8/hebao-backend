@@ -56,7 +56,7 @@ export const TrendingEngine = {
             });
             container.innerHTML = html;
         });
-    }
+    },
 
     // 切换红榜 / 黑榜
     switchHomeTrendingTab(tabType, element) {
