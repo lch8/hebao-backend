@@ -11,7 +11,6 @@ import { showToast } from './core/toast.js';
 import { ModalManager } from './components/modals.js';
 import { safeDOM } from './core/dom.js';
 import { ProfileEngine } from './modules/profile.js';
-import { GuideEngine } from './js/modules/guide.js';
 // ============================================================================
 // 🎨 UI 界面与强制发布菜单引擎
 // ============================================================================
