@@ -151,15 +151,12 @@ export const ScannerEngine = {
         } catch (e) { console.error(e); }
     },
 
-    // ------------------------------------------------------------------------
-    // 4. 详情页极速渲染 (兼容并保留所有前序逻辑)
-    // ------------------------------------------------------------------------
+    // 🌟 详情页渲染 (加入非食品动态判断)
     async _renderAndOpenDetail(data) {
         try {
             if (window.switchTab) window.switchTab('details');
             currentProductData = data; 
 
-            // 基础数据瞬间上屏
             const fallbackImg = 'https://images.unsplash.com/photo-1544025162-8315ea07659b?q=80&w=600&auto=format&fit=crop';
             safeDOM.execute('detailImg', el => el.src = data.image_url || data.scanned_img || fallbackImg);
 
@@ -177,6 +174,11 @@ export const ScannerEngine = {
             safeDOM.execute('detailWarningBox', el => el.style.display = data.warning ? 'block' : 'none');
             safeDOM.execute('detailWarning', el => el.innerText = data.warning || '');
 
+            // 🌟 动态判断：如果是日化/非食品，切换 UI 标题
+            const isNonFood = data.category && (data.category.includes('日化') || data.category.includes('非食品') || data.category.includes('清洁'));
+            safeDOM.execute('recipeTitleIcon', el => el.innerText = isNonFood ? '🧼' : '🍳');
+            safeDOM.execute('recipeTitleText', el => el.innerText = isNonFood ? '使用指南 & 注意事项' : '食用指南 & 神仙吃法');
+
             // 隐藏深度盒子，开启骨架呼吸灯
             safeDOM.execute('detailRecipeBox', el => el.style.display = 'none');
             safeDOM.execute('detailAltBox', el => el.style.display = 'none');
@@ -187,7 +189,7 @@ export const ScannerEngine = {
             const res = await fetch('/api/detail', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ dutchName: data.dutch_name, chineseName: data.chinese_name })
+                body: JSON.stringify({ dutchName: data.dutch_name, chineseName: data.chinese_name, isNonFood: isNonFood })
             });
 
             if (res.ok) {
@@ -195,7 +197,7 @@ export const ScannerEngine = {
                 currentDetailData = deepData;
                 safeDOM.execute('detailAiLoading', el => el.style.display = 'none');
                 
-                // 渲染食用指南
+                // 渲染指南
                 if (deepData.methods || deepData.recipe_desc) {
                     safeDOM.execute('detailRecipeBox', el => el.style.display = 'block');
                     if (deepData.methods && Array.isArray(deepData.methods)) {
@@ -206,7 +208,7 @@ export const ScannerEngine = {
                     safeDOM.execute('recipeDetails', el => el.innerText = deepData.recipe_desc || '暂无具体步骤~');
                 }
 
-                // 渲染平替/搭配
+                // 渲染平替
                 if (deepData.alternatives && Array.isArray(deepData.alternatives) && deepData.alternatives.length > 0) {
                     safeDOM.execute('detailAltBox', el => el.style.display = 'block');
                     safeDOM.execute('detailAlternatives', el => {
@@ -214,7 +216,7 @@ export const ScannerEngine = {
                     });
                 }
 
-                // 渲染高赞真实评论区
+                // 渲染高赞评论
                 if (deepData.reviews && Array.isArray(deepData.reviews) && deepData.reviews.length > 0) {
                     safeDOM.execute('detailReviewsBox', el => el.style.display = 'block');
                     safeDOM.execute('reviewsList', el => {
@@ -226,7 +228,7 @@ export const ScannerEngine = {
                                         <div style="font-size:13px; font-weight:bold; color:#475569;">${rev.author || '匿名荷包蛋'}</div>
                                     </div>
                                     <div style="display:flex; align-items:center; gap:4px; color:#9CA3AF; font-size:12px; cursor:pointer;" onclick="this.style.color='#EF4444'; this.querySelector('span').innerText = parseInt(this.querySelector('span').innerText) + 1;">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path></svg>
+                                        <svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"currentColor\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3\"></path></svg>
                                         <span>${rev.likes || 0}</span>
                                     </div>
                                 </div>
@@ -245,13 +247,23 @@ export const ScannerEngine = {
         }
     },
 
+    // 🌟 修复：加入历史后立即重绘足迹列表！
     _addToHistory(data) {
         try {
             let history = JSON.parse(localStorage.getItem('hp_scan_history') || '[]');
-            history = history.filter(item => item.dutch_name !== data.dutch_name);
+            
+            // 严谨去重：防止名字为空时的误删
+            const key = data.dutch_name || data.chinese_name || String(Date.now());
+            history = history.filter(item => (item.dutch_name || item.chinese_name) !== key);
+            
             history.unshift(data);
             if (history.length > 20) history.pop(); 
             localStorage.setItem('hp_scan_history', JSON.stringify(history));
+
+            // 🌟 核心：存完之后立刻刷新 UI，保证切到“我的足迹”时 100% 有数据！
+            if (typeof this.renderFootprints === 'function') {
+                this.renderFootprints();
+            }
         } catch(e) { console.error("History Save Error:", e); }
     }
 };
