@@ -1,5 +1,5 @@
 // ============================================================================
-// js/modules/scanner.js - 极速扫码穿透与足迹点评引擎 (修复符号截断，新增删除)
+// js/modules/scanner.js - 极速扫码穿透与足迹引擎 (内置大厂级 Canvas 图片极速压缩)
 // ============================================================================
 import { showToast } from '../core/toast.js';
 import { safeDOM } from '../core/dom.js'; 
@@ -14,6 +14,41 @@ export const ScannerEngine = {
         safeDOM.execute('packageImgInput', el => el.click());
     },
 
+    // 🌟 核心急救包：前端 Canvas 图片极速压缩引擎
+    // 把 5MB 的原图压缩到 50KB，拯救 Vercel 接口和 LocalStorage！
+    compressImage(file, maxWidth = 800, quality = 0.6) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+
+                    // 按比例缩放
+                    if (width > maxWidth) {
+                        height = Math.round((height *= maxWidth / width));
+                        width = maxWidth;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    
+                    // 绘制并压缩为 JPEG
+                    ctx.drawImage(img, 0, 0, width, height);
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+                    resolve(compressedBase64);
+                };
+                img.onerror = error => reject(error);
+            };
+            reader.onerror = error => reject(error);
+        });
+    },
+
     // ------------------------------------------------------------------------
     // 1. 扫码极速穿透引擎
     // ------------------------------------------------------------------------
@@ -23,51 +58,62 @@ export const ScannerEngine = {
 
         const sessionId = ++currentScanSession;
 
+        // 切换到 Loading UI
         safeDOM.execute('homeActionBox', el => el.style.display = 'none');
         safeDOM.execute('previewContainer', el => el.style.display = 'block');
         safeDOM.execute('scanOverlay', el => el.style.display = 'flex');
-        safeDOM.execute('scanText', el => el.innerText = "📡 大脑飞速解析中...");
+        safeDOM.execute('scanText', el => el.innerText = "📡 正在压缩图片...");
 
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            try {
-                safeDOM.execute('previewImg', el => { el.src = e.target.result; el.style.display = 'block'; });
-                const base64Data = e.target.result.split(',')[1];
-                
-                const res = await fetch('/api/scan', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ imageBase64: base64Data })
-                });
+        try {
+            // 🌟 1. 执行极速压缩 (手机端只需几十毫秒)
+            const compressedImage = await this.compressImage(file, 800, 0.6);
+            
+            safeDOM.execute('previewImg', el => { 
+                el.src = compressedImage; 
+                el.style.display = 'block'; 
+            });
+            safeDOM.execute('scanText', el => el.innerText = "🧠 大脑飞速解析中...");
 
-                if (sessionId !== currentScanSession) return; 
-                if (!res.ok) throw new Error("AI 解析失败，请重试");
-                
-                const data = await res.json();
-                data.scanned_img = e.target.result; 
-                
-                // 保存足迹
-                this._addToHistory(data);
-                
-                // 隐藏扫描界面，直接穿透到详情页
-                safeDOM.execute('scanOverlay', el => el.style.display = 'none'); 
-                safeDOM.execute('previewContainer', el => el.style.display = 'none');
-                safeDOM.execute('homeActionBox', el => el.style.display = 'flex');
-                
-                this._renderAndOpenDetail(data);
+            // 提取纯 Base64 数据发给后端
+            const base64Data = compressedImage.split(',')[1];
+            
+            const res = await fetch('/api/scan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ imageBase64: base64Data })
+            });
 
-            } catch (error) {
-                if (sessionId === currentScanSession) {
-                    safeDOM.execute('scanText', el => el.innerText = "❌ 解析失败: " + error.message);
-                    setTimeout(() => {
-                        safeDOM.execute('scanOverlay', el => el.style.display = 'none'); 
-                        safeDOM.execute('previewContainer', el => el.style.display = 'none');
-                        safeDOM.execute('homeActionBox', el => el.style.display = 'flex');
-                    }, 2000);
-                }
+            if (sessionId !== currentScanSession) return; 
+            if (!res.ok) throw new Error("AI 解析失败，请重试");
+            
+            const data = await res.json();
+            
+            // 🌟 2. 存入本地的图片也是压缩后的，彻底告别 LocalStorage 爆存！
+            data.scanned_img = compressedImage; 
+            
+            // 保存足迹
+            this._addToHistory(data);
+            
+            // 隐藏扫描界面，直接穿透到详情页
+            safeDOM.execute('scanOverlay', el => el.style.display = 'none'); 
+            safeDOM.execute('previewContainer', el => el.style.display = 'none');
+            safeDOM.execute('homeActionBox', el => el.style.display = 'flex');
+            
+            this._renderAndOpenDetail(data);
+
+        } catch (error) {
+            if (sessionId === currentScanSession) {
+                safeDOM.execute('scanText', el => el.innerText = "❌ 解析失败: " + (error.message || "请重试"));
+                setTimeout(() => {
+                    safeDOM.execute('scanOverlay', el => el.style.display = 'none'); 
+                    safeDOM.execute('previewContainer', el => el.style.display = 'none');
+                    safeDOM.execute('homeActionBox', el => el.style.display = 'flex');
+                }, 2000);
             }
-        };
-        reader.readAsDataURL(file);
+        } finally {
+            // 清空 input 使得再次扫同一张图也能触发 change 事件
+            event.target.value = '';
+        }
     },
 
     // ------------------------------------------------------------------------
@@ -81,7 +127,6 @@ export const ScannerEngine = {
                 return;
             }
             
-            // 🌟 顶部栏：增加一键清空按钮
             let html = `
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px;">
                 <div style="font-size:14px; font-weight:900; color:#111827;">共 ${history.length} 条足迹</div>
@@ -140,13 +185,11 @@ export const ScannerEngine = {
         } catch (e) { console.error("历史读取失败:", e); }
     },
 
-    // 🌟 修复：通过 index 提取名字，彻底规避 ' 引发语法错误
     async voteFromFootprint(index, action, btnElement) {
         const history = JSON.parse(localStorage.getItem('hp_scan_history') || '[]');
         const targetItem = history[index];
         if (!targetItem || !targetItem.dutch_name) return showToast("商品信息有误", "error");
 
-        // UI 提前给反馈
         btnElement.innerText = "已记录 ✔";
         btnElement.style.opacity = "0.6";
         btnElement.style.pointerEvents = "none";
@@ -169,7 +212,6 @@ export const ScannerEngine = {
             const history = JSON.parse(localStorage.getItem('hp_scan_history') || '[]');
             if (history[index]) {
                 currentProductData = history[index];
-                // 触发已有弹窗机制
                 if (window.App && typeof window.App.openModal === 'function') {
                     window.App.openModal('addReviewModal');
                 } else {
@@ -187,7 +229,6 @@ export const ScannerEngine = {
             if (window.switchTab) window.switchTab('details');
             currentProductData = data; 
 
-            // 基础数据上屏
             const fallbackImg = 'https://images.unsplash.com/photo-1544025162-8315ea07659b?q=80&w=600&auto=format&fit=crop';
             safeDOM.execute('detailImg', el => el.src = data.image_url || data.scanned_img || fallbackImg);
 
@@ -205,18 +246,15 @@ export const ScannerEngine = {
             safeDOM.execute('detailWarningBox', el => el.style.display = data.warning ? 'block' : 'none');
             safeDOM.execute('detailWarning', el => el.innerText = data.warning || '');
 
-            // 动态判断非食品
             const isNonFood = data.category && (data.category.includes('日化') || data.category.includes('非食品') || data.category.includes('清洁'));
             safeDOM.execute('recipeTitleIcon', el => el.innerText = isNonFood ? '🧼' : '🍳');
             safeDOM.execute('recipeTitleText', el => el.innerText = isNonFood ? '使用指南 & 注意事项' : '食用指南 & 神仙吃法');
 
-            // 隐藏深度盒子，开启骨架呼吸灯
             safeDOM.execute('detailRecipeBox', el => el.style.display = 'none');
             safeDOM.execute('detailAltBox', el => el.style.display = 'none');
             safeDOM.execute('detailReviewsBox', el => el.style.display = 'none');
             safeDOM.execute('detailAiLoading', el => el.style.display = 'block'); 
 
-            // 异步请求深度数据
             const res = await fetch('/api/detail', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -228,7 +266,6 @@ export const ScannerEngine = {
                 currentDetailData = deepData;
                 safeDOM.execute('detailAiLoading', el => el.style.display = 'none');
                 
-                // 渲染指南
                 if (deepData.methods || deepData.recipe_desc) {
                     safeDOM.execute('detailRecipeBox', el => el.style.display = 'block');
                     if (deepData.methods && Array.isArray(deepData.methods)) {
@@ -239,7 +276,6 @@ export const ScannerEngine = {
                     safeDOM.execute('recipeDetails', el => el.innerText = deepData.recipe_desc || '暂无具体步骤~');
                 }
 
-                // 渲染平替
                 if (deepData.alternatives && Array.isArray(deepData.alternatives) && deepData.alternatives.length > 0) {
                     safeDOM.execute('detailAltBox', el => el.style.display = 'block');
                     safeDOM.execute('detailAlternatives', el => {
@@ -247,7 +283,6 @@ export const ScannerEngine = {
                     });
                 }
 
-                // 渲染高赞评论
                 if (deepData.reviews && Array.isArray(deepData.reviews) && deepData.reviews.length > 0) {
                     safeDOM.execute('detailReviewsBox', el => el.style.display = 'block');
                     safeDOM.execute('reviewsList', el => {
@@ -295,7 +330,7 @@ export const ScannerEngine = {
     }
 };
 
-// 挂载
+// 挂载到 window.App
 if (typeof window !== 'undefined') {
     window.App = window.App || {};
     Object.keys(ScannerEngine).forEach(key => {
