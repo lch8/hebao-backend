@@ -1179,39 +1179,66 @@ if (!document.getElementById('vipStyles')) {
 // ==========================================
 // 🛡️ 全局身份与信用标识引擎 (供全站调用)
 // ==========================================
-window.App.getUserBadgeHtml = function(email, creditScore = 100) {
-    // 1. 如果没有绑定邮箱，显示游客
+window.App.getUserBadgeHtml = function(email, creditScore) {
+    // 默认信用分为 100
+    let score = creditScore !== undefined ? parseInt(creditScore) : 100;
+    
+    // ==========================================
+    // 1. 信用分红绿灯系统 (基于 100 分基准线)
+    // ==========================================
+    let creditHtml = '';
+    if (score < 60) {
+        creditHtml = `<span style="background: #FEF2F2; color: #DC2626; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 900; margin-left: 4px; border: 1px solid #FECACA; box-shadow: 0 1px 2px rgba(220,38,38,0.1);">🚫 极低 (${score})</span>`;
+    } else if (score < 100) {
+        creditHtml = `<span style="background: #FFFBEB; color: #D97706; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 900; margin-left: 4px; border: 1px solid #FDE68A;">⚠️ 预警 (${score})</span>`;
+    } else if (score >= 150) {
+        creditHtml = `<span style="background: #FEFCE8; color: #B45309; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 900; margin-left: 4px; border: 1px solid #FEF08A; box-shadow: 0 1px 2px rgba(180,83,9,0.1);">👑 极佳 (${score})</span>`;
+    } else {
+        // 100 - 149 分：正常良民
+        creditHtml = `<span style="background: #F0FDF4; color: #047857; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 900; margin-left: 4px; border: 1px solid #A7F3D0;">🟢 良好 (${score})</span>`;
+    }
+
+    // ==========================================
+    // 2. 邮箱百变厂牌匹配
+    // ==========================================
     if (!email || email === '未绑定邮箱') {
-        return `<span style="background: #F1F5F9; color: #64748B; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-left: 6px;">Lv.0 游客</span>`;
+        return `<span style="background: #F1F5F9; color: #64748B; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; margin-left: 6px; border: 1px solid #E2E8F0;">👤 游客</span>` + creditHtml;
     }
     
-    // 2. 百变厂牌匹配
     const domain = email.toLowerCase().split('@')[1] || '';
-    let badge = { grad: 'linear-gradient(135deg, #FDE68A 0%, #F59E0B 100%)', icon: '🎓', text: '实名校友', textColor: '#78350F' };
+    let badge = null; // 默认不显示特殊徽章
 
-    if (domain.includes('tudelft.nl')) badge = { grad: 'linear-gradient(135deg, #E0F2FE 0%, #0EA5E9 100%)', icon: '🏛️', text: 'TUD 认证', textColor: '#FFF' };
-    else if (domain.includes('uva.nl')) badge = { grad: 'linear-gradient(135deg, #FEE2E2 0%, #DC2626 100%)', icon: '❌', text: 'UvA 认证', textColor: '#FFF' };
-    else if (domain.includes('vu.nl')) badge = { grad: 'linear-gradient(135deg, #DBEAFE 0%, #2563EB 100%)', icon: '🦅', text: 'VU 认证', textColor: '#FFF' };
-    else if (domain.includes('eur.nl')) badge = { grad: 'linear-gradient(135deg, #D1FAE5 0%, #10B981 100%)', icon: '📈', text: 'EUR 认证', textColor: '#FFF' };
-    else if (domain.includes('leidenuniv.nl')) badge = { grad: 'linear-gradient(135deg, #E0E7FF 0%, #4F46E5 100%)', icon: '📜', text: 'Leiden 认证', textColor: '#FFF' };
-    else if (domain.includes('wur.nl')) badge = { grad: 'linear-gradient(135deg, #ECFCCB 0%, #65A30D 100%)', icon: '🌱', text: 'WUR 认证', textColor: '#FFF' };
-    else if (domain.includes('asml.com')) badge = { grad: 'linear-gradient(135deg, #475569 0%, #0F172A 100%)', icon: '⚙️', text: 'ASML 认证', textColor: '#FFF' };
-    else if (domain.includes('ing.com') || domain.includes('ing.nl')) badge = { grad: 'linear-gradient(135deg, #FFEDD5 0%, #EA580C 100%)', icon: '🦁', text: 'ING 认证', textColor: '#FFF' };
+    // --- 🎓 荷兰核心大学 (加上了缺漏的巨头) ---
+    if (domain.includes('tudelft.nl')) badge = { grad: 'linear-gradient(135deg, #E0F2FE 0%, #0EA5E9 100%)', icon: '🏛️', text: 'TUD', textColor: '#FFF' };
+    else if (domain.includes('uva.nl')) badge = { grad: 'linear-gradient(135deg, #FEE2E2 0%, #DC2626 100%)', icon: '❌', text: 'UvA', textColor: '#FFF' };
+    else if (domain.includes('vu.nl')) badge = { grad: 'linear-gradient(135deg, #DBEAFE 0%, #2563EB 100%)', icon: '🦅', text: 'VU', textColor: '#FFF' };
+    else if (domain.includes('eur.nl')) badge = { grad: 'linear-gradient(135deg, #D1FAE5 0%, #10B981 100%)', icon: '📈', text: 'EUR', textColor: '#FFF' };
+    else if (domain.includes('leidenuniv.nl')) badge = { grad: 'linear-gradient(135deg, #E0E7FF 0%, #4F46E5 100%)', icon: '📜', text: 'Leiden', textColor: '#FFF' };
+    else if (domain.includes('wur.nl')) badge = { grad: 'linear-gradient(135deg, #ECFCCB 0%, #65A30D 100%)', icon: '🌱', text: 'WUR', textColor: '#FFF' };
+    else if (domain.includes('uu.nl')) badge = { grad: 'linear-gradient(135deg, #FEF08A 0%, #EAB308 100%)', icon: '☀️', text: 'UU', textColor: '#78350F' }; // 乌特勒支
+    else if (domain.includes('rug.nl')) badge = { grad: 'linear-gradient(135deg, #FCA5A5 0%, #EF4444 100%)', icon: '🛡️', text: 'RUG', textColor: '#FFF' }; // 格罗宁根
+    else if (domain.includes('utwente.nl')) badge = { grad: 'linear-gradient(135deg, #111827 0%, #374151 100%)', icon: '💻', text: 'Twente', textColor: '#FFF' }; // 屯特
+    else if (domain.includes('tue.nl')) badge = { grad: 'linear-gradient(135deg, #FCA5A5 0%, #DC2626 100%)', icon: '💡', text: 'TU/e', textColor: '#FFF' }; // 埃因霍温
+
+    // --- 💼 荷兰核心名企大厂 (加上了缺漏的巨头) ---
+    else if (domain.includes('asml.com')) badge = { grad: 'linear-gradient(135deg, #475569 0%, #0F172A 100%)', icon: '⚙️', text: 'ASML', textColor: '#FFF' };
+    else if (domain.includes('ing.com') || domain.includes('ing.nl')) badge = { grad: 'linear-gradient(135deg, #FFEDD5 0%, #EA580C 100%)', icon: '🦁', text: 'ING', textColor: '#FFF' };
     else if (domain.includes('booking.com')) badge = { grad: 'linear-gradient(135deg, #93C5FD 0%, #003B95 100%)', icon: '🧳', text: 'Booking', textColor: '#FFF' };
-    else if (!domain.includes('gmail.com') && !domain.includes('hotmail.com') && !domain.includes('outlook.com') && !domain.includes('qq.com') && !domain.includes('163.com')) {
-        badge = { grad: 'linear-gradient(135deg, #F3F4F6 0%, #4B5563 100%)', icon: '💼', text: '名企认证', textColor: '#FFF' };
+    else if (domain.includes('adyen.com')) badge = { grad: 'linear-gradient(135deg, #A7F3D0 0%, #059669 100%)', icon: '💳', text: 'Adyen', textColor: '#FFF' };
+    else if (domain.includes('philips.com')) badge = { grad: 'linear-gradient(135deg, #93C5FD 0%, #2563EB 100%)', icon: '🏥', text: 'Philips', textColor: '#FFF' };
+
+    // --- ⚠️ 修复漏洞：只对明确带有教育特征的域名给予“实名校友” ---
+    else if (domain.endsWith('.edu') || domain.includes('student.')) {
+        badge = { grad: 'linear-gradient(135deg, #FDE68A 0%, #F59E0B 100%)', icon: '🎓', text: '实名校友', textColor: '#78350F' };
     }
 
-    const badgeHtml = `<span style="background: ${badge.grad}; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 900; color: ${badge.textColor}; margin-left: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">${badge.icon} ${badge.text}</span>`;
-    
-    // 3. 信用分红绿灯系统 (90以上绿，70以上黄，低于70红)
-    const creditColor = creditScore >= 90 ? '#059669' : (creditScore >= 70 ? '#D97706' : '#DC2626');
-    const creditBg = creditScore >= 90 ? '#D1FAE5' : (creditScore >= 70 ? '#FEF3C7' : '#FEE2E2');
-    const creditHtml = `<span style="background: ${creditBg}; color: ${creditColor}; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 900; margin-left: 4px; border: 1px solid ${creditColor}40;">信用 ${creditScore}</span>`;
-    
+    let badgeHtml = '';
+    if (badge) {
+        badgeHtml = `<span style="background: ${badge.grad}; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 900; color: ${badge.textColor}; margin-left: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">${badge.icon} ${badge.text}</span>`;
+    }
+
     return badgeHtml + creditHtml;
 };
-
 // ============================================================================
 // App 核心启动引擎 (统一调度中心)
 // ============================================================================
