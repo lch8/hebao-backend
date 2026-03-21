@@ -1,47 +1,101 @@
-export const config = { runtime: 'edge' };
+// ============================================================================
+// js/modules/trending.js - 超市红黑榜引擎 (修复作用域 + 颜值升级)
+// ============================================================================
+import { safeDOM } from '../core/dom.js';
 
-export default async function handler(req) {
-    if (req.method === 'OPTIONS') return new Response(null, { status: 200, headers: { 'Access-Control-Allow-Origin': '*' }});
-    try {
-        let dbUrl = process.env.TURSO_DATABASE_URL;
-        const authToken = process.env.TURSO_AUTH_TOKEN;
-        if (!dbUrl || !authToken) return new Response(JSON.stringify({ error: '配置缺失' }), { status: 500 });
-        dbUrl = dbUrl.replace('libsql://', 'https://');
+export const TrendingEngine = {
+    // 1. 拉取真实榜单数据
+    async loadTrendingData() {
+        try {
+            const res = await fetch('/api/trending');
+            const data = await res.json();
+            if (data.success) {
+                this.renderTrendingList(data.topLikes, 'homeTrendingListLikes', 'likes');
+                this.renderTrendingList(data.topDislikes, 'homeTrendingListDislikes', 'dislikes');
+            }
+        } catch (error) {
+            console.error("🚨 榜单拉取失败:", error);
+        }
+    },
 
-        // ⚠️ 核心修复：SELECT 语句中强制拉取 alternatives(平替) 和 pairing(点评)！
-        const sqlLikes = "SELECT id, dutch_name, chinese_name, category, insight, alternatives, pairing, warning, image_url, likes, dislikes FROM products ORDER BY likes DESC LIMIT 20";
-        const sqlDislikes = "SELECT id, dutch_name, chinese_name, category, insight, alternatives, pairing, warning, image_url, likes, dislikes FROM products ORDER BY dislikes DESC LIMIT 20";
+    // 2. 渲染榜单列表 (金银铜牌 UI)
+    renderTrendingList(items, containerId, type) {
+        safeDOM.execute(containerId, container => {
+            if (!items || items.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding: 40px; color:#9CA3AF; font-size:14px; font-weight:bold;">暂无数据，快去扫码当第一个排雷先锋！</div>';
+                return;
+            }
+            let html = '';
+            items.forEach((item, index) => {
+                // 动态生成金银铜牌样式
+                let rankStyle = "background:#F1F5F9; color:#94A3B8;"; 
+                if (index === 0) rankStyle = "background: linear-gradient(135deg, #FDE68A, #F59E0B); color:#FFF; box-shadow: 0 2px 8px rgba(245,158,11,0.3);"; 
+                else if (index === 1) rankStyle = "background: linear-gradient(135deg, #E2E8F0, #94A3B8); color:#FFF; box-shadow: 0 2px 8px rgba(148,163,184,0.3);"; 
+                else if (index === 2) rankStyle = "background: linear-gradient(135deg, #FED7AA, #D97706); color:#FFF; box-shadow: 0 2px 8px rgba(217,119,6,0.3);"; 
 
-        const response = await fetch(`${dbUrl}/v2/pipeline`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                requests: [
-                    { type: "execute", stmt: { sql: sqlLikes } },
-                    { type: "execute", stmt: { sql: sqlDislikes } },
-                    { type: "close" }
-                ]
-            })
-        });
+                const icon = type === 'likes' ? '🔥' : '💣';
+                const count = type === 'likes' ? item.likes : item.dislikes;
+                const scoreColor = type === 'likes' ? '#EF4444' : '#111827';
+                
+                // 确保点击能跳到详情页
+                const safeItemStr = encodeURIComponent(JSON.stringify(item));
 
-        const result = await response.json();
-        if (result.results[0].type === 'error') throw new Error(result.results[0].error.message);
-
-        // 数据格式化洗牌
-        const formatRows = (resData) => {
-            const cols = resData.cols.map(c => c.name);
-            return resData.rows.map(row => {
-                let obj = {};
-                row.forEach((val, i) => obj[cols[i]] = val.value);
-                return obj;
+                html += `
+                <div class="trending-item" style="display:flex; align-items:center; background:#FFF; border-radius:16px; margin-bottom:12px; padding:12px; box-shadow:0 4px 15px rgba(0,0,0,0.02); border:1px solid #F1F5F9; cursor:pointer;" onclick="window.App.openTrendingDetail(decodeURIComponent('${safeItemStr}'))">
+                    
+                    <div style="width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 900; flex-shrink: 0; ${rankStyle}">${index + 1}</div>
+                    
+                    <img src="${item.image_url || 'https://via.placeholder.com/60'}" onerror="this.src='https://via.placeholder.com/60'" style="width:55px; height:55px; border-radius:12px; object-fit:cover; margin:0 12px; background:#F8FAFC; border: 1px solid #F1F5F9;">
+                    
+                    <div style="flex:1; overflow:hidden;">
+                        <div style="font-weight:900; font-size:16px; color:#111827; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:4px;">${item.chinese_name || item.dutch_name}</div>
+                        <div style="font-size:12px; color:#94A3B8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.dutch_name}</div>
+                    </div>
+                    
+                    <div style="font-weight:900; font-size: 16px; color:${scoreColor}; flex-shrink:0; display:flex; align-items:center; gap:4px;">
+                        <span style="font-size:14px;">${icon}</span> ${count || 0}
+                    </div>
+                </div>`;
             });
-        };
+            container.innerHTML = html;
+        });
+    },
 
-        const topLikes = formatRows(result.results[0].response.result);
-        const topDislikes = formatRows(result.results[1].response.result);
+    // 3. 核心修复：切换红榜 / 黑榜
+    switchHomeTrendingTab(tabType, element) {
+        document.querySelectorAll('.t-tab').forEach(el => el.classList.remove('active'));
+        if (element) element.classList.add('active');
+        
+        if (tabType === 'likes') {
+            safeDOM.execute('homeTrendingListLikes', el => el.style.display = 'block');
+            safeDOM.execute('homeTrendingListDislikes', el => el.style.display = 'none');
+        } else {
+            safeDOM.execute('homeTrendingListLikes', el => el.style.display = 'none');
+            safeDOM.execute('homeTrendingListDislikes', el => el.style.display = 'block');
+        }
+    },
 
-        return new Response(JSON.stringify({ success: true, topLikes, topDislikes }), { status: 200, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }});
-    } catch (error) {
-        return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }});
+    // 4. 点击榜单直接跳转详情页
+    openTrendingDetail(itemJsonStr) {
+        try {
+            const data = JSON.parse(itemJsonStr);
+            if (window.App && window.App._renderAndOpenDetail) {
+                window.App._renderAndOpenDetail(data);
+            }
+        } catch (e) {
+            console.error("解析详情失败", e);
+        }
     }
+};
+
+// 🌟 极其关键：将函数暴露给全局 window，否则 HTML 里的 onclick 找不到！
+if (typeof window !== 'undefined') {
+    window.App = window.App || {};
+    Object.keys(TrendingEngine).forEach(key => {
+        if (typeof TrendingEngine[key] === 'function') {
+            window.App[key] = TrendingEngine[key].bind(TrendingEngine);
+            // 兼容你旧版 HTML 直接写的 onclick="switchHomeTrendingTab"
+            window[key] = window.App[key]; 
+        }
+    });
 }
