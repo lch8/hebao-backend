@@ -14,12 +14,22 @@
 
 <div class="tab-bar">
     <div class="tab-item active" onclick="switchTab('tips', this)"><span class="tab-icon">📖</span><span class="tab-text">红宝书</span></div>
+    
     <div class="tab-item" onclick="switchTab('market', this)"><span class="tab-icon">📦</span><span class="tab-text">集市</span></div>
+    
     <div class="tab-item-publish" onclick="window.App ? window.App.openPublishSheet() : alert('引擎加载中...')">
         <div class="btn-publish">+</div>
         <span class="tab-text" style="position: absolute; bottom: 8px; color:#9CA3AF;">发布</span>
     </div>
-    <div class="tab-item" onclick="switchTab('messages', this)"><span class="tab-icon">💬</span><span class="tab-text">消息</span></div>
+    
+    <div class="tab-item" onclick="switchTab('messages', this)">
+        <div style="position: relative; display: inline-flex; justify-content: center; align-items: center;">
+            <span class="tab-icon">💬</span>
+            <div id="navMsgBadge" style="display: none; position: absolute; top: -4px; right: -12px; background: #EF4444; color: #FFF; font-size: 10px; font-weight: 900; padding: 2px 5px; border-radius: 10px; border: 2px solid #FFF; min-width: 8px; text-align: center; box-shadow: 0 2px 4px rgba(239,68,68,0.3); z-index: 10; line-height: 1.2;">0</div>
+        </div>
+        <span class="tab-text">消息</span>
+    </div>
+
     <div class="tab-item" onclick="switchTab('profile', this)"><span class="tab-icon">👤</span><span class="tab-text">我的</span></div>
 </div>
 
