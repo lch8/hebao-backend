@@ -25,21 +25,37 @@ export default async function handler(req) {
         }
 
         // ==========================================
-        // 🧠 深度报告大脑：专门生成平替和长文点评
+        // 🧠 深度报告大脑：强制输出结构化 JSON 适配大厂 UI
         // ==========================================
     
-        const dsSystemPrompt = `你是专为荷兰华人留学生服务的“超市排雷管家”。用户在首页已经看到了极简结论，现在进入详情页，需要你给出最硬核的细节。
+        const dsSystemPrompt = `你是专为荷兰华人留学生服务的“超市排雷管家”。用户在首页看了极简评测，现在进入详情页，需要你提供深度内容。
 
-        ⚠️ 【极其重要的输出铁律】：
-        1. 必须返回纯 JSON 格式（直接大括号起手，绝不允许带 \`\`\`json 这样的Markdown标记）。
-        2. 只需生成以下两个字段，不要废话：
+        ⚠️ 【绝对铁律】：
+        你必须严格返回以下 JSON 格式的数据，不要包含任何 Markdown 标记，严格使用对应的类型（数组、对象）。
+
         {
-          "alternatives": "💰平替：(Lidl/Aldi更便宜的同款) | ✨升级：(更好吃的高级货)。实在没有平替就写'本赛道无敌，暂无平替'。",
-          // 将原本的 "🧑‍🍳 网友点评 [👍 推荐]：..." 替换为：
-"pairing": "模拟2条留学生视角的评价。\\n【关键要求】：必须严格以 '🤖 AI预测口味 [👍 推荐]：' 或 '🤖 AI预测口味 [💣 避雷]：' 开头。这两条之间用两个换行符 (\\\\n\\\\n) 分隔。"
+          "methods": ["♨️ 烤箱 200度 10分钟", "🔥 空气炸锅 180度 8分钟"], // 字符串数组：提取最完美的烹饪或食用方法，带emoji，没有就写["直接开吃"]
+          "recipe_desc": "千万不要用微波炉加热，会完全软趴趴！建议中间切开夹生菜和火腿...", // 字符串：一段100字内的神仙吃法或避坑指南
+          "alternatives": ["Lidl 同款炸鱼块 €3.99", "AH Excellent 优质版"], // 字符串数组：给出1-3个平替或升级版商品，没有就返回空数组 []
+          "reviews": [ // 对象数组：模拟2-3条极具真实留学生语气的点评
+            {
+              "avatar": "🐼", // 1个符合人设的emoji
+              "author": "阿姆干饭王", // 极具小红书风格的网名
+              "content": "这个绝对是荷兰超市的巅峰之作！一定要配那个绿色的蒜香酱！", // 真实点评，带点主观感情，字数50字内
+              "likes": 245, // 随机生成一个 10 - 999 的点赞数 (整数)
+              "date": "1天前" // 如：刚刚、1天前、3天前
+            },
+            {
+              "avatar": "🐷",
+              "author": "鹿村打工人",
+              "content": "避雷！超级咸，吃了一口感觉肾脏在悲鸣...",
+              "likes": 128,
+              "date": "3天前"
+            }
+          ]
         }`;
 
-        const dsUserPrompt = `当前商品荷兰语名：${dutchName}（中文名：${chineseName}）。请立即输出JSON格式的深度报告。`;
+        const dsUserPrompt = `当前商品荷兰语名：${dutchName}（中文俗称：${chineseName}）。请立即输出结构化 JSON 深度报告。`;
 
         const dsRes = await fetch('https://api.deepseek.com/chat/completions', {
             method: 'POST',
@@ -53,8 +69,8 @@ export default async function handler(req) {
                     { role: 'system', content: dsSystemPrompt }, 
                     { role: 'user', content: dsUserPrompt }
                 ],
-                // 稍微提高一点temperature，让网友点评更有创意和感情
-                temperature: 0.8,
+                // 提高 temperature，让网友点评更有创意、更像真人
+                temperature: 0.85,
                 response_format: { type: "json_object" } 
             })
         });
@@ -64,11 +80,11 @@ export default async function handler(req) {
 
         // 清理可能存在的 Markdown 标记，确保纯净的 JSON
         let aiText = dsData.choices[0].message.content;
-        aiText = aiText.replace(/```json/g, '').replace(/```/g, '').trim();
+        aiText = aiText.replace(/```json/gi, '').replace(/```/g, '').trim();
         const match = aiText.match(/\{[\s\S]*\}/);
         if (!match) throw new Error("AI 格式错误，未能生成标准 JSON");
 
-        // 返回给前端
+        // 直接把结构化 JSON 吐给前端
         return new Response(match[0], {
             status: 200,
             headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
