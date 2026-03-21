@@ -102,11 +102,31 @@ export const TrendingEngine = {
         });
     },
 
-    // 4. 核心修复：切换红榜 / 黑榜 (完全保留)
+    // 4. 核心修复：切换红榜 / 黑榜 (修复点击不强制变色的 Bug)
     switchHomeTrendingTab(tabType, element) {
-        document.querySelectorAll('.t-tab').forEach(el => el.classList.remove('active'));
-        if (element) element.classList.add('active');
+        // 第一步：把所有的 tab 都重置为“灰色未选中”状态
+        document.querySelectorAll('.t-tab').forEach(tab => {
+            tab.style.background = '#F8FAFC';
+            tab.style.color = '#475569';
+            tab.style.borderColor = '#E2E8F0';
+        });
         
+        // 第二步：给当前点击的按钮，强制涂上专属颜色
+        if (element) {
+            if (tabType === 'likes') {
+                // 红榜专属色：红底红字
+                element.style.background = '#FEF2F2';
+                element.style.color = '#EF4444';
+                element.style.borderColor = '#FECACA';
+            } else {
+                // 黑榜专属色：黑底白字
+                element.style.background = '#111827';
+                element.style.color = '#FFF';
+                element.style.borderColor = '#111827';
+            }
+        }
+        
+        // 第三步：切换底下数据列表的显示与隐藏
         if (tabType === 'likes') {
             safeDOM.execute('homeTrendingListLikes', el => el.style.display = 'block');
             safeDOM.execute('homeTrendingListDislikes', el => el.style.display = 'none');
