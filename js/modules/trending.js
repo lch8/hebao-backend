@@ -102,16 +102,20 @@ export const TrendingEngine = {
         });
     },
 
-    // 4. 🌟 暴力修复版：切换红榜 / 黑榜
+    // 4. 🌟 终极防冲突版：切换红榜 / 黑榜
     switchHomeTrendingTab(tabType, element) {
-        // 第一步：重置所有 Tab 样式
-        document.querySelectorAll('.t-tab').forEach(tab => {
+        // 1. 暴力锁定当前所在的页面容器，防止和页面上可能遗留的其他废弃代码串台！
+        const container = element.closest('#page-trending');
+        if (!container) return;
+
+        // 2. 只重置当前容器内的 Tab 样式
+        container.querySelectorAll('.t-tab').forEach(tab => {
             tab.style.background = '#F8FAFC';
             tab.style.color = '#475569';
             tab.style.borderColor = '#E2E8F0';
         });
         
-        // 第二步：强制给当前 Tab 上色
+        // 3. 强制给当前点击的 Tab 上色
         if (element) {
             if (tabType === 'likes') {
                 element.style.background = '#FEF2F2';
@@ -124,9 +128,9 @@ export const TrendingEngine = {
             }
         }
         
-        // 第三步：抛弃安全封装，使用最底层的原生 JS 暴力操控显示隐藏！绝对不可能失效！
-        const likesList = document.getElementById('homeTrendingListLikes');
-        const dislikesList = document.getElementById('homeTrendingListDislikes');
+        // 4. 🌟 核心修复：只在当前容器内查找 List，彻底免疫 ID 冲突！
+        const likesList = container.querySelector('#homeTrendingListLikes');
+        const dislikesList = container.querySelector('#homeTrendingListDislikes');
 
         if (likesList && dislikesList) {
             if (tabType === 'likes') {
@@ -138,7 +142,6 @@ export const TrendingEngine = {
             }
         }
     },
-
     openTrendingDetail(itemJsonStr) {
         try {
             const data = JSON.parse(itemJsonStr);
