@@ -809,3 +809,62 @@ window.App.submitPost = async function() {
         btn.style.pointerEvents = 'auto';
     }
 };
+
+
+// ============================================================================
+// 🌟 个人主页 UI 状态持久化引擎
+// ============================================================================
+window.App = window.App || {};
+
+window.App.refreshProfileUI = function() {
+    // 1. 从本地存储安全读取用户数据
+    const isLoggedIn = localStorage.getItem('hebao_logged_in') === 'true';
+    const email = localStorage.getItem('hebao_email') || '未绑定邮箱';
+    const credit = localStorage.getItem('hebao_credit') || 100;
+    const name = localStorage.getItem('hp_name') || '新晋荷包蛋';
+
+    if (isLoggedIn) {
+        // 2. 重新计算并注入高颜值徽章！
+        const badgeHtml = window.App.getUserBadgeHtml(email, credit);
+        
+        // 3. 强制更新 DOM
+        const subInfoEl = document.getElementById('profileSubInfo');
+        if (subInfoEl) subInfoEl.innerHTML = badgeHtml;
+        
+        const nameEl = document.getElementById('profileName');
+        if (nameEl) nameEl.innerText = name;
+
+        const creditEl = document.getElementById('statCredit');
+        if (creditEl) creditEl.innerText = credit;
+        
+        // 隐藏游客提示，显示真实数据面板
+        const guestBlock = document.querySelector('.guest-login-block');
+        if (guestBlock) guestBlock.style.display = 'none';
+        
+        const statsPanel = document.getElementById('userStatsPanel');
+        if (statsPanel) statsPanel.style.display = 'flex';
+    } else {
+        // 恢复未登录状态
+        const subInfoEl = document.getElementById('profileSubInfo');
+        if (subInfoEl) subInfoEl.innerHTML = '<span>ID: 未登录</span>';
+    }
+};
+
+// 🌟 关键点：在你切换 Tab 的代码里，加上这一句拦截！
+// 找到你原来的 switchTab 函数，把它改造成这样：
+const originalSwitchTab = window.switchTab; // 假设你原本有这个全局函数
+window.switchTab = function(tabId, element) {
+    if (originalSwitchTab) originalSwitchTab(tabId, element);
+    
+    // 如果切到了“我的”页面 (profile)，立刻强制刷新 UI！
+    if (tabId === 'profile') {
+        window.App.refreshProfileUI();
+    }
+};
+
+// 页面刚加载时，也顺手刷一次
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        if (window.App.refreshProfileUI) window.App.refreshProfileUI();
+    }, 200);
+});
