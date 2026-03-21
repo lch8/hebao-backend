@@ -141,12 +141,13 @@ export default async function handler(req) {
         
         const finalJsonText = jsonData.candidates[0].content.parts[0].text;
 
-        // ==========================================
-        // 🗄️ 异步写入数据库 (不阻塞前端响应)
+       // ==========================================
+        // 🗄️ 绝对安全写入数据库 (修复 Edge 拔电源 Bug)
         // ==========================================
         try {
             const aiResult = JSON.parse(finalJsonText);
-            fetch(`${dbUrl}/v2/pipeline`, {
+            // 🌟 必须加上 await！否则 Edge 运行时会在请求发出去前直接终止进程！
+            await fetch(`${dbUrl}/v2/pipeline`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -170,7 +171,10 @@ export default async function handler(req) {
                     ]
                 })
             });
-        } catch (_) { /* 异步错误不影响主流程 */ }
+        } catch (dbError) { 
+            console.error("Turso 写入失败:", dbError);
+            // 即使写入失败，也不阻断 AI 结果返回给用户
+        }
 
         return new Response(finalJsonText, {
             status: 200,
