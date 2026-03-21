@@ -1,5 +1,5 @@
 // ============================================================================
-// js/modules/chat.js - 私信聊天引擎 (小红书级 UI + 用户自定义头像支持)
+// js/modules/chat.js - 私信聊天引擎 (带未读消息角标 + 小红书级 UI)
 // ============================================================================
 import { showToast } from '../core/toast.js';
 import { safeDOM } from '../core/dom.js';
@@ -7,7 +7,7 @@ import { ModalManager } from '../components/modals.js';
 
 let currentChatPartnerId = null; 
 let currentChatPostId = null; 
-let currentChatPartnerAvatar = '😎'; // 暂存对方头像
+let currentChatPartnerAvatar = '😎'; 
 let chatPollingInterval = null;    
 let globalPollingInterval = null;  
 let lastMessageCount = 0; 
@@ -15,7 +15,7 @@ let latestConversationTime = null;
 
 export const ChatEngine = {
     // ------------------------------------------------------------------------
-    // 🌟 1. 全局雷达启动器
+    // 1. 全局雷达启动器
     // ------------------------------------------------------------------------
     startGlobalPolling() {
         if (globalPollingInterval) return; 
@@ -27,7 +27,24 @@ export const ChatEngine = {
     },
 
     // ------------------------------------------------------------------------
-    // 🌟 2. UGC 头像处理引擎 (极速压缩 + 本地化存储)
+    // 🌟 新增：全局未读红点渲染器
+    // ------------------------------------------------------------------------
+    updateGlobalBadge(count) {
+        safeDOM.execute('navMsgBadge', badge => {
+            if (count > 0) {
+                badge.innerText = count > 99 ? '99+' : count;
+                badge.style.display = 'block';
+                // 让小红点产生一个“Q弹”的动画效果，吸引注意力
+                badge.style.transform = 'scale(1.2)';
+                setTimeout(() => badge.style.transform = 'scale(1)', 200);
+            } else {
+                badge.style.display = 'none';
+            }
+        });
+    },
+
+    // ------------------------------------------------------------------------
+    // 2. UGC 头像处理引擎
     // ------------------------------------------------------------------------
     async uploadCustomAvatar(event) {
         const file = event.target.files[0];
@@ -36,7 +53,6 @@ export const ChatEngine = {
         showToast("正在生成高清头像...", "info");
 
         try {
-            // 利用 Canvas 极速压缩到 200px (极其轻量，不会塞爆 LocalStorage)
             const compressedAvatar = await new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
@@ -48,7 +64,6 @@ export const ChatEngine = {
                         const size = 200;
                         canvas.width = size; canvas.height = size;
                         const ctx = canvas.getContext('2d');
-                        // 居中裁剪
                         const minDim = Math.min(img.width, img.height);
                         const startX = (img.width - minDim) / 2;
                         const startY = (img.height - minDim) / 2;
@@ -61,7 +76,7 @@ export const ChatEngine = {
             });
             
             localStorage.setItem('hp_real_avatar', compressedAvatar);
-            this.renderGlobalAvatar(); // 立刻更新全站 UI
+            this.renderGlobalAvatar(); 
             showToast("🎉 头像更新成功，太好看啦！", "success");
         } catch (error) {
             showToast("头像更新失败，请重试", "error");
@@ -70,7 +85,6 @@ export const ChatEngine = {
         }
     },
 
-    // 🌟 全局头像刷新器
     renderGlobalAvatar() {
         const realAvatarData = localStorage.getItem('hp_real_avatar');
         if (realAvatarData) {
@@ -83,7 +97,7 @@ export const ChatEngine = {
     },
 
     // ------------------------------------------------------------------------
-    // 3. 获取消息列表
+    // 3. 获取消息列表 (🌟 加入未读状态计算)
     // ------------------------------------------------------------------------
     async loadConversations(isSilent = false) {
         const uid = window.userUUID || localStorage.getItem('hebao_uuid');
@@ -104,11 +118,15 @@ export const ChatEngine = {
 
             const conversations = data.conversations || [];
             
+            // 🌟 核心：拉取本地阅读记录
+            const readTimestamps = JSON.parse(localStorage.getItem('hp_chat_reads') || '{}');
+            let totalUnreadCount = 0;
+
             if (conversations.length > 0) {
                 const topConvTime = conversations[0].last_time;
                 if (latestConversationTime !== null && topConvTime !== latestConversationTime) {
                     if (currentChatPartnerId !== conversations[0].partner_id) {
-                        showToast("📩 您收到了一条新私信，快去看看吧！", "info");
+                        showToast("📩 您收到了一条新私信！", "info");
                     }
                 }
                 latestConversationTime = topConvTime;
@@ -118,6 +136,7 @@ export const ChatEngine = {
                 if (conversations.length === 0) {
                     list.innerHTML = '';
                     safeDOM.execute('msgEmptyState', el => el.style.display = 'flex');
+                    this.updateGlobalBadge(0); // 清空角标
                     return;
                 }
 
@@ -126,19 +145,31 @@ export const ChatEngine = {
                 
                 conversations.forEach(conv => {
                     const date = new Date(conv.last_time + 'Z');
+                    const msgTimeMs = date.getTime();
                     const timeStr = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+                    
                     const partnerEmail = conv.partner_email || '';
                     const partnerCredit = conv.partner_credit !== undefined ? conv.partner_credit : 100;
                     const partnerName = conv.partner_name || `校友_${conv.partner_id.substring(0, 4)}`;
                     const partnerAvatar = conv.partner_avatar || '😎';
 
-                    // 渲染对方真实头像或 Emoji
-                    const avatarHtml = partnerAvatar.length > 10 // 如果长度大于10，说明是Base64真实图片
+                    // 🌟 核心算法：如果这条消息的时间，晚于该用户的本地已读时间，且当前没打开他的聊天框，就是未读！
+                    const lastReadTime = readTimestamps[conv.partner_id] || 0;
+                    let isUnread = false;
+                    if (msgTimeMs > lastReadTime && currentChatPartnerId !== conv.partner_id) {
+                        isUnread = true;
+                        totalUnreadCount++;
+                    }
+
+                    // 如果未读，在列表右侧加个醒目的红点
+                    const unreadDotHtml = isUnread ? `<div style="width: 10px; height: 10px; background: #EF4444; border-radius: 50%; box-shadow: 0 0 0 2px #FFF; margin-left: 8px; flex-shrink: 0;"></div>` : '';
+
+                    const avatarHtml = partnerAvatar.length > 10 
                         ? `<img src="${partnerAvatar}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; margin-right: 12px; border: 1px solid #F1F5F9;">`
                         : `<div style="font-size:26px; margin-right:12px; background: #F3F4F6; border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">${partnerAvatar}</div>`;
 
                     html += `
-                    <div style="display:flex; align-items:center; background:#FFF; padding:15px; border-radius: 16px; margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.02); border: 1px solid #E5E7EB; cursor:pointer;" 
+                    <div style="display:flex; align-items:center; background:#FFF; padding:15px; border-radius: 16px; margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.02); border: 1px solid ${isUnread ? '#BFDBFE' : '#E5E7EB'}; cursor:pointer;" 
                          onclick="window.App.openChat('${conv.partner_id}', '${partnerName}', '${partnerAvatar}', null, null, null, null, null, '${partnerEmail}', ${partnerCredit})">
                         ${avatarHtml}
                         <div style="flex:1; overflow:hidden;">
@@ -146,13 +177,19 @@ export const ChatEngine = {
                                 <div style="display:flex; align-items:center;">
                                     <span style="font-weight:900; font-size:15px; color:#111827;">${partnerName}</span>
                                 </div>
-                                <span style="font-size:11px; color:#9CA3AF; margin-left:6px; flex-shrink:0;">${timeStr}</span>
+                                <div style="display:flex; align-items:center;">
+                                    <span style="font-size:11px; color:#9CA3AF; margin-left:6px; flex-shrink:0;">${timeStr}</span>
+                                    ${unreadDotHtml}
+                                </div>
                             </div>
-                            <div style="font-size:13px; color:#6B7280; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${conv.last_message}</div>
+                            <div style="font-size:13px; color:${isUnread ? '#111827' : '#6B7280'}; font-weight:${isUnread ? '900' : 'normal'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${conv.last_message}</div>
                         </div>
                     </div>`;
                 });
                 list.innerHTML = html;
+                
+                // 🌟 更新底部导航栏的总角标
+                this.updateGlobalBadge(totalUnreadCount);
             });
         } catch(e) { console.error("🚨 拉取会话失败:", e); }
     },
@@ -171,8 +208,14 @@ export const ChatEngine = {
 
         currentChatPartnerId = targetId;
         currentChatPostId = postId;
-        currentChatPartnerAvatar = targetAvatar || '😎'; // 全局暂存对方头像
+        currentChatPartnerAvatar = targetAvatar || '😎'; 
         lastMessageCount = 0;
+
+        // 🌟 核心：用户点开聊天框，立刻更新他的“已读时间戳”，清空红点！
+        const readTimestamps = JSON.parse(localStorage.getItem('hp_chat_reads') || '{}');
+        readTimestamps[targetId] = Date.now();
+        localStorage.setItem('hp_chat_reads', JSON.stringify(readTimestamps));
+        this.loadConversations(true); // 顺便静默刷新一次外面的列表和底部的总角标
 
         ModalManager.injectIfNeeded('chatModal');
 
@@ -207,13 +250,11 @@ export const ChatEngine = {
     },
 
     // ------------------------------------------------------------------------
-    // 🌟 4. 小红书气泡渲染引擎
+    // 4. 小红书气泡渲染引擎
     // ------------------------------------------------------------------------
     async loadChatHistory(isPolling = false) {
         if (!currentChatPartnerId) return;
         const uid = window.userUUID || localStorage.getItem('hebao_uuid');
-        
-        // 抓取我的真实头像
         const myAvatar = localStorage.getItem('hp_real_avatar') || '😎';
 
         try {
@@ -223,6 +264,14 @@ export const ChatEngine = {
             const data = await res.json();
             if (data.success) {
                 const messages = data.messages || [];
+
+                // 🌟 收到新消息时，如果是当前打开的聊天框，自动更新已读时间戳！
+                if (messages.length > lastMessageCount && isPolling) {
+                    const readTimestamps = JSON.parse(localStorage.getItem('hp_chat_reads') || '{}');
+                    readTimestamps[currentChatPartnerId] = Date.now();
+                    localStorage.setItem('hp_chat_reads', JSON.stringify(readTimestamps));
+                }
+
                 if (isPolling && messages.length === lastMessageCount) return;
                 lastMessageCount = messages.length;
 
@@ -238,7 +287,6 @@ export const ChatEngine = {
                         const date = new Date(msg.created_at + 'Z');
                         const timeStr = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
                         
-                        // 🌟 动态生成对方和我的头像 HTML
                         const themAvatarHtml = currentChatPartnerAvatar.length > 10 
                             ? `<img src="${currentChatPartnerAvatar}" style="width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0; border:1px solid #E2E8F0;">`
                             : `<div style="font-size:20px; width:36px; height:36px; border-radius:50%; background:#F1F5F9; display:flex; align-items:center; justify-content:center; flex-shrink:0;">${currentChatPartnerAvatar}</div>`;
@@ -288,7 +336,6 @@ export const ChatEngine = {
         const uid = window.userUUID || localStorage.getItem('hebao_uuid');
         if (!uid || !currentChatPartnerId) return;
 
-        // 小红书乐观更新
         const myAvatar = localStorage.getItem('hp_real_avatar') || '😎';
         const myAvatarHtml = myAvatar.length > 10 
             ? `<img src="${myAvatar}" style="width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0; border:1px solid #E2E8F0;">`
@@ -332,7 +379,6 @@ export const ChatEngine = {
     }
 };
 
-// 🌟 挂载与全局头像初始化
 if (typeof window !== 'undefined') {
     window.App = window.App || {};
     Object.keys(ChatEngine).forEach(key => {
@@ -341,7 +387,6 @@ if (typeof window !== 'undefined') {
         }
     });
 
-    // App 启动时，自动渲染本地保存的真实头像！
     document.addEventListener('DOMContentLoaded', () => {
         window.App.renderGlobalAvatar();
     });
