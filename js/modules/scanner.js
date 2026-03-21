@@ -312,6 +312,50 @@ export const ScannerEngine = {
             safeDOM.execute('detailAiLoading', el => el.style.display = 'none');
         }
     },
+    // ------------------------------------------------------------------------
+    // 5. 真实点评提交引擎 (取代虚假数据)
+    // ------------------------------------------------------------------------
+    async submitDetailReview(text) {
+        if (!text || !currentProductData) return;
+        
+        try {
+            // 获取当前用户的登录状态和头像
+            const token = localStorage.getItem('hebao_token');
+            if (!token) return showToast("请先在「我的」页面登录后再点评哦！", "warning");
+
+            const author = localStorage.getItem('hp_name') || '热心荷包蛋';
+            const avatar = localStorage.getItem('hp_avatar') || '😎';
+
+            showToast("正在提交您的真实点评...", "info");
+            
+            const res = await fetch('/api/review', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ 
+                    dutch_name: currentProductData.dutch_name, 
+                    content: text,
+                    author: author,
+                    avatar: avatar
+                })
+            });
+
+            const data = await res.json();
+            if(!res.ok) throw new Error(data.error || "提交失败");
+            
+            // 关闭弹窗
+            if(window.App.closeModal) window.App.closeModal('addReviewModal');
+            showToast("🎉 评价发布成功！感谢为村友排雷！", "success");
+            
+            // 🌟 核心细节：如果当前正停留在详情页，立即重新拉取数据，让用户看到自己的评论！
+            const detailsPage = document.getElementById('page-details');
+            if(detailsPage && detailsPage.style.display !== 'none') {
+                 this._renderAndOpenDetail(currentProductData);
+            }
+
+        } catch (e) {
+            showToast(e.message, "error");
+        }
+    },
 
     _addToHistory(data) {
         try {
