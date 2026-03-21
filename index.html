@@ -451,16 +451,28 @@
         <div style="height: 100px;"></div>
     </div>
 
-    <div id="page-details" class="page-section" style="background: #F8FAFC; min-height: 100vh; padding-bottom: 0; position: relative;">
+   <div id="page-details" class="page-section" style="background: #F8FAFC; min-height: 100vh; padding-bottom: 0; position: relative;">
         
-        <div onclick="goBack()" style="position: absolute; top: max(15px, env(safe-area-inset-top)); left: 15px; width: 36px; height: 36px; background: rgba(255,255,255,0.85); border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: bold; color: #111827; cursor: pointer; z-index: 100; backdrop-filter: blur(10px); box-shadow: 0 4px 12px rgba(0,0,0,0.08);">‹</div>
+        <div onclick="goBack()" style="position: absolute; top: max(15px, env(safe-area-inset-top)); left: 15px; width: 36px; height: 36px; background: rgba(255,255,255,0.85); border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: bold; color: #111827; cursor: pointer; z-index: 101; backdrop-filter: blur(10px); box-shadow: 0 4px 12px rgba(0,0,0,0.08);">‹</div>
 
-        <div style="width: 100%; height: 48vh; background: #F1F5F9; position: relative; overflow: hidden;">
-            <img id="detailImg" src="" style="width: 100%; height: 100%; object-fit: cover;">
-            <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 100px; background: linear-gradient(to top, #F8FAFC 0%, transparent 100%);"></div>
+        <div id="detailHeaderContainer">
+            <div id="headerImgMode" style="display:none; width: 100%; height: 48vh; background: #F1F5F9; position: relative; overflow: hidden;">
+                <img id="detailImg" src="" style="width: 100%; height: 100%; object-fit: cover;">
+                <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 100px; background: linear-gradient(to top, #F8FAFC 0%, transparent 100%);"></div>
+            </div>
+            
+            <div id="headerNoImgMode" style="display:none; width: 100%; padding-top: calc(20px + env(safe-area-inset-top)); background: #FFF; border-bottom: 1px solid #E2E8F0;">
+                <div style="padding: 24px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 16px;">
+                    <div id="fallbackNoImgBlock" style="width: 100px; height: 100px; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 50px; background: linear-gradient(135deg, #F0FDF4, #DCFCE7); border: 2px dashed #A7F3D0; margin-bottom: 6px;">🛍️</div>
+                    <div style="font-size: 14px; font-weight: bold; color: #64748B;">管家暂时没找到商品图片噢 ~</div>
+                    
+                    <button id="uploadFirstPhotoBtn" style="background: #10B981; color: #FFF; border: none; padding: 12px 24px; border-radius: 16px; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(16,185,129,0.2);">📸 我来上传</button>
+                    <div style="height: 10px;"></div>
+                </div>
+            </div>
         </div>
 
-        <div style="position: relative; margin-top: -30px; background: #F8FAFC; border-radius: 28px 28px 0 0; padding: 24px 20px; min-height: 60vh;">
+        <div id="detailContentPanel" style="position: relative; margin-top: -30px; background: #F8FAFC; border-radius: 28px 28px 0 0; padding: 24px 20px; min-height: 60vh; transition: margin-top 0.3s;">
             
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
                 <div style="flex: 1; padding-right: 15px;">
@@ -521,6 +533,8 @@
             <div style="text-align: center; font-size: 11px; color: #64748B; font-weight: bold;">✨ 建议先买回去尝尝，用后记得前往「我的-足迹」真实点评哦！</div>
             <button onclick="window.App.openScanner()" style="width: 100%; background: #111827; color: #FFF; border: none; padding: 14px 0; border-radius: 18px; font-size: 16px; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 8px 25px rgba(17,24,39,0.25);">📸 再拍一个 (扫码识别)</button>
         </div>
+
+        <input type="file" id="detailUgcImgInput" accept="image/*" style="display:none;">
     </div>
 </div>
 
