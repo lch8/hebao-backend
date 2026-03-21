@@ -502,9 +502,13 @@
             <div style="height: 110px;"></div>
         </div>
 
-        <div style="position: fixed; bottom: 0; left: 0; right: 0; padding: 12px 20px max(12px, env(safe-area-inset-bottom)); background: rgba(248,250,252,0.85); backdrop-filter: blur(20px); border-top: 1px solid rgba(0,0,0,0.05); display: flex; gap: 16px; z-index: 100;">
-            <button onclick="window.App.voteProduct('like')" style="flex: 1; background: #FFF; color: #EF4444; border: 2px solid #FECACA; padding: 16px 0; border-radius: 20px; font-size: 16px; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 6px 15px rgba(239,68,68,0.1);">🔥 种草 (推爆)</button>
-            <button onclick="window.App.voteProduct('dislike')" style="flex: 1; background: #111827; color: #FFF; border: none; padding: 16px 0; border-radius: 20px; font-size: 16px; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 8px 25px rgba(17,24,39,0.3);">💣 避雷 (快跑)</button>
+        <div style="position: fixed; bottom: 0; left: 0; right: 0; padding: 12px 20px max(12px, env(safe-area-inset-bottom)); background: rgba(248,250,252,0.9); backdrop-filter: blur(20px); border-top: 1px solid rgba(0,0,0,0.05); display: flex; flex-direction: column; gap: 10px; z-index: 100;">
+            <div style="text-align: center; font-size: 11px; color: #64748B; font-weight: bold;">
+                ✨ 使用过后记得前往「我的-足迹」真实点评哦！
+            </div>
+            <button onclick="window.App.openScanner()" style="width: 100%; background: #111827; color: #FFF; border: none; padding: 14px 0; border-radius: 18px; font-size: 16px; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 8px 25px rgba(17,24,39,0.25); transition: transform 0.1s;" onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform='scale(1)'">
+                📸 再拍一个 (扫码识别)
+            </button>
         </div>
     </div>
 </div>
