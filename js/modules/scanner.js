@@ -1,5 +1,5 @@
 // ============================================================================
-// js/modules/scanner.js - 极速扫码穿透与足迹引擎 (内置大厂级 Canvas 图片极速压缩)
+// js/modules/scanner.js - 极速扫码、足迹单选锁定与极简点评引擎
 // ============================================================================
 import { showToast } from '../core/toast.js';
 import { safeDOM } from '../core/dom.js'; 
@@ -14,8 +14,7 @@ export const ScannerEngine = {
         safeDOM.execute('packageImgInput', el => el.click());
     },
 
-    // 🌟 核心急救包：前端 Canvas 图片极速压缩引擎
-    // 把 5MB 的原图压缩到 50KB，拯救 Vercel 接口和 LocalStorage！
+    // 🌟 前端 Canvas 极速图片压缩
     compressImage(file, maxWidth = 800, quality = 0.6) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -28,7 +27,6 @@ export const ScannerEngine = {
                     let width = img.width;
                     let height = img.height;
 
-                    // 按比例缩放
                     if (width > maxWidth) {
                         height = Math.round((height *= maxWidth / width));
                         width = maxWidth;
@@ -37,11 +35,8 @@ export const ScannerEngine = {
                     canvas.width = width;
                     canvas.height = height;
                     const ctx = canvas.getContext('2d');
-                    
-                    // 绘制并压缩为 JPEG
                     ctx.drawImage(img, 0, 0, width, height);
-                    const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
-                    resolve(compressedBase64);
+                    resolve(canvas.toDataURL('image/jpeg', quality));
                 };
                 img.onerror = error => reject(error);
             };
@@ -58,23 +53,16 @@ export const ScannerEngine = {
 
         const sessionId = ++currentScanSession;
 
-        // 切换到 Loading UI
         safeDOM.execute('homeActionBox', el => el.style.display = 'none');
         safeDOM.execute('previewContainer', el => el.style.display = 'block');
         safeDOM.execute('scanOverlay', el => el.style.display = 'flex');
         safeDOM.execute('scanText', el => el.innerText = "📡 正在压缩图片...");
 
         try {
-            // 🌟 1. 执行极速压缩 (手机端只需几十毫秒)
             const compressedImage = await this.compressImage(file, 800, 0.6);
-            
-            safeDOM.execute('previewImg', el => { 
-                el.src = compressedImage; 
-                el.style.display = 'block'; 
-            });
+            safeDOM.execute('previewImg', el => { el.src = compressedImage; el.style.display = 'block'; });
             safeDOM.execute('scanText', el => el.innerText = "🧠 大脑飞速解析中...");
 
-            // 提取纯 Base64 数据发给后端
             const base64Data = compressedImage.split(',')[1];
             
             const res = await fetch('/api/scan', {
@@ -87,14 +75,10 @@ export const ScannerEngine = {
             if (!res.ok) throw new Error("AI 解析失败，请重试");
             
             const data = await res.json();
-            
-            // 🌟 2. 存入本地的图片也是压缩后的，彻底告别 LocalStorage 爆存！
             data.scanned_img = compressedImage; 
             
-            // 保存足迹
             this._addToHistory(data);
             
-            // 隐藏扫描界面，直接穿透到详情页
             safeDOM.execute('scanOverlay', el => el.style.display = 'none'); 
             safeDOM.execute('previewContainer', el => el.style.display = 'none');
             safeDOM.execute('homeActionBox', el => el.style.display = 'flex');
@@ -111,13 +95,12 @@ export const ScannerEngine = {
                 }, 2000);
             }
         } finally {
-            // 清空 input 使得再次扫同一张图也能触发 change 事件
             event.target.value = '';
         }
     },
 
     // ------------------------------------------------------------------------
-    // 2. 足迹卡片渲染引擎 (带一键清空与单条删除)
+    // 2. 足迹卡片渲染引擎 (🌟 加入二选一锁定逻辑)
     // ------------------------------------------------------------------------
     renderFootprints() {
         safeDOM.execute('footprintList', container => {
@@ -135,9 +118,28 @@ export const ScannerEngine = {
 
             history.forEach((item, index) => {
                 const img = item.scanned_img || item.image_url || 'https://via.placeholder.com/100';
+                
+                // 🌟 读取该商品的投票状态
+                const voteStatus = item.vote_status || null; 
+
+                // 🌟 动态生成互斥样式
+                let likeStyle = "flex:1; background:#FEF2F2; color:#EF4444; border:1px solid #FECACA; padding:10px 0; border-radius:12px; font-size:13px; font-weight:900; cursor:pointer; transition:0.2s;";
+                let dislikeStyle = "flex:1; background:#F8FAFC; color:#475569; border:1px solid #E2E8F0; padding:10px 0; border-radius:12px; font-size:13px; font-weight:900; cursor:pointer; transition:0.2s;";
+                let likeText = "🔥 狂赞";
+                let dislikeText = "💣 避雷";
+
+                if (voteStatus === 'like') {
+                    likeStyle = "flex:1; background:#EF4444; color:#FFF; border:none; padding:10px 0; border-radius:12px; font-size:13px; font-weight:900; cursor:default; box-shadow:0 4px 10px rgba(239,68,68,0.2);";
+                    dislikeStyle = "flex:1; background:#F8FAFC; color:#94A3B8; border:1px solid #E2E8F0; padding:10px 0; border-radius:12px; font-size:13px; font-weight:900; cursor:not-allowed; opacity:0.4;";
+                    likeText = "🔥 已种草";
+                } else if (voteStatus === 'dislike') {
+                    likeStyle = "flex:1; background:#FEF2F2; color:#FCA5A5; border:1px solid #FECACA; padding:10px 0; border-radius:12px; font-size:13px; font-weight:900; cursor:not-allowed; opacity:0.4;";
+                    dislikeStyle = "flex:1; background:#111827; color:#FFF; border:none; padding:10px 0; border-radius:12px; font-size:13px; font-weight:900; cursor:default; box-shadow:0 4px 10px rgba(17,24,39,0.2);";
+                    dislikeText = "💣 已避雷";
+                }
+
                 html += `
                 <div style="background:#FFF; border-radius:20px; padding:16px; margin-bottom:16px; box-shadow:0 4px 15px rgba(0,0,0,0.03); border:1px solid #F1F5F9; display:flex; flex-direction:column; gap:16px; position:relative;">
-                    
                     <div onclick="window.App.deleteFootprint(${index})" style="position:absolute; top:12px; right:12px; width:28px; height:28px; background:#F8FAFC; border-radius:14px; display:flex; align-items:center; justify-content:center; color:#94A3B8; font-size:12px; cursor:pointer; z-index:10; border:1px solid #E2E8F0;">✕</div>
 
                     <div style="display:flex; gap:16px; cursor:pointer; padding-right:24px;" onclick="window.App.openDetailsFromHistory(${index})">
@@ -150,8 +152,8 @@ export const ScannerEngine = {
                     </div>
                     
                     <div style="display:flex; gap:10px; border-top:1px dashed #E5E7EB; padding-top:16px;">
-                        <button onclick="window.App.voteFromFootprint(${index}, 'like', this)" style="flex:1; background:#FEF2F2; color:#EF4444; border:1px solid #FECACA; padding:10px 0; border-radius:12px; font-size:13px; font-weight:900; cursor:pointer; transition:0.2s;">🔥 狂赞</button>
-                        <button onclick="window.App.voteFromFootprint(${index}, 'dislike', this)" style="flex:1; background:#F8FAFC; color:#475569; border:1px solid #E2E8F0; padding:10px 0; border-radius:12px; font-size:13px; font-weight:900; cursor:pointer; transition:0.2s;">💣 避雷</button>
+                        <button onclick="window.App.voteFromFootprint(${index}, 'like')" style="${likeStyle}">${likeText}</button>
+                        <button onclick="window.App.voteFromFootprint(${index}, 'dislike')" style="${dislikeStyle}">${dislikeText}</button>
                         <button onclick="window.App.reviewFromFootprint(${index})" style="flex:1; background:#F0FDF4; color:#10B981; border:1px solid #A7F3D0; padding:10px 0; border-radius:12px; font-size:13px; font-weight:900; cursor:pointer;">💬 点评</button>
                     </div>
                 </div>`;
@@ -161,7 +163,7 @@ export const ScannerEngine = {
     },
 
     // ------------------------------------------------------------------------
-    // 3. 足迹操作 (清空、删除、投票、评价)
+    // 3. 足迹操作 (锁定互斥、原生清爽弹窗)
     // ------------------------------------------------------------------------
     clearAllFootprints() {
         if(confirm("确定要清空所有本地足迹吗？")) {
@@ -185,14 +187,20 @@ export const ScannerEngine = {
         } catch (e) { console.error("历史读取失败:", e); }
     },
 
-    async voteFromFootprint(index, action, btnElement) {
-        const history = JSON.parse(localStorage.getItem('hp_scan_history') || '[]');
+    // 🌟 二选一锁定投票引擎
+    async voteFromFootprint(index, action) {
+        let history = JSON.parse(localStorage.getItem('hp_scan_history') || '[]');
         const targetItem = history[index];
         if (!targetItem || !targetItem.dutch_name) return showToast("商品信息有误", "error");
 
-        btnElement.innerText = "已记录 ✔";
-        btnElement.style.opacity = "0.6";
-        btnElement.style.pointerEvents = "none";
+        if (targetItem.vote_status) {
+            return showToast("您已经表过态啦！", "warning");
+        }
+
+        // 瞬间写入本地状态并重绘，视觉秒响应
+        targetItem.vote_status = action;
+        localStorage.setItem('hp_scan_history', JSON.stringify(history));
+        this.renderFootprints(); 
         
         showToast(action === 'like' ? "🔥 已为您推送至红榜！" : "💣 已记录，帮助他人避雷！", "success");
 
@@ -207,22 +215,89 @@ export const ScannerEngine = {
         } catch (e) { console.error("足迹投票失败:", e); }
     },
 
+    // 🌟 全新原生注入：极简纯净的点评弹窗 (干掉下拉框)
     reviewFromFootprint(index) {
         try {
             const history = JSON.parse(localStorage.getItem('hp_scan_history') || '[]');
-            if (history[index]) {
-                currentProductData = history[index];
-                if (window.App && typeof window.App.openModal === 'function') {
-                    window.App.openModal('addReviewModal');
-                } else {
-                    showToast("💬 评价模块已唤醒，请编写您的评价！", "success");
-                }
+            if (!history[index]) return;
+            currentProductData = history[index];
+
+            let modal = document.getElementById('customCleanReviewModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'customCleanReviewModal';
+                modal.style.cssText = 'display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.6); z-index:999999; justify-content:center; align-items:center; backdrop-filter:blur(4px); opacity:0; transition:opacity 0.2s;';
+                modal.innerHTML = `
+                    <div style="background:#FFF; width:85%; max-width:340px; border-radius:24px; padding:24px; box-shadow:0 10px 40px rgba(0,0,0,0.2); transform:scale(0.9); transition:0.2s;" id="ccReviewContent">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                            <div style="font-size:18px; font-weight:900; color:#111827;">发表真实点评 ✍️</div>
+                            <div onclick="document.getElementById('customCleanReviewModal').style.opacity=0; setTimeout(()=>document.getElementById('customCleanReviewModal').style.display='none', 200);" style="width:30px; height:30px; background:#F1F5F9; border-radius:15px; display:flex; align-items:center; justify-content:center; color:#64748B; font-weight:bold; cursor:pointer;">✕</div>
+                        </div>
+                        <textarea id="ccReviewInput" placeholder="这玩意儿味道怎么样？怎么做最好吃？(畅所欲言)..." style="width:100%; box-sizing:border-box; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:16px; padding:16px; font-size:14px; color:#334155; height:120px; outline:none; resize:none; margin-bottom:20px; font-weight:bold; line-height:1.5;"></textarea>
+                        <button onclick="window.App.submitCustomReview()" style="width:100%; background:#10B981; color:#FFF; border:none; padding:14px; border-radius:16px; font-size:16px; font-weight:900; cursor:pointer; box-shadow:0 4px 15px rgba(16,185,129,0.3); transition:0.1s;" onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='scale(1)'">🚀 提交评价</button>
+                    </div>
+                `;
+                document.body.appendChild(modal);
             }
+
+            document.getElementById('ccReviewInput').value = '';
+            modal.style.display = 'flex';
+            void modal.offsetWidth; // 触发重绘
+            modal.style.opacity = '1';
+            document.getElementById('ccReviewContent').style.transform = 'scale(1)';
         } catch (e) { console.error(e); }
     },
 
+    // 🌟 全新原生点评提交引擎
+    async submitCustomReview() {
+        const text = document.getElementById('ccReviewInput').value.trim();
+        if (!text || !currentProductData) return showToast("写点什么再提交吧~", "warning");
+        
+        try {
+            const token = localStorage.getItem('hebao_token');
+            if (!token) return showToast("请先在「我的」页面登录后再点评哦！", "warning");
+
+            const author = localStorage.getItem('hp_name') || '热心荷包蛋';
+            const avatar = localStorage.getItem('hp_avatar') || '😎';
+
+            showToast("正在提交您的真实点评...", "info");
+            
+            const res = await fetch('/api/review', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ 
+                    dutch_name: currentProductData.dutch_name, 
+                    content: text,
+                    author: author,
+                    avatar: avatar
+                })
+            });
+
+            const data = await res.json();
+            if(!res.ok) throw new Error(data.error || "提交失败");
+            
+            // 关闭自定义弹窗
+            const modal = document.getElementById('customCleanReviewModal');
+            if (modal) {
+                modal.style.opacity = '0';
+                setTimeout(() => modal.style.display = 'none', 200);
+            }
+
+            showToast("🎉 评价发布成功！感谢为村友排雷！", "success");
+            
+            // 如果在详情页则刷新数据
+            const detailsPage = document.getElementById('page-details');
+            if(detailsPage && detailsPage.style.display !== 'none') {
+                 this._renderAndOpenDetail(currentProductData);
+            }
+
+        } catch (e) {
+            showToast(e.message, "error");
+        }
+    },
+
     // ------------------------------------------------------------------------
-    // 4. 详情页极速与深度分层渲染引擎
+    // 4. 详情页极速与深度分层渲染引擎 (保持不变)
     // ------------------------------------------------------------------------
     async _renderAndOpenDetail(data) {
         try {
@@ -310,50 +385,6 @@ export const ScannerEngine = {
         } catch (error) {
             console.error("渲染详情页报错:", error);
             safeDOM.execute('detailAiLoading', el => el.style.display = 'none');
-        }
-    },
-    // ------------------------------------------------------------------------
-    // 5. 真实点评提交引擎 (取代虚假数据)
-    // ------------------------------------------------------------------------
-    async submitDetailReview(text) {
-        if (!text || !currentProductData) return;
-        
-        try {
-            // 获取当前用户的登录状态和头像
-            const token = localStorage.getItem('hebao_token');
-            if (!token) return showToast("请先在「我的」页面登录后再点评哦！", "warning");
-
-            const author = localStorage.getItem('hp_name') || '热心荷包蛋';
-            const avatar = localStorage.getItem('hp_avatar') || '😎';
-
-            showToast("正在提交您的真实点评...", "info");
-            
-            const res = await fetch('/api/review', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ 
-                    dutch_name: currentProductData.dutch_name, 
-                    content: text,
-                    author: author,
-                    avatar: avatar
-                })
-            });
-
-            const data = await res.json();
-            if(!res.ok) throw new Error(data.error || "提交失败");
-            
-            // 关闭弹窗
-            if(window.App.closeModal) window.App.closeModal('addReviewModal');
-            showToast("🎉 评价发布成功！感谢为村友排雷！", "success");
-            
-            // 🌟 核心细节：如果当前正停留在详情页，立即重新拉取数据，让用户看到自己的评论！
-            const detailsPage = document.getElementById('page-details');
-            if(detailsPage && detailsPage.style.display !== 'none') {
-                 this._renderAndOpenDetail(currentProductData);
-            }
-
-        } catch (e) {
-            showToast(e.message, "error");
         }
     },
 
