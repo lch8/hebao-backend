@@ -1,25 +1,22 @@
 // ============================================================================
-// js/modules/scanner.js - 扫码与商品详情引擎 (满血逻辑 + 高级 UI 适配版 + 投票引擎)
+// js/modules/scanner.js - 极速扫码穿透与足迹点评引擎
 // ============================================================================
 import { showToast } from '../core/toast.js';
 import { safeDOM } from '../core/dom.js'; 
 import { ModalManager } from '../components/modals.js'; 
 
-// 🔒 模块级私有状态
 let currentProductData = null;
 let currentDetailData = null;
-let html5Scanner = null;
 let currentScanSession = 0; 
 
 export const ScannerEngine = {
     
-    // 🌟 1. 暴露给首页相机图标的唤醒方法
     openScanner() {
         safeDOM.execute('packageImgInput', el => el.click());
     },
 
     // ------------------------------------------------------------------------
-    // 2. 图片上传解析 (AI 扫包装)
+    // 1. 扫码极速穿透引擎
     // ------------------------------------------------------------------------
     async handlePackageImage(event) {
         const file = event.target.files[0]; 
@@ -30,17 +27,12 @@ export const ScannerEngine = {
         safeDOM.execute('homeActionBox', el => el.style.display = 'none');
         safeDOM.execute('previewContainer', el => el.style.display = 'block');
         safeDOM.execute('scanOverlay', el => el.style.display = 'flex');
-        safeDOM.execute('scanText', el => el.innerText = "📡 提取外包装文字...");
-        safeDOM.execute('miniResultCard', el => el.style.display = 'none');
+        safeDOM.execute('scanText', el => el.innerText = "📡 大脑飞速解析中...");
 
         const reader = new FileReader();
         reader.onload = async (e) => {
             try {
-                safeDOM.execute('previewImg', el => {
-                    el.src = e.target.result;
-                    el.style.display = 'block';
-                });
-
+                safeDOM.execute('previewImg', el => { el.src = e.target.result; el.style.display = 'block'; });
                 const base64Data = e.target.result.split(',')[1];
                 
                 const res = await fetch('/api/scan', {
@@ -50,25 +42,29 @@ export const ScannerEngine = {
                 });
 
                 if (sessionId !== currentScanSession) return; 
-
                 if (!res.ok) throw new Error("AI 解析失败，请重试");
+                
                 const data = await res.json();
+                data.scanned_img = e.target.result; 
                 
-                currentProductData = data;
-                currentProductData.scanned_img = e.target.result; // 存入刚拍的照片用于详情页展示
-                
-                safeDOM.execute('miniResultCard', el => el.style.display = 'block');
-                safeDOM.execute('scanOverlay', el => el.style.display = 'none'); 
-                
-                safeDOM.execute('miniChineseName', el => el.innerText = data.chinese_name || data.dutch_name || '未知商品');
-                safeDOM.execute('miniInsight', el => el.innerText = data.insight || '点击查看深度评测');
-                
+                // 保存足迹
                 this._addToHistory(data);
+                
+                // 🌟 核心改动：隐藏扫描界面，直接穿透到详情页！不用再多点一次！
+                safeDOM.execute('scanOverlay', el => el.style.display = 'none'); 
+                safeDOM.execute('previewContainer', el => el.style.display = 'none');
+                safeDOM.execute('homeActionBox', el => el.style.display = 'flex');
+                
+                this._renderAndOpenDetail(data);
 
             } catch (error) {
                 if (sessionId === currentScanSession) {
                     safeDOM.execute('scanText', el => el.innerText = "❌ 解析失败: " + error.message);
-                    setTimeout(() => this.closeScanner(), 2000);
+                    setTimeout(() => {
+                        safeDOM.execute('scanOverlay', el => el.style.display = 'none'); 
+                        safeDOM.execute('previewContainer', el => el.style.display = 'none');
+                        safeDOM.execute('homeActionBox', el => el.style.display = 'flex');
+                    }, 2000);
                 }
             }
         };
@@ -76,65 +72,94 @@ export const ScannerEngine = {
     },
 
     // ------------------------------------------------------------------------
-    // 3. 扫条形码入口 (完美保留)
+    // 2. 足迹卡片渲染引擎 (带互动打分)
     // ------------------------------------------------------------------------
-    async startBarcodeScan() {
-        const sessionId = ++currentScanSession;
-        showToast("正在启动摄像头...", "info");
-        
-        safeDOM.execute('homeActionBox', el => el.style.display = 'none');
-        safeDOM.execute('previewContainer', el => el.style.display = 'block');
-        
-        // 此处应为你原有的扫码回调，接收到 barcode 后请求 /api/scan-barcode
+    renderFootprints() {
+        safeDOM.execute('footprintList', container => {
+            const history = JSON.parse(localStorage.getItem('hp_scan_history') || '[]');
+            if (history.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:60px 20px; color:#9CA3AF; font-size:14px;">暂无扫码足迹哦~ 快去超市扫一扫吧！</div>';
+                return;
+            }
+            
+            let html = '';
+            history.forEach((item, index) => {
+                const img = item.scanned_img || item.image_url || 'https://via.placeholder.com/100';
+                html += `
+                <div style="background:#FFF; border-radius:20px; padding:16px; margin-bottom:16px; box-shadow:0 4px 15px rgba(0,0,0,0.03); border:1px solid #F1F5F9; display:flex; flex-direction:column; gap:16px;">
+                    
+                    <div style="display:flex; gap:16px; cursor:pointer;" onclick="window.App.openDetailsFromHistory(${index})">
+                        <img src="${img}" style="width:80px; height:80px; border-radius:14px; object-fit:cover; border:1px solid #F1F5F9; flex-shrink:0;">
+                        <div style="flex:1; overflow:hidden;">
+                            <div style="font-size:16px; font-weight:900; color:#111827; margin-bottom:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.chinese_name || item.dutch_name}</div>
+                            <div style="font-size:12px; color:#64748B; font-weight:bold; margin-bottom:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.category || '超市好物'}</div>
+                            <div style="font-size:12px; color:#475569; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; line-height:1.4;">${item.insight || '暂无评测'}</div>
+                        </div>
+                    </div>
+                    
+                    <div style="display:flex; gap:10px; border-top:1px dashed #E5E7EB; padding-top:16px;">
+                        <button onclick="window.App.voteFromFootprint('${item.dutch_name}', 'like', this)" style="flex:1; background:#FEF2F2; color:#EF4444; border:1px solid #FECACA; padding:10px 0; border-radius:12px; font-size:13px; font-weight:900; cursor:pointer; transition:0.2s;">🔥 狂赞</button>
+                        <button onclick="window.App.voteFromFootprint('${item.dutch_name}', 'dislike', this)" style="flex:1; background:#F8FAFC; color:#475569; border:1px solid #E2E8F0; padding:10px 0; border-radius:12px; font-size:13px; font-weight:900; cursor:pointer; transition:0.2s;">💣 避雷</button>
+                        <button onclick="window.App.reviewFromFootprint(${index})" style="flex:1; background:#F0FDF4; color:#10B981; border:1px solid #A7F3D0; padding:10px 0; border-radius:12px; font-size:13px; font-weight:900; cursor:pointer;">💬 点评</button>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        });
     },
 
     // ------------------------------------------------------------------------
-    // 4. 关闭扫码器，安全重置状态
+    // 3. 足迹专属交互
     // ------------------------------------------------------------------------
-    closeScanner() {
-        currentScanSession++; 
-        currentProductData = null;
+    openDetailsFromHistory(index) {
+        try {
+            const history = JSON.parse(localStorage.getItem('hp_scan_history') || '[]');
+            if (history[index]) this._renderAndOpenDetail(history[index]);
+        } catch (e) { console.error("历史读取失败:", e); }
+    },
+
+    async voteFromFootprint(dutchName, action, btnElement) {
+        // UI 提前给反馈
+        const originalText = btnElement.innerText;
+        btnElement.innerText = "已记录 ✔";
+        btnElement.style.opacity = "0.6";
+        btnElement.style.pointerEvents = "none";
         
-        safeDOM.execute('homeActionBox', el => el.style.display = 'flex');
-        safeDOM.execute('previewContainer', el => el.style.display = 'none');
-        safeDOM.execute('scanOverlay', el => el.style.display = 'none');
-        safeDOM.execute('miniResultCard', el => el.style.display = 'none');
-        safeDOM.execute('previewImg', el => el.src = '');
-        
-        if (html5Scanner) {
-            html5Scanner.clear().catch(e => console.error(e));
-            html5Scanner = null;
+        showToast(action === 'like' ? "🔥 已为您推送至红榜！" : "💣 已记录，帮助他人避雷！", "success");
+
+        try {
+            const token = localStorage.getItem('hebao_token') || '';
+            await fetch('/api/vote', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ dutch_name: dutchName, action: action })
+            });
+            // 刷新全网排行榜
+            if (window.App && window.App.loadTrendingData) window.App.loadTrendingData();
+        } catch (e) {
+            console.error("足迹投票失败:", e);
         }
     },
 
-    // ------------------------------------------------------------------------
-    // 5. 打开详情页 (保留了足迹历史的触发入口)
-    // ------------------------------------------------------------------------
-    openDetailsFromScan() {
-        if (!currentProductData) return showToast("暂无商品数据", "warning");
-        this._renderAndOpenDetail(currentProductData);
-    },
-
-    // 🌟 完美保留：点击足迹卡片时重新渲染详情
-    openDetailsFromHistory(index) {
+    reviewFromFootprint(index) {
         try {
             const history = JSON.parse(localStorage.getItem('hp_scan_history') || '[]');
             if (history[index]) {
                 currentProductData = history[index];
-                this._renderAndOpenDetail(currentProductData);
+                ModalManager.injectIfNeeded('addReviewModal');
             }
-        } catch (e) {
-            console.error("历史记录读取失败:", e);
-        }
+        } catch (e) { console.error(e); }
     },
 
-    // 🌟 5. 完美融合：大厂 UI 渲染 + 异步深度评测与点评请求
+    // ------------------------------------------------------------------------
+    // 4. 详情页极速渲染 (兼容并保留所有前序逻辑)
+    // ------------------------------------------------------------------------
     async _renderAndOpenDetail(data) {
         try {
             if (window.switchTab) window.switchTab('details');
             currentProductData = data; 
 
-            // --- 阶段 1：基础极速数据上屏 (用户感知不到延迟) ---
+            // 基础数据瞬间上屏
             const fallbackImg = 'https://images.unsplash.com/photo-1544025162-8315ea07659b?q=80&w=600&auto=format&fit=crop';
             safeDOM.execute('detailImg', el => el.src = data.image_url || data.scanned_img || fallbackImg);
 
@@ -149,18 +174,16 @@ export const ScannerEngine = {
             });
             
             safeDOM.execute('detailInsight', el => el.innerText = data.insight || '暂无锐评');
-            
             safeDOM.execute('detailWarningBox', el => el.style.display = data.warning ? 'block' : 'none');
             safeDOM.execute('detailWarning', el => el.innerText = data.warning || '');
 
-            // 隐藏所有深度模块，开启 AI 呼吸灯
+            // 隐藏深度盒子，开启骨架呼吸灯
             safeDOM.execute('detailRecipeBox', el => el.style.display = 'none');
             safeDOM.execute('detailAltBox', el => el.style.display = 'none');
             safeDOM.execute('detailReviewsBox', el => el.style.display = 'none');
             safeDOM.execute('detailAiLoading', el => el.style.display = 'block'); 
 
-            // --- 阶段 2：异步请求 /api/detail 获取“神仙吃法”、“平替”与“真实点评” ---
-            // 注意：你的后端 /api/detail 需要返回包含 methods(数组), recipe_desc, alternatives(数组), reviews(数组) 的 JSON
+            // 异步请求深度数据
             const res = await fetch('/api/detail', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -170,10 +193,9 @@ export const ScannerEngine = {
             if (res.ok) {
                 const deepData = await res.json();
                 currentDetailData = deepData;
-                
                 safeDOM.execute('detailAiLoading', el => el.style.display = 'none');
                 
-                // 🍳 渲染食用指南 (例如标签：空气炸锅 180度, 微波炉)
+                // 渲染食用指南
                 if (deepData.methods || deepData.recipe_desc) {
                     safeDOM.execute('detailRecipeBox', el => el.style.display = 'block');
                     if (deepData.methods && Array.isArray(deepData.methods)) {
@@ -184,7 +206,7 @@ export const ScannerEngine = {
                     safeDOM.execute('recipeDetails', el => el.innerText = deepData.recipe_desc || '暂无具体步骤~');
                 }
 
-                // 🛍️ 渲染平替/搭配
+                // 渲染平替/搭配
                 if (deepData.alternatives && Array.isArray(deepData.alternatives) && deepData.alternatives.length > 0) {
                     safeDOM.execute('detailAltBox', el => el.style.display = 'block');
                     safeDOM.execute('detailAlternatives', el => {
@@ -192,7 +214,7 @@ export const ScannerEngine = {
                     });
                 }
 
-                // 💬 渲染高赞真实评论区 (带有小红书风格的点赞交互)
+                // 渲染高赞真实评论区
                 if (deepData.reviews && Array.isArray(deepData.reviews) && deepData.reviews.length > 0) {
                     safeDOM.execute('detailReviewsBox', el => el.style.display = 'block');
                     safeDOM.execute('reviewsList', el => {
@@ -217,54 +239,12 @@ export const ScannerEngine = {
             } else {
                 safeDOM.execute('detailAiLoading', el => el.style.display = 'none');
             }
-
         } catch (error) {
             console.error("渲染详情页报错:", error);
             safeDOM.execute('detailAiLoading', el => el.style.display = 'none');
         }
     },
 
-    // ------------------------------------------------------------------------
-    // 6. 全新底部投票引擎 (对接后端 /api/vote)
-    // ------------------------------------------------------------------------
-    async voteProduct(action) {
-        if (!currentProductData || !currentProductData.dutch_name) return showToast("当前商品信息丢失", "error");
-        
-        const btnText = action === 'like' ? '🔥 种草' : '💣 避雷';
-        showToast(`已记录您的 ${btnText} 态度！`, "success");
-
-        try {
-            const token = localStorage.getItem('hebao_token') || '';
-            const res = await fetch('/api/vote', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ dutch_name: currentProductData.dutch_name, action: action })
-            });
-            
-            if (window.App && window.App.loadTrendingData) {
-                window.App.loadTrendingData();
-            }
-        } catch (e) {
-            console.error("投票失败:", e);
-        }
-    },
-
-    // ------------------------------------------------------------------------
-    // 7. 其他交互：评价与点赞 (保留)
-    // ------------------------------------------------------------------------
-    submitDetailReview(text) {
-        if (!text) return;
-        ModalManager.injectIfNeeded('addReviewModal');
-        showToast("评价提交成功！", "success");
-    },
-
-    likeReviewCard(cardId) {
-        // ... 点赞防抖逻辑
-    },
-
-    // ------------------------------------------------------------------------
-    // 8. 私有辅助方法：写入历史记录
-    // ------------------------------------------------------------------------
     _addToHistory(data) {
         try {
             let history = JSON.parse(localStorage.getItem('hp_scan_history') || '[]');
@@ -276,7 +256,7 @@ export const ScannerEngine = {
     }
 };
 
-// 🌟 挂载所有方法到 window.App，确保 HTML 的 onClick 能找得到
+// 挂载到 window.App
 if (typeof window !== 'undefined') {
     window.App = window.App || {};
     Object.keys(ScannerEngine).forEach(key => {
