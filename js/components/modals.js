@@ -387,26 +387,39 @@ const ModalTemplates = {
     `,
 
     chatModal: `
-        <div class="full-modal" id="chatModal" style="display: none; background: #F9FAFB; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 999999;">
-            <div class="fm-header" style="background: #FFF; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; padding: 15px;">
-                <div class="fm-close" onclick="window.App.closeChat()" style="font-size: 24px; cursor: pointer;">‹</div>
-                <div class="fm-title" id="chatPartnerName" style="font-weight: 900; font-size: 16px;"></div>
-                <div style="width: 24px;"></div>
-            </div>
+        <div class="full-modal" id="chatModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:#F8FAFC; z-index:999999; flex-direction:column;">
             
-            <div id="chatPostCard" style="display:none; background: #FFF; padding: 10px 15px; border-bottom: 1px solid #E5E7EB; align-items: center; gap: 10px;">
-                <img id="chatPostImg" style="width: 40px; height: 40px; border-radius: 6px; object-fit: cover;">
-                <div style="flex:1;">
-                    <div id="chatPostTitle" style="font-size: 13px; font-weight: bold; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;"></div>
-                    <div id="chatPostPrice" style="font-size: 12px; color: #D97706; font-weight: bold;"></div>
+            <div style="background: #FFF; padding: max(15px, env(safe-area-inset-top)) 15px 15px 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #F1F5F9; z-index: 10; flex-shrink: 0;">
+                <div onclick="window.App.closeChat()" style="font-size: 28px; color: #111827; cursor: pointer; width: 30px; display: flex; align-items: center;">‹</div>
+                <div id="chatPartnerName" style="font-size: 16px; font-weight: 900; color: #111827;">校友</div>
+                <div style="font-size: 20px; color: #64748B; font-weight: bold; letter-spacing: 2px;">···</div>
+            </div>
+
+            <div id="chatPostCard" style="display:none; background: #FFF; padding: 12px 15px; border-bottom: 1px solid #F1F5F9; align-items: center; gap: 12px; cursor: pointer; flex-shrink: 0;">
+                <img id="chatPostImg" src="" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover; background: #F1F5F9;">
+                <div style="flex: 1; overflow: hidden;">
+                    <div id="chatPostPrice" style="color: #EF4444; font-size: 16px; font-weight: 900; font-family: monospace; margin-bottom: 2px;"></div>
+                    <div id="chatPostTitle" style="font-size: 13px; color: #64748B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: bold;"></div>
                 </div>
             </div>
 
-            <div id="chatMsgList" style="padding: 15px; overflow-y: auto; height: calc(100vh - 160px); padding-bottom: 80px; display: flex; flex-direction: column;"></div>
-            
-            <div style="position: absolute; bottom: 0; left: 0; right: 0; background: #F3F4F6; padding: 10px 15px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); border-top: 1px solid #E5E7EB; display: flex; align-items: center; gap: 10px;">
-                <input type="text" id="chatInput" placeholder="发消息..." style="flex: 1; padding: 12px 15px; border-radius: 20px; border: 1px solid #E5E7EB; font-size: 14px; outline: none;" onkeypress="if(event.key==='Enter') window.App.sendChatMessage()">
-                <button onclick="window.App.sendChatMessage()" style="background: #111827; color: #FFF; width: 40px; height: 40px; border-radius: 50%; border: none; font-size: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer;">↑</button>
+            <div id="chatMsgList" style="flex: 1; overflow-y: auto; padding: 20px 15px; display: flex; flex-direction: column; gap: 20px;">
+                </div>
+
+            <div style="background: #FFF; padding-bottom: max(10px, env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px rgba(0,0,0,0.03); flex-shrink: 0;">
+                
+                <div style="display: flex; gap: 10px; overflow-x: auto; padding: 12px 15px; border-bottom: 1px solid #F8FAFC;" class="hide-scrollbar">
+                    <div onclick="window.App.sendQuickMessage('hello 👋')" style="background: #F1F5F9; color: #475569; padding: 6px 14px; border-radius: 16px; font-size: 13px; font-weight: bold; white-space: nowrap; cursor: pointer; transition: 0.1s;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">🐵 hello</div>
+                    <div onclick="window.App.sendQuickMessage('谢谢宝 🌺')" style="background: #F1F5F9; color: #475569; padding: 6px 14px; border-radius: 16px; font-size: 13px; font-weight: bold; white-space: nowrap; cursor: pointer; transition: 0.1s;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">🌺 谢谢宝</div>
+                    <div onclick="window.App.sendQuickMessage('在干嘛 🔍')" style="background: #F1F5F9; color: #475569; padding: 6px 14px; border-radius: 16px; font-size: 13px; font-weight: bold; white-space: nowrap; cursor: pointer; transition: 0.1s;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">🔍 在干嘛</div>
+                    <div onclick="window.App.sendQuickMessage('东西还在吗？')" style="background: #F1F5F9; color: #475569; padding: 6px 14px; border-radius: 16px; font-size: 13px; font-weight: bold; white-space: nowrap; cursor: pointer; transition: 0.1s;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">📦 东西还在吗？</div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 12px; padding: 10px 15px;">
+                    <div style="font-size: 24px; color: #94A3B8; cursor: pointer;">😊</div>
+                    <input type="text" id="chatInput" placeholder="Send message..." style="flex: 1; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 10px 16px; border-radius: 20px; font-size: 15px; color: #111827; outline: none;" onkeypress="if(event.key==='Enter') window.App.sendChatMessage()">
+                    <div onclick="window.App.sendChatMessage()" style="width: 32px; height: 32px; border-radius: 16px; border: 1.5px solid #2563EB; display: flex; align-items: center; justify-content: center; color: #2563EB; font-size: 20px; cursor: pointer; transition: 0.1s;" onmousedown="this.style.transform='scale(0.9)'" onmouseup="this.style.transform='scale(1)'">↑</div>
+                </div>
             </div>
         </div>
     `,
