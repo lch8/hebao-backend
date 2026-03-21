@@ -8,24 +8,31 @@ let currentCategory = '全部';
 
 export const TrendingEngine = {
     // 1. 🌟 升级版：带分类过滤的榜单拉取
+    // 1. 🌟 升级版：带分类过滤和真实错误追踪的榜单拉取
     async loadTrendingData() {
         try {
-            // 切换分类或加载时，先清空列表，显示平滑的 Loading 状态
             safeDOM.execute('homeTrendingListLikes', el => el.innerHTML = '<div style="text-align:center; padding: 40px; color:#9CA3AF; font-size:14px; font-weight:bold;"><span style="display:inline-block; animation:spin 1s linear infinite;">⏳</span> 正在拉取新鲜榜单...</div>');
             safeDOM.execute('homeTrendingListDislikes', el => el.innerHTML = '<div style="text-align:center; padding: 40px; color:#9CA3AF; font-size:14px; font-weight:bold;"><span style="display:inline-block; animation:spin 1s linear infinite;">⏳</span> 正在拉取新鲜榜单...</div>');
 
-            // 动态带上 category 参数发送给后端
             const res = await fetch(`/api/trending?category=${encodeURIComponent(currentCategory)}`);
             const data = await res.json();
             
             if (data.success) {
                 this.renderTrendingList(data.topLikes, 'homeTrendingListLikes', 'likes');
                 this.renderTrendingList(data.topDislikes, 'homeTrendingListDislikes', 'dislikes');
+            } else {
+                // 🌟 如果后端返回报错，直接抛出！
+                throw new Error(data.error || '未知接口错误');
             }
         } catch (error) {
             console.error("🚨 榜单拉取失败:", error);
-            safeDOM.execute('homeTrendingListLikes', el => el.innerHTML = '<div style="text-align:center; padding: 40px; color:#EF4444; font-size:14px;">拉取失败，请检查网络或刷新重试</div>');
-            safeDOM.execute('homeTrendingListDislikes', el => el.innerHTML = '<div style="text-align:center; padding: 40px; color:#EF4444; font-size:14px;">拉取失败，请检查网络或刷新重试</div>');
+            // 🌟 直接把错误信息打在屏幕上！
+            const errorMsg = `<div style="text-align:center; padding: 40px; color:#EF4444; font-size:13px; font-weight:bold;">
+                                💥 拉取失败<br><br>
+                                <span style="color:#B91C1C;">原因: ${error.message}</span>
+                              </div>`;
+            safeDOM.execute('homeTrendingListLikes', el => el.innerHTML = errorMsg);
+            safeDOM.execute('homeTrendingListDislikes', el => el.innerHTML = errorMsg);
         }
     },
 
