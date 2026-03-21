@@ -1,14 +1,11 @@
 // ============================================================================
-// js/modules/trending.js - 超市红黑榜引擎 (全量功能保留 + 横向分类过滤支持)
+// js/modules/trending.js - 超市红黑榜引擎 (暴力切换修复 + 高级渐变占位图)
 // ============================================================================
 import { safeDOM } from '../core/dom.js';
 
-// 🌟 新增：记录当前激活的分类状态，默认为"全部"
 let currentCategory = '全部';
 
 export const TrendingEngine = {
-    // 1. 🌟 升级版：带分类过滤的榜单拉取
-    // 1. 🌟 升级版：带分类过滤和真实错误追踪的榜单拉取
     async loadTrendingData() {
         try {
             safeDOM.execute('homeTrendingListLikes', el => el.innerHTML = '<div style="text-align:center; padding: 40px; color:#9CA3AF; font-size:14px; font-weight:bold;"><span style="display:inline-block; animation:spin 1s linear infinite;">⏳</span> 正在拉取新鲜榜单...</div>');
@@ -21,45 +18,35 @@ export const TrendingEngine = {
                 this.renderTrendingList(data.topLikes, 'homeTrendingListLikes', 'likes');
                 this.renderTrendingList(data.topDislikes, 'homeTrendingListDislikes', 'dislikes');
             } else {
-                // 🌟 如果后端返回报错，直接抛出！
                 throw new Error(data.error || '未知接口错误');
             }
         } catch (error) {
             console.error("🚨 榜单拉取失败:", error);
-            // 🌟 直接把错误信息打在屏幕上！
-            const errorMsg = `<div style="text-align:center; padding: 40px; color:#EF4444; font-size:13px; font-weight:bold;">
-                                💥 拉取失败<br><br>
-                                <span style="color:#B91C1C;">原因: ${error.message}</span>
-                              </div>`;
+            const errorMsg = `<div style="text-align:center; padding: 40px; color:#EF4444; font-size:13px; font-weight:bold;">💥 拉取失败<br><br><span style="color:#B91C1C;">原因: ${error.message}</span></div>`;
             safeDOM.execute('homeTrendingListLikes', el => el.innerHTML = errorMsg);
             safeDOM.execute('homeTrendingListDislikes', el => el.innerHTML = errorMsg);
         }
     },
 
-    // 2. 🌟 新增：处理横向分类导航的点击事件
     changeTrendingCategory(category, element) {
-        if (currentCategory === category) return; // 如果点的就是当前分类，直接忽略
+        if (currentCategory === category) return; 
         currentCategory = category;
         
-        // 重置所有分类按钮的默认样式 (灰字白底)
         document.querySelectorAll('.cat-btn').forEach(btn => {
             btn.style.background = '#FFF';
             btn.style.color = '#475569';
             btn.style.border = '1px solid #E2E8F0';
         });
         
-        // 激活当前被点击的按钮样式 (白字黑底)
         if (element) {
             element.style.background = '#111827';
             element.style.color = '#FFF';
             element.style.border = 'none';
         }
 
-        // 重新拉取该分类下的数据
         this.loadTrendingData();
     },
 
-    // 3. 渲染榜单列表 (完全保留你的金银铜牌 UI)
     renderTrendingList(items, containerId, type) {
         safeDOM.execute(containerId, container => {
             if (!items || items.length === 0) {
@@ -68,7 +55,6 @@ export const TrendingEngine = {
             }
             let html = '';
             items.forEach((item, index) => {
-                // 动态生成金银铜牌样式
                 let rankStyle = "background:#F1F5F9; color:#94A3B8;"; 
                 if (index === 0) rankStyle = "background: linear-gradient(135deg, #FDE68A, #F59E0B); color:#FFF; box-shadow: 0 2px 8px rgba(245,158,11,0.3);"; 
                 else if (index === 1) rankStyle = "background: linear-gradient(135deg, #E2E8F0, #94A3B8); color:#FFF; box-shadow: 0 2px 8px rgba(148,163,184,0.3);"; 
@@ -78,15 +64,29 @@ export const TrendingEngine = {
                 const count = type === 'likes' ? item.likes : item.dislikes;
                 const scoreColor = type === 'likes' ? '#EF4444' : '#111827';
                 
-                // 确保点击能跳到详情页
+                // 🌟 核心魔法：动态生成高颜值无图占位符 (Notion 风格)
+                let fallbackBg = "linear-gradient(135deg, #F8FAFC, #E2E8F0)";
+                let fallbackEmoji = "🛍️";
+                if (item.category === '懒人速食') { fallbackBg = "linear-gradient(135deg, #FFF7ED, #FFEDD5)"; fallbackEmoji = "🥡"; }
+                else if (item.category === '厨房生鲜') { fallbackBg = "linear-gradient(135deg, #FEF2F2, #FEE2E2)"; fallbackEmoji = "🥩"; }
+                else if (item.category === '追剧零食') { fallbackBg = "linear-gradient(135deg, #FEFCE8, #FEF08A)"; fallbackEmoji = "🍪"; }
+                else if (item.category === '租房日用') { fallbackBg = "linear-gradient(135deg, #F0FDF4, #DCFCE7)"; fallbackEmoji = "🧼"; }
+                else if (item.category === '萌宠好物') { fallbackBg = "linear-gradient(135deg, #FAF5FF, #F3E8FF)"; fallbackEmoji = "🐾"; }
+
+                const imgSrc = item.image_url || item.scanned_img;
+                
+                // 如果有图就渲染图，没图就渲染高级 Emoji 盒子
+                const imageHtml = imgSrc 
+                    ? `<img src="${imgSrc}" style="width:55px; height:55px; border-radius:12px; object-fit:cover; margin:0 12px; border: 1px solid #F1F5F9;">`
+                    : `<div style="width:55px; height:55px; border-radius:12px; margin:0 12px; display:flex; align-items:center; justify-content:center; font-size:26px; background:${fallbackBg}; border: 1px solid rgba(0,0,0,0.05); flex-shrink:0;">${fallbackEmoji}</div>`;
+
                 const safeItemStr = encodeURIComponent(JSON.stringify(item));
 
                 html += `
                 <div class="trending-item" style="display:flex; align-items:center; background:#FFF; border-radius:16px; margin-bottom:12px; padding:12px; box-shadow:0 4px 15px rgba(0,0,0,0.02); border:1px solid #F1F5F9; cursor:pointer;" onclick="window.App.openTrendingDetail(decodeURIComponent('${safeItemStr}'))">
-                    
                     <div style="width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 900; flex-shrink: 0; ${rankStyle}">${index + 1}</div>
                     
-                    <img src="${item.image_url || 'https://via.placeholder.com/60'}" onerror="this.src='https://via.placeholder.com/60'" style="width:55px; height:55px; border-radius:12px; object-fit:cover; margin:0 12px; background:#F8FAFC; border: 1px solid #F1F5F9;">
+                    ${imageHtml}
                     
                     <div style="flex:1; overflow:hidden;">
                         <div style="font-weight:900; font-size:16px; color:#111827; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:4px;">${item.chinese_name || item.dutch_name}</div>
@@ -102,41 +102,43 @@ export const TrendingEngine = {
         });
     },
 
-    // 4. 核心修复：切换红榜 / 黑榜 (修复点击不强制变色的 Bug)
+    // 4. 🌟 暴力修复版：切换红榜 / 黑榜
     switchHomeTrendingTab(tabType, element) {
-        // 第一步：把所有的 tab 都重置为“灰色未选中”状态
+        // 第一步：重置所有 Tab 样式
         document.querySelectorAll('.t-tab').forEach(tab => {
             tab.style.background = '#F8FAFC';
             tab.style.color = '#475569';
             tab.style.borderColor = '#E2E8F0';
         });
         
-        // 第二步：给当前点击的按钮，强制涂上专属颜色
+        // 第二步：强制给当前 Tab 上色
         if (element) {
             if (tabType === 'likes') {
-                // 红榜专属色：红底红字
                 element.style.background = '#FEF2F2';
                 element.style.color = '#EF4444';
                 element.style.borderColor = '#FECACA';
             } else {
-                // 黑榜专属色：黑底白字
                 element.style.background = '#111827';
                 element.style.color = '#FFF';
                 element.style.borderColor = '#111827';
             }
         }
         
-        // 第三步：切换底下数据列表的显示与隐藏
-        if (tabType === 'likes') {
-            safeDOM.execute('homeTrendingListLikes', el => el.style.display = 'block');
-            safeDOM.execute('homeTrendingListDislikes', el => el.style.display = 'none');
-        } else {
-            safeDOM.execute('homeTrendingListLikes', el => el.style.display = 'none');
-            safeDOM.execute('homeTrendingListDislikes', el => el.style.display = 'block');
+        // 第三步：抛弃安全封装，使用最底层的原生 JS 暴力操控显示隐藏！绝对不可能失效！
+        const likesList = document.getElementById('homeTrendingListLikes');
+        const dislikesList = document.getElementById('homeTrendingListDislikes');
+
+        if (likesList && dislikesList) {
+            if (tabType === 'likes') {
+                likesList.style.display = 'block';
+                dislikesList.style.display = 'none';
+            } else {
+                likesList.style.display = 'none';
+                dislikesList.style.display = 'block';
+            }
         }
     },
 
-    // 5. 点击榜单直接跳转详情页 (完全保留)
     openTrendingDetail(itemJsonStr) {
         try {
             const data = JSON.parse(itemJsonStr);
@@ -149,13 +151,11 @@ export const TrendingEngine = {
     }
 };
 
-// 🌟 极其关键：将函数暴露给全局 window，否则 HTML 里的 onclick 找不到！
 if (typeof window !== 'undefined') {
     window.App = window.App || {};
     Object.keys(TrendingEngine).forEach(key => {
         if (typeof TrendingEngine[key] === 'function') {
             window.App[key] = TrendingEngine[key].bind(TrendingEngine);
-            // 兼容你旧版 HTML 直接写的 onclick="switchHomeTrendingTab"
             window[key] = window.App[key]; 
         }
     });
