@@ -438,7 +438,7 @@
 
     <div id="page-details" class="page-section" style="background: #F8FAFC; min-height: 100vh; padding-bottom: 0; position: relative;">
         
-        <div onclick="goBack()" style="position: absolute; top: max(15px, env(safe-area-inset-top)); left: 15px; width: 36px; height: 36px; background: rgba(255,255,255,0.85); border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: bold; color: #111827; cursor: pointer; z-index: 100; backdrop-filter: blur(10px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); transition: transform 0.1s;" onmousedown="this.style.transform='scale(0.9)'" onmouseup="this.style.transform='scale(1)'">‹</div>
+        <div onclick="goBack()" style="position: absolute; top: max(15px, env(safe-area-inset-top)); left: 15px; width: 36px; height: 36px; background: rgba(255,255,255,0.85); border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: bold; color: #111827; cursor: pointer; z-index: 100; backdrop-filter: blur(10px); box-shadow: 0 4px 12px rgba(0,0,0,0.08);">‹</div>
 
         <div style="width: 100%; height: 48vh; background: #F1F5F9; position: relative; overflow: hidden;">
             <img id="detailImg" src="" style="width: 100%; height: 100%; object-fit: cover;">
@@ -457,13 +457,13 @@
 
             <div style="background: #FFF; border-radius: 20px; padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #F1F5F9;">
                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-                    <div style="background: #FFFBEB; width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; box-shadow: 0 2px 6px rgba(217,119,6,0.1);">💡</div>
+                    <div style="background: #FFFBEB; width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px;">💡</div>
                     <span style="font-size: 15px; font-weight: 900; color: #111827;">管家锐评</span>
                 </div>
                 <div id="detailInsight" style="font-size: 14px; color: #334155; line-height: 1.7; font-weight: bold;"></div>
             </div>
 
-            <div id="detailWarningBox" style="display: none; background: #FEF2F2; border-radius: 20px; padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 20px rgba(220,38,38,0.05); border: 1px solid #FECACA;">
+            <div id="detailWarningBox" style="display: none; background: #FEF2F2; border-radius: 20px; padding: 20px; margin-bottom: 16px; border: 1px solid #FECACA;">
                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
                     <div style="background: #FEE2E2; width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px;">⚠️</div>
                     <span style="font-size: 15px; font-weight: 900; color: #DC2626;">致命避雷</span>
@@ -473,23 +473,38 @@
 
             <div id="detailAiLoading" style="display:none; background: #EFF6FF; border-radius: 20px; padding: 20px; text-align: center; border: 1px dashed #BFDBFE; margin-bottom: 16px;">
                 <div style="font-size: 14px; font-weight: 900; color: #3B82F6; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    <span style="animation: spin 1.5s linear infinite; display: inline-block;">✨</span> DeepSeek 深度数据生成中...
+                    <span style="animation: spin 1.5s linear infinite; display: inline-block;">✨</span> 全网搜罗神仙吃法与点评中...
                 </div>
+            </div>
+
+            <div id="detailRecipeBox" style="display: none; background: #FFF; border-radius: 20px; padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #F1F5F9;">
+                <div style="font-size: 15px; font-weight: 900; color: #111827; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                    <div style="background: #ECFDF5; width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px;">🍳</div>
+                    食用指南 & 神仙吃法
+                </div>
+                <div id="recipeMethodTags" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;"></div>
+                <div id="recipeDetails" style="font-size: 13px; color: #475569; line-height: 1.6; background: #F8FAFC; padding: 12px; border-radius: 12px;"></div>
             </div>
 
             <div id="detailAltBox" style="display: none; background: #FFF; border-radius: 20px; padding: 20px; margin-bottom: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #F1F5F9;">
                 <div style="font-size: 15px; font-weight: 900; color: #111827; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
                     <div style="background: #F3E8FF; width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px;">🛍️</div>
-                    购物指南 (搭配 / 平替)
+                    购物指南 (搭配/平替)
                 </div>
-                <div id="detailAlternatives" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
+                <div id="detailAlternatives" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+            </div>
+
+            <div id="detailReviewsBox" style="display: none; margin-top: 24px;">
+                <div style="font-size: 16px; font-weight: 900; color: #111827; margin-bottom: 16px; padding-left: 4px;">荷包蛋真实点评</div>
+                <div id="reviewsList"></div>
             </div>
             
-            <div style="height: 110px;"></div> </div>
+            <div style="height: 110px;"></div>
+        </div>
 
         <div style="position: fixed; bottom: 0; left: 0; right: 0; padding: 12px 20px max(12px, env(safe-area-inset-bottom)); background: rgba(248,250,252,0.85); backdrop-filter: blur(20px); border-top: 1px solid rgba(0,0,0,0.05); display: flex; gap: 16px; z-index: 100;">
-            <button onclick="window.App.voteProduct('like')" style="flex: 1; background: #FFF; color: #EF4444; border: 2px solid #FECACA; padding: 16px 0; border-radius: 20px; font-size: 16px; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 6px 15px rgba(239,68,68,0.1); transition: transform 0.1s;" onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='scale(1)'">🔥 种草 (推爆)</button>
-            <button onclick="window.App.voteProduct('dislike')" style="flex: 1; background: #111827; color: #FFF; border: none; padding: 16px 0; border-radius: 20px; font-size: 16px; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 8px 25px rgba(17,24,39,0.3); transition: transform 0.1s;" onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='scale(1)'">💣 避雷 (快跑)</button>
+            <button onclick="window.App.voteProduct('like')" style="flex: 1; background: #FFF; color: #EF4444; border: 2px solid #FECACA; padding: 16px 0; border-radius: 20px; font-size: 16px; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 6px 15px rgba(239,68,68,0.1);">🔥 种草 (推爆)</button>
+            <button onclick="window.App.voteProduct('dislike')" style="flex: 1; background: #111827; color: #FFF; border: none; padding: 16px 0; border-radius: 20px; font-size: 16px; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 8px 25px rgba(17,24,39,0.3);">💣 避雷 (快跑)</button>
         </div>
     </div>
 </div>
