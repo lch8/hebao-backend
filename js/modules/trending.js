@@ -1,55 +1,92 @@
 // ============================================================================
-// js/modules/trending.js - 超市红黑榜引擎
+// js/modules/trending.js - 超市红黑榜引擎 (全量功能保留 + 横向分类过滤支持)
 // ============================================================================
 import { safeDOM } from '../core/dom.js';
 
+// 🌟 新增：记录当前激活的分类状态，默认为"全部"
+let currentCategory = '全部';
+
 export const TrendingEngine = {
-    // 拉取榜单数据
+    // 1. 🌟 升级版：带分类过滤的榜单拉取
     async loadTrendingData() {
         try {
-            const res = await fetch('/api/trending');
+            // 切换分类或加载时，先清空列表，显示平滑的 Loading 状态
+            safeDOM.execute('homeTrendingListLikes', el => el.innerHTML = '<div style="text-align:center; padding: 40px; color:#9CA3AF; font-size:14px; font-weight:bold;"><span style="display:inline-block; animation:spin 1s linear infinite;">⏳</span> 正在拉取新鲜榜单...</div>');
+            safeDOM.execute('homeTrendingListDislikes', el => el.innerHTML = '<div style="text-align:center; padding: 40px; color:#9CA3AF; font-size:14px; font-weight:bold;"><span style="display:inline-block; animation:spin 1s linear infinite;">⏳</span> 正在拉取新鲜榜单...</div>');
+
+            // 动态带上 category 参数发送给后端
+            const res = await fetch(`/api/trending?category=${encodeURIComponent(currentCategory)}`);
             const data = await res.json();
+            
             if (data.success) {
                 this.renderTrendingList(data.topLikes, 'homeTrendingListLikes', 'likes');
                 this.renderTrendingList(data.topDislikes, 'homeTrendingListDislikes', 'dislikes');
             }
         } catch (error) {
             console.error("🚨 榜单拉取失败:", error);
+            safeDOM.execute('homeTrendingListLikes', el => el.innerHTML = '<div style="text-align:center; padding: 40px; color:#EF4444; font-size:14px;">拉取失败，请检查网络或刷新重试</div>');
+            safeDOM.execute('homeTrendingListDislikes', el => el.innerHTML = '<div style="text-align:center; padding: 40px; color:#EF4444; font-size:14px;">拉取失败，请检查网络或刷新重试</div>');
         }
     },
 
-    // 渲染榜单列表 (自带大厂防弹 UI 与金银铜牌样式)
+    // 2. 🌟 新增：处理横向分类导航的点击事件
+    changeTrendingCategory(category, element) {
+        if (currentCategory === category) return; // 如果点的就是当前分类，直接忽略
+        currentCategory = category;
+        
+        // 重置所有分类按钮的默认样式 (灰字白底)
+        document.querySelectorAll('.cat-btn').forEach(btn => {
+            btn.style.background = '#FFF';
+            btn.style.color = '#475569';
+            btn.style.border = '1px solid #E2E8F0';
+        });
+        
+        // 激活当前被点击的按钮样式 (白字黑底)
+        if (element) {
+            element.style.background = '#111827';
+            element.style.color = '#FFF';
+            element.style.border = 'none';
+        }
+
+        // 重新拉取该分类下的数据
+        this.loadTrendingData();
+    },
+
+    // 3. 渲染榜单列表 (完全保留你的金银铜牌 UI)
     renderTrendingList(items, containerId, type) {
         safeDOM.execute(containerId, container => {
             if (!items || items.length === 0) {
-                container.innerHTML = '<div style="text-align:center; padding: 40px; color:#9CA3AF;">暂无数据</div>';
+                container.innerHTML = '<div style="text-align:center; padding: 40px; color:#9CA3AF; font-size:14px; font-weight:bold;">暂无该分类数据，快去扫码当排雷先锋！</div>';
                 return;
             }
             let html = '';
             items.forEach((item, index) => {
-                // 🌟 核心升级：前3名给予金、银、铜专属颜色与底色！
-                let rankStyle = "background:#F3F4F6; color:#9CA3AF;"; // 默认样式 (第4名及以后)
-                if (index === 0) rankStyle = "background: linear-gradient(135deg, #FDE68A, #F59E0B); color:#FFF; box-shadow: 0 2px 6px rgba(245,158,11,0.3);"; // 金
-                else if (index === 1) rankStyle = "background: linear-gradient(135deg, #E2E8F0, #94A3B8); color:#FFF; box-shadow: 0 2px 6px rgba(148,163,184,0.3);"; // 银
-                else if (index === 2) rankStyle = "background: linear-gradient(135deg, #FED7AA, #D97706); color:#FFF; box-shadow: 0 2px 6px rgba(217,119,6,0.3);"; // 铜
+                // 动态生成金银铜牌样式
+                let rankStyle = "background:#F1F5F9; color:#94A3B8;"; 
+                if (index === 0) rankStyle = "background: linear-gradient(135deg, #FDE68A, #F59E0B); color:#FFF; box-shadow: 0 2px 8px rgba(245,158,11,0.3);"; 
+                else if (index === 1) rankStyle = "background: linear-gradient(135deg, #E2E8F0, #94A3B8); color:#FFF; box-shadow: 0 2px 8px rgba(148,163,184,0.3);"; 
+                else if (index === 2) rankStyle = "background: linear-gradient(135deg, #FED7AA, #D97706); color:#FFF; box-shadow: 0 2px 8px rgba(217,119,6,0.3);"; 
 
                 const icon = type === 'likes' ? '🔥' : '💣';
                 const count = type === 'likes' ? item.likes : item.dislikes;
                 const scoreColor = type === 'likes' ? '#EF4444' : '#111827';
                 
+                // 确保点击能跳到详情页
+                const safeItemStr = encodeURIComponent(JSON.stringify(item));
+
                 html += `
-                <div class="trending-item" style="display:flex; align-items:center; background:#FFF; border-radius:16px; margin-bottom:12px; padding:12px; box-shadow:0 2px 8px rgba(0,0,0,0.02); border:1px solid #F1F5F9; cursor:pointer; transition: transform 0.1s;" onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform='scale(1)'" onclick="window.App._renderAndOpenDetail({dutch_name: '${item.dutch_name}', chinese_name: '${item.chinese_name}', category: '${item.category}', insight: '${item.insight || ''}', warning: '${item.warning || ''}'})">
+                <div class="trending-item" style="display:flex; align-items:center; background:#FFF; border-radius:16px; margin-bottom:12px; padding:12px; box-shadow:0 4px 15px rgba(0,0,0,0.02); border:1px solid #F1F5F9; cursor:pointer;" onclick="window.App.openTrendingDetail(decodeURIComponent('${safeItemStr}'))">
                     
-                    <div style="width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 900; font-family: monospace; flex-shrink: 0; ${rankStyle}">${index + 1}</div>
+                    <div style="width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 900; flex-shrink: 0; ${rankStyle}">${index + 1}</div>
                     
-                    <img src="${item.image_url || 'https://via.placeholder.com/60'}" onerror="this.src='https://via.placeholder.com/60'" style="width:50px; height:50px; border-radius:10px; object-fit:cover; margin:0 12px; background:#F8FAFC; border: 1px solid #F1F5F9;">
+                    <img src="${item.image_url || 'https://via.placeholder.com/60'}" onerror="this.src='https://via.placeholder.com/60'" style="width:55px; height:55px; border-radius:12px; object-fit:cover; margin:0 12px; background:#F8FAFC; border: 1px solid #F1F5F9;">
                     
                     <div style="flex:1; overflow:hidden;">
-                        <div style="font-weight:900; font-size:15px; color:#111827; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.chinese_name || item.dutch_name}</div>
-                        <div style="font-size:11px; color:#94A3B8; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.dutch_name}</div>
+                        <div style="font-weight:900; font-size:16px; color:#111827; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:4px;">${item.chinese_name || item.dutch_name}</div>
+                        <div style="font-size:12px; color:#94A3B8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${item.dutch_name}</div>
                     </div>
                     
-                    <div style="font-weight:900; font-size: 15px; color:${scoreColor}; flex-shrink:0; display:flex; align-items:center; gap:4px;">
+                    <div style="font-weight:900; font-size: 16px; color:${scoreColor}; flex-shrink:0; display:flex; align-items:center; gap:4px;">
                         <span style="font-size:14px;">${icon}</span> ${count || 0}
                     </div>
                 </div>`;
@@ -58,7 +95,7 @@ export const TrendingEngine = {
         });
     },
 
-    // 切换红榜 / 黑榜
+    // 4. 核心修复：切换红榜 / 黑榜 (完全保留)
     switchHomeTrendingTab(tabType, element) {
         document.querySelectorAll('.t-tab').forEach(el => el.classList.remove('active'));
         if (element) element.classList.add('active');
@@ -70,5 +107,29 @@ export const TrendingEngine = {
             safeDOM.execute('homeTrendingListLikes', el => el.style.display = 'none');
             safeDOM.execute('homeTrendingListDislikes', el => el.style.display = 'block');
         }
+    },
+
+    // 5. 点击榜单直接跳转详情页 (完全保留)
+    openTrendingDetail(itemJsonStr) {
+        try {
+            const data = JSON.parse(itemJsonStr);
+            if (window.App && window.App._renderAndOpenDetail) {
+                window.App._renderAndOpenDetail(data);
+            }
+        } catch (e) {
+            console.error("解析详情失败", e);
+        }
     }
 };
+
+// 🌟 极其关键：将函数暴露给全局 window，否则 HTML 里的 onclick 找不到！
+if (typeof window !== 'undefined') {
+    window.App = window.App || {};
+    Object.keys(TrendingEngine).forEach(key => {
+        if (typeof TrendingEngine[key] === 'function') {
+            window.App[key] = TrendingEngine[key].bind(TrendingEngine);
+            // 兼容你旧版 HTML 直接写的 onclick="switchHomeTrendingTab"
+            window[key] = window.App[key]; 
+        }
+    });
+}
