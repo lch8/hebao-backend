@@ -1,5 +1,5 @@
 // ============================================================================
-// js/modules/auth.js - 用户鉴权与登录引擎 (防弹升级版 + 隐私脱敏闭环)
+// js/modules/auth.js - 用户鉴权与登录引擎 (支持多设备同步 + 信用分闭环)
 // ============================================================================
 import { showToast } from '../core/toast.js';
 import { safeDOM } from '../core/dom.js';
@@ -31,7 +31,7 @@ export const AuthEngine = {
         } 
     },
 
-    // 🌟 发送验证码 (新增 Spam 垃圾箱强提醒)
+    // 🌟 发送验证码 (Spam 垃圾箱强提醒)
     async sendAuthCode() {
         const email = safeDOM.getValue('hebaoAuthEmail').trim();
         if (!email || !email.includes('@')) return showToast("请输入有效的邮箱！", "warning");
@@ -47,7 +47,6 @@ export const AuthEngine = {
             const data = await res.json();
             
             if (data.success) {
-                // 💥 核心修复 1：强力阻断式提示，解决用户干等的问题！
                 alert("✉️ 验证码已发送！\n\n⚠️ 重要提示：由于是系统自动发信，邮件极大概率会被误判进【垃圾邮件(Spam / Junk)】文件夹，请务必前往垃圾箱查看！");
                 showToast("请前往垃圾箱(Spam)查找验证码！", "success");
 
@@ -72,7 +71,7 @@ export const AuthEngine = {
         }
     },
 
-    // 🌟 验证验证码 (获取后端真实信用分 + 邮箱前端脱敏)
+    // 🌟 验证验证码 (获取后端真实 UUID + 信用分 + 多设备同步)
     async verifyCode() {
         const email = safeDOM.getValue('hebaoAuthEmail').trim();
         const code = safeDOM.getValue('hebaoAuthCode').trim();
@@ -88,51 +87,58 @@ export const AuthEngine = {
             });
             const data = await res.json();
             
-           if (data.success) {
-                localStorage.setItem('hebao_token', data.token);
+            if (data.success) {
+                // 1. 基础状态写入
                 isLoggedIn = true;
                 localStorage.setItem('hebao_logged_in', 'true');
+                localStorage.setItem('hebao_token', data.token);
+                localStorage.setItem('hebao_email', email); // 存入完整邮箱，供徽章引擎使用
                 
-                // 统一社区称呼
+                // 🌟 2. 核心大厂逻辑：用后端返回的真实老 UUID，强行覆盖当前设备的临时 UUID！
+                if (data.userId) {
+                    localStorage.setItem('hebao_uuid', data.userId);
+                    userUUID = data.userId; // 更新内存里的 UUID
+                    window.userUUID = data.userId; // 确保全局变量也更新
+                }
+                
+                // 🌟 3. 同步后端的真实信用分 (与 refreshProfileUI 里的键名 'hebao_credit' 保持一致)
+                if (data.credit !== undefined) {
+                    localStorage.setItem('hebao_credit', data.credit);
+                } else {
+                    localStorage.setItem('hebao_credit', 100);
+                }
+
+                // 给新用户随机发个名字
                 if (!localStorage.getItem('hp_name')) {
                     localStorage.setItem('hp_name', '荷包蛋_' + Math.floor(Math.random() * 1000));
                 }
 
-                const domain = email.split('@')[1] || '';
-                const isEdu = domain.includes('.edu') || domain.includes('tudelft.nl') || domain.includes('uva.nl') || domain.includes('eur.nl') || domain.includes('leidenuniv.nl');
-
-                localStorage.setItem('hp_email_verified', 'true');
-                localStorage.setItem('hp_is_edu', isEdu ? 'true' : 'false');
-                
-                // 💥 核心新增 1：存储后端的真实信用分 (防断层)
-                localStorage.setItem('hp_credit', data.credit !== undefined ? data.credit : 100);
-
-                // 💥 核心新增 2：邮箱前端脱敏存储，保护隐私
-                const rawEmail = email;
-                const [namePart, domainPart] = rawEmail.split('@');
+                // 4. 邮箱前端脱敏存储 (留作发帖/评论显示用，保护隐私)
+                const [namePart, domainPart] = email.split('@');
                 let maskedName = '';
                 if (namePart && namePart.length <= 2) {
                     maskedName = `${namePart[0]}***`;
                 } else if (namePart) {
                     maskedName = `${namePart[0]}***${namePart[namePart.length - 1]}`;
                 }
-                const safeEmailForFrontend = `${maskedName}@${domainPart}`;
+                localStorage.setItem('hp_email', `${maskedName}@${domainPart}`);
                 
-                // 存入脱敏邮箱，发评论时直接调用这个安全版本
-                localStorage.setItem('hp_email', safeEmailForFrontend);
-                
-                // 💥 关掉登录弹窗
+                // 5. 关掉弹窗，弹出提示
                 safeDOM.execute('loginModal', el => el.style.display = 'none');
+                showToast(data.isNewUser ? "🎉 注册成功，欢迎来到荷包管家！" : "👋 欢迎回来！您的账号数据已同步。", "success");
                 
-                // 弹窗提示
-                showToast(isEdu ? "🎊 认证成功！专属校友勋章已点亮！" : "✅ 验证成功！已为您点亮【实名认证】勋章。", "success");
-                
-                // 🚀 让百变厂牌引擎接管页面渲染！
-                if (window.App && window.App.renderProfileState) {
-                    window.App.renderProfileState();
+                // 🚀 6. 立刻呼叫 UI 刷新引擎，徽章瞬间亮起！
+                if (window.App && window.App.refreshProfileUI) {
+                    window.App.refreshProfileUI();
+                } else if (window.App && window.App.renderProfileState) {
+                    window.App.renderProfileState(); // 兼容旧版本的备用调用
                 }
                 
-                if (currentPendingAction) { currentPendingAction(); currentPendingAction = null; }
+                // 恢复中断的操作 (比如他刚才是点“发布”弹出的登录，现在直接让他继续发布)
+                if (currentPendingAction) { 
+                    currentPendingAction(); 
+                    currentPendingAction = null; 
+                }
             } else {
                 throw new Error(data.error);
             }
@@ -151,3 +157,10 @@ export const AuthEngine = {
         return headers;
     }
 };
+
+// 挂载到全局
+if (typeof window !== 'undefined') {
+    window.App = window.App || {};
+    window.App.requireAuth = AuthEngine.requireAuth.bind(AuthEngine);
+    window.App.getAuthHeaders = AuthEngine.getAuthHeaders.bind(AuthEngine);
+}
