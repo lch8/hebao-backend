@@ -2047,3 +2047,7 @@ body, .page-section, .container {
     background: #FEF2F2;
     box-shadow: 0 4px 15px rgba(239, 68, 68, 0.15);
 }
+
+/* 隐藏横向导航的滚动条，但保持可以滑动 */
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
