@@ -95,8 +95,14 @@ export default async function handler(req) {
         const now = Math.floor(Date.now() / 1000);
         const token = await signJwt({ userId: finalUserId, email, iat: now, exp: now + 7 * 24 * 3600 }, jwtSecret);
 
-        // 🌟 返回给前端的数据带上 credit，让前端去存在 localStorage
-        return new Response(JSON.stringify({ success: true, token, isNewUser, credit: userCredit }), {
+        // 🌟 核心修复：必须把数据库里真正的 finalUserId 返回给前端，覆盖前端的临时 ID！
+        return new Response(JSON.stringify({ 
+            success: true, 
+            token: token, 
+            isNewUser: isNewUser, 
+            credit: userCredit,
+            userId: finalUserId // 👈 新增这一行！
+        }), {
             status: 200,
             headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
         });
