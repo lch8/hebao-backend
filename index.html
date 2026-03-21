@@ -276,18 +276,33 @@
         <div class="fab-btn" id="fabGridBtn" onclick="toggleFabModal()" style="display: none; position: fixed; bottom: 90px; right: 20px; width: 50px; height: 50px; background: linear-gradient(135deg, #111827, #374151); color: white; border-radius: 25px; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 8px 20px rgba(17,24,39,0.3); z-index: 100; transition: transform 0.2s;">🗂️</div>
     </div>
 
-    <div id="page-trending" class="page-section" style="background: #F7F8FA; min-height: 100vh; padding-bottom: 0;">
-        <div class="detail-back-btn" onclick="goBack()" style="position: absolute; top: 15px; left: 15px;">‹</div>
-        <div class="header" style="margin-top: 25px; margin-bottom: 30px;">
-            <h1 class="title">超市红黑榜 🛒</h1>
-            <div class="subtitle">靠荷包蛋们一口口吃出来的榜单</div>
+    <div id="page-trending" class="page-section" style="background: #F8FAFC; min-height: 100vh; padding-bottom: 20px;">
+        
+        <div onclick="goBack()" style="position: absolute; top: max(15px, env(safe-area-inset-top)); left: 15px; width: 36px; height: 36px; background: #FFF; border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: bold; color: #111827; cursor: pointer; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">‹</div>
+        
+        <div class="header" style="margin-top: 50px; margin-bottom: 20px; text-align: center;">
+            <h1 style="font-size: 24px; font-weight: 900; color: #111827; margin-bottom: 6px;">超市红黑榜 🛒</h1>
+            <div style="font-size: 13px; color: #64748B; font-weight: bold;">靠荷包蛋们一口口吃出来的榜单</div>
         </div>
-        <div class="trending-tabs" style="padding: 0 15px;">
-            <div class="t-tab active" onclick="switchHomeTrendingTab('likes', this)">🏆 种草红榜</div>
-            <div class="t-tab" onclick="switchHomeTrendingTab('dislikes', this)">💣 避雷黑榜</div>
+
+        <div style="width: 100%; overflow-x: auto; white-space: nowrap; padding: 0 20px 15px 20px; box-sizing: border-box; -webkit-overflow-scrolling: touch;" class="hide-scrollbar">
+            <div style="display: inline-flex; gap: 10px;" id="trendingCategoryNav">
+                <button onclick="window.App.changeTrendingCategory('全部', this)" class="cat-btn active" style="background:#111827; color:#FFF; border:none; padding:8px 16px; border-radius:20px; font-size:14px; font-weight:bold; cursor:pointer; transition:0.2s;">🏆 全部</button>
+                <button onclick="window.App.changeTrendingCategory('懒人速食', this)" class="cat-btn" style="background:#FFF; color:#475569; border:1px solid #E2E8F0; padding:8px 16px; border-radius:20px; font-size:14px; font-weight:bold; cursor:pointer; transition:0.2s;">🥡 懒人速食</button>
+                <button onclick="window.App.changeTrendingCategory('厨房生鲜', this)" class="cat-btn" style="background:#FFF; color:#475569; border:1px solid #E2E8F0; padding:8px 16px; border-radius:20px; font-size:14px; font-weight:bold; cursor:pointer; transition:0.2s;">🥩 厨房生鲜</button>
+                <button onclick="window.App.changeTrendingCategory('追剧零食', this)" class="cat-btn" style="background:#FFF; color:#475569; border:1px solid #E2E8F0; padding:8px 16px; border-radius:20px; font-size:14px; font-weight:bold; cursor:pointer; transition:0.2s;">🍪 追剧零食</button>
+                <button onclick="window.App.changeTrendingCategory('租房日用', this)" class="cat-btn" style="background:#FFF; color:#475569; border:1px solid #E2E8F0; padding:8px 16px; border-radius:20px; font-size:14px; font-weight:bold; cursor:pointer; transition:0.2s;">🧼 租房日用</button>
+                <button onclick="window.App.changeTrendingCategory('萌宠好物', this)" class="cat-btn" style="background:#FFF; color:#475569; border:1px solid #E2E8F0; padding:8px 16px; border-radius:20px; font-size:14px; font-weight:bold; cursor:pointer; transition:0.2s;">🐾 萌宠好物</button>
+            </div>
         </div>
-        <div id="homeTrendingListLikes" style="display:block; padding: 0 15px; margin-top: 15px;"></div>
-        <div id="homeTrendingListDislikes" style="display:none; padding: 0 15px; margin-top: 15px;"></div>
+
+        <div style="display: flex; gap: 12px; padding: 0 20px; margin-bottom: 20px;">
+            <div class="t-tab active" onclick="window.App.switchHomeTrendingTab('likes', this)" style="flex:1; text-align:center; padding: 12px 0; background: #FEF2F2; color: #EF4444; border-radius: 16px; font-size: 15px; font-weight: 900; cursor: pointer; border: 1px solid #FECACA; transition:0.2s;">🔥 种草红榜</div>
+            <div class="t-tab" onclick="window.App.switchHomeTrendingTab('dislikes', this)" style="flex:1; text-align:center; padding: 12px 0; background: #F8FAFC; color: #475569; border-radius: 16px; font-size: 15px; font-weight: 900; cursor: pointer; border: 1px solid #E2E8F0; transition:0.2s;">💣 避雷黑榜</div>
+        </div>
+
+        <div id="homeTrendingListLikes" style="display:block; padding: 0 20px;"></div>
+        <div id="homeTrendingListDislikes" style="display:none; padding: 0 20px;"></div>
     </div>
 
     <div id="page-market" class="page-section">
