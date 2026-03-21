@@ -1,5 +1,5 @@
 // ============================================================================
-// js/modules/scanner.js - 极速扫码、足迹单选锁定与极简点评引擎
+// js/modules/scanner.js - 极速扫码、足迹单选锁定、原生点评与 UGC 图片引擎
 // ============================================================================
 import { showToast } from '../core/toast.js';
 import { safeDOM } from '../core/dom.js'; 
@@ -10,6 +10,13 @@ let currentScanSession = 0;
 
 export const ScannerEngine = {
     
+    // 🌟 新增：在 App 启动时，初始化一次 UGC 图片上传的监听
+    initDetailsUgcHandler() {
+        safeDOM.execute('detailUgcImgInput', el => {
+            el.onchange = this.handleDetailUgcImage.bind(this);
+        });
+    },
+
     openScanner() {
         safeDOM.execute('packageImgInput', el => el.click());
     },
@@ -100,7 +107,59 @@ export const ScannerEngine = {
     },
 
     // ------------------------------------------------------------------------
-    // 2. 足迹卡片渲染引擎 (🌟 加入二选一锁定逻辑)
+    // 🌟 新增：UGC 图片上传引擎 (详情页用户上传闭环)
+    // ------------------------------------------------------------------------
+    async handleDetailUgcImage(event) {
+        const file = event.target.files[0]; 
+        if (!file || !currentProductData) return;
+
+        // 绑定 upload 按钮的 Loading 状态
+        safeDOM.execute('uploadFirstPhotoBtn', el => {
+            el.innerHTML = '<span style="display:inline-block; animation:spin 1s linear infinite;">⏳</span> 正在上传...';
+            el.style.opacity = '0.7';
+            el.style.pointerEvents = 'none';
+        });
+
+        try {
+            // 用户上传也进行极速 Canvas 压缩
+            const compressedImage = await this.compressImage(file, 800, 0.6);
+            
+            // 1. 更新当前内存数据
+            currentProductData.scanned_img = compressedImage;
+            // 如果后端拉取过来的也有 image_url，强制覆盖为新传的
+            currentProductData.image_url = compressedImage; 
+            
+            // 2. 更新 localStorage 足迹中的图片 (确保刷新后不丢失)
+            let history = JSON.parse(localStorage.getItem('hp_scan_history') || '[]');
+            history = history.map(item => {
+                if((item.dutch_name || item.chinese_name) === (currentProductData.dutch_name || currentProductData.chinese_name)) {
+                    item.scanned_img = compressedImage;
+                    item.image_url = compressedImage;
+                }
+                return item;
+            });
+            localStorage.setItem('hp_scan_history', JSON.stringify(history));
+
+            showToast("📸 感谢上传！商品图片已更新为您的杰作！", "success");
+            
+            // 3. 核心：重新渲染详情页，由于有图了，会自动切换为大图模式
+            this._renderAndOpenDetail(currentProductData);
+
+        } catch (error) {
+            showToast("❌ 上传失败: " + error.message, "error");
+        } finally {
+            safeDOM.execute('uploadFirstPhotoBtn', el => {
+                el.innerHTML = '📸 我来上传';
+                el.style.opacity = '1';
+                el.style.pointerEvents = 'auto';
+            });
+            // 清空 input 保证下次可传同名图片
+            event.target.value = '';
+        }
+    },
+
+    // ------------------------------------------------------------------------
+    // 2. 足迹卡片渲染引擎 (保留投票互斥锁定)
     // ------------------------------------------------------------------------
     renderFootprints() {
         safeDOM.execute('footprintList', container => {
@@ -119,10 +178,8 @@ export const ScannerEngine = {
             history.forEach((item, index) => {
                 const img = item.scanned_img || item.image_url || 'https://via.placeholder.com/100';
                 
-                // 🌟 读取该商品的投票状态
                 const voteStatus = item.vote_status || null; 
 
-                // 🌟 动态生成互斥样式
                 let likeStyle = "flex:1; background:#FEF2F2; color:#EF4444; border:1px solid #FECACA; padding:10px 0; border-radius:12px; font-size:13px; font-weight:900; cursor:pointer; transition:0.2s;";
                 let dislikeStyle = "flex:1; background:#F8FAFC; color:#475569; border:1px solid #E2E8F0; padding:10px 0; border-radius:12px; font-size:13px; font-weight:900; cursor:pointer; transition:0.2s;";
                 let likeText = "🔥 狂赞";
@@ -163,7 +220,7 @@ export const ScannerEngine = {
     },
 
     // ------------------------------------------------------------------------
-    // 3. 足迹操作 (锁定互斥、原生清爽弹窗)
+    // 3. 足迹操作 (保留所有逻辑)
     // ------------------------------------------------------------------------
     clearAllFootprints() {
         if(confirm("确定要清空所有本地足迹吗？")) {
@@ -187,17 +244,13 @@ export const ScannerEngine = {
         } catch (e) { console.error("历史读取失败:", e); }
     },
 
-    // 🌟 二选一锁定投票引擎
     async voteFromFootprint(index, action) {
         let history = JSON.parse(localStorage.getItem('hp_scan_history') || '[]');
         const targetItem = history[index];
         if (!targetItem || !targetItem.dutch_name) return showToast("商品信息有误", "error");
 
-        if (targetItem.vote_status) {
-            return showToast("您已经表过态啦！", "warning");
-        }
+        if (targetItem.vote_status) return showToast("您已经表过态啦！", "warning");
 
-        // 瞬间写入本地状态并重绘，视觉秒响应
         targetItem.vote_status = action;
         localStorage.setItem('hp_scan_history', JSON.stringify(history));
         this.renderFootprints(); 
@@ -215,7 +268,6 @@ export const ScannerEngine = {
         } catch (e) { console.error("足迹投票失败:", e); }
     },
 
-    // 🌟 全新原生注入：极简纯净的点评弹窗 (干掉下拉框)
     reviewFromFootprint(index) {
         try {
             const history = JSON.parse(localStorage.getItem('hp_scan_history') || '[]');
@@ -242,13 +294,12 @@ export const ScannerEngine = {
 
             document.getElementById('ccReviewInput').value = '';
             modal.style.display = 'flex';
-            void modal.offsetWidth; // 触发重绘
+            void modal.offsetWidth; 
             modal.style.opacity = '1';
             document.getElementById('ccReviewContent').style.transform = 'scale(1)';
         } catch (e) { console.error(e); }
     },
 
-    // 🌟 全新原生点评提交引擎
     async submitCustomReview() {
         const text = document.getElementById('ccReviewInput').value.trim();
         if (!text || !currentProductData) return showToast("写点什么再提交吧~", "warning");
@@ -276,7 +327,6 @@ export const ScannerEngine = {
             const data = await res.json();
             if(!res.ok) throw new Error(data.error || "提交失败");
             
-            // 关闭自定义弹窗
             const modal = document.getElementById('customCleanReviewModal');
             if (modal) {
                 modal.style.opacity = '0';
@@ -285,7 +335,6 @@ export const ScannerEngine = {
 
             showToast("🎉 评价发布成功！感谢为村友排雷！", "success");
             
-            // 如果在详情页则刷新数据
             const detailsPage = document.getElementById('page-details');
             if(detailsPage && detailsPage.style.display !== 'none') {
                  this._renderAndOpenDetail(currentProductData);
@@ -297,15 +346,47 @@ export const ScannerEngine = {
     },
 
     // ------------------------------------------------------------------------
-    // 4. 详情页极速与深度分层渲染引擎 (保持不变)
+    // 4. 详情页极速与深度分层渲染引擎 (🌟 加入双模无图切换逻辑)
     // ------------------------------------------------------------------------
     async _renderAndOpenDetail(data) {
         try {
             if (window.switchTab) window.switchTab('details');
             currentProductData = data; 
 
-            const fallbackImg = 'https://images.unsplash.com/photo-1544025162-8315ea07659b?q=80&w=600&auto=format&fit=crop';
-            safeDOM.execute('detailImg', el => el.src = data.image_url || data.scanned_img || fallbackImg);
+            // 🌟 核心升级：判断是否有图片，动态切换顶部 UI 模式
+            const productImage = data.image_url || data.scanned_img;
+            const contentPanel = document.getElementById('detailContentPanel');
+
+            if (productImage) {
+                // 有图模式
+                safeDOM.execute('headerImgMode', el => el.style.display = 'block');
+                safeDOM.execute('headerNoImgMode', el => el.style.display = 'none');
+                safeDOM.execute('detailImg', el => el.src = productImage);
+                if(contentPanel) contentPanel.style.marginTop = '-30px';
+            } else {
+                // 无图模式：显示占位引导并绑定上传事件
+                safeDOM.execute('headerImgMode', el => el.style.display = 'none');
+                safeDOM.execute('headerNoImgMode', el => el.style.display = 'block');
+                if(contentPanel) contentPanel.style.marginTop = '-5px';
+
+                safeDOM.execute('uploadFirstPhotoBtn', el => {
+                    el.onclick = () => safeDOM.execute('detailUgcImgInput', input => input.click());
+                });
+
+                // 动态 Emoji 占位背景
+                let fallbackBg = "linear-gradient(135deg, #F8FAFC, #E2E8F0)";
+                let fallbackEmoji = "🛍️";
+                if (data.category === '懒人速食') { fallbackBg = "linear-gradient(135deg, #FFF7ED, #FFEDD5)"; fallbackEmoji = "🥡"; }
+                else if (data.category === '厨房生鲜') { fallbackBg = "linear-gradient(135deg, #FEF2F2, #FEE2E2)"; fallbackEmoji = "🥩"; }
+                else if (data.category === '追剧零食') { fallbackBg = "linear-gradient(135deg, #FEFCE8, #FEF08A)"; fallbackEmoji = "🍪"; }
+                else if (data.category === '租房日用') { fallbackBg = "linear-gradient(135deg, #F0FDF4, #DCFCE7)"; fallbackEmoji = "🧼"; }
+                else if (data.category === '萌宠好物') { fallbackBg = "linear-gradient(135deg, #FAF5FF, #F3E8FF)"; fallbackEmoji = "🐾"; }
+                
+                safeDOM.execute('fallbackNoImgBlock', el => {
+                    el.style.background = fallbackBg;
+                    el.innerHTML = fallbackEmoji;
+                });
+            }
 
             safeDOM.execute('detailChineseName', el => el.innerText = data.chinese_name || data.dutch_name || '未知商品');
             safeDOM.execute('detailDutchName', el => el.innerText = data.dutch_name || '');
@@ -405,12 +486,16 @@ export const ScannerEngine = {
     }
 };
 
-// 挂载到 window.App
+// 🌟 确保 App 启动时，初始化 UGC 文件监听器
 if (typeof window !== 'undefined') {
     window.App = window.App || {};
     Object.keys(ScannerEngine).forEach(key => {
         if (typeof ScannerEngine[key] === 'function') {
             window.App[key] = ScannerEngine[key].bind(ScannerEngine);
         }
+    });
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        window.App.initDetailsUgcHandler();
     });
 }
