@@ -1213,24 +1213,33 @@ window.App.getUserBadgeHtml = function(email, creditScore = 100) {
 };
 
 // ============================================================================
-// 🚀 全局启动器 (确保所有页面一打开就有数据！)
+// App 核心启动引擎 (统一调度中心)
+// ============================================================================
 document.addEventListener('DOMContentLoaded', () => {
+    // 延迟 100ms，确保所有 DOM 节点和 CSS 动画都已挂载完毕
     setTimeout(() => {
         try {
-            if (window.App.switchRbMode) window.App.switchRbMode(localStorage.getItem('hp_survival_mode') || 'starter');
-            
-            // 🌟 强制拉取四大金刚的数据！
-            if (window.App.loadTrendingData) window.App.loadTrendingData(); 
-            if (window.App.loadCommunityPosts) window.App.loadCommunityPosts(); 
-            if (window.App.loadConversations) window.App.loadConversations();
-            // 在你的 DOMContentLoaded 或各种 Engine 绑定完毕之后，加上这句：
-if (window.App && window.App.startGlobalPolling) {
-    window.App.startGlobalPolling();
-}
-            
-            console.log("🚢 [Hebao Core] 所有后台数据引擎已启动！");
+            const App = window.App || {};
+
+            // 1. 恢复用户上次选择的“红宝书模式” (新手村/进阶篇)
+            if (App.switchRbMode) App.switchRbMode(localStorage.getItem('hp_survival_mode') || 'starter');
+
+            // 2. 渲染全站用户自定义头像 (如果用户上传过真实照片)
+            if (App.renderGlobalAvatar) App.renderGlobalAvatar();
+
+            // 3. 强制拉取两大核心板块的数据
+            if (App.loadTrendingData) App.loadTrendingData();     // 拉取超市红黑榜
+            if (App.loadCommunityPosts) App.loadCommunityPosts(); // 拉取集市二手帖
+
+            // 4. 启动聊天全局雷达 (会自动拉取消息列表，并实时更新底部未读红点)
+            if (App.startGlobalPolling) App.startGlobalPolling();
+
+            // 5. 🌟 唤起大厂级新手引导 (内部会判断是否已经看过了)
+            if (App.initGuide) App.initGuide();
+
+            console.log("🚢 [Hebao Core] 所有后台数据引擎与 UI 渲染已成功启动！");
         } catch(e) { 
-            console.error("🚨 启动时发生错误:", e); 
+            console.error("🚨 引擎启动时发生错误:", e); 
         }
-    }, 100); // 延迟 0.1 秒，等待 DOM 完全渲染
+    }, 100); 
 });
