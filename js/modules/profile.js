@@ -169,27 +169,29 @@ export const ProfileEngine = {
     // 🌟 核心引擎：将修改瞬间同步到集市大厅内存 (绝杀数据库延迟！)
     // ============================================================================
     syncToMarket(postId, newContentObj, newContentStr, type) {
-        // 1. 同步到底层全局缓存 (保证点开详情弹窗时也是最新数据)
+        // 1. 同步到底层全局缓存
         if (window.allCommunityPostsCache) {
-            const globalPost = window.allCommunityPostsCache.find(p => p.id === postId);
+            const globalPost = window.allCommunityPostsCache.find(p => String(p.id) === String(postId));
             if (globalPost) globalPost.content = newContentStr;
         }
 
         // 2. 瞬间劫持并修改大厅视图缓存
         if (window.App.marketDataCache) {
             if (type === 'idle' && window.App.marketDataCache.idle) {
-                const marketItem = window.App.marketDataCache.idle.find(p => p.id === postId);
+                const marketItem = window.App.marketDataCache.idle.find(p => String(p.id) === String(postId));
                 if (marketItem) {
                     marketItem.contentObj = newContentObj;
                     // 🔥 重新计算大厅卡片的总价和变灰状态！
                     let currentTotalPrice = 0;
                     let allSold = true;
-                    newContentObj.items.forEach(i => {
-                        if (!i.is_sold) {
-                            currentTotalPrice += parseFloat(i.price) || 0;
-                            allSold = false; 
-                        }
-                    });
+                    if (newContentObj.items && newContentObj.items.length > 0) {
+                        newContentObj.items.forEach(i => {
+                            if (!i.is_sold) {
+                                currentTotalPrice += parseFloat(i.price) || 0;
+                                allSold = false; 
+                            }
+                        });
+                    }
                     marketItem.price = currentTotalPrice;
                     marketItem.isAllSold = allSold;
                     
@@ -198,7 +200,7 @@ export const ProfileEngine = {
                 }
             } 
             else if (type === 'partner' && window.App.marketDataCache.partner) {
-                const marketItem = window.App.marketDataCache.partner.find(p => p.id === postId);
+                const marketItem = window.App.marketDataCache.partner.find(p => String(p.id) === String(postId));
                 if (marketItem) {
                     marketItem.contentObj = newContentObj;
                     if (window.App.renderMarketPartner) window.App.renderMarketPartner();
@@ -216,11 +218,11 @@ export const ProfileEngine = {
         const token = localStorage.getItem('hebao_token');
         if (!token) return window.App.showToast ? window.App.showToast("请先登录", "warning") : null;
 
-        const post = window.myPostsCache.find(p => p.id === postId);
+        const post = window.myPostsCache.find(p => String(p.id) === String(postId));
         if(!post) return;
         
         let contentObj = typeof post.content === 'string' ? JSON.parse(post.content) : post.content;
-        const itemIndex = contentObj.items.findIndex(i => i.id === itemId);
+        const itemIndex = contentObj.items.findIndex(i => String(i.id) === String(itemId));
         if(itemIndex > -1) {
             contentObj.items[itemIndex].is_sold = true; 
         }
@@ -228,12 +230,12 @@ export const ProfileEngine = {
 
         // 🚀 乐观更新：不等后端返回，前端本地直接秒切状态！
         post.content = newContentStr; 
-        this.renderMyPosts(); // 刷新我的页面
-        this.syncToMarket(postId, contentObj, newContentStr, 'idle'); // 瞬间同步给集市大厅
+        this.renderMyPosts(); 
+        this.syncToMarket(postId, contentObj, newContentStr, 'idle'); 
         
         if (window.App.showToast) window.App.showToast("✅ 已成功标记为售出！", "success");
 
-        // 偷偷在后台发给数据库，不管它多慢都不影响用户体验
+        // 偷偷在后台发给数据库
         try {
             fetch('/api/update-post', {
                 method: 'POST',
@@ -259,11 +261,11 @@ export const ProfileEngine = {
         const token = localStorage.getItem('hebao_token');
         if (!token) return;
 
-        const post = window.myPostsCache.find(p => p.id === postId);
+        const post = window.myPostsCache.find(p => String(p.id) === String(postId));
         if(!post) return;
         
         let contentObj = typeof post.content === 'string' ? JSON.parse(post.content) : post.content;
-        const itemIndex = contentObj.items.findIndex(i => i.id === itemId);
+        const itemIndex = contentObj.items.findIndex(i => String(i.id) === String(itemId));
         
         if(itemIndex > -1) {
             contentObj.items[itemIndex].price = newPrice; 
@@ -295,7 +297,7 @@ export const ProfileEngine = {
         const token = localStorage.getItem('hebao_token');
         if (!token) return;
 
-        const post = window.myPostsCache.find(p => p.id === postId);
+        const post = window.myPostsCache.find(p => String(p.id) === String(postId));
         if(!post) return;
         
         let contentObj = typeof post.content === 'string' ? JSON.parse(post.content) : post.content;
