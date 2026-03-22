@@ -173,37 +173,42 @@ window.renderMyPosts = window.renderMyPosts || function() {
     if (list) list.innerHTML = '<div style="text-align:center; padding:40px 0; color:#9CA3AF;">这里将展示你发布的闲置，功能接入中...</div>';
 };
 // ============================================================================
-// 🛡️ 架构师补丁：补齐“我的”页面底部 Asset Tabs 的切换逻辑
+// 📦 拦截并接管 Profile 页面的 Tab 切换逻辑 (四大金刚并列版)
 // ============================================================================
 window.switchAssetTab = function(tabId, element) {
     try {
-        // 1. 移除所有 Tab 的高亮状态
-        document.querySelectorAll('.a-tab').forEach(el => el.classList.remove('active'));
-        // 2. 隐藏所有的内容面板
-        document.querySelectorAll('.asset-content').forEach(el => {
-            el.style.display = 'none';
+        // 1. 样式切换：移除所有加粗和下划线
+        document.querySelectorAll('.a-tab').forEach(el => {
             el.classList.remove('active');
+            el.style.color = '#64748B';
+            el.style.fontWeight = 'bold';
+            const underline = el.querySelector('.tab-underline');
+            if (underline) underline.remove();
         });
-
-        // 3. 激活当前点击的 Tab
+        
+        // 2. 激活当前选中的 Tab
         if (element) {
             element.classList.add('active');
+            element.style.color = '#111827';
+            element.style.fontWeight = '900';
+            // 添加灵魂小黑条
+            element.innerHTML += '<div class="tab-underline" style="position: absolute; bottom: -13px; left: 50%; transform: translateX(-50%); width: 20px; height: 3px; background: #111827; border-radius: 2px;"></div>';
         }
         
-        // 4. 显示对应的目标内容面板
+        // 3. 切换内容显示
+        document.querySelectorAll('.asset-content').forEach(el => el.style.display = 'none');
         const targetContent = document.getElementById('asset-' + tabId);
-        if (targetContent) {
-            targetContent.style.display = 'block';
-            targetContent.classList.add('active');
-        }
+        if (targetContent) targetContent.style.display = 'block';
 
-        // 5. 智能按需加载数据 (利用我们之前写好的占位函数)
-        if (tabId === 'footprint' && typeof window.renderFootprints === 'function') {
-            window.renderFootprints();
-        } else if (tabId === 'posts' && typeof window.renderMyPosts === 'function') {
-            window.renderMyPosts();
-        } else if (tabId === 'reviews' && typeof window.renderMyReviews === 'function') {
-            window.renderMyReviews();
+        // 4. 智能拉取数据
+        if (tabId === 'posts' && typeof window.App.loadMyPosts === 'function') window.App.loadMyPosts();
+        if (tabId === 'footprint' && typeof window.renderFootprints === 'function') window.renderFootprints();
+        
+        // 🌟 新增：触发收藏列表渲染 (你可以复用之前写过的 showMyCollections 逻辑，把它挂载到容器里)
+        if (tabId === 'collections') {
+            const cl = document.getElementById('myCollectionsList');
+            if(cl && !cl.innerHTML.includes('暂无')) cl.innerHTML = '<div style="text-align:center; padding:40px 0; color:#9CA3AF;">暂无收藏</div>';
+            // if (typeof window.App.loadMyCollections === 'function') window.App.loadMyCollections();
         }
     } catch (error) {
         console.error("🚨 切换 Asset Tab 失败:", error);
