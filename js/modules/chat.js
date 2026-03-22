@@ -418,6 +418,89 @@ export const ChatEngine = {
     }
 };
 
+
+// ============================================================================
+// 🚀 全局审批引擎：通过与婉拒 (继承了原 approvePartner 的真实数据库逻辑)
+// ============================================================================
+window.App = window.App || {};
+
+window.App.approveApplication = async function(btnElement, appId, postId, applicantName) {
+    if(!confirm(`🎉 确认同意 @${applicantName} 加入队伍吗？\n\n(确认后队伍人数将 +1，大厅进度条同步更新！)`)) return;
+    
+    // UI 立即反馈，防连击
+    const originalText = btnElement.innerText;
+    btnElement.innerText = "⏳ 处理中...";
+    btnElement.style.pointerEvents = "none";
+
+    try {
+        const token = localStorage.getItem('hebao_token');
+        if (!token) return showToast("登录状态已过期，请重新登录", "warning");
+
+        // 1. 从前端所有帖子的缓存里找到这个帖子
+        const allPosts = window.allCommunityPostsCache || [];
+        const post = allPosts.find(p => p.id === postId);
+        if(!post) throw new Error("帖子数据不存在");
+        
+        let contentObj = typeof post.content === 'string' ? JSON.parse(post.content) : post.content;
+        const currentJoined = parseInt(contentObj.joinedCount) || 1;
+        const max = parseInt(contentObj.maxPeople) || 2;
+        
+        if (currentJoined >= max) throw new Error("⚠️ 哎呀，队伍已经满员啦！");
+        
+        // 2. 人数进度 +1 (使用你原本的逻辑)
+        contentObj.joinedCount = currentJoined + 1;
+        const newContentStr = JSON.stringify(contentObj);
+
+        // 3. 通知后端更新数据库
+        const res = await fetch('/api/update-post', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ postId, content: newContentStr })
+        });
+        const data = await res.json();
+        
+        if(data.success) {
+            // 4. 将本地 mock 的申请记录标记为已处理
+            let mockApps = JSON.parse(localStorage.getItem('hp_mock_applications') || '[]');
+            mockApps = mockApps.filter(app => app.id !== appId);
+            localStorage.setItem('hp_mock_applications', JSON.stringify(mockApps));
+
+            // 5. 更新本地缓存
+            post.content = newContentStr;
+            
+            // 6. UI 变化：把卡片变成已通过状态
+            const card = btnElement.closest('div[style*="background: #FFF"]');
+            card.innerHTML = `<div style="text-align: center; padding: 10px; color: #10B981; font-weight: 900; font-size: 13px;">✅ 已同意 @${applicantName} 入队！进度：${contentObj.joinedCount}/${max}</div>`;
+            
+            if (window.App.showToast) window.App.showToast(`✅ 迎新成功！当前队伍 ${contentObj.joinedCount}/${max} 人`, "success");
+            
+            // 7. 同步大厅数据
+            if(window.App.loadCommunityPosts) window.App.loadCommunityPosts(); 
+        } else {
+            throw new Error(data.error);
+        }
+    } catch(e) {
+        if (window.App.showToast) window.App.showToast("审批失败: " + e.message, "error");
+        btnElement.innerText = originalText;
+        btnElement.style.pointerEvents = "auto";
+    }
+};
+
+window.App.rejectApplication = function(btnElement, appId) {
+    if(!confirm('婉拒后对方不会收到强提醒，确定婉拒吗？')) return;
+    
+    // 清理本地 mock 记录
+    let mockApps = JSON.parse(localStorage.getItem('hp_mock_applications') || '[]');
+    mockApps = mockApps.filter(app => app.id !== appId);
+    localStorage.setItem('hp_mock_applications', JSON.stringify(mockApps));
+
+    // UI 变化：卡片消失
+    const card = btnElement.closest('div[style*="background: #FFF"]');
+    card.style.opacity = '0';
+    setTimeout(() => card.remove(), 300);
+};
+
+
 if (typeof window !== 'undefined') {
     window.App = window.App || {};
     Object.keys(ChatEngine).forEach(key => {
