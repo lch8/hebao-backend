@@ -742,15 +742,26 @@ window.App.submitPost = async function() {
             desc = document.getElementById('partnerDesc')?.value.trim();
             if (!desc) throw new Error("请介绍一下你的计划哦");
             
-            // 🌟 抓取用户填的期望时间
+            // 🌟 读取时间和组局人数
             const timeDesc = document.getElementById('partnerTime')?.value.trim() || '时间随意';
+            const maxPeople = parseInt(document.getElementById('partnerMaxPeople')?.value) || 2;
             
             const cleanCat = catEl.innerText.replace(/[^a-zA-Z\u4e00-\u9fa5\/]/g, '').trim();
             title = `[搭子] ${cleanCat}`;
-            // 🌟 把时间拼接到 desc 供前端渲染
-            const finalDesc = `⏱️ 期望时间：${timeDesc}\n\n${desc}`;
+            const finalDesc = `⏱️ 时间：${timeDesc}\n👥 队伍：1 / ${maxPeople} 人已就位\n\n${desc}`;
             
-            payloadContent = { desc: finalDesc, tag: cleanCat, urgent: isUrgent ? '十万火急' : '普通', city: city, zip: zip };
+            // 🌟 存入 payload，给后续的“加入群聊”功能留好数据结构
+            payloadContent = { 
+                desc: finalDesc, 
+                tag: cleanCat, 
+                urgent: isUrgent ? '十万火急' : '普通', 
+                city: city, 
+                zip: zip,
+                time: timeDesc,
+                maxPeople: maxPeople,
+                joinedCount: 1, // 发起人自己占1个坑
+                joinedUsers: [uuid] // 预留：存入群聊成员的 UUID
+            };
         }
         else if (type === 'idle') {
             const catEl = document.querySelector('#idleCategoryCapsules .active');
