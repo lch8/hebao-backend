@@ -801,6 +801,25 @@ window.App.submitPost = async function() {
         if (typeof window.switchMarketTab === 'function') window.switchMarketTab(type); 
         if (window.App.loadCommunityPosts) window.App.loadCommunityPosts();
 
+        // 1. 从刚才发帖的数据里，提取海报需要的干货
+        let posterImg = (type === 'idle' && payloadContent.items && payloadContent.items.length > 0) ? payloadContent.items[0].url : '';
+        let posterTag = type === 'idle' ? '📦 闲置' : (type === 'help' ? '🤝 悬赏' : '🏕️ 搭子');
+        let posterTitle = title.replace(/\[.*?\]\s*/, ''); // 把 "[闲置] 卷发棒" 去掉前缀，变成 "卷发棒"
+        let posterPrice = price > 0 ? price : '面议';
+
+        // 2. 延迟 0.6 秒弹窗（等页面切换的动画走完，体验极其丝滑）
+        setTimeout(() => {
+            const wantShare = confirm("🎉 帖子已发布！\n\n是否一键生成带有【高校认证】和【信用背书】的高级海报？");
+            if (wantShare) {
+                if (window.App.generateAndSharePoster) {
+                    // 召唤 Canvas 海报印钞机
+                    window.App.generateAndSharePoster(posterTitle, posterPrice, posterImg, posterTag);
+                } else {
+                    if (window.App.showToast) window.App.showToast("海报引擎尚未加载", "warning");
+                }
+            }
+        }, 600);
+
     } catch (err) {
         if (window.App.showToast) window.App.showToast(err.message, "error");
         else alert(err.message);
