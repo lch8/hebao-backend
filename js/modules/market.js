@@ -278,11 +278,11 @@ export const MarketEngine = {
     },
 
     // ==========================================
-    // 🤝 渲染器：悬赏 (极致窄边双列瀑布流)
+    // 🤝 渲染器：悬赏 (真·双列防篡改瀑布流)
     // ==========================================
     renderMarketHelp() {
-        // 🌟 致命修正：这里的 true 决定了它必须是双列瀑布流！
-        const container = this.getContainer('helpListContainer', true);
+        // 🌟 防御降级：这里传 false，把外层容器的控制权交还给 Tab 切换器
+        const container = this.getContainer('helpListContainer', false);
         if (!container) return;
 
         let processData = [...(window.App.marketDataCache?.help || [])];
@@ -293,22 +293,23 @@ export const MarketEngine = {
         else if (state.sort === 'reward') processData.sort((a, b) => (parseFloat(b.likes) || 0) - (parseFloat(a.likes) || 0));
 
         if (processData.length === 0) { 
-            container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:60px 0; grid-column:span 2;">暂无符合条件的悬赏哦~</div>'; 
+            container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:60px 0;">暂无符合条件的悬赏哦~</div>'; 
             return; 
         }
 
-        let html = '';
+        // 🌟 核心魔法：使用内层 Wrapper，利用 column-count 原生瀑布流排版！
+        let html = '<div style="column-count: 2; column-gap: 8px;">';
+        
         processData.forEach(post => {
             const isUrgent = post.contentObj?.urgent === '十万火急';
             const titleStr = post.title.replace('[互助] ', '');
             let descStr = post.contentObj?.desc || post.contentObj?.text || '';
-            // 清洗发帖时残留的富文本噪音
             descStr = descStr.replace(/搬运物品清单：|起点.*：|终点.*：|需要几人帮忙：/g, ' ').trim();
             const city = post.contentObj?.city || '荷兰';
 
-            // 🌟 视觉重构：双列卡片布局，使用 margin-top: auto 把底部推向最下方对齐
+            // 🌟 核心魔法 2：加上 break-inside: avoid; 防止一张卡片被劈成两半跨列显示
             html += `
-            <div class="waterfall-item" style="background:#FFF; border-radius:12px; padding:10px; margin-bottom:8px; box-shadow:0 4px 12px rgba(0,0,0,0.03); border:1px solid ${isUrgent ? '#FECACA' : '#F1F5F9'}; cursor:pointer; display:flex; flex-direction:column; gap:8px;" onclick="window.App.initiateHelpChat('${post.id}')">
+            <div class="waterfall-item" style="break-inside: avoid; background:#FFF; border-radius:12px; padding:10px; margin-bottom:8px; box-shadow:0 4px 12px rgba(0,0,0,0.03); border:1px solid ${isUrgent ? '#FECACA' : '#F1F5F9'}; cursor:pointer; display:flex; flex-direction:column; gap:8px;" onclick="window.App.initiateHelpChat('${post.id}')">
                 
                 <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                     <div style="font-size:18px; font-weight:900; color:#EF4444; line-height:1; letter-spacing:-0.5px;">€${post.likes || 0}</div>
@@ -332,15 +333,17 @@ export const MarketEngine = {
                 </div>
             </div>`;
         });
+        
+        html += '</div>'; // 闭合 Wrapper
         container.innerHTML = html;
     },
 
     // ==========================================
-    // 🏕️ 渲染器：找搭子 (极致窄边双列瀑布流)
+    // 🏕️ 渲染器：找搭子 (真·双列防篡改瀑布流)
     // ==========================================
     renderMarketPartner() {
-        // 🌟 致命修正：这里的 true 决定了它必须是双列瀑布流！
-        const container = this.getContainer('partnerListContainer', true);
+        // 🌟 防御降级：这里传 false
+        const container = this.getContainer('partnerListContainer', false);
         if (!container) return;
 
         let processData = [...(window.App.marketDataCache?.partner || [])];
@@ -365,20 +368,21 @@ export const MarketEngine = {
 
         if (processData.length === 0) { 
             container.innerHTML = `
-                <div style="text-align:center; padding:60px 0; color:#9CA3AF; grid-column:span 2;">
+                <div style="text-align:center; padding:60px 0; color:#9CA3AF;">
                     <div style="font-size:40px; margin-bottom:10px;">🏕️</div>
                     <div style="font-size:14px; font-weight:bold; color:#64748B;">没有找到符合要求的组局哦</div>
                 </div>`; 
             return; 
         }
 
-        let html = '';
+        // 🌟 核心魔法：瀑布流 Wrapper
+        let html = '<div style="column-count: 2; column-gap: 8px;">';
+
         const currentUserId = localStorage.getItem('hebao_uuid');
 
         processData.forEach(post => {
             const titleStr = post.title.replace('[找搭子] ', '').replace('[搭子] ', '');
             
-            // 🌟 彻底清洗“Word文档式”拼接文本，只留真言
             let rawDesc = post.contentObj?.desc || post.contentObj?.text || '';
             let cleanDesc = rawDesc;
             if (rawDesc.includes('\\n\\n')) cleanDesc = rawDesc.split('\\n\\n').pop();
@@ -387,7 +391,6 @@ export const MarketEngine = {
             const city = post.contentObj?.city || '荷兰';
             const date = post.contentObj?.time || post.contentObj?.date || '待定'; 
             
-            // 🌟 智能去重：如果分类标签和标题一模一样（比如标题是"饭搭子"，标签也是"饭搭子"），就不显示标签了
             const tagStr = post.contentObj?.tag || '组局';
             const showTag = tagStr !== titleStr; 
 
@@ -396,11 +399,10 @@ export const MarketEngine = {
             const remain = max - joined > 0 ? max - joined : 0;
             const percent = Math.min(100, (joined / max) * 100);
             const isHost = currentUserId === post.user_id;              
-            const safeTitle = titleStr.replace(/'/g, "\\'");
 
-            // 🌟 视觉重构：小红书双列适配，字体更紧凑，进度条极限微缩
+            // 🌟 加上 break-inside: avoid;
             html += `
-            <div class="waterfall-item" style="background:#FFF; border-radius:12px; padding:10px; margin-bottom:8px; box-shadow:0 4px 12px rgba(0,0,0,0.03); border:1px solid #F3E8FF; cursor:pointer; display:flex; flex-direction:column; gap:8px;" onclick="window.App.initiatePartnerChat('${post.id}')">
+            <div class="waterfall-item" style="break-inside: avoid; background:#FFF; border-radius:12px; padding:10px; margin-bottom:8px; box-shadow:0 4px 12px rgba(0,0,0,0.03); border:1px solid #F3E8FF; cursor:pointer; display:flex; flex-direction:column; gap:8px;" onclick="window.App.initiatePartnerChat('${post.id}')">
                 
                 <div style="font-size:13px; font-weight:900; color:#4C1D95; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${titleStr}</div>
                 
@@ -434,6 +436,8 @@ export const MarketEngine = {
                 </div>
             </div>`;
         });
+        
+        html += '</div>'; // 闭合 Wrapper
         container.innerHTML = html;
     },
     // ==========================================
