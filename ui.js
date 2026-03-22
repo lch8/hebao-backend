@@ -951,8 +951,10 @@ window.App.switchPublishTab = function(type) {
     window.App.checkSmartLocation();
 };
 
+
+
 // ============================================================================
-// 🛡️ 管家信用分 & 社交赴约率 动态核算大脑
+// 🛡️ 管家信用分 & 社交赴约率 动态核算大脑 (真实交易闭环版)
 // ============================================================================
 window.App = window.App || {};
 
@@ -974,17 +976,12 @@ window.App.calculateCreditScore = function() {
         baseScore += 5;
     }
 
-    // 📦 3. 社区贡献 (+5分/次，封顶+50分)
-    let postCount = 0;
-    if (window.myPostsCache && Array.isArray(window.myPostsCache)) {
-        postCount = window.myPostsCache.length;
-    } else {
-        const cachedPosts = JSON.parse(localStorage.getItem('hp_my_posts') || '[]');
-        postCount = cachedPosts.length;
-    }
-    baseScore += Math.min(50, postCount * 5);
+    // 📦 3. 真实社区贡献 (+5分/次，封顶+50分)
+    // 🚨 架构师修改：彻底废弃“发帖加分”，改为“双向确认的交易完成数”
+    const completedTrades = parseInt(localStorage.getItem('hp_completed_trades')) || 0; 
+    baseScore += Math.min(50, completedTrades * 5);
 
-    // 🚨 4. 扣分项 (读取由于违规或举报导致的惩罚扣分)
+    // 🚨 4. 严厉的惩罚机制 (举报/违约/放鸽子扣分)
     const penalty = parseInt(localStorage.getItem('hp_credit_penalty')) || 0;
     baseScore -= penalty;
 
@@ -996,15 +993,15 @@ window.App.calculateCreditScore = function() {
     localStorage.setItem('hp_credit', baseScore); 
 
     // =====================================
-    // 🕊️ 鸽子记录与赴约率核算引擎
+    // 🕊️ 鸽子记录与赴约率核算引擎 (局后结算版)
     // =====================================
-    let flakeCount = parseInt(localStorage.getItem('hp_flake_count')) || 0; // 放鸽子次数
-    let joinedEvents = parseInt(localStorage.getItem('hp_joined_events')) || 0; // 参加的总局数
+    // 只有经过局长“局后点名”确认的，才算入有效局数！
+    let flakeCount = parseInt(localStorage.getItem('hp_flake_count')) || 0; // 确认放鸽子次数
+    let validJoinedEvents = parseInt(localStorage.getItem('hp_valid_joined_events')) || 0; // 确认已结束且参加的局数
     let attendanceRate = 100; 
     
-    if (joinedEvents > 0) {
-        // 计算赴约率 = ((总局数 - 鸽子数) / 总局数) * 100
-        attendanceRate = Math.max(0, Math.round(((joinedEvents - flakeCount) / joinedEvents) * 100));
+    if (validJoinedEvents > 0) {
+        attendanceRate = Math.max(0, Math.round(((validJoinedEvents - flakeCount) / validJoinedEvents) * 100));
     }
     localStorage.setItem('hp_attendance_rate', attendanceRate + '%');
 
@@ -1029,6 +1026,48 @@ window.App.calculateCreditScore = function() {
     }
 
     return baseScore;
+};
+
+// ============================================================================
+// 🚀 交易与信誉状态机 (Transaction & Reputation State Machine)
+// 供你的聊天界面 (ChatEngine) 和订单界面调用
+// ============================================================================
+
+window.App.TransactionEngine = {
+    // 1. 闲置/悬赏：双向确认交易成功
+    confirmTradeSuccess: function(targetUserId, isBuyer) {
+        // 增加当前用户的“已完成交易数”
+        let trades = parseInt(localStorage.getItem('hp_completed_trades')) || 0;
+        localStorage.setItem('hp_completed_trades', trades + 1);
+        
+        window.App.showToast("🎉 交易已确认完成！信用分 +5", "success");
+        
+        // 立刻触发重新计算
+        window.App.calculateCreditScore();
+        window.App.refreshProfileUI();
+        
+        // (真实后端逻辑：向服务器发送 API，给对方的数据库字段也 +1)
+    },
+
+    // 2. 闲置/悬赏：发起举报维权
+    reportUser: function(targetUserId, reason) {
+        if (!confirm(`确定要举报该用户吗？\n理由：${reason}\n\n恶意举报将被反扣分！`)) return;
+        
+        window.App.showToast("🚨 举报已提交管家人工审核", "info");
+        // (真实后端逻辑：管家客服在后台核实后，给该用户增加 hp_credit_penalty)
+    },
+
+    // 3. 找搭子：局长提交打卡记录 (点名)
+    submitAttendance: function(eventId, presentUserIds, flakedUserIds) {
+        // (真实后端逻辑：遍历这些 ID，给赴约的人增加 validJoinedEvents，给放鸽子的人增加 flakeCount 和扣除信用分)
+        
+        // 前端演示逻辑 (假设自己是参与者且准时到了)：
+        let validEvents = parseInt(localStorage.getItem('hp_valid_joined_events')) || 0;
+        localStorage.setItem('hp_valid_joined_events', validEvents + 1);
+        
+        window.App.showToast("✅ 局后打卡已提交！感谢维护社区环境", "success");
+        window.App.calculateCreditScore();
+    }
 };
 
 // ============================================================================
