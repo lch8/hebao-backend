@@ -285,7 +285,7 @@ export const MarketEngine = {
     },
 
     // ==========================================
-    // 🏕️ 渲染器：找搭子 (极致克制的信息流)
+    // 🏕️ 渲染器：找搭子 (带进度条与社交闭环)
     // ==========================================
     renderMarketPartner() {
         const container = this.getContainer('partnerListContainer', false);
@@ -295,15 +295,29 @@ export const MarketEngine = {
         if (processData.length === 0) { container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:60px 0;">目前还没有搭子哦~</div>'; return; }
 
         let html = '';
+        const currentUserId = localStorage.getItem('hebao_uuid'); // 获取当前登录用户
+
         processData.forEach(post => {
             const titleStr = post.title.replace('[找搭子] ', '');
             const descStr = post.contentObj?.desc || post.contentObj?.text || '点击查看详情...';
             const city = post.contentObj?.city || '荷兰';
-            const date = post.contentObj?.date || '时间待定';
+            // 兼容新旧数据的时间字段
+            const date = post.contentObj?.time || post.contentObj?.date || '时间待定'; 
             const creditStr = post.credit ? `${post.credit}` : '100';
 
+            // 🌟 核心：搭子队伍进度条计算逻辑
+            const joined = parseInt(post.contentObj?.joinedCount) || 1; // 默认局长自己占1个位置
+            const max = parseInt(post.contentObj?.maxPeople) || 2;      // 默认2人局
+            const remain = max - joined > 0 ? max - joined : 0;
+            const percent = Math.min(100, (joined / max) * 100);
+            const isHost = currentUserId === post.user_id;              // 判断是不是自己发的局
+
+            // 安全处理单引号，防止传入函数时报错
+            const safeTitle = titleStr.replace(/'/g, "\\'");
+            const safeDesc = descStr.replace(/\n/g, ' ').replace(/'/g, "\\'").substring(0, 30);
+
             html += `
-            <div style="background:#FFF; border-radius:12px; padding:12px; margin-bottom:10px; box-shadow:0 4px 12px rgba(0,0,0,0.03); border:0.5px solid #F3E8FF; cursor:pointer;" onclick="window.App.initiatePartnerChat('${post.id}')">
+            <div style="background:#FFF; border-radius:12px; padding:12px; margin-bottom:10px; box-shadow:0 4px 12px rgba(0,0,0,0.03); border:0.5px solid #F3E8FF;">
                 
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
                     <div style="font-size:14px; font-weight:900; color:#4C1D95; flex:1; padding-right:10px;">${titleStr}</div>
@@ -315,8 +329,28 @@ export const MarketEngine = {
                     <span style="font-size:10px; color:#64748B; background:#F8FAFC; padding:2px 6px; border-radius:4px;">🏙️ ${city}</span>
                 </div>
 
-                <div style="font-size:12px; color:#4B5563; line-height:1.5; margin-bottom:10px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${descStr}</div>
+                <div style="font-size:12px; color:#4B5563; line-height:1.5; margin-bottom:10px; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;">${descStr}</div>
                 
+                <div style="background: #F8FAFC; border-radius: 10px; padding: 10px; margin-bottom: 12px; border: 1px solid #E2E8F0;">
+                    <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; color: #475569; margin-bottom: 6px;">
+                        <span>🏃 当前队伍 (${joined}/${max}人)</span>
+                        ${remain === 0 ? `<span style="color: #EF4444;">已满员</span>` : `<span style="color: #10B981;">还差 ${remain} 人</span>`}
+                    </div>
+                    <div style="width: 100%; height: 6px; background: #E2E8F0; border-radius: 3px; overflow: hidden; margin-bottom: 10px;">
+                        <div style="width: ${percent}%; height: 100%; background: ${remain === 0 ? '#94A3B8' : '#10B981'}; border-radius: 3px; transition: width 0.5s ease;"></div>
+                    </div>
+                    
+                    ${isHost ? 
+                        `<button onclick="window.App.showToast('你是局长，请前往消息列表审核申请哦', 'info')" style="width: 100%; background: #E2E8F0; color: #475569; border: none; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: not-allowed;">👑 我是局长 (管理队伍)</button>` 
+                        : 
+                        (remain === 0 ? 
+                            `<button style="width: 100%; background: #F1F5F9; color: #94A3B8; border: none; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: not-allowed;">车门已焊死 (满员)</button>`
+                            :
+                            `<button onclick="window.App.applyToJoinGroup('${post.user_id}', '${post.id}', '${safeTitle}', '${post.author}', '${post.avatar}')" style="width: 100%; background: #111827; color: white; border: none; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: 0.2s;" onmousedown="this.style.transform='scale(0.97)'" onmouseup="this.style.transform='scale(1)'">✋ 申请加入并私聊</button>`
+                        )
+                    }
+                </div>
+
                 <div style="display:flex; justify-content:space-between; align-items:center; border-top:0.5px dashed #E5E7EB; padding-top:10px;">
                     <div style="display:flex; align-items:center; gap:6px;">
                         <span style="font-size:18px; background:#F5F3FF; width:24px; height:24px; border-radius:12px; display:flex; align-items:center; justify-content:center;">${post.avatar}</span>
@@ -325,13 +359,47 @@ export const MarketEngine = {
                             <span style="font-size:9px; color:#D97706; font-weight:bold; background:#FEF3C7; padding:1px 4px; border-radius:4px; width:fit-content;">⭐ ${creditStr}分</span>
                         </div>
                     </div>
-                    <button style="background:#8B5CF6; color:#FFF; border:none; padding:6px 14px; border-radius:10px; font-size:11px; font-weight:bold; cursor:pointer; box-shadow:0 2px 6px rgba(139,92,246,0.2);" onclick="event.stopPropagation(); window.App.initiatePartnerChat('${post.id}')">聊一聊</button>
+                    <button style="background:#F3F4F6; color:#475569; border:none; padding:6px 10px; border-radius:10px; font-size:11px; font-weight:bold; cursor:pointer;" onclick="event.stopPropagation(); window.App.generateAndSharePoster('${safeTitle}', '0', '', '🏕️ 搭子', '${safeDesc}...')">📤 分享</button>
                 </div>
             </div>`;
         });
         container.innerHTML = html;
     },
 
+    // ==========================================
+    // ✋ 搭子申请引擎：通过私信通道发起请求
+    // ==========================================
+    applyToJoinGroup(hostId, postId, postTitle, hostName, hostAvatar) {
+        const currentUserId = localStorage.getItem('hebao_uuid');
+        if (!currentUserId || localStorage.getItem('hebao_logged_in') !== 'true') {
+            if (window.App.showToast) window.App.showToast("请先登录再报名哦！", "warning");
+            if (window.App.openModal) window.App.openModal('loginModal');
+            return;
+        }
+
+        const confirmJoin = confirm(`确定要申请加入 [${postTitle}] 吗？\n\n点击确定将自动开启与局长的私信！`);
+        if (!confirmJoin) return;
+
+        const applyMessage = `✋ 你好！我在集市看到了你的组局【${postTitle}】，我非常感兴趣，想要申请加入！请问还有位置吗？`;
+        
+        if (window.App.showToast) window.App.showToast("正在联系局长...", "info");
+
+        setTimeout(() => {
+            // 复用原本的 ChatEngine 拉起聊天框，并自动输入申请话术
+            ChatEngine.openChat(
+                hostId, 
+                hostName || '局长', 
+                hostAvatar || '😎', 
+                postId, 
+                `申请加入: ${postTitle}`, 
+                0, 
+                '', 
+                false, 
+                'partner'
+            );
+            safeDOM.execute('chatInput', input => input.value = applyMessage);
+        }, 500);
+    },
     // 4. 图片与语音引擎 (保持不变，已十分稳定)
     handleMultiImageSelect(event) {
         try {
