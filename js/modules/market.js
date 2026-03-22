@@ -27,10 +27,13 @@ if (SpeechRecognition) {
 window.App.marketDataCache = { idle: [], help: [], partner: [] };
 window.App.currentMarketTab = 'idle';
 
+// ============================================================================
+// 🎯 筛选引擎全局状态 (闲置、悬赏、搭子定制化维度)
+// ============================================================================
 window.App.currentMarketFilter = {
-    idle: { loc: 'all', cat: 'all', sort: 'newest' },
-    help: { loc: 'all', status: 'all', sort: 'newest' },
-    partner: { loc: 'all', type: 'all', sort: 'newest' }
+    idle: { cat: 'all', sort: 'newest' },     
+    help: { cat: 'all', sort: 'newest' },     
+    partner: { cat: 'all', size: 'all' } // 🌟 搭子专属：分类 + 人数规模
 };
 
 window.App.renderFilterBar = function(tab) {
@@ -38,7 +41,10 @@ window.App.renderFilterBar = function(tab) {
     const container = document.getElementById('dynamicFilterBar');
     if (!container) return;
 
-    // 🌟 强行收紧顶部筛选栏的留白，与下方卡片对齐
+    // 🌟 优化筛选栏容器，支持横向丝滑滚动 (小红书风)
+    container.style.display = 'flex';
+    container.style.overflowX = 'auto';
+    container.style.scrollbarWidth = 'none'; // 隐藏滚动条
     container.style.padding = '0 12px';
     container.style.gap = '8px';
     container.style.marginBottom = '10px';
@@ -52,23 +58,21 @@ window.App.renderFilterBar = function(tab) {
         const arrowColor = selectedValue !== 'all' && selectedValue !== 'newest' ? '%23FFFFFF' : '%2364748B';
         
         return `<select onchange="window.App.onFilterChange('${tab}', '${key}', this.value)" 
-                 style="appearance:none; -webkit-appearance:none; background-image: url('data:image/svg+xml;utf8,<svg fill=%22${arrowColor}%22 viewBox=%220 0 24 24%22 xmlns=%22http://www.w3.org/2000/svg%22><path d=%22M7 10l5 5 5-5z%22/></svg>'); background-repeat: no-repeat; background-position: right 6px center; background-size: 14px; padding: 6px 22px 6px 12px; border-radius: 16px; font-size: 11px; font-weight: bold; outline: none; cursor: pointer; border-width: 1px; border-style: solid; box-shadow: 0 2px 4px rgba(0,0,0,0.02); transition: all 0.2s; flex-shrink: 0; ${activeStyle}">
+                 style="appearance:none; -webkit-appearance:none; background-image: url('data:image/svg+xml;utf8,<svg fill=%22${arrowColor}%22 viewBox=%220 0 24 24%22 xmlns=%22http://www.w3.org/2000/svg%22><path d=%22M7 10l5 5 5-5z%22/></svg>'); background-repeat: no-repeat; background-position: right 8px center; background-size: 14px; padding: 8px 26px 8px 12px; border-radius: 12px; font-size: 13px; font-weight: 900; outline: none; cursor: pointer; border-width: 1px; border-style: solid; box-shadow: 0 2px 4px rgba(0,0,0,0.02); transition: all 0.2s; flex-shrink: 0; ${activeStyle}">
                     ${optsHtml}
                 </select>`;
     };
 
     if (tab === 'idle') {
-        html += makeSelect('loc', [{val:'all', label:'📍 全荷兰'}, {val:'city', label:'📍 同城自提'}, {val:'nearby', label:'📍 离我最近'}], state.loc);
-        html += makeSelect('cat', [{val:'all', label:'🏷️ 全部分类'}, {val:'digital', label:'📱 电子数码'}, {val:'home', label:'🛏️ 家具家电'}, {val:'transport', label:'🚲 交通出行'}], state.cat);
-        html += makeSelect('sort', [{val:'newest', label:'✨ 最新发布'}, {val:'nearest', label:'🏃 距离优先'}], state.sort);
+        html += makeSelect('cat', [{val:'all', label:'📦 全部分类'}, {val:'数码', label:'📱 数码电器'}, {val:'家居', label:'🛏️ 家具日用'}, {val:'服饰', label:'👗 美妆衣物'}, {val:'交通', label:'🚲 交通出行'}, {val:'其他', label:'📦 其他'}], state.cat);
+        html += makeSelect('sort', [{val:'newest', label:'✨ 最新发布'}, {val:'price_asc', label:'💸 价格最低'}, {val:'price_desc', label:'💎 价格最高'}], state.sort);
     } else if (tab === 'help') {
-        html += makeSelect('loc', [{val:'all', label:'📍 互助范围'}, {val:'online', label:'💻 线上求助'}, {val:'city', label:'📍 同城线下'}], state.loc);
-        html += makeSelect('status', [{val:'all', label:'🏷️ 任务状态'}, {val:'urgent', label:'🚨 十万火急'}, {val:'unresolved', label:'🟢 仅看未解决'}], state.status);
-        html += makeSelect('sort', [{val:'newest', label:'✨ 最新发布'}, {val:'reward', label:'💰 赏金最高'}], state.sort);
+        html += makeSelect('cat', [{val:'all', label:'🤝 全部互助'}, {val:'接送机', label:'🚗 接送机'}, {val:'搬家装配', label:'🪑 搬家装配'}, {val:'代喂宠物', label:'🐱 代喂宠物'}, {val:'辅导解题', label:'💻 辅导解题'}, {val:'其他', label:'🛠️ 其他'}], state.cat);
+        html += makeSelect('sort', [{val:'newest', label:'✨ 最新发布'}, {val:'urgent', label:'🚨 十万火急'}, {val:'reward', label:'💰 赏金最高'}], state.sort);
     } else if (tab === 'partner') {
-        html += makeSelect('loc', [{val:'all', label:'📍 活动区域'}, {val:'city', label:'📍 同城组局'}, {val:'travel', label:'✈️ 跨城/跨国'}], state.loc);
-        html += makeSelect('type', [{val:'all', label:'🏷️ 全部类型'}, {val:'food', label:'🍔 饭搭子'}, {val:'mbti_e', label:'🔥 寻 E 人'}, {val:'mbti_i', label:'🍵 寻 I 人'}], state.type);
-        html += makeSelect('sort', [{val:'newest', label:'✨ 最新发布'}, {val:'date', label:'⏰ 出发最近'}], state.sort);
+        // 🌟 核心：搭子的筛选漏斗 (分类 + 人数)
+        html += makeSelect('cat', [{val:'all', label:'🏕️ 全部组局'}, {val:'饭搭子', label:'🍔 探店饭搭子'}, {val:'旅游', label:'✈️ 旅游看展'}, {val:'运动', label:'🏋️ 运动健身'}, {val:'自习', label:'📚 考前自习'}, {val:'游戏', label:'🎮 游戏开黑'}, {val:'KTV', label:'🎤 KTV/蹦迪'}], state.cat);
+        html += makeSelect('size', [{val:'all', label:'👥 人数规模不限'}, {val:'2', label:'👯 两人局 (1v1)'}, {val:'3-5', label:'👨‍👩‍👧‍👦 3-5人小队'}, {val:'6+', label:'🎉 6人以上大群'}], state.size);
     }
 
     container.innerHTML = html;
@@ -76,9 +80,6 @@ window.App.renderFilterBar = function(tab) {
 
 window.App.onFilterChange = function(tab, key, value) {
     window.App.currentMarketFilter[tab][key] = value;
-    if (value === 'nearby' || value === 'nearest') {
-        if(window.App.showToast) window.App.showToast("📍 正在请求高精度定位权限...", "info");
-    }
     window.App.renderFilterBar(tab); 
     if (tab === 'idle') window.App.renderMarketIdle();
     if (tab === 'help') window.App.renderMarketHelp();
@@ -312,70 +313,90 @@ export const MarketEngine = {
         container.innerHTML = html;
     },
 
-    // ==========================================
-    // 🏕️ 渲染器：找搭子 (带进度条与社交闭环)
-    // ==========================================
     renderMarketPartner() {
         const container = this.getContainer('partnerListContainer', false);
         if (!container) return;
 
         let processData = [...(window.App.marketDataCache?.partner || [])];
-        if (processData.length === 0) { container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:60px 0;">目前还没有搭子哦~</div>'; return; }
+        const state = window.App.currentMarketFilter?.partner || { cat: 'all', size: 'all' };
+
+        // 🛑 0. 底层净化：一刀切，自动隐藏所有已经满员的帖子！
+        processData = processData.filter(post => {
+            const max = parseInt(post.contentObj?.maxPeople) || 2;
+            const joined = parseInt(post.contentObj?.joinedCount) || 1;
+            return joined < max; // 只要还有空位，才允许在集市展示
+        });
+
+        // 🔍 1. 分类筛选
+        if (state.cat !== 'all') {
+            processData = processData.filter(post => post.contentObj?.tag && post.contentObj.tag.includes(state.cat));
+        }
+
+        // 👥 2. 人数规模筛选引擎
+        if (state.size !== 'all') {
+            processData = processData.filter(post => {
+                const max = parseInt(post.contentObj?.maxPeople) || 2;
+                if (state.size === '2') return max === 2;
+                if (state.size === '3-5') return max >= 3 && max <= 5;
+                if (state.size === '6+') return max >= 6;
+                return true;
+            });
+        }
+
+        // 数据为空的状态兜底
+        if (processData.length === 0) { 
+            container.innerHTML = `
+                <div style="text-align:center; padding:60px 0; color:#9CA3AF;">
+                    <div style="font-size:40px; margin-bottom:10px;">🏕️</div>
+                    <div style="font-size:14px; font-weight:bold; color:#64748B;">没有找到符合要求的组局哦</div>
+                    <div style="font-size:12px; margin-top:6px;">(满员的车队已为您自动隐藏)</div>
+                </div>`; 
+            return; 
+        }
 
         let html = '';
-        const currentUserId = localStorage.getItem('hebao_uuid'); // 获取当前登录用户
+        const currentUserId = localStorage.getItem('hebao_uuid');
 
         processData.forEach(post => {
-            const titleStr = post.title.replace('[找搭子] ', '');
+            const titleStr = post.title.replace('[找搭子] ', '').replace('[搭子] ', '');
             const descStr = post.contentObj?.desc || post.contentObj?.text || '点击查看详情...';
             const city = post.contentObj?.city || '荷兰';
-            // 兼容新旧数据的时间字段
             const date = post.contentObj?.time || post.contentObj?.date || '时间待定'; 
             const creditStr = post.credit ? `${post.credit}` : '100';
 
-            // 🌟 核心：搭子队伍进度条计算逻辑
-            const joined = parseInt(post.contentObj?.joinedCount) || 1; // 默认局长自己占1个位置
-            const max = parseInt(post.contentObj?.maxPeople) || 2;      // 默认2人局
+            const joined = parseInt(post.contentObj?.joinedCount) || 1; 
+            const max = parseInt(post.contentObj?.maxPeople) || 2;      
             const remain = max - joined > 0 ? max - joined : 0;
             const percent = Math.min(100, (joined / max) * 100);
-            const isHost = currentUserId === post.user_id;              // 判断是不是自己发的局
+            const isHost = currentUserId === post.user_id;              
 
-            // 安全处理单引号，防止传入函数时报错
             const safeTitle = titleStr.replace(/'/g, "\\'");
             const safeDesc = descStr.replace(/\n/g, ' ').replace(/'/g, "\\'").substring(0, 30);
 
             html += `
             <div style="background:#FFF; border-radius:12px; padding:12px; margin-bottom:10px; box-shadow:0 4px 12px rgba(0,0,0,0.03); border:0.5px solid #F3E8FF;">
-                
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
                     <div style="font-size:14px; font-weight:900; color:#4C1D95; flex:1; padding-right:10px;">${titleStr}</div>
                     <div style="background:#F3E8FF; color:#7E22CE; padding:3px 6px; border-radius:6px; font-size:10px; font-weight:bold; flex-shrink:0;">${post.contentObj?.tag || '组局'}</div>
                 </div>
-                
                 <div style="display:flex; gap:6px; margin-bottom:8px;">
                     <span style="font-size:10px; color:#64748B; background:#F8FAFC; padding:2px 6px; border-radius:4px;">⏰ ${date}</span>
                     <span style="font-size:10px; color:#64748B; background:#F8FAFC; padding:2px 6px; border-radius:4px;">🏙️ ${city}</span>
                 </div>
-
                 <div style="font-size:12px; color:#4B5563; line-height:1.5; margin-bottom:10px; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;">${descStr}</div>
                 
                 <div style="background: #F8FAFC; border-radius: 10px; padding: 10px; margin-bottom: 12px; border: 1px solid #E2E8F0;">
                     <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; color: #475569; margin-bottom: 6px;">
                         <span>🏃 当前队伍 (${joined}/${max}人)</span>
-                        ${remain === 0 ? `<span style="color: #EF4444;">已满员</span>` : `<span style="color: #10B981;">还差 ${remain} 人</span>`}
+                        <span style="color: #10B981;">还差 ${remain} 人</span>
                     </div>
                     <div style="width: 100%; height: 6px; background: #E2E8F0; border-radius: 3px; overflow: hidden; margin-bottom: 10px;">
-                        <div style="width: ${percent}%; height: 100%; background: ${remain === 0 ? '#94A3B8' : '#10B981'}; border-radius: 3px; transition: width 0.5s ease;"></div>
+                        <div style="width: ${percent}%; height: 100%; background: #10B981; border-radius: 3px; transition: width 0.5s ease;"></div>
                     </div>
-                    
                     ${isHost ? 
                         `<button onclick="window.App.showToast('你是局长，请前往消息列表审核申请哦', 'info')" style="width: 100%; background: #E2E8F0; color: #475569; border: none; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: not-allowed;">👑 我是局长 (管理队伍)</button>` 
                         : 
-                        (remain === 0 ? 
-                            `<button style="width: 100%; background: #F1F5F9; color: #94A3B8; border: none; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: not-allowed;">车门已焊死 (满员)</button>`
-                            :
-                            `<button onclick="window.App.applyToJoinGroup('${post.user_id}', '${post.id}', '${safeTitle}', '${post.author}', '${post.avatar}')" style="width: 100%; background: #111827; color: white; border: none; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: 0.2s;" onmousedown="this.style.transform='scale(0.97)'" onmouseup="this.style.transform='scale(1)'">✋ 申请加入并私聊</button>`
-                        )
+                        `<button onclick="window.App.applyToJoinGroup('${post.user_id}', '${post.id}', '${safeTitle}', '${post.author}', '${post.avatar}')" style="width: 100%; background: #111827; color: white; border: none; padding: 8px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: 0.2s;" onmousedown="this.style.transform='scale(0.97)'" onmouseup="this.style.transform='scale(1)'">✋ 申请加入并私聊</button>`
                     }
                 </div>
 
