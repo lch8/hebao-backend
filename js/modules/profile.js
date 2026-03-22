@@ -68,7 +68,10 @@ export const ProfileEngine = {
                                 </div>
                                 ${isSold 
                                     ? `<div style="font-size:11px; color:#9CA3AF; font-weight:900; background:#F3F4F6; padding:4px 10px; border-radius:12px;">已出</div>` 
-                                    : `<button onclick="window.App.markItemSold(${post.id}, '${item.id}')" style="background:#10B981; border:none; padding:6px 14px; border-radius:14px; font-size:12px; font-weight:bold; color:#FFF; cursor:pointer; box-shadow: 0 2px 6px rgba(16,185,129,0.2);">卖掉了</button>`
+                                    : `<div style="display: flex; gap: 8px;">
+                                           <button onclick="window.App.updateItemPrice(${post.id}, '${item.id}', ${item.price || 0})" style="background:#F1F5F9; border:none; padding:6px 12px; border-radius:14px; font-size:12px; font-weight:bold; color:#475569; cursor:pointer; transition: 0.2s;" onmousedown="this.style.background='#E2E8F0'" onmouseup="this.style.background='#F1F5F9'">改价</button>
+                                           <button onclick="window.App.markItemSold(${post.id}, '${item.id}')" style="background:#10B981; border:none; padding:6px 14px; border-radius:14px; font-size:12px; font-weight:bold; color:#FFF; cursor:pointer; box-shadow: 0 2px 6px rgba(16,185,129,0.2);">卖掉了</button>
+                                       </div>`
                                 }
                             </div>`;
                     });
