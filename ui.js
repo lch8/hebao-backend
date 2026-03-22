@@ -707,7 +707,6 @@ window.App.submitPost = async function() {
             payloadContent = { desc, tag: cleanCat, urgent: isUrgent ? '十万火急' : '普通', city: city, zip: zip };
         } 
         else if (type === 'idle') {
-            // 🌟 核心修复：只查分类，不再死磕“交易方式”是否选中
             const catEl = document.querySelector('#idleCategoryCapsules .active');
             if(!catEl) throw new Error("请选择物品分类");
             
@@ -717,25 +716,42 @@ window.App.submitPost = async function() {
             const imgCards = document.querySelectorAll('#idleImgPreviewContainer .item-edit-card');
             if (imgCards.length === 0) throw new Error("发闲置至少要上传一张图片哦！");
 
-            btn.innerText = "🚀 正在为图片打标签...";
             let totalIdlePrice = 0;
-            let finalItemsData = [];
+            const itemsToProcess = [];
 
+            // 1. 瞬间收集所有卡片数据，算出总价
             for (let i = 0; i < imgCards.length; i++) {
                 const card = imgCards[i];
-                const previewUrl = card.querySelector('img').src;
-                const itemName = card.querySelector('input[type="text"]').value;
                 const itemPrice = card.querySelector('input[type="number"]').value;
-                
                 if (itemPrice) totalIdlePrice += parseFloat(itemPrice);
+                
+                itemsToProcess.push({
+                    previewUrl: card.querySelector('img').src,
+                    itemName: card.querySelector('input[type="text"]').value,
+                    itemPrice: itemPrice,
+                    index: i
+                });
+            }
+            price = totalIdlePrice;
 
-                let finalBase64 = previewUrl.split(',')[1];
+            // =========================================================
+            // 🚀 核心性能飙升：多线程并发处理图片与上传！
+            // =========================================================
+            let completedCount = 0;
+            btn.innerText = `🚀 正在准备上传 (0/${itemsToProcess.length})...`;
+
+            // 使用 map 启动所有上传任务（同时跑！）
+            const uploadPromises = itemsToProcess.map(async (item) => {
+                let finalBase64 = item.previewUrl.split(',')[1];
+                
+                // 如果有打标签的AI函数，执行它
                 if (window.App.addTagToImage) {
-                    finalBase64 = await window.App.addTagToImage(previewUrl, itemName, itemPrice);
+                    finalBase64 = await window.App.addTagToImage(item.previewUrl, item.itemName, item.itemPrice);
                 }
 
                 let finalUrl = 'data:image/jpeg;base64,' + finalBase64;
                 try {
+                    // 传给 Vercel 图床 API
                     const upRes = await fetch('/api/upload', { 
                         method: 'POST', 
                         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -743,25 +759,30 @@ window.App.submitPost = async function() {
                     });
                     const upData = await upRes.json();
                     if (upData.success) finalUrl = upData.url;
-                } catch(e) { console.warn("云端图床未连接"); }
+                } catch(e) { console.warn("云端图床未连接", e); }
 
-                finalItemsData.push({
-                    id: 'item_' + Date.now() + i,
-                    name: itemName || '闲置好物',
-                    price: itemPrice || 0,
+                // 🌟 UX 魔法：每传完一张，实时更新按钮上的进度！
+                completedCount++;
+                btn.innerText = `🚀 图片上传中 (${completedCount}/${itemsToProcess.length})...`;
+
+                return {
+                    id: 'item_' + Date.now() + '_' + item.index,
+                    name: item.itemName || '闲置好物',
+                    price: item.itemPrice || 0,
                     url: finalUrl,
                     is_sold: false
-                });
-            }
+                };
+            });
 
-            price = totalIdlePrice;
+            // 🌟 等待所有并发任务一次性冲线！
+            const finalItemsData = await Promise.all(uploadPromises);
+
             const cleanCat = catEl.innerText.replace(/[^a-zA-Z\u4e00-\u9fa5\/]/g, '').trim();
             title = `[闲置] ${cleanCat}`;
-            // 直接将城市作为主 location 传给数据库
             payloadContent = { desc, location: city, items: finalItemsData, type: cleanCat, urgent: isUrgent ? '十万火急' : '普通', city: city, zip: zip };
         }
 
-        btn.innerText = "🚀 写入数据库...";
+        btn.innerText = "🚀 正在写入数据库...";
         const res = await fetch('/api/publish-community', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
