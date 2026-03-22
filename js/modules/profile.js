@@ -165,158 +165,164 @@ export const ProfileEngine = {
         }
     },
 
-    // 4. 精准修改某件物品为“已售出”
+   // ============================================================================
+    // 🌟 核心引擎：将修改瞬间同步到集市大厅内存 (绝杀数据库延迟！)
+    // ============================================================================
+    syncToMarket(postId, newContentObj, newContentStr, type) {
+        // 1. 同步到底层全局缓存 (保证点开详情弹窗时也是最新数据)
+        if (window.allCommunityPostsCache) {
+            const globalPost = window.allCommunityPostsCache.find(p => p.id === postId);
+            if (globalPost) globalPost.content = newContentStr;
+        }
+
+        // 2. 瞬间劫持并修改大厅视图缓存
+        if (window.App.marketDataCache) {
+            if (type === 'idle' && window.App.marketDataCache.idle) {
+                const marketItem = window.App.marketDataCache.idle.find(p => p.id === postId);
+                if (marketItem) {
+                    marketItem.contentObj = newContentObj;
+                    // 🔥 重新计算大厅卡片的总价和变灰状态！
+                    let currentTotalPrice = 0;
+                    let allSold = true;
+                    newContentObj.items.forEach(i => {
+                        if (!i.is_sold) {
+                            currentTotalPrice += parseFloat(i.price) || 0;
+                            allSold = false; 
+                        }
+                    });
+                    marketItem.price = currentTotalPrice;
+                    marketItem.isAllSold = allSold;
+                    
+                    // 瞬间强制重绘大厅，不需要发网络请求！
+                    if (window.App.renderMarketIdle) window.App.renderMarketIdle();
+                }
+            } 
+            else if (type === 'partner' && window.App.marketDataCache.partner) {
+                const marketItem = window.App.marketDataCache.partner.find(p => p.id === postId);
+                if (marketItem) {
+                    marketItem.contentObj = newContentObj;
+                    if (window.App.renderMarketPartner) window.App.renderMarketPartner();
+                }
+            }
+        }
+    },
+
+    // ==========================================
+    // 🛍️ 修改某件物品为“已售出” (0延迟版)
+    // ==========================================
     async markItemSold(postId, itemId) {
-        if(!confirm("🛍️ 确认将该物品标为「已售出」吗？(标为已出后，集市里的商品也会变灰哦)")) return;
-        try {
-            const token = localStorage.getItem('hebao_token');
-            if (!token) return showToast("请先登录", "warning");
-
-            const post = window.myPostsCache.find(p => p.id === postId);
-            if(!post) return;
-            
-            let contentObj = typeof post.content === 'string' ? JSON.parse(post.content) : post.content;
-            const itemIndex = contentObj.items.findIndex(i => i.id === itemId);
-            if(itemIndex > -1) {
-                contentObj.items[itemIndex].is_sold = true; 
-            }
-            
-            const newContentStr = JSON.stringify(contentObj);
-
-            const res = await fetch('/api/update-post', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ postId, content: newContentStr })
-            });
-            const data = await res.json();
-            
-            if(data.success) {
-                showToast("✅ 已成功标记为售出！", "success");
-                post.content = newContentStr; 
-                this.renderMyPosts(); 
-                if(window.App.loadCommunityPosts) window.App.loadCommunityPosts(); 
-            } else {
-                throw new Error(data.error);
-            }
-        } catch(e) {
-            showToast("更新失败: " + e.message, "error");
-        }
-    },
-    // ==========================================
-    // 🌟 5. 局长专属：通过搭子入局申请 (+1 逻辑)
-    // ==========================================
-    async approvePartner(postId) {
-        if(!confirm("🎉 确认同意这位小伙伴入局吗？\n\n(确认后队伍人数将 +1，一旦满员大厅的进度条将自动关闭报名通道！)")) return;
+        if(!confirm("🛍️ 确认将该物品标为「已售出」吗？")) return;
         
+        const token = localStorage.getItem('hebao_token');
+        if (!token) return window.App.showToast ? window.App.showToast("请先登录", "warning") : null;
+
+        const post = window.myPostsCache.find(p => p.id === postId);
+        if(!post) return;
+        
+        let contentObj = typeof post.content === 'string' ? JSON.parse(post.content) : post.content;
+        const itemIndex = contentObj.items.findIndex(i => i.id === itemId);
+        if(itemIndex > -1) {
+            contentObj.items[itemIndex].is_sold = true; 
+        }
+        const newContentStr = JSON.stringify(contentObj);
+
+        // 🚀 乐观更新：不等后端返回，前端本地直接秒切状态！
+        post.content = newContentStr; 
+        this.renderMyPosts(); // 刷新我的页面
+        this.syncToMarket(postId, contentObj, newContentStr, 'idle'); // 瞬间同步给集市大厅
+        
+        if (window.App.showToast) window.App.showToast("✅ 已成功标记为售出！", "success");
+
+        // 偷偷在后台发给数据库，不管它多慢都不影响用户体验
         try {
-            const token = localStorage.getItem('hebao_token');
-            if (!token) return showToast("登录状态已过期，请重新登录", "warning");
-
-            // 从本地缓存里捞出这个帖子
-            const post = window.myPostsCache.find(p => p.id === postId);
-            if(!post) return;
-            
-            // 解析配置 JSON
-            let contentObj = typeof post.content === 'string' ? JSON.parse(post.content) : post.content;
-            
-            const currentJoined = parseInt(contentObj.joinedCount) || 1;
-            const max = parseInt(contentObj.maxPeople) || 2;
-            
-            if (currentJoined >= max) {
-                return showToast("⚠️ 哎呀，队伍已经满员啦！", "warning");
-            }
-            
-            // 🌟 核心：人数进度 +1
-            contentObj.joinedCount = currentJoined + 1;
-            const newContentStr = JSON.stringify(contentObj);
-
-            // 通知后端更新数据库
-            const res = await fetch('/api/update-post', {
+            fetch('/api/update-post', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({ postId, content: newContentStr })
             });
-            const data = await res.json();
-            
-            if(data.success) {
-                showToast(`✅ 迎新成功！当前队伍 ${contentObj.joinedCount}/${max} 人`, "success");
-                
-                // 1. 更新本地缓存
-                post.content = newContentStr; 
-                
-                // 2. 重新渲染“我的发布”面板，按钮可能会变成“已满员”
-                this.renderMyPosts(); 
-                
-                // 3. 通知大厅集市重新拉取数据，让所有人的进度条同步往前走！
-                if(window.App.loadCommunityPosts) window.App.loadCommunityPosts(); 
-            } else {
-                throw new Error(data.error);
-            }
-        } catch(e) {
-            showToast("更新失败: " + e.message, "error");
-        }
+        } catch(e) { console.warn("后台同步失败", e); }
     },
-// ==========================================
-    // 🌟 6. 闲置专属：修改单个物品的价格
+
+    // ==========================================
+    // 💶 修改单个物品的价格 (0延迟版)
     // ==========================================
     async updateItemPrice(postId, itemId, oldPrice) {
-        // 1. 原生弹窗询问新价格，极简高效
         const newPriceStr = prompt(`请输入该物品的新价格 (€):\n\n(当前价格为 €${oldPrice})`, oldPrice);
-        
-        // 用户点了取消，或者什么都没填
         if (newPriceStr === null || newPriceStr.trim() === '') return; 
         
         const newPrice = parseFloat(newPriceStr);
         if (isNaN(newPrice) || newPrice < 0) {
-            return showToast("⚠️ 请输入有效的数字价格哦！", "warning");
+            return window.App.showToast ? window.App.showToast("⚠️ 请输入有效的数字哦！", "warning") : alert("价格无效");
         }
+        if (newPrice === parseFloat(oldPrice)) return;
 
-        if (newPrice === parseFloat(oldPrice)) return; // 价格没变，不浪费服务器请求
+        const token = localStorage.getItem('hebao_token');
+        if (!token) return;
+
+        const post = window.myPostsCache.find(p => p.id === postId);
+        if(!post) return;
+        
+        let contentObj = typeof post.content === 'string' ? JSON.parse(post.content) : post.content;
+        const itemIndex = contentObj.items.findIndex(i => i.id === itemId);
+        
+        if(itemIndex > -1) {
+            contentObj.items[itemIndex].price = newPrice; 
+        }
+        const newContentStr = JSON.stringify(contentObj);
+
+        // 🚀 乐观更新：瞬间生效
+        post.content = newContentStr; 
+        this.renderMyPosts(); 
+        this.syncToMarket(postId, contentObj, newContentStr, 'idle');
+        
+        if (window.App.showToast) window.App.showToast(`✅ 已成功降价为 €${newPrice}！`, "success");
 
         try {
-            const token = localStorage.getItem('hebao_token');
-            if (!token) return showToast("请先登录", "warning");
-
-            const post = window.myPostsCache.find(p => p.id === postId);
-            if(!post) return;
-            
-            // 2. 解析 JSON，找到那个物品，修改价格
-            let contentObj = typeof post.content === 'string' ? JSON.parse(post.content) : post.content;
-            const itemIndex = contentObj.items.findIndex(i => i.id === itemId);
-            
-            if(itemIndex > -1) {
-                contentObj.items[itemIndex].price = newPrice; 
-            } else {
-                return showToast("找不到该物品", "error");
-            }
-            
-            const newContentStr = JSON.stringify(contentObj);
-
-            // 3. 呼叫后端接口更新数据库
-            const res = await fetch('/api/update-post', {
+            fetch('/api/update-post', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({ postId, content: newContentStr })
             });
-            const data = await res.json();
-            
-            if(data.success) {
-                showToast(`✅ 已成功降价为 €${newPrice}！`, "success");
-                
-                // 4. 更新本地缓存并重新渲染
-                post.content = newContentStr; 
-                this.renderMyPosts(); 
-                
-                // 5. 通知集市大厅瀑布流同步刷新价格
-                if(window.App.loadCommunityPosts) window.App.loadCommunityPosts(); 
-            } else {
-                throw new Error(data.error);
-            }
-        } catch(e) {
-            showToast("改价失败: " + e.message, "error");
-        }
+        } catch(e) { console.warn(e); }
+    },
+
+    // ==========================================
+    // 🎉 局长专属：同意搭子入伙 (0延迟版)
+    // ==========================================
+    async approvePartner(postId) {
+        if(!confirm("🎉 确认同意这位小伙伴入局吗？")) return;
+        
+        const token = localStorage.getItem('hebao_token');
+        if (!token) return;
+
+        const post = window.myPostsCache.find(p => p.id === postId);
+        if(!post) return;
+        
+        let contentObj = typeof post.content === 'string' ? JSON.parse(post.content) : post.content;
+        const currentJoined = parseInt(contentObj.joinedCount) || 1;
+        const max = parseInt(contentObj.maxPeople) || 2;
+        
+        if (currentJoined >= max) return window.App.showToast ? window.App.showToast("⚠️ 哎呀，队伍已经满员啦！", "warning") : null;
+        
+        contentObj.joinedCount = currentJoined + 1;
+        const newContentStr = JSON.stringify(contentObj);
+
+        // 🚀 乐观更新
+        post.content = newContentStr; 
+        this.renderMyPosts(); 
+        this.syncToMarket(postId, contentObj, newContentStr, 'partner');
+        
+        if (window.App.showToast) window.App.showToast(`✅ 迎新成功！当前队伍 ${contentObj.joinedCount}/${max} 人`, "success");
+
+        try {
+            fetch('/api/update-post', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ postId, content: newContentStr })
+            });
+        } catch(e) { console.warn(e); }
     }
-}; // <-- 确保包在 ProfileEngine 里面
+};
 
 // 挂载到全局
 if (typeof window !== 'undefined') {
