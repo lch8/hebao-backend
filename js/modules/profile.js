@@ -29,7 +29,6 @@ export const ProfileEngine = {
         }
     },
 
-    // 2. 渲染 UI 面板
     renderMyPosts() {
         safeDOM.execute('myPostsList', container => {
             const emptyState = document.getElementById('postsEmptyState');
@@ -46,7 +45,7 @@ export const ProfileEngine = {
                 let contentObj = { items: [] };
                 try { contentObj = typeof post.content === 'string' ? JSON.parse(post.content) : post.content; } catch(e) {}
                 
-                // 1. 处理闲置的物品列表 (原有逻辑保留)
+                // 1. 处理闲置的物品列表 (原有逻辑完美保留)
                 let itemsHtml = '';
                 let firstItemPrice = '面议';
                 let firstItemImg = post.image_url || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800';
@@ -80,7 +79,7 @@ export const ProfileEngine = {
                 const safeTitleForJS = cleanTitle.replace(/'/g, "\\'");
 
                 // ==========================================
-                // 🌟 2. 核心新增：搭子局长专属管理面板 (+1 按钮)
+                // 🌟 2. 核心替换：搭子局长专属管理面板 (改为邀请入队)
                 // ==========================================
                 let partnerManageHtml = '';
                 if (typeTag === '🏕️ 搭子' && contentObj.maxPeople) {
@@ -94,8 +93,8 @@ export const ProfileEngine = {
                                     <span style="font-size: 11px; color: #64748B; font-weight: bold;">队伍进度</span>
                                     <span style="font-size: 14px; color: #111827; font-weight: 900;">${joined} / ${max} 人</span>
                                 </div>
-                                <button onclick="window.App.approvePartner(${post.id})" style="background: #10B981; color: white; border: none; padding: 8px 16px; border-radius: 10px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(16,185,129,0.2); transition: 0.2s;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">
-                                    ✅ 迎新入队 (+1)
+                                <button onclick="if(window.App.openInviteModal) window.App.openInviteModal('${post.id}')" style="background: #FFF; color: #7C3AED; border: 1px solid #E9D5FF; padding: 8px 16px; border-radius: 10px; font-weight: 900; font-size: 13px; cursor: pointer; box-shadow: 0 2px 6px rgba(124,58,237,0.05); transition: 0.2s;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">
+                                    🙋 邀请入队
                                 </button>
                             </div>
                         `;
@@ -112,7 +111,7 @@ export const ProfileEngine = {
                     }
                 }
 
-                // 3. 组装整张卡片
+                // 3. 组装整张卡片 (原有外框和删除、海报功能完美保留)
                 html += `
                     <div class="my-post-card" id="myPost_${post.id}" style="background:#FFF; border-radius:16px; padding:16px; margin-bottom:15px; box-shadow:0 4px 15px rgba(0,0,0,0.03); border:1px solid #F3F4F6;">
                         <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">
