@@ -301,7 +301,7 @@ window.compressImage = function(file, maxWidth, maxHeight, quality) {
     });
 };
 
-// 2. 丝滑的多图选择与预览
+// 🌟 升级版：多图选择与独立卡片生成器 (带独立分类)
 window.handleMultiImageSelect = async function(event) {
     const files = event.target.files;
     if (!files || files.length === 0) return;
@@ -317,23 +317,60 @@ window.handleMultiImageSelect = async function(event) {
 
     if (window.App && window.App.showToast) window.App.showToast("⏳ 正在处理高清照片...", "info");
 
+    // 确保暂存数组存在
+    window.idleImages = window.idleImages || [];
+
     for (let i = 0; i < files.length; i++) {
         try {
             const compressedBase64 = await window.compressImage(files[i], 800, 800, 0.8);
             window.idleImages.push(compressedBase64);
 
             const imgDiv = document.createElement('div');
-            imgDiv.style.cssText = 'width: 90px; height: 90px; border-radius: 8px; overflow: hidden; position: relative; border: 1px solid #E5E7EB; flex-shrink: 0;';
+            
+            // 🌟 核心修改 1：加上 class="item-edit-card"，并把宽度拉宽到 140px，变成竖向排列的卡片
+            imgDiv.className = 'item-edit-card'; 
+            imgDiv.style.cssText = 'width: 140px; border-radius: 12px; overflow: hidden; position: relative; border: 1px solid #E5E7EB; flex-shrink: 0; background: #FFF; box-shadow: 0 2px 8px rgba(0,0,0,0.04); display: flex; flex-direction: column;';
+            
+            // 🌟 核心修改 2：在图片下面，加入名称、价格、独立分类下拉框
             imgDiv.innerHTML = `
-                <img src="${compressedBase64}" style="width: 100%; height: 100%; object-fit: cover;">
-                <div style="position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.5); color: #FFF; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer;" 
-                     onclick="this.parentElement.remove(); window.idleImages.splice(${window.idleImages.length - 1}, 1);">✕</div>
+                <div style="position: relative; height: 100px;">
+                    <img src="${compressedBase64}" style="width: 100%; height: 100%; object-fit: cover;">
+                    <div style="position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.6); color: #FFF; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer;" 
+                         onclick="this.parentElement.parentElement.remove();">✕</div>
+                </div>
+                
+                <div style="padding: 8px; display: flex; flex-direction: column; gap: 6px;">
+                    <input type="text" class="item-name" placeholder="物品名称" style="width: 100%; box-sizing: border-box; border: 1px solid #E2E8F0; border-radius: 6px; padding: 4px 6px; font-size: 12px; outline: none; background: #F8FAFC;">
+                    
+                    <div style="display: flex; gap: 4px;">
+                        <span style="font-size: 12px; font-weight: bold; color: #64748B; padding-top: 4px;">€</span>
+                        <input type="number" class="item-price" placeholder="价格" style="width: 100%; box-sizing: border-box; border: 1px solid #E2E8F0; border-radius: 6px; padding: 4px 6px; font-size: 12px; outline: none; background: #F8FAFC;">
+                    </div>
+                    
+                    <select class="item-category" style="width: 100%; box-sizing: border-box; border: 1px solid #E2E8F0; border-radius: 6px; padding: 4px; font-size: 12px; outline: none; background: #FFF; color: #475569; margin-top: 2px;">
+                        <option value="数码">📱 数码电器</option>
+                        <option value="家居">🛏️ 家具日用</option>
+                        <option value="服饰">👗 美妆衣物</option>
+                        <option value="交通">🚲 交通出行</option>
+                        <option value="其他" selected>📦 其他闲置</option>
+                    </select>
+                </div>
             `;
             container.insertBefore(imgDiv, uploadBtn);
         } catch(e) { console.error("图片处理失败", e); }
     }
+    
+    // 如果你还需要支持悬赏模板的动态注入，保留这行安全代码
+    if (window.App && window.App.currentPublishType === 'help' && window.App.applyHelpTemplate) {
+        const activeHelpCapsule = document.querySelector('#helpCategoryCapsules .active');
+        if (activeHelpCapsule) window.App.applyHelpTemplate(activeHelpCapsule.innerText.replace(/[^a-zA-Z\u4e00-\u9fa5\/]/g, '').trim(), activeHelpCapsule);
+    }
 };
 
+// 如果之前你在 window.App 里也绑了这个方法，同步更新一下以防万一
+if (typeof window.App !== 'undefined') {
+    window.App.handleMultiImageSelect = window.handleMultiImageSelect;
+}
 // ============================================================================
 // 🔐 架构师补丁：修复登录状态不同步与 UI 渲染问题
 // ============================================================================
@@ -704,10 +741,17 @@ window.App.submitPost = async function() {
             if(!catEl) throw new Error("请选择搭子类型");
             desc = document.getElementById('partnerDesc')?.value.trim();
             if (!desc) throw new Error("请介绍一下你的计划哦");
+            
+            // 🌟 抓取用户填的期望时间
+            const timeDesc = document.getElementById('partnerTime')?.value.trim() || '时间随意';
+            
             const cleanCat = catEl.innerText.replace(/[^a-zA-Z\u4e00-\u9fa5\/]/g, '').trim();
-            title = `[找搭子] ${cleanCat}`;
-            payloadContent = { desc, tag: cleanCat, urgent: isUrgent ? '十万火急' : '普通', city: city, zip: zip };
-        } 
+            title = `[搭子] ${cleanCat}`;
+            // 🌟 把时间拼接到 desc 供前端渲染
+            const finalDesc = `⏱️ 期望时间：${timeDesc}\n\n${desc}`;
+            
+            payloadContent = { desc: finalDesc, tag: cleanCat, urgent: isUrgent ? '十万火急' : '普通', city: city, zip: zip };
+        }
         else if (type === 'idle') {
             const catEl = document.querySelector('#idleCategoryCapsules .active');
             if(!catEl) throw new Error("请选择物品分类");
@@ -724,13 +768,17 @@ window.App.submitPost = async function() {
             // 1. 瞬间收集所有卡片数据，算出总价
             for (let i = 0; i < imgCards.length; i++) {
                 const card = imgCards[i];
-                const itemPrice = card.querySelector('input[type="number"]').value;
+                const itemPrice = card.querySelector('.item-price').value;
                 if (itemPrice) totalIdlePrice += parseFloat(itemPrice);
+                
+                // 🌟 读取这件物品的专属分类
+                const itemCategory = card.querySelector('.item-category').value;
                 
                 itemsToProcess.push({
                     previewUrl: card.querySelector('img').src,
-                    itemName: card.querySelector('input[type="text"]').value,
+                    itemName: card.querySelector('.item-name').value,
                     itemPrice: itemPrice,
+                    itemCategory: itemCategory, // 记录专属分类
                     index: i
                 });
             }
@@ -771,6 +819,7 @@ window.App.submitPost = async function() {
                     id: 'item_' + Date.now() + '_' + item.index,
                     name: item.itemName || '闲置好物',
                     price: item.itemPrice || 0,
+                    category: item.itemCategory,  <-- 加上这行
                     url: finalUrl,
                     is_sold: false
                 };
@@ -779,8 +828,9 @@ window.App.submitPost = async function() {
             // 🌟 等待所有并发任务一次性冲线！
             const finalItemsData = await Promise.all(uploadPromises);
 
-            const cleanCat = catEl.innerText.replace(/[^a-zA-Z\u4e00-\u9fa5\/]/g, '').trim();
-            title = `[闲置] ${cleanCat}`;
+            // const cleanCat = catEl.innerText.replace(/[^a-zA-Z\u4e00-\u9fa5\/]/g, '').trim();
+            title = `[闲置] 大清仓`; 
+            const cleanCat = "综合闲置"; // 兜底
             payloadContent = { desc, location: city, items: finalItemsData, type: cleanCat, urgent: isUrgent ? '十万火急' : '普通', city: city, zip: zip };
         }
 
@@ -951,3 +1001,28 @@ document.addEventListener('DOMContentLoaded', () => {
         if (window.App.refreshProfileUI) window.App.refreshProfileUI();
     }, 200);
 });
+
+window.App = window.App || {};
+
+// 🌟 悬赏：智能模板注入引擎
+window.App.applyHelpTemplate = function(type, clickedEl) {
+    window.App.togglePublishCapsule(clickedEl);
+    window.App.checkSmartLocation(); // 同步检查位置
+
+    const descEl = document.getElementById('helpDesc');
+    
+    // 如果用户已经写了很长的话，不要粗暴覆盖他的心血
+    if (descEl.value.length > 20 && !descEl.value.includes('：')) {
+        return; 
+    }
+
+    const templates = {
+        '接送机': "📍 出发地：\n🏁 目的地：\n⏰ 出发时间：\n👥 人数/行李数：\n⚠️ 其他要求：",
+        '搬家装配': "📦 搬运物品清单：\n🏢 起点(楼层/有无电梯)：\n🏢 终点(楼层/有无电梯)：\n👥 需要几人帮忙：\n⏳ 预计用时：",
+        '代喂宠物': "🐈 宠物类型(猫/狗/其他)：\n📅 代喂日期：\n🔄 上门频率：\n🔑 钥匙交接方式：\n⚠️ 注意事项：",
+        '辅导解题': "📚 学科/专业：\n❓ 遇到的具体问题：\n💻 希望上课形式(线上/线下)：",
+        '其他求助': ""
+    };
+
+    descEl.value = templates[type] || "";
+};
