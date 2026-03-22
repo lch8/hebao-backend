@@ -725,9 +725,18 @@
                 </div>
             </div>
 
-            <div style="margin-bottom: 20px;">
-                <div style="font-size: 13px; font-weight: 900; color: #111827; margin-bottom: 10px;">期望时间 ⏱️</div>
-                <input type="text" id="partnerTime" placeholder="例如：本周六下午 / 明天晚上 / 时间随意" style="width: 100%; box-sizing: border-box; border: none; background: #F8FAFC; border-radius: 12px; padding: 14px 16px; font-size: 14px; outline: none; font-weight: bold;">
+            <div style="margin-bottom: 24px; display: flex; gap: 12px;">
+                <div style="flex: 1;">
+                    <div style="font-size: 13px; font-weight: 900; color: #111827; margin-bottom: 10px;">期望时间 ⏱️</div>
+                    <input type="text" id="partnerTime" placeholder="如：本周六下午" style="width: 100%; box-sizing: border-box; border: none; background: #F8FAFC; border-radius: 12px; padding: 14px 16px; font-size: 14px; outline: none; font-weight: bold; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+                </div>
+                <div style="flex: 0.8;">
+                    <div style="font-size: 13px; font-weight: 900; color: #111827; margin-bottom: 10px;">需要几人 👥</div>
+                    <div style="display: flex; align-items: center; background: #F8FAFC; border-radius: 12px; padding: 12px 16px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+                        <input type="number" id="partnerMaxPeople" placeholder="2" value="2" min="2" max="20" style="width: 100%; border: none; background: transparent; font-size: 16px; font-weight: bold; outline: none; text-align: center; color: #111827;">
+                        <span style="font-size: 14px; font-weight: bold; color: #64748B; margin-left: 4px;">人</span>
+                    </div>
+                </div>
             </div>
 
             <div style="margin-bottom: 24px;">
