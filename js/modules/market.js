@@ -28,12 +28,12 @@ window.App.marketDataCache = { idle: [], help: [], partner: [] };
 window.App.currentMarketTab = 'idle';
 
 // ============================================================================
-// 🎯 筛选引擎全局状态 (闲置、悬赏、搭子定制化维度)
+// 🎯 筛选引擎全局状态 (重构为符合真实业务场景的维度)
 // ============================================================================
 window.App.currentMarketFilter = {
-    idle: { cat: 'all', sort: 'newest' },     
-    help: { cat: 'all', sort: 'newest' },     
-    partner: { cat: 'all', size: 'all' } // 🌟 搭子专属：分类 + 人数规模
+    idle: { cat: 'all', sort: 'newest' },     // 闲置：分类 + 价格排序
+    help: { cat: 'all', sort: 'newest' },     // 悬赏：分类 + 赏金排序/加急
+    partner: { cat: 'all', size: 'all' }      // 搭子：分类 + 人数规模过滤
 };
 
 window.App.renderFilterBar = function(tab) {
@@ -41,10 +41,10 @@ window.App.renderFilterBar = function(tab) {
     const container = document.getElementById('dynamicFilterBar');
     if (!container) return;
 
-    // 🌟 优化筛选栏容器，支持横向丝滑滚动 (小红书风)
+    // 支持横向丝滑滑动，防止小屏手机被挤压
     container.style.display = 'flex';
     container.style.overflowX = 'auto';
-    container.style.scrollbarWidth = 'none'; // 隐藏滚动条
+    container.style.scrollbarWidth = 'none'; 
     container.style.padding = '0 12px';
     container.style.gap = '8px';
     container.style.marginBottom = '10px';
@@ -64,15 +64,14 @@ window.App.renderFilterBar = function(tab) {
     };
 
     if (tab === 'idle') {
-        html += makeSelect('cat', [{val:'all', label:'📦 全部分类'}, {val:'数码', label:'📱 数码电器'}, {val:'家居', label:'🛏️ 家具日用'}, {val:'服饰', label:'👗 美妆衣物'}, {val:'交通', label:'🚲 交通出行'}, {val:'其他', label:'📦 其他'}], state.cat);
+        html += makeSelect('cat', [{val:'all', label:'📦 全部分类'}, {val:'数码', label:'📱 数码电器'}, {val:'家居', label:'🛏️ 家具日用'}, {val:'服饰', label:'👗 美妆衣物'}, {val:'交通', label:'🚲 交通出行'}, {val:'其他', label:'📦 其他闲置'}], state.cat);
         html += makeSelect('sort', [{val:'newest', label:'✨ 最新发布'}, {val:'price_asc', label:'💸 价格最低'}, {val:'price_desc', label:'💎 价格最高'}], state.sort);
     } else if (tab === 'help') {
-        html += makeSelect('cat', [{val:'all', label:'🤝 全部互助'}, {val:'接送机', label:'🚗 接送机'}, {val:'搬家装配', label:'🪑 搬家装配'}, {val:'代喂宠物', label:'🐱 代喂宠物'}, {val:'辅导解题', label:'💻 辅导解题'}, {val:'其他', label:'🛠️ 其他'}], state.cat);
+        html += makeSelect('cat', [{val:'all', label:'🤝 全部互助'}, {val:'接送', label:'🚗 接送机'}, {val:'搬家', label:'🪑 搬家装配'}, {val:'宠物', label:'🐱 代喂宠物'}, {val:'辅导', label:'💻 辅导解题'}, {val:'其他', label:'🛠️ 其他'}], state.cat);
         html += makeSelect('sort', [{val:'newest', label:'✨ 最新发布'}, {val:'urgent', label:'🚨 十万火急'}, {val:'reward', label:'💰 赏金最高'}], state.sort);
     } else if (tab === 'partner') {
-        // 🌟 核心：搭子的筛选漏斗 (分类 + 人数)
         html += makeSelect('cat', [{val:'all', label:'🏕️ 全部组局'}, {val:'饭搭子', label:'🍔 探店饭搭子'}, {val:'旅游', label:'✈️ 旅游看展'}, {val:'运动', label:'🏋️ 运动健身'}, {val:'自习', label:'📚 考前自习'}, {val:'游戏', label:'🎮 游戏开黑'}, {val:'KTV', label:'🎤 KTV/蹦迪'}], state.cat);
-        html += makeSelect('size', [{val:'all', label:'👥 人数规模不限'}, {val:'2', label:'👯 两人局 (1v1)'}, {val:'3-5', label:'👨‍👩‍👧‍👦 3-5人小队'}, {val:'6+', label:'🎉 6人以上大群'}], state.size);
+        html += makeSelect('size', [{val:'all', label:'👥 规模不限'}, {val:'2', label:'👯 两人局 (1v1)'}, {val:'3-5', label:'👨‍👩‍👧‍👦 3-5人小队'}, {val:'6+', label:'🎉 6人以上大群'}], state.size);
     }
 
     container.innerHTML = html;
@@ -81,15 +80,23 @@ window.App.renderFilterBar = function(tab) {
 window.App.onFilterChange = function(tab, key, value) {
     window.App.currentMarketFilter[tab][key] = value;
     window.App.renderFilterBar(tab); 
+    // 触发重新渲染
     if (tab === 'idle') window.App.renderMarketIdle();
     if (tab === 'help') window.App.renderMarketHelp();
     if (tab === 'partner') window.App.renderMarketPartner();
 };
 
+// 🌟 核心魔法：无视新老数据结构的“全局模糊扫描器”
+const fuzzyMatch = (post, keyword) => {
+    if (keyword === 'all') return true;
+    // 把帖子的标题、和深层的 JSON 内容全部转成字符串，然后强行扫关键字！
+    const haystack = (post.title + ' ' + JSON.stringify(post.contentObj)).toLowerCase();
+    return haystack.includes(keyword.toLowerCase());
+};
+
 export const MarketEngine = {
     async loadCommunityPosts() {
         try {
-            // 加上时间戳强制刷新缓存
             const res = await fetch('/api/get-community?t=' + Date.now()); 
             const data = await res.json();
             
@@ -142,7 +149,6 @@ export const MarketEngine = {
                 else if (title.includes('[互助]')) {
                     helpItems.push(commonData);
                 }
-                // 🌟 核心修复点：同时兼容老帖子的“[找搭子]”和新帖子的“[搭子]”
                 else if (title.includes('[搭子]') || title.includes('[找搭子]')) {
                     partnerItems.push(commonData);
                 }
@@ -164,34 +170,35 @@ export const MarketEngine = {
         let el = document.getElementById(id);
         if (!el) {
             const parent = document.getElementById('page-market');
-            if (parent) {
-                el = document.createElement('div');
-                el.id = id;
-                parent.appendChild(el);
-            }
+            if (parent) { el = document.createElement('div'); el.id = id; parent.appendChild(el); }
         }
         el.style.display = isGrid ? 'grid' : 'none';
         el.style.padding = '0 12px 100px'; 
-        if (isGrid) {
-            el.style.gridTemplateColumns = '1fr 1fr';
-            el.style.gap = '8px'; 
-            el.style.alignItems = 'start'; 
-        }
+        if (isGrid) { el.style.gridTemplateColumns = '1fr 1fr'; el.style.gap = '8px'; el.style.alignItems = 'start'; }
         return el;
     },
 
     // ==========================================
-    // 📦 渲染器：闲置 (带实时改价与自动变灰效果)
+    // 📦 渲染器：闲置 
     // ==========================================
     renderMarketIdle() {
         const container = this.getContainer('idleWaterfall', true);
         if (!container) return;
 
         let processData = [...(window.App.marketDataCache?.idle || [])];
-        const state = window.App.currentMarketFilter?.idle || { loc: 'all', cat: 'all', sort: 'newest' };
+        const state = window.App.currentMarketFilter?.idle || { cat: 'all', sort: 'newest' };
 
-        if (state.cat === 'digital') processData = processData.filter(i => /手机|电脑|显示器|耳机|pad|线|卡/i.test(i.title));
-        else if (state.cat === 'home') processData = processData.filter(i => /床|柜|桌|椅|灯|锅/i.test(i.title));
+        // 🔍 1. 全局模糊扫描分类 (0 漏报，完美兼容新老数据)
+        if (state.cat !== 'all') {
+            processData = processData.filter(post => fuzzyMatch(post, state.cat));
+        }
+
+        // 🔢 2. 价格排序
+        if (state.sort === 'price_asc') {
+            processData.sort((a, b) => (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0));
+        } else if (state.sort === 'price_desc') {
+            processData.sort((a, b) => (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0));
+        }
 
         if (processData.length === 0) {
             container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:60px 0; grid-column:span 2;">该分类下暂无闲置~</div>';
@@ -206,7 +213,7 @@ export const MarketEngine = {
             if (!itemsList || itemsList.length === 0) itemsList = [{ url: item.img || defaultImg }];
 
             const itemCount = itemsList.length;
-            const multiBadge = itemCount > 1 ? `<div style="position:absolute; top:6px; right:6px; background:rgba(0,0,0,0.5); color:#FFF; font-size:9px; padding:2px 6px; border-radius:10px; font-weight:bold; backdrop-filter:blur(4px); pointer-events:none; z-index:10; letter-spacing:0.5px;">📸 ${itemCount}</div>` : '';
+            const multiBadge = itemCount > 1 ? `<div style="position:absolute; top:6px; right:6px; background:rgba(0,0,0,0.5); color:#FFF; font-size:9px; padding:2px 6px; border-radius:10px; font-weight:bold; backdrop-filter:blur(4px); pointer-events:none; z-index:10;">📸 ${itemCount}</div>` : '';
             
             let city = item.contentObj?.city || '';
             if (!city) {
@@ -217,17 +224,13 @@ export const MarketEngine = {
 
             let imagesHtml = '';
             itemsList.forEach(subItem => {
-                const imgUrl = subItem.url || defaultImg;
                 imagesHtml += `
                 <div style="flex-shrink:0; width:100%; aspect-ratio: 1 / 1.05; scroll-snap-align:start; position:relative;">
-                    <img src="${imgUrl}" style="width:100%; height:100%; object-fit:cover; display:block;">
+                    <img src="${subItem.url || defaultImg}" style="width:100%; height:100%; object-fit:cover; display:block;">
                     ${subItem.is_sold ? `<div style="position:absolute; top:6px; left:6px; background:rgba(0,0,0,0.6); color:white; padding:2px 6px; border-radius:4px; font-size:9px;">已售出</div>` : ''}
                 </div>`;
             });
 
-            // ==========================================
-            // 🌟 核心调优：售罄卡片变灰，价格智能切换
-            // ==========================================
             const isAllSold = item.isAllSold;
             const priceDisplay = isAllSold ? '已售罄' : `€ ${item.price}`;
             const priceColor = isAllSold ? '#9CA3AF' : '#EF4444';
@@ -235,20 +238,17 @@ export const MarketEngine = {
 
             html += `
             <div class="waterfall-item" style="background:#FFF; border-radius:10px; border: 0.5px solid rgba(0,0,0,0.04); overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.03); margin-bottom:8px; cursor:pointer; opacity: ${cardOpacity}; transition: opacity 0.3s;" onclick="window.App.openCommunityPost('${item.id}')">
-                
                 <div style="position:relative; width:100%;">
                     <div style="display:flex; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; -webkit-overflow-scrolling:touch; width:100%;">
                         ${imagesHtml}
                     </div>
                     ${multiBadge}
                 </div>
-                
                 <div style="padding:8px;">
                     <div style="display:flex; align-items:center; justify-content:space-between;">
                         <div style="color:${priceColor}; font-size:15px; font-weight:900; letter-spacing: -0.5px;">${priceDisplay}</div>
                         <div style="font-size:9px; color:#D97706; font-weight:bold; background:#FFFBEB; border:0.5px solid #FDE68A; padding:1px 4px; border-radius:4px;">⭐ ${creditStr}</div>
                     </div>
-                    
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; border-top:0.5px dashed #F3F4F6; padding-top:8px;">
                         <div style="display:flex; align-items:center; gap:4px; overflow:hidden;">
                             <span style="font-size:12px; background:#F8FAFC; width:18px; height:18px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">${item.avatar}</span>
@@ -263,16 +263,27 @@ export const MarketEngine = {
     },
 
     // ==========================================
-    // 🤝 渲染器：悬赏 (高度浓缩的高级感)
+    // 🤝 渲染器：悬赏 
     // ==========================================
     renderMarketHelp() {
         const container = this.getContainer('helpListContainer', false);
         if (!container) return;
 
         let processData = [...(window.App.marketDataCache?.help || [])];
-        const state = window.App.currentMarketFilter?.help || { loc: 'all', status: 'all', sort: 'newest' };
+        const state = window.App.currentMarketFilter?.help || { cat: 'all', sort: 'newest' };
 
-        if (state.status === 'urgent') processData = processData.filter(p => p.contentObj?.urgent === '十万火急');
+        // 🔍 1. 模糊扫描分类
+        if (state.cat !== 'all') {
+            processData = processData.filter(post => fuzzyMatch(post, state.cat));
+        }
+
+        // 🔢 2. 状态与赏金排序
+        if (state.sort === 'urgent') {
+            processData = processData.filter(post => post.contentObj?.urgent === '十万火急');
+        } else if (state.sort === 'reward') {
+            processData.sort((a, b) => (parseFloat(b.likes) || 0) - (parseFloat(a.likes) || 0));
+        }
+
         if (processData.length === 0) { container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:60px 0;">暂无符合条件的悬赏哦~</div>'; return; }
 
         let html = '';
@@ -283,17 +294,13 @@ export const MarketEngine = {
             const city = post.contentObj?.city || '荷兰';
             const creditStr = post.credit ? `${post.credit}` : '100';
 
-            // 🌟 核心调优：内边距减小到 12px，底部间距 10px，更紧凑精致
             html += `
             <div style="background:#FFF; border-radius:12px; padding:12px; margin-bottom:10px; box-shadow:0 4px 12px rgba(0,0,0,0.03); border:0.5px solid ${isUrgent ? '#FECACA' : '#F1F5F9'}; cursor:pointer;" onclick="window.App.initiateHelpChat('${post.id}')">
-                
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
                     <div style="font-size:14px; font-weight:900; color:#111827; flex:1; padding-right:10px; line-height:1.4;">${isUrgent ? '🚨 ' : ''}${titleStr}</div>
                     <div style="font-size:16px; font-weight:900; color:#D97706; flex-shrink:0;">💰 €${post.likes || 0}</div>
                 </div>
-                
                 <div style="font-size:12px; color:#4B5563; line-height:1.5; margin-bottom:10px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${descStr}</div>
-                
                 <div style="display:flex; justify-content:space-between; align-items:flex-end; border-top:0.5px dashed #E5E7EB; padding-top:10px;">
                     <div style="display:flex; align-items:center; gap:6px; flex:1; overflow:hidden;">
                         <span style="font-size:18px; background:#F8FAFC; width:24px; height:24px; border-radius:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">${post.avatar}</span>
@@ -302,7 +309,6 @@ export const MarketEngine = {
                             <span style="font-size:9px; color:#D97706; font-weight:bold; background:#FEF3C7; padding:1px 4px; border-radius:4px; width:fit-content;">⭐ ${creditStr}分</span>
                         </div>
                     </div>
-                    
                     <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
                         <span style="font-size:10px; font-weight:bold; color:#64748B; background:#F1F5F9; padding:3px 6px; border-radius:6px;">🏙️ ${city}</span>
                         <button style="background:#111827; color:#FFF; border:none; padding:6px 14px; border-radius:10px; font-size:11px; font-weight:bold; cursor:pointer;" onclick="event.stopPropagation(); window.App.initiateHelpChat('${post.id}')">接单</button>
@@ -313,6 +319,9 @@ export const MarketEngine = {
         container.innerHTML = html;
     },
 
+    // ==========================================
+    // 🏕️ 渲染器：找搭子 
+    // ==========================================
     renderMarketPartner() {
         const container = this.getContainer('partnerListContainer', false);
         if (!container) return;
@@ -320,19 +329,19 @@ export const MarketEngine = {
         let processData = [...(window.App.marketDataCache?.partner || [])];
         const state = window.App.currentMarketFilter?.partner || { cat: 'all', size: 'all' };
 
-        // 🛑 0. 底层净化：一刀切，自动隐藏所有已经满员的帖子！
+        // 🛑 0. 底层净化：无情切除满员帖子
         processData = processData.filter(post => {
             const max = parseInt(post.contentObj?.maxPeople) || 2;
             const joined = parseInt(post.contentObj?.joinedCount) || 1;
-            return joined < max; // 只要还有空位，才允许在集市展示
+            return joined < max; 
         });
 
-        // 🔍 1. 分类筛选
+        // 🔍 1. 全局模糊分类
         if (state.cat !== 'all') {
-            processData = processData.filter(post => post.contentObj?.tag && post.contentObj.tag.includes(state.cat));
+            processData = processData.filter(post => fuzzyMatch(post, state.cat));
         }
 
-        // 👥 2. 人数规模筛选引擎
+        // 👥 2. 人数规模精准筛选
         if (state.size !== 'all') {
             processData = processData.filter(post => {
                 const max = parseInt(post.contentObj?.maxPeople) || 2;
@@ -343,7 +352,6 @@ export const MarketEngine = {
             });
         }
 
-        // 数据为空的状态兜底
         if (processData.length === 0) { 
             container.innerHTML = `
                 <div style="text-align:center; padding:60px 0; color:#9CA3AF;">
