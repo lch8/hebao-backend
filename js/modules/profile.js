@@ -201,7 +201,7 @@ export const ProfileEngine = {
         } catch(e) {
             showToast("更新失败: " + e.message, "error");
         }
-    }
+    },
     // ==========================================
     // 🌟 5. 局长专属：通过搭子入局申请 (+1 逻辑)
     // ==========================================
@@ -255,8 +255,68 @@ export const ProfileEngine = {
         } catch(e) {
             showToast("更新失败: " + e.message, "error");
         }
+    },
+// ==========================================
+    // 🌟 6. 闲置专属：修改单个物品的价格
+    // ==========================================
+    async updateItemPrice(postId, itemId, oldPrice) {
+        // 1. 原生弹窗询问新价格，极简高效
+        const newPriceStr = prompt(`请输入该物品的新价格 (€):\n\n(当前价格为 €${oldPrice})`, oldPrice);
+        
+        // 用户点了取消，或者什么都没填
+        if (newPriceStr === null || newPriceStr.trim() === '') return; 
+        
+        const newPrice = parseFloat(newPriceStr);
+        if (isNaN(newPrice) || newPrice < 0) {
+            return showToast("⚠️ 请输入有效的数字价格哦！", "warning");
+        }
+
+        if (newPrice === parseFloat(oldPrice)) return; // 价格没变，不浪费服务器请求
+
+        try {
+            const token = localStorage.getItem('hebao_token');
+            if (!token) return showToast("请先登录", "warning");
+
+            const post = window.myPostsCache.find(p => p.id === postId);
+            if(!post) return;
+            
+            // 2. 解析 JSON，找到那个物品，修改价格
+            let contentObj = typeof post.content === 'string' ? JSON.parse(post.content) : post.content;
+            const itemIndex = contentObj.items.findIndex(i => i.id === itemId);
+            
+            if(itemIndex > -1) {
+                contentObj.items[itemIndex].price = newPrice; 
+            } else {
+                return showToast("找不到该物品", "error");
+            }
+            
+            const newContentStr = JSON.stringify(contentObj);
+
+            // 3. 呼叫后端接口更新数据库
+            const res = await fetch('/api/update-post', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ postId, content: newContentStr })
+            });
+            const data = await res.json();
+            
+            if(data.success) {
+                showToast(`✅ 已成功降价为 €${newPrice}！`, "success");
+                
+                // 4. 更新本地缓存并重新渲染
+                post.content = newContentStr; 
+                this.renderMyPosts(); 
+                
+                // 5. 通知集市大厅瀑布流同步刷新价格
+                if(window.App.loadCommunityPosts) window.App.loadCommunityPosts(); 
+            } else {
+                throw new Error(data.error);
+            }
+        } catch(e) {
+            showToast("改价失败: " + e.message, "error");
+        }
     }
-};
+}; // <-- 确保包在 ProfileEngine 里面
 
 // 挂载到全局
 if (typeof window !== 'undefined') {
