@@ -28,12 +28,12 @@ window.App.marketDataCache = { idle: [], help: [], partner: [] };
 window.App.currentMarketTab = 'idle';
 
 // ============================================================================
-// 🎯 筛选引擎全局状态 (重构为符合真实业务场景的维度)
+// 🎯 筛选引擎全局状态 (新增距离维度)
 // ============================================================================
 window.App.currentMarketFilter = {
-    idle: { cat: 'all', sort: 'newest' },     // 闲置：分类 + 价格排序
-    help: { cat: 'all', sort: 'newest' },     // 悬赏：分类 + 赏金排序/加急
-    partner: { cat: 'all', size: 'all' }      // 搭子：分类 + 人数规模过滤
+    idle: { loc: 'all', cat: 'all', sort: 'newest' },     
+    help: { loc: 'all', cat: 'all', sort: 'newest' },     
+    partner: { loc: 'all', cat: 'all', size: 'all' }      
 };
 
 window.App.renderFilterBar = function(tab) {
@@ -41,7 +41,6 @@ window.App.renderFilterBar = function(tab) {
     const container = document.getElementById('dynamicFilterBar');
     if (!container) return;
 
-    // 支持横向丝滑滑动，防止小屏手机被挤压
     container.style.display = 'flex';
     container.style.overflowX = 'auto';
     container.style.scrollbarWidth = 'none'; 
@@ -63,15 +62,21 @@ window.App.renderFilterBar = function(tab) {
                 </select>`;
     };
 
+    // 🌟 共享距离筛选组件
+    const locOptions = [{val:'all', label:'📍 全荷兰'}, {val:'city', label:'🏙️ 同城'}];
+
     if (tab === 'idle') {
-        html += makeSelect('cat', [{val:'all', label:'📦 全部分类'}, {val:'数码', label:'📱 数码电器'}, {val:'家居', label:'🛏️ 家具日用'}, {val:'服饰', label:'👗 美妆衣物'}, {val:'交通', label:'🚲 交通出行'}, {val:'其他', label:'📦 其他闲置'}], state.cat);
-        html += makeSelect('sort', [{val:'newest', label:'✨ 最新发布'}, {val:'price_asc', label:'💸 价格最低'}, {val:'price_desc', label:'💎 价格最高'}], state.sort);
+        html += makeSelect('loc', locOptions, state.loc);
+        html += makeSelect('cat', [{val:'all', label:'📦 全部分类'}, {val:'数码', label:'📱 数码电器'}, {val:'家居', label:'🛏️ 家具日用'}, {val:'服饰', label:'👗 美妆衣物'}, {val:'交通', label:'🚲 交通出行'}, {val:'其他', label:'📦 其他'}], state.cat);
+        html += makeSelect('sort', [{val:'newest', label:'✨ 最新'}, {val:'price_asc', label:'💸 最低价'}, {val:'price_desc', label:'💎 最高价'}], state.sort);
     } else if (tab === 'help') {
+        html += makeSelect('loc', locOptions, state.loc);
         html += makeSelect('cat', [{val:'all', label:'🤝 全部互助'}, {val:'接送', label:'🚗 接送机'}, {val:'搬家', label:'🪑 搬家装配'}, {val:'宠物', label:'🐱 代喂宠物'}, {val:'辅导', label:'💻 辅导解题'}, {val:'其他', label:'🛠️ 其他'}], state.cat);
-        html += makeSelect('sort', [{val:'newest', label:'✨ 最新发布'}, {val:'urgent', label:'🚨 十万火急'}, {val:'reward', label:'💰 赏金最高'}], state.sort);
+        html += makeSelect('sort', [{val:'newest', label:'✨ 最新'}, {val:'urgent', label:'🚨 十万火急'}, {val:'reward', label:'💰 赏金最高'}], state.sort);
     } else if (tab === 'partner') {
+        html += makeSelect('loc', locOptions, state.loc);
         html += makeSelect('cat', [{val:'all', label:'🏕️ 全部组局'}, {val:'饭搭子', label:'🍔 探店饭搭子'}, {val:'旅游', label:'✈️ 旅游看展'}, {val:'运动', label:'🏋️ 运动健身'}, {val:'自习', label:'📚 考前自习'}, {val:'游戏', label:'🎮 游戏开黑'}, {val:'KTV', label:'🎤 KTV/蹦迪'}], state.cat);
-        html += makeSelect('size', [{val:'all', label:'👥 规模不限'}, {val:'2', label:'👯 两人局 (1v1)'}, {val:'3-5', label:'👨‍👩‍👧‍👦 3-5人小队'}, {val:'6+', label:'🎉 6人以上大群'}], state.size);
+        html += makeSelect('size', [{val:'all', label:'👥 规模不限'}, {val:'2', label:'👯 两人局 (1v1)'}, {val:'3-5', label:'👨‍👩‍👧‍👦 3-5人'}, {val:'6+', label:'🎉 6人以上'}], state.size);
     }
 
     container.innerHTML = html;
@@ -83,90 +88,63 @@ window.App.onFilterChange = function(tab, key, value) {
     if (tab === 'idle') window.App.renderMarketIdle();
     if (tab === 'help') window.App.renderMarketHelp();
     if (tab === 'partner') window.App.renderMarketPartner();
-    
-    // 🌟 兜底魔法：筛选结束后，强行唤醒当前版块的显示状态，拒绝隐身！
-    if (typeof window.switchMarketTab === 'function') {
-        window.switchMarketTab(tab);
-    }
+    if (typeof window.switchMarketTab === 'function') window.switchMarketTab(tab);
 };
-// 🌟 核心魔法：无视新老数据结构的“全局模糊扫描器”
+
+// 模糊搜索
 const fuzzyMatch = (post, keyword) => {
     if (keyword === 'all') return true;
-    // 把帖子的标题、和深层的 JSON 内容全部转成字符串，然后强行扫关键字！
     const haystack = (post.title + ' ' + JSON.stringify(post.contentObj)).toLowerCase();
     return haystack.includes(keyword.toLowerCase());
 };
 
+// 🌟 核心引擎：按同城过滤
+const applyLocFilter = (data, locState) => {
+    if (locState === 'city') {
+        // 读取本地存储的用户城市 (你在注册/定位时存入的)，默认找不到就算查不到
+        const myCity = localStorage.getItem('hebao_city') || localStorage.getItem('hp_city') || 'Delft'; 
+        return data.filter(post => (post.contentObj?.city || '').toLowerCase().includes(myCity.toLowerCase()));
+    }
+    return data;
+};
+
 export const MarketEngine = {
+    // ... [中间的 loadCommunityPosts 和 getContainer 保持不变，请勿删除] ...
     async loadCommunityPosts() {
         try {
             const res = await fetch('/api/get-community?t=' + Date.now()); 
             const data = await res.json();
-            
-            if (!data.success) {
-                if(window.App.showToast) window.App.showToast("集市加载失败: " + data.error, "error");
-                return;
-            }
+            if (!data.success) return;
 
             let idleItems = [], helpItems = [], partnerItems = [];
-            
             (data.posts || []).forEach(post => {
                 const title = post.title || ''; 
                 let payload = {}; 
-                try {
-                    payload = JSON.parse(post.content || '{}');
-                    if (typeof payload === 'string') payload = JSON.parse(payload); 
-                } catch(e) { payload = { desc: post.content }; }
+                try { payload = typeof post.content === 'string' ? JSON.parse(post.content) : post.content; } catch(e) { payload = { desc: post.content }; }
 
-                const commonData = {
-                    ...post,
-                    author: post.author_name || '匿名荷包蛋',
-                    avatar: post.avatar || '😎',
-                    email: post.email || '',    
-                    credit: post.credit || 100,  
-                    contentObj: payload
-                };
+                const commonData = { ...post, author: post.author_name || '匿名荷包蛋', avatar: post.avatar || '😎', credit: post.credit || 100, contentObj: payload };
 
                 if (title.includes('[闲置]')) {
                     commonData.title = title.replace('[闲置] ', '');
                     commonData.img = post.image_url || '';
-
-                    let currentTotalPrice = 0;
-                    let allSold = true;
-
+                    let currentTotalPrice = 0, allSold = true;
                     if (payload && payload.items && payload.items.length > 0) {
-                        payload.items.forEach(i => {
-                            if (!i.is_sold) {
-                                currentTotalPrice += parseFloat(i.price) || 0;
-                                allSold = false; 
-                            }
-                        });
-                        commonData.price = currentTotalPrice;
-                        commonData.isAllSold = allSold;
-                    } else {
-                        commonData.price = post.likes || 0;
-                        commonData.isAllSold = false;
-                    }
+                        payload.items.forEach(i => { if (!i.is_sold) { currentTotalPrice += parseFloat(i.price) || 0; allSold = false; }});
+                        commonData.price = currentTotalPrice; commonData.isAllSold = allSold;
+                    } else { commonData.price = post.likes || 0; commonData.isAllSold = false; }
                     idleItems.push(commonData);
                 }
-                else if (title.includes('[互助]')) {
-                    helpItems.push(commonData);
-                }
-                else if (title.includes('[搭子]') || title.includes('[找搭子]')) {
-                    partnerItems.push(commonData);
-                }
+                else if (title.includes('[互助]')) helpItems.push(commonData);
+                else if (title.includes('[搭子]') || title.includes('[找搭子]')) partnerItems.push(commonData);
             });
 
             window.App.marketDataCache = { idle: idleItems, help: helpItems, partner: partnerItems };
             window.allCommunityPostsCache = data.posts || []; 
 
-            this.renderMarketIdle(); 
-            this.renderMarketHelp();
-            this.renderMarketPartner();
-
+            this.renderMarketIdle(); this.renderMarketHelp(); this.renderMarketPartner();
             const currentTab = window.App.currentMarketTab || 'idle';
             if (window.switchMarketTab) window.switchMarketTab(currentTab);
-        } catch (error) { console.error("🚨 致命加载失败:", error); }
+        } catch (error) { console.error("加载失败:", error); }
     },
 
     getContainer(id, isGrid = false) {
@@ -174,95 +152,44 @@ export const MarketEngine = {
         if (!el) {
             const parent = document.getElementById('page-market');
             if (parent) { el = document.createElement('div'); el.id = id; parent.appendChild(el); }
-            el.style.display = 'none'; // 仅在初次创建时隐藏
+            el.style.display = 'none';
         }
-        
         el.style.padding = '0 12px 100px'; 
-        if (isGrid) { 
-            el.style.display = 'grid'; 
-            el.style.gridTemplateColumns = '1fr 1fr'; 
-            el.style.gap = '8px'; 
-            el.style.alignItems = 'start'; 
-        } else {
-            // 🌟 致命 Bug 修复处：
-            // 如果面板本来就是显示状态（比如你正在看悬赏版块），绝对不能强行把它改成 none！
-            if (el.style.display !== 'none') {
-                el.style.display = 'block';
-            }
-        }
+        if (isGrid) { el.style.display = 'grid'; el.style.gridTemplateColumns = '1fr 1fr'; el.style.gap = '8px'; el.style.alignItems = 'start'; } 
+        else { if (el.style.display !== 'none') el.style.display = 'block'; }
         return el;
     },
 
-    // ==========================================
-    // 📦 渲染器：闲置 
-    // ==========================================
+    // 📦 闲置
     renderMarketIdle() {
         const container = this.getContainer('idleWaterfall', true);
         if (!container) return;
-
         let processData = [...(window.App.marketDataCache?.idle || [])];
-        const state = window.App.currentMarketFilter?.idle || { cat: 'all', sort: 'newest' };
+        const state = window.App.currentMarketFilter?.idle || { loc: 'all', cat: 'all', sort: 'newest' };
 
-        // 🔍 1. 全局模糊扫描分类 (0 漏报，完美兼容新老数据)
-        if (state.cat !== 'all') {
-            processData = processData.filter(post => fuzzyMatch(post, state.cat));
-        }
+        processData = applyLocFilter(processData, state.loc); // 应用距离筛选
+        if (state.cat !== 'all') processData = processData.filter(post => fuzzyMatch(post, state.cat));
+        if (state.sort === 'price_asc') processData.sort((a, b) => (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0));
+        else if (state.sort === 'price_desc') processData.sort((a, b) => (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0));
 
-        // 🔢 2. 价格排序
-        if (state.sort === 'price_asc') {
-            processData.sort((a, b) => (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0));
-        } else if (state.sort === 'price_desc') {
-            processData.sort((a, b) => (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0));
-        }
-
-        if (processData.length === 0) {
-            container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:60px 0; grid-column:span 2;">该分类下暂无闲置~</div>';
-            return;
-        }
+        if (processData.length === 0) { container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:60px 0; grid-column:span 2;">暂无符合条件的闲置~</div>'; return; }
 
         let html = '';
-        const defaultImg = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Crect width='100%25' height='100%25' fill='%23F3F4F6'/%3E%3Ctext x='50%25' y='50%25' font-size='12' fill='%239CA3AF' text-anchor='middle' dominant-baseline='middle'%3E暂无图%3C/text%3E%3C/svg%3E";
-
         processData.forEach(item => {
-            let itemsList = item.contentObj?.items;
-            if (!itemsList || itemsList.length === 0) itemsList = [{ url: item.img || defaultImg }];
-
+            let itemsList = item.contentObj?.items; if (!itemsList || itemsList.length === 0) itemsList = [{ url: item.img }];
             const itemCount = itemsList.length;
-            const multiBadge = itemCount > 1 ? `<div style="position:absolute; top:6px; right:6px; background:rgba(0,0,0,0.5); color:#FFF; font-size:9px; padding:2px 6px; border-radius:10px; font-weight:bold; backdrop-filter:blur(4px); pointer-events:none; z-index:10;">📸 ${itemCount}</div>` : '';
-            
-            let city = item.contentObj?.city || '';
-            if (!city) {
-                const locStr = (item.contentObj?.location || '').replace('📍', '').trim();
-                city = locStr.includes('同城') ? '荷兰' : locStr;
-            }
-            const creditStr = item.credit ? `${item.credit}` : '100';
-
+            const multiBadge = itemCount > 1 ? `<div style="position:absolute; top:6px; right:6px; background:rgba(0,0,0,0.5); color:#FFF; font-size:9px; padding:2px 6px; border-radius:10px; font-weight:bold;">📸 ${itemCount}</div>` : '';
+            const city = item.contentObj?.city || '荷兰';
             let imagesHtml = '';
-            itemsList.forEach(subItem => {
-                imagesHtml += `
-                <div style="flex-shrink:0; width:100%; aspect-ratio: 1 / 1.05; scroll-snap-align:start; position:relative;">
-                    <img src="${subItem.url || defaultImg}" style="width:100%; height:100%; object-fit:cover; display:block;">
-                    ${subItem.is_sold ? `<div style="position:absolute; top:6px; left:6px; background:rgba(0,0,0,0.6); color:white; padding:2px 6px; border-radius:4px; font-size:9px;">已售出</div>` : ''}
-                </div>`;
-            });
-
-            const isAllSold = item.isAllSold;
-            const priceDisplay = isAllSold ? '已售罄' : `€ ${item.price}`;
-            const priceColor = isAllSold ? '#9CA3AF' : '#EF4444';
-            const cardOpacity = isAllSold ? '0.6' : '1';
-
+            itemsList.forEach(subItem => { imagesHtml += `<div style="flex-shrink:0; width:100%; aspect-ratio: 1 / 1.05; scroll-snap-align:start; position:relative;"><img src="${subItem.url}" style="width:100%; height:100%; object-fit:cover; display:block;">${subItem.is_sold ? `<div style="position:absolute; top:6px; left:6px; background:rgba(0,0,0,0.6); color:white; padding:2px 6px; border-radius:4px; font-size:9px;">已售出</div>` : ''}</div>`; });
+            const isAllSold = item.isAllSold; const priceDisplay = isAllSold ? '已售罄' : `€ ${item.price}`;
             html += `
-            <div class="waterfall-item" style="background:#FFF; border-radius:10px; border: 0.5px solid rgba(0,0,0,0.04); overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.03); margin-bottom:8px; cursor:pointer; opacity: ${cardOpacity}; transition: opacity 0.3s;" onclick="window.App.openCommunityPost('${item.id}')">
-                <div style="position:relative; width:100%;">
-                    <div style="display:flex; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; -webkit-overflow-scrolling:touch; width:100%;">
-                        ${imagesHtml}
-                    </div>
-                    ${multiBadge}
-                </div>
+            <div class="waterfall-item" style="background:#FFF; border-radius:10px; border: 0.5px solid rgba(0,0,0,0.04); overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.03); margin-bottom:8px; cursor:pointer; opacity: ${isAllSold ? '0.6' : '1'}; transition: opacity 0.3s;" onclick="window.App.openCommunityPost('${item.id}')">
+                <div style="position:relative; width:100%;"><div style="display:flex; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; width:100%;">${imagesHtml}</div>${multiBadge}</div>
                 <div style="padding:8px;">
                     <div style="display:flex; align-items:center; justify-content:space-between;">
-                        <div style="color:${priceColor}; font-size:15px; font-weight:900; letter-spacing: -0.5px;">${priceDisplay}</div>
-                        <div style="font-size:9px; color:#D97706; font-weight:bold; background:#FFFBEB; border:0.5px solid #FDE68A; padding:1px 4px; border-radius:4px;">⭐ ${creditStr}</div>
+                        <div style="color:${isAllSold ? '#9CA3AF' : '#EF4444'}; font-size:15px; font-weight:900;">${priceDisplay}</div>
+                        <div style="font-size:9px; color:#D97706; font-weight:bold; background:#FFFBEB; border:0.5px solid #FDE68A; padding:1px 4px; border-radius:4px;">⭐ ${item.credit || 100}</div>
                     </div>
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; border-top:0.5px dashed #F3F4F6; padding-top:8px;">
                         <div style="display:flex; align-items:center; gap:4px; overflow:hidden;">
@@ -277,54 +204,40 @@ export const MarketEngine = {
         container.innerHTML = html;
     },
 
-    // ==========================================
-    // 🤝 渲染器：悬赏 (双列瀑布流 + 原生换行保留)
-    // ==========================================
+    // 🤝 悬赏
     renderMarketHelp() {
         const container = this.getContainer('helpListContainer', true);
         if (!container) return;
-
         let processData = [...(window.App.marketDataCache?.help || [])];
-        const state = window.App.currentMarketFilter?.help || { cat: 'all', sort: 'newest' };
+        const state = window.App.currentMarketFilter?.help || { loc: 'all', cat: 'all', sort: 'newest' };
 
+        processData = applyLocFilter(processData, state.loc); // 距离筛选
         if (state.cat !== 'all') processData = processData.filter(post => fuzzyMatch(post, state.cat));
         if (state.sort === 'urgent') processData = processData.filter(post => post.contentObj?.urgent === '十万火急');
         else if (state.sort === 'reward') processData.sort((a, b) => (parseFloat(b.likes) || 0) - (parseFloat(a.likes) || 0));
 
-        if (processData.length === 0) { 
-            container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:60px 0; grid-column:span 2;">暂无符合条件的悬赏哦~</div>'; 
-            return; 
-        }
+        if (processData.length === 0) { container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:60px 0; grid-column:span 2;">暂无符合条件的悬赏哦~</div>'; return; }
 
         let html = '<div style="column-count: 2; column-gap: 8px;">';
-        
         processData.forEach(post => {
             const isUrgent = post.contentObj?.urgent === '十万火急';
             const titleStr = post.title.replace('[互助] ', '');
-            
-            // 🌟 修复换行丢失：把可能被转义的 \n 恢复成真实换行
             let descStr = post.contentObj?.desc || post.contentObj?.text || '';
-            descStr = String(descStr).replace(/\\n/g, '\n').trim(); 
-            
+            descStr = String(descStr).replace(/\\n/g, '\n').replace(/搬运物品清单：|起点.*：|终点.*：|需要几人帮忙：/g, ' ').trim(); 
             const city = post.contentObj?.city || '荷兰';
 
             html += `
             <div class="waterfall-item" style="break-inside: avoid; background:#FFF; border-radius:12px; padding:10px; margin-bottom:8px; box-shadow:0 4px 12px rgba(0,0,0,0.03); border:1px solid ${isUrgent ? '#FECACA' : '#F1F5F9'}; cursor:pointer; display:flex; flex-direction:column; gap:8px;" onclick="window.App.initiateHelpChat('${post.id}')">
-                
                 <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                     <div style="font-size:18px; font-weight:900; color:#EF4444; line-height:1; letter-spacing:-0.5px;">€${post.likes || 0}</div>
                     ${isUrgent ? `<div style="background:#FEF2F2; color:#DC2626; padding:2px 4px; border-radius:4px; font-size:9px; font-weight:900;">🚨 急单</div>` : ''}
                 </div>
-                
                 <div style="font-size:13px; font-weight:900; color:#111827; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${titleStr}</div>
-                
                 <div style="font-size:11px; color:#64748B; line-height:1.5; display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; white-space: pre-line;">${descStr}</div>
-                
                 <div style="display:flex; gap:4px; flex-wrap:wrap;">
                     <span style="font-size:9px; font-weight:bold; color:#D97706; background:#FFFBEB; padding:2px 6px; border-radius:4px;">💰 悬赏</span>
                     <span style="font-size:9px; font-weight:bold; color:#475569; background:#F8FAFC; padding:2px 6px; border-radius:4px;">📍 ${city}</span>
                 </div>
-                
                 <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #F1F5F9; padding-top:8px; margin-top:auto;">
                     <div style="display:flex; align-items:center; gap:4px; overflow:hidden; flex:1;">
                         <span style="font-size:14px; background:#F1F5F9; width:20px; height:20px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">${post.avatar}</span>
@@ -334,108 +247,60 @@ export const MarketEngine = {
                 </div>
             </div>`;
         });
-        
-        html += '</div>';
-        container.innerHTML = html;
+        html += '</div>'; container.innerHTML = html;
     },
 
-    // ==========================================
-    // 🏕️ 渲染器：找搭子 (双列瀑布流 + 原生换行保留)
-    // ==========================================
+    // 🏕️ 搭子
     renderMarketPartner() {
         const container = this.getContainer('partnerListContainer', false);
         if (!container) return;
-
         let processData = [...(window.App.marketDataCache?.partner || [])];
-        const state = window.App.currentMarketFilter?.partner || { cat: 'all', size: 'all' };
+        const state = window.App.currentMarketFilter?.partner || { loc: 'all', cat: 'all', size: 'all' };
 
-        processData = processData.filter(post => {
-            const max = parseInt(post.contentObj?.maxPeople) || 2;
-            const joined = parseInt(post.contentObj?.joinedCount) || 1;
-            return joined < max; 
-        });
-
+        processData = processData.filter(post => (parseInt(post.contentObj?.joinedCount) || 1) < (parseInt(post.contentObj?.maxPeople) || 2));
+        processData = applyLocFilter(processData, state.loc); // 距离筛选
         if (state.cat !== 'all') processData = processData.filter(post => fuzzyMatch(post, state.cat));
         if (state.size !== 'all') {
             processData = processData.filter(post => {
                 const max = parseInt(post.contentObj?.maxPeople) || 2;
-                if (state.size === '2') return max === 2;
-                if (state.size === '3-5') return max >= 3 && max <= 5;
-                if (state.size === '6+') return max >= 6;
-                return true;
+                if (state.size === '2') return max === 2; if (state.size === '3-5') return max >= 3 && max <= 5; if (state.size === '6+') return max >= 6; return true;
             });
         }
 
-        if (processData.length === 0) { 
-            container.innerHTML = `
-                <div style="text-align:center; padding:60px 0; color:#9CA3AF;">
-                    <div style="font-size:40px; margin-bottom:10px;">🏕️</div>
-                    <div style="font-size:14px; font-weight:bold; color:#64748B;">没有找到符合要求的组局哦</div>
-                </div>`; 
-            return; 
-        }
+        if (processData.length === 0) { container.innerHTML = '<div style="text-align:center; padding:60px 0; color:#9CA3AF;"><div style="font-size:40px; margin-bottom:10px;">🏕️</div><div style="font-size:14px; font-weight:bold; color:#64748B;">没有找到符合要求的组局哦</div></div>'; return; }
 
         let html = '<div style="column-count: 2; column-gap: 8px;">';
         const currentUserId = localStorage.getItem('hebao_uuid');
-
         processData.forEach(post => {
             const titleStr = post.title.replace('[找搭子] ', '').replace('[搭子] ', '');
-            
-            // 🌟 修复换行并精准脱除自动拼接的前缀
-            let rawDesc = post.contentObj?.desc || post.contentObj?.text || '';
-            let cleanDesc = String(rawDesc).replace(/\\n/g, '\n');
-            cleanDesc = cleanDesc.replace(/⏱️ 时间：.*?\n👥 队伍：.*?\n\n/g, '').trim();
-
+            let cleanDesc = String(post.contentObj?.desc || post.contentObj?.text || '').replace(/\\n/g, '\n').replace(/⏱️ 时间：.*?\n👥 队伍：.*?\n\n/g, '').trim();
             const city = post.contentObj?.city || '荷兰';
-            const date = post.contentObj?.time || post.contentObj?.date || '待定'; 
-            
             const tagStr = post.contentObj?.tag || '组局';
-            const showTag = tagStr !== titleStr; 
-
-            const joined = parseInt(post.contentObj?.joinedCount) || 1; 
-            const max = parseInt(post.contentObj?.maxPeople) || 2;      
-            const remain = max - joined > 0 ? max - joined : 0;
-            const percent = Math.min(100, (joined / max) * 100);
+            const joined = parseInt(post.contentObj?.joinedCount) || 1; const max = parseInt(post.contentObj?.maxPeople) || 2;      
             const isHost = currentUserId === post.user_id;              
 
             html += `
             <div class="waterfall-item" style="break-inside: avoid; background:#FFF; border-radius:12px; padding:10px; margin-bottom:8px; box-shadow:0 4px 12px rgba(0,0,0,0.03); border:1px solid #F3E8FF; cursor:pointer; display:flex; flex-direction:column; gap:8px;" onclick="window.App.initiatePartnerChat('${post.id}')">
-                
                 <div style="font-size:13px; font-weight:900; color:#4C1D95; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${titleStr}</div>
-                
                 <div style="display:flex; gap:4px; flex-wrap:wrap;">
-                    ${showTag ? `<span style="font-size:9px; font-weight:bold; color:#7E22CE; background:#F3E8FF; padding:2px 6px; border-radius:4px;">${tagStr}</span>` : ''}
-                    <span style="font-size:9px; font-weight:bold; color:#475569; background:#F8FAFC; padding:2px 6px; border-radius:4px;">⏰ ${date}</span>
+                    ${tagStr !== titleStr ? `<span style="font-size:9px; font-weight:bold; color:#7E22CE; background:#F3E8FF; padding:2px 6px; border-radius:4px;">${tagStr}</span>` : ''}
+                    <span style="font-size:9px; font-weight:bold; color:#475569; background:#F8FAFC; padding:2px 6px; border-radius:4px;">📍 ${city}</span>
                 </div>
-
                 <div style="font-size:11px; color:#64748B; line-height:1.5; display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; white-space: pre-line;">${cleanDesc || '快来和我一起吧！'}</div>
-                
                 <div style="background: #F8FAFC; border-radius: 6px; padding: 6px; border: 1px solid #E2E8F0; margin-top: auto;">
-                    <div style="display: flex; justify-content: space-between; font-size: 9px; font-weight: 900; color: #111827; margin-bottom: 4px;">
-                        <span>进度 ${joined}/${max}</span>
-                        <span style="color: #10B981;">缺 ${remain}</span>
-                    </div>
-                    <div style="width: 100%; height: 4px; background: #E2E8F0; border-radius: 2px; overflow: hidden;">
-                        <div style="width: ${percent}%; height: 100%; background: #10B981; border-radius: 2px;"></div>
-                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 9px; font-weight: 900; color: #111827; margin-bottom: 4px;"><span>进度 ${joined}/${max}</span><span style="color: #10B981;">缺 ${max - joined}</span></div>
+                    <div style="width: 100%; height: 4px; background: #E2E8F0; border-radius: 2px; overflow: hidden;"><div style="width: ${Math.min(100, (joined/max)*100)}%; height: 100%; background: #10B981; border-radius: 2px;"></div></div>
                 </div>
-
                 <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #F1F5F9; padding-top:8px;">
                     <div style="display:flex; align-items:center; gap:4px; overflow:hidden; flex:1;">
                         <span style="font-size:14px; background:#F5F3FF; width:20px; height:20px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">${post.avatar}</span>
                         <span style="font-size:10px; font-weight:bold; color:#475569; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${post.author}</span>
                     </div>
-                    ${isHost ? 
-                        `<div style="font-size:9px; font-weight:900; color:#64748B; background:#F1F5F9; padding:4px 6px; border-radius:6px; flex-shrink:0;">👑</div>` 
-                        : 
-                        `<div style="font-size:9px; font-weight:900; color:#FFF; background:#111827; padding:4px 6px; border-radius:6px; flex-shrink:0;">✋ 申请</div>`
-                    }
+                    ${isHost ? `<div style="font-size:9px; font-weight:900; color:#64748B; background:#F1F5F9; padding:4px 6px; border-radius:6px; flex-shrink:0;">👑</div>` : `<div style="font-size:9px; font-weight:900; color:#FFF; background:#111827; padding:4px 6px; border-radius:6px; flex-shrink:0;">✋ 申请</div>`}
                 </div>
             </div>`;
         });
-        
-        html += '</div>';
-        container.innerHTML = html;
+        html += '</div>'; container.innerHTML = html;
     },
     // ==========================================
     // ✋ 搭子申请引擎：通过私信通道发起请求
@@ -670,20 +535,33 @@ export const MarketEngine = {
         ModalManager.close('postDetailModal');
     },
 
+    // 🌟 核心 Bug 修复：用真缓存替换假数据，确保点击绝对生效
     initiateHelpChat(postId) {
-        const post = mockHelpItems.find(p => String(p.id) === String(postId));
-        if (!post) return showToast("哎呀，帖子似乎走丢了", "error");
+        const post = (window.App.marketDataCache?.help || []).find(p => String(p.id) === String(postId));
+        if (!post) return window.App.showToast("哎呀，帖子似乎走丢了", "error");
         const cleanTitle = post.title.replace('[互助] ', '');
         ChatEngine.openChat(post.user_id || 'test_id', post.author_name || '悬赏主', post.avatar || '👻', post.id, `悬赏: ${cleanTitle}`, post.likes || 0, '', false, 'help');
         safeDOM.execute('chatInput', input => input.value = `哈喽！我看到你的悬赏【${cleanTitle}】，我可以接单哦，请问还需要吗？`);
     },
 
     initiatePartnerChat(postId) {
-        const post = mockPartnerItems.find(p => String(p.id) === String(postId));
-        if (!post) return showToast("哎呀，帖子似乎走丢了", "error");
-        const cleanTitle = post.title.replace('[找搭子] ', '');
-        ChatEngine.openChat(post.user_id || 'test_id', post.author_name || '发起人', post.avatar || '👻', post.id, `搭子局: ${cleanTitle}`, 0, '', false, 'partner');
-        safeDOM.execute('chatInput', input => input.value = `哈喽！我对你的搭子局【${cleanTitle}】很感兴趣，能加我一个吗？🙋`);
+        const post = (window.App.marketDataCache?.partner || []).find(p => String(p.id) === String(postId));
+        if (!post) return window.App.showToast("哎呀，帖子似乎走丢了", "error");
+        
+        // 🌟 自动判断是否是局长，局长点进去进入【群聊视图】，申请人点进去进入【私聊申请视图】
+        const currentUserId = localStorage.getItem('hebao_uuid');
+        const isHost = currentUserId === post.user_id;
+        const cleanTitle = post.title.replace('[找搭子] ', '').replace('[搭子] ', '');
+        
+        if (isHost) {
+            // 局长打开的是“群聊房间”
+            ChatEngine.openChat(`group_${post.id}`, '👥 ' + cleanTitle + ' (群聊)', '🏕️', post.id, `你的搭子队伍`, 0, '', true, 'group_chat');
+            safeDOM.execute('chatInput', input => input.value = `欢迎大家加入【${cleanTitle}】！`);
+        } else {
+            // 用户打开的是和局长的 1v1 私聊申请
+            ChatEngine.openChat(post.user_id || 'test_id', post.author_name || '发起人', post.avatar || '👻', post.id, `搭子局: ${cleanTitle}`, 0, '', false, 'partner');
+            safeDOM.execute('chatInput', input => input.value = `哈喽！我对你的搭子局【${cleanTitle}】很感兴趣，能加我一个吗？🙋`);
+        }
     }
 };
 
