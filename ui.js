@@ -1124,3 +1124,73 @@ if (typeof window !== 'undefined') {
         }
     };
 }
+
+// ============================================================================
+// 🚀 终极外挂：拦截 ChatEngine，100% 植入删除按钮与群聊样式
+// ============================================================================
+document.addEventListener('DOMContentLoaded', () => {
+    // 延迟 1 秒，等待 ChatEngine 彻底加载完毕
+    setTimeout(() => {
+        // 如果找到了聊天引擎，且还没有被我们拦截过
+        if (window.ChatEngine && window.ChatEngine.openChat && !window.ChatEngine._isIntercepted) {
+            
+            const originalOpenChat = window.ChatEngine.openChat; // 保存原版函数
+            
+            // 覆写原版函数！
+            window.ChatEngine.openChat = function(...args) {
+                // 1. 先照常打开聊天框
+                originalOpenChat.apply(this, args);
+                
+                // 2. 聊天框出来后，暴力植入删除按钮
+                setTimeout(() => {
+                    const chatModal = document.getElementById('chatModal');
+                    if (!chatModal) return;
+                    
+                    const chatHeader = chatModal.querySelector('.modal-content > div:first-child');
+                    if (chatHeader && !document.getElementById('deleteChatBtn')) {
+                        const delBtn = document.createElement('div');
+                        delBtn.id = 'deleteChatBtn';
+                        delBtn.innerHTML = '🗑️ 删除';
+                        // 极致的 UI 设计：红色警示色，带微小阴影和按压缩放动画
+                        delBtn.style.cssText = 'color:#EF4444; font-size:12px; font-weight:900; cursor:pointer; background:#FEF2F2; padding:6px 12px; border-radius:8px; margin-right:10px; box-shadow:0 2px 4px rgba(239,68,68,0.1); transition: transform 0.2s;';
+                        delBtn.onmousedown = () => delBtn.style.transform = 'scale(0.9)';
+                        delBtn.onmouseup = () => delBtn.style.transform = 'scale(1)';
+                        
+                        // 绑定一键删除核心逻辑
+                        delBtn.onclick = () => {
+                            if(!confirm('🚨 确定要删除这条对话吗？\n（群聊将退出队伍，单聊将永久清空记录）')) return;
+                            
+                            const targetId = args[0]; // 第一个参数是 userId 或 groupId
+                            localStorage.removeItem(`chat_history_${targetId}`); // 抹除本地记录
+                            
+                            if (window.App.showToast) window.App.showToast("✅ 已成功删除该对话", "success");
+                            if (window.ModalManager) window.ModalManager.close('chatModal');
+                            else chatModal.style.display = 'none';
+                            
+                            // 自动刷新外层的消息列表
+                            if (window.App.renderMessageList) window.App.renderMessageList();
+                        };
+
+                        const closeBtn = chatHeader.querySelector('div:last-child');
+                        if (closeBtn) chatHeader.insertBefore(delBtn, closeBtn);
+                    }
+                    
+                    // 🌟 群聊识别系统：根据 groupId 自动变换头部颜色
+                    const targetId = String(args[0]);
+                    if (targetId.startsWith('group_')) {
+                        chatHeader.style.background = 'linear-gradient(90deg, #F3E8FF 0%, #FFF 100%)';
+                        const nameEl = chatHeader.querySelector('div[style*="font-weight:900"]');
+                        // 自动在名字后加上 (群聊) 标识
+                        if (nameEl && !nameEl.innerText.includes('群聊')) nameEl.innerText += ' (群聊)';
+                    } else {
+                        // 恢复单聊白色背景
+                        chatHeader.style.background = '#FFF'; 
+                    }
+                }, 100);
+            };
+            
+            // 打上标记，防止重复拦截
+            window.ChatEngine._isIntercepted = true;
+        }
+    }, 1000); 
+});
