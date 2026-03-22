@@ -88,6 +88,7 @@ window.App.onFilterChange = function(tab, key, value) {
 export const MarketEngine = {
     async loadCommunityPosts() {
         try {
+            // 加上时间戳强制刷新缓存
             const res = await fetch('/api/get-community?t=' + Date.now()); 
             const data = await res.json();
             
@@ -118,7 +119,29 @@ export const MarketEngine = {
                 if (title.includes('[闲置]')) {
                     commonData.title = title.replace('[闲置] ', '');
                     commonData.img = post.image_url || '';
-                    commonData.price = post.likes || 0;
+
+                    // ==========================================
+                    // 🌟 核心修复：实时动态计算最新总价与售罄状态
+                    // ==========================================
+                    let currentTotalPrice = 0;
+                    let allSold = true;
+
+                    if (payload && payload.items && payload.items.length > 0) {
+                        payload.items.forEach(i => {
+                            if (!i.is_sold) {
+                                // 只要有一个没卖掉，就累加价格，且没有售罄
+                                currentTotalPrice += parseFloat(i.price) || 0;
+                                allSold = false; 
+                            }
+                        });
+                        commonData.price = currentTotalPrice;
+                        commonData.isAllSold = allSold;
+                    } else {
+                        // 兜底逻辑
+                        commonData.price = post.likes || 0;
+                        commonData.isAllSold = false;
+                    }
+
                     idleItems.push(commonData);
                 }
                 else if (title.includes('[互助]')) helpItems.push(commonData);
@@ -147,7 +170,6 @@ export const MarketEngine = {
                 parent.appendChild(el);
             }
         }
-        // 🌟 核心调整：压缩两侧边界 padding 到 12px，缝隙 gap 压缩到 8px！
         el.style.display = isGrid ? 'grid' : 'none';
         el.style.padding = '0 12px 100px'; 
         if (isGrid) {
@@ -159,7 +181,7 @@ export const MarketEngine = {
     },
 
     // ==========================================
-    // 📦 渲染器：闲置 (超高屏占比画廊)
+    // 📦 渲染器：闲置 (带实时改价与自动变灰效果)
     // ==========================================
     renderMarketIdle() {
         const container = this.getContainer('idleWaterfall', true);
@@ -203,9 +225,16 @@ export const MarketEngine = {
                 </div>`;
             });
 
-            // 🌟 核心调优：卡片 padding 压缩到 8px，使用更柔和的阴影 0.03
+            // ==========================================
+            // 🌟 核心调优：售罄卡片变灰，价格智能切换
+            // ==========================================
+            const isAllSold = item.isAllSold;
+            const priceDisplay = isAllSold ? '已售罄' : `€ ${item.price}`;
+            const priceColor = isAllSold ? '#9CA3AF' : '#EF4444';
+            const cardOpacity = isAllSold ? '0.6' : '1';
+
             html += `
-            <div class="waterfall-item" style="background:#FFF; border-radius:10px; border: 0.5px solid rgba(0,0,0,0.04); overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.03); margin-bottom:8px; cursor:pointer;" onclick="window.App.openCommunityPost('${item.id}')">
+            <div class="waterfall-item" style="background:#FFF; border-radius:10px; border: 0.5px solid rgba(0,0,0,0.04); overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.03); margin-bottom:8px; cursor:pointer; opacity: ${cardOpacity}; transition: opacity 0.3s;" onclick="window.App.openCommunityPost('${item.id}')">
                 
                 <div style="position:relative; width:100%;">
                     <div style="display:flex; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; -webkit-overflow-scrolling:touch; width:100%;">
@@ -216,7 +245,7 @@ export const MarketEngine = {
                 
                 <div style="padding:8px;">
                     <div style="display:flex; align-items:center; justify-content:space-between;">
-                        <div style="color:#EF4444; font-size:15px; font-weight:900; letter-spacing: -0.5px;">€ ${item.price}</div>
+                        <div style="color:${priceColor}; font-size:15px; font-weight:900; letter-spacing: -0.5px;">${priceDisplay}</div>
                         <div style="font-size:9px; color:#D97706; font-weight:bold; background:#FFFBEB; border:0.5px solid #FDE68A; padding:1px 4px; border-radius:4px;">⭐ ${creditStr}</div>
                     </div>
                     
