@@ -369,60 +369,55 @@ export const WikiEngine = {
         this.swipeState[id] = null;
     },
     // ==========================================
-    // 💖 独立收藏夹抽屉引擎
+    // 💖 渲染我的收藏 (Tab 内嵌版 - 对象内部写法)
     // ==========================================
-    window.App = window.App || {};
+    showMyCollections() {
+        // 1. 直接锁定我们在 HTML 里写好的那个容器
+        const container = document.getElementById('myCollectionsList');
+        if (!container) return;
 
-// ==========================================
-// 💖 渲染我的收藏 (Tab 内嵌版)
-// ==========================================
-window.App.showMyCollections = function() {
-    // 1. 直接锁定我们在 HTML 里写好的那个容器
-    const container = document.getElementById('myCollectionsList');
-    if (!container) return;
+        // 2. 读取本地收藏的数据 ID
+        const savedIds = JSON.parse(localStorage.getItem('hp_wiki_saved') || '[]');
 
-    // 2. 读取本地收藏的数据 ID
-    const savedIds = JSON.parse(localStorage.getItem('hp_wiki_saved') || '[]');
+        // 3. 如果没有收藏，直接渲染极简空状态
+        if (savedIds.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state" style="text-align: center; padding: 40px 0; color: #94A3B8;">
+                    <div style="font-size: 32px; margin-bottom: 10px;">📭</div>
+                    <div style="font-size: 14px; font-weight: bold; color: #64748B;">还没有收藏干货哦</div>
+                    <div style="font-size: 11px; margin-top: 6px;">去红宝书进阶篇 👉向右滑动卡片收藏</div>
+                </div>
+            `;
+            return;
+        }
 
-    // 3. 如果没有收藏，直接渲染极简空状态
-    if (savedIds.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state" style="text-align: center; padding: 40px 0; color: #94A3B8;">
-                <div style="font-size: 32px; margin-bottom: 10px;">📭</div>
-                <div style="font-size: 14px; font-weight: bold; color: #64748B;">还没有收藏干货哦</div>
-                <div style="font-size: 11px; margin-top: 6px;">去红宝书进阶篇 👉向右滑动卡片收藏</div>
-            </div>
-        `;
-        return;
-    }
+        // 4. 防错：确保全局变量 wikiData 存在
+        if (typeof wikiData === 'undefined' || !wikiData.length) {
+            container.innerHTML = '<div style="text-align:center; padding:40px 0; color:#EF4444;">干货数据加载失败，请刷新重试</div>';
+            return;
+        }
 
-    // 4. 防错：确保全局变量 wikiData 存在
-    if (typeof wikiData === 'undefined' || !wikiData.length) {
-        container.innerHTML = '<div style="text-align:center; padding:40px 0; color:#EF4444;">干货数据加载失败，请刷新重试</div>';
-        return;
-    }
+        // 5. 匹配数据并生成高颜值卡片列表
+        const mySavedItems = wikiData.filter(w => savedIds.includes(w.id));
+        let listHtml = '';
+        
+        mySavedItems.forEach(w => {
+            const displayDesc = w.desc || w.summary || '';
+            listHtml += `
+            <div style="background:#FFF; padding:16px; border-radius:16px; margin-bottom:12px; box-shadow:0 2px 8px rgba(0,0,0,0.02); border: 1px solid #F3F4F6;">
+                <div style="display:flex; align-items:center; margin-bottom:10px;">
+                    <span style="font-size:24px; margin-right:10px;">${w.icon}</span>
+                    <div style="font-weight:900; color:#111827; flex:1; font-size:15px;">${w.title}</div>
+                    <span style="font-size:10px; color:${w.tagColor || '#3B82F6'}; background:${w.tagColor ? w.tagColor+'1A' : '#EFF6FF'}; padding:4px 8px; border-radius:6px; font-weight:bold;">${w.tag}</span>
+                </div>
+                <div style="font-size:13px; color:#4B5563; line-height:1.6; margin-bottom:12px;">${displayDesc}</div>
+                <div style="font-size:12px; color:#10B981; background:#ECFDF5; padding:10px 12px; border-radius:8px; font-weight:bold;">💡 详细攻略：${w.detailContent || w.details || ''}</div>
+            </div>`;
+        });
 
-    // 5. 匹配数据并生成高颜值卡片列表
-    const mySavedItems = wikiData.filter(w => savedIds.includes(w.id));
-    let listHtml = '';
-    
-    mySavedItems.forEach(w => {
-        const displayDesc = w.desc || w.summary || '';
-        listHtml += `
-        <div style="background:#FFF; padding:16px; border-radius:16px; margin-bottom:12px; box-shadow:0 2px 8px rgba(0,0,0,0.02); border: 1px solid #F3F4F6;">
-            <div style="display:flex; align-items:center; margin-bottom:10px;">
-                <span style="font-size:24px; margin-right:10px;">${w.icon}</span>
-                <div style="font-weight:900; color:#111827; flex:1; font-size:15px;">${w.title}</div>
-                <span style="font-size:10px; color:${w.tagColor || '#3B82F6'}; background:${w.tagColor ? w.tagColor+'1A' : '#EFF6FF'}; padding:4px 8px; border-radius:6px; font-weight:bold;">${w.tag}</span>
-            </div>
-            <div style="font-size:13px; color:#4B5563; line-height:1.6; margin-bottom:12px;">${displayDesc}</div>
-            <div style="font-size:12px; color:#10B981; background:#ECFDF5; padding:10px 12px; border-radius:8px; font-weight:bold;">💡 详细攻略：${w.detailContent || w.details || ''}</div>
-        </div>`;
-    });
-
-    // 6. 瞬间将 HTML 塞进容器！
-    container.innerHTML = listHtml;
-};
+        // 6. 瞬间将 HTML 塞进容器！
+        container.innerHTML = listHtml;
+    }, // <--- ⚠️ 架构师提醒：注意这个结尾的逗号！如果你这个函数下面还有别的函数，必须保留这个逗号。
     resetSwipeBg(id) { const sBg = document.querySelector(`#swipe_${id} .save-bg`); const dBg = document.querySelector(`#swipe_${id} .delete-bg`); if(sBg) sBg.style.opacity = 0; if(dBg) dBg.style.opacity = 0; },
     toggleWikiCard(el) { if (isSwiping || isDraggingClickPrevent) return; const transform = window.getComputedStyle(el).transform; const matrix = new WebKitCSSMatrix(transform); if (Math.abs(matrix.m41) < 5) el.classList.toggle('open'); },
     
