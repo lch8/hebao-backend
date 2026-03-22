@@ -384,7 +384,7 @@
             <div style="color: #94A3B8; font-size: 24px; font-weight: 300; padding-right: 10px;">›</div>
         </div>
 
-        <div id="userStatsPanel" style="display: none; background: #FFF; border-radius: 16px; padding: 16px 0; box-shadow: 0 4px 15px rgba(0,0,0,0.02); justify-content: space-around;">
+        <!-- <div id="userStatsPanel" style="display: none; background: #FFF; border-radius: 16px; padding: 16px 0; box-shadow: 0 4px 15px rgba(0,0,0,0.02); justify-content: space-around;">
             <div style="text-align: center; flex: 1;">
                 <div style="font-size: 18px; font-weight: 900; color: #10B981; font-family: monospace;" id="statCredit">100</div>
                 <div style="font-size: 11px; color: #64748B; font-weight: bold; margin-top: 4px;">信用分</div>
@@ -399,7 +399,7 @@
                 <div style="font-size: 18px; font-weight: 900; color: #111827; font-family: monospace;" id="statDays">1</div>
                 <div style="font-size: 11px; color: #64748B; font-weight: bold; margin-top: 4px;">荷村天数</div>
             </div>
-        </div>
+        </div> -->
     </div>
 
     <div style="padding: 0 16px;">
@@ -427,7 +427,8 @@
                     📦 发布
                     <div class="tab-underline" style="position: absolute; bottom: -13px; left: 50%; transform: translateX(-50%); width: 20px; height: 3px; background: #111827; border-radius: 2px;"></div>
                 </div>
-                <div class="a-tab" onclick="window.switchAssetTab('collections', this)" style="font-size: 14px; font-weight: bold; color: #64748B; cursor: pointer; position: relative;">💖 收藏</div>
+                <div class="a-tab" onclick="window.switchAssetTab('collections', this); if(window.App.showMyCollections) window.App.showMyCollections();" style="font-size: 14px; font-weight: bold; color: #64748B; cursor: pointer; position: relative;">💖 收藏</div>
+
                 <div class="a-tab" onclick="window.switchAssetTab('footprint', this)" style="font-size: 14px; font-weight: bold; color: #64748B; cursor: pointer; position: relative;">👣 足迹</div>
                 <div class="a-tab" onclick="window.switchAssetTab('reviews', this)" style="font-size: 14px; font-weight: bold; color: #64748B; cursor: pointer; position: relative;">💬 评价</div>
             </div>
