@@ -763,6 +763,81 @@
         <button onclick="window.App.submitPost()" style="width: 100%; background: #111827; color: white; border: none; padding: 16px; border-radius: 16px; font-weight: 900; font-size: 16px; cursor: pointer; box-shadow: 0 8px 20px rgba(17,24,39,0.25); margin-top: 10px; transition: 0.2s;" onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform='scale(1)'">🚀 立即发布</button>
     </div>
 </div>
+
+
+
+    <div id="userProfileModal" class="modal-overlay" style="display: none; align-items: flex-end; padding: 0;">
+    <div class="modal-content" style="width: 100%; border-radius: 20px 20px 0 0; border: none; padding: 20px; animation: slideUp 0.3s ease;">
+        
+        <div style="display: flex; gap: 16px; align-items: center; margin-bottom: 24px;">
+            <div style="font-size: 48px; background: #F1F5F9; width: 64px; height: 64px; border-radius: 32px; display: flex; align-items: center; justify-content: center; position: relative;">
+                <span id="profTargetAvatar">😎</span>
+                <span style="position: absolute; bottom: -2px; right: -2px; font-size: 16px;">✅</span>
+            </div>
+            <div style="flex: 1;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <div style="font-size: 18px; font-weight: 900; color: #111827;" id="profTargetName">荷包蛋管理员</div>
+                </div>
+                <div style="font-size: 12px; color: #64748B; margin-top: 2px;">TUD 认证校友</div>
+            </div>
+            <button class="close-btn" onclick="ModalManager.close('userProfileModal')" style="padding: 10px 16px; border-radius: 12px;">× Close</button>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-bottom: 24px;">
+            <div style="flex: 1; background: #FFFBEB; padding: 16px; border-radius: 16px; border: 1px solid #FDE68A; text-align: center;">
+                <div style="font-size: 11px; color: #D97706; font-weight: bold; margin-bottom: 4px;">管家信用分</div>
+                <div style="font-size: 28px; font-weight: 900; color: #F59E0B; font-family: monospace;" id="profTargetCredit">130</div>
+            </div>
+            <div style="flex: 1; background: #ECFDF5; padding: 16px; border-radius: 16px; border: 1px solid #A7F3D0; text-align: center;">
+                <div style="font-size: 11px; color: #059669; font-weight: bold; margin-bottom: 4px;">找搭子赴约率</div>
+                <div style="font-size: 28px; font-weight: 900; color: #10B981; font-family: monospace;" id="profTargetAttendance">100%</div>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+            <button id="profFollowBtn" style="flex: 1; background: #FFF; color: #111827; border: 1px solid #E2E8F0; padding: 14px; border-radius: 14px; font-weight: 900; font-size: 14px; cursor: pointer;">✨ 关注</button>
+            <button id="profInviteBtn" style="flex: 1; background: #FFF; color: #7C3AED; border: 1px solid #F3E8FF; padding: 14px; border-radius: 14px; font-weight: 900; font-size: 14px; cursor: pointer;">🏕️ 邀请组队</button>
+            <button id="profChatBtn" style="flex: 1; background: #111827; color: white; border: none; padding: 14px; border-radius: 14px; font-weight: 900; font-size: 14px; cursor: pointer;">✋ 私聊申请</button>
+        </div>
+    </div>
+</div>
+
+<div id="chatOptionsMenuModal" class="modal-overlay" style="display: none; align-items: flex-end; padding: 0;">
+    <div class="modal-content" style="width: 100%; border-radius: 20px 20px 0 0; border: none; padding: 10px 10px 20px; animation: slideUp 0.3s ease;">
+        <div style="width: 40px; height: 4px; background: #E2E8F0; border-radius: 2px; margin: 0 auto 10px;"></div>
+        
+        <div style="border-radius: 16px; overflow: hidden; background: #FFF; border: 1px solid #F1F5F9; margin-bottom: 10px;">
+            <button class="menu-item-btn" onclick="window.App.TransactionEngine.confirmTradeSuccess()" style="display: flex; width: 100%; align-items: center; justify-content: space-between; padding: 16px; border: none; background: transparent; cursor: pointer;">
+                <span style="font-size: 14px; font-weight: bold; color: #059669;">✅ 确认线下交易完成</span>
+                <span style="color: #A1A1AA;">+5分 ›</span>
+            </button>
+            
+            <button class="menu-item-btn" style="display: flex; width: 100%; align-items: center; justify-content: space-between; padding: 16px; border: none; border-top: 1px solid #F1F5F9; background: transparent; cursor: pointer;">
+                <span style="font-size: 14px; font-weight: bold; color: #7C3AED;">CAMP 点名与结算鸽子</span>
+                <span style="color: #A1A1AA;">局后 ›</span>
+            </button>
+            
+            <button class="menu-item-btn" onclick="window.App.TransactionEngine.reportUser()" style="display: flex; width: 100%; align-items: center; justify-content: space-between; padding: 16px; border: none; border-top: 1px solid #F1F5F9; background: transparent; cursor: pointer;">
+                <span style="font-size: 14px; font-weight: bold; color: #EF4444;">🚩 举报违规/维权</span>
+                <span style="color: #A1A1AA;">人工核实 ›</span>
+            </button>
+        </div>
+
+        <div style="border-radius: 16px; overflow: hidden; background: #FFF; border: 1px solid #FEE2E2;">
+            <button class="menu-item-btn" style="display: flex; width: 100%; align-items: center; justify-content: center; padding: 16px; border: none; background: transparent; cursor: pointer;">
+                <span style="font-size: 14px; font-weight: bold; color: #EF4444;">🗑️ 清空聊天记录 (退出队伍)</span>
+            </button>
+        </div>
+
+        <button onclick="ModalManager.close('chatOptionsMenuModal')" style="display: block; width: 100%; text-align: center; margin-top: 10px; background: #F1F5F9; color: #111827; padding: 16px; border-radius: 16px; font-size: 14px; font-weight: bold; border: none; cursor: pointer;">取消</button>
+    </div>
+</div>
+
+<style>
+    /* 小红书风格滑入动画 */
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .menu-item-btn:active { background-color: #F8FAFC; }
+</style>
     
     
 <script>
