@@ -941,7 +941,7 @@ window.App.switchPublishTab = function(type) {
 };
 
 // ============================================================================
-// 🌟 个人主页 UI 状态持久化引擎
+// 🌟 个人主页 UI 状态持久化引擎 (消除功能冗余版)
 // ============================================================================
 window.App = window.App || {};
 
@@ -949,55 +949,101 @@ window.App.refreshProfileUI = function() {
     // 1. 从本地存储安全读取用户数据
     const isLoggedIn = localStorage.getItem('hebao_logged_in') === 'true';
     const email = localStorage.getItem('hebao_email') || '未绑定邮箱';
-    const credit = localStorage.getItem('hebao_credit') || 100;
+    const credit = localStorage.getItem('hebao_credit') || localStorage.getItem('hp_credit') || 100;
     const name = localStorage.getItem('hp_name') || '新晋荷包蛋';
+    const isVerified = localStorage.getItem('hp_email_verified') === 'true'; // 读取认证状态
+
+    const subInfoEl = document.getElementById('profileSubInfo');
+    const nameEl = document.getElementById('profileName');
+    const guestBlock = document.getElementById('guestLoginBlock');
+    const unverifiedBanner = document.getElementById('unverifiedBanner');
+    const statsPanel = document.getElementById('userStatsPanel');
 
     if (isLoggedIn) {
-        // 2. 重新计算并注入高颜值徽章！
-        const badgeHtml = window.App.getUserBadgeHtml(email, credit);
+        // 2. 注入高颜值徽章
+        if (subInfoEl && window.App.getUserBadgeHtml) {
+            subInfoEl.innerHTML = window.App.getUserBadgeHtml(email, credit);
+        }
         
-        // 3. 强制更新 DOM
-        const subInfoEl = document.getElementById('profileSubInfo');
-        if (subInfoEl) subInfoEl.innerHTML = badgeHtml;
-        
-        const nameEl = document.getElementById('profileName');
         if (nameEl) nameEl.innerText = name;
 
+        // 更新信用分面板
         const creditEl = document.getElementById('statCredit');
         if (creditEl) creditEl.innerText = credit;
         
         // 隐藏游客提示，显示真实数据面板
-        const guestBlock = document.querySelector('.guest-login-block');
         if (guestBlock) guestBlock.style.display = 'none';
-        
-        const statsPanel = document.getElementById('userStatsPanel');
         if (statsPanel) statsPanel.style.display = 'flex';
+
+        // 🌟 核心：如果用户已经认证过大学邮箱，立刻隐藏那条黑色的催促横幅！
+        if (unverifiedBanner) {
+            unverifiedBanner.style.display = isVerified ? 'none' : 'flex';
+        }
+
+        // 🌟 自动切回“我的发布”作为默认展示区
+        if (window.App.loadMyPosts) window.App.loadMyPosts();
+
     } else {
         // 恢复未登录状态
-        const subInfoEl = document.getElementById('profileSubInfo');
-        if (subInfoEl) subInfoEl.innerHTML = '<span>ID: 未登录</span>';
+        if (subInfoEl) subInfoEl.innerHTML = '<span style="background:#F1F5F9; color:#64748B; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold;">Lv.0 游客</span>';
+        if (nameEl) nameEl.innerText = '管家游客';
+        if (statsPanel) statsPanel.style.display = 'none';
+        if (guestBlock) guestBlock.style.display = 'flex';
+        if (unverifiedBanner) unverifiedBanner.style.display = 'none'; // 游客不弹认证，弹登录
     }
 };
 
-// 🌟 关键点：在你切换 Tab 的代码里，加上这一句拦截！
-// 找到你原来的 switchTab 函数，把它改造成这样：
-const originalSwitchTab = window.switchTab; // 假设你原本有这个全局函数
+// 🌟 Tab 页面切换拦截
+const originalSwitchTab = window.switchTab; 
 window.switchTab = function(tabId, element) {
     if (originalSwitchTab) originalSwitchTab(tabId, element);
     
-    // 如果切到了“我的”页面 (profile)，立刻强制刷新 UI！
+    // 如果切到了“我的”页面 (profile)，立刻强制刷新 UI
     if (tabId === 'profile') {
         window.App.refreshProfileUI();
     }
 };
 
-// 页面刚加载时，也顺手刷一次
+// 🌟 底部资产 Tab (我的发布/足迹) 丝滑切换引擎
+window.switchAssetTab = function(tabId, element) {
+    try {
+        // 1. 样式切换：移除所有加粗和下划线
+        document.querySelectorAll('.a-tab').forEach(el => {
+            el.classList.remove('active');
+            el.style.color = '#64748B';
+            el.style.fontWeight = 'bold';
+            const underline = el.querySelector('.tab-underline');
+            if (underline) underline.remove();
+        });
+        
+        // 2. 激活当前选中的 Tab
+        if (element) {
+            element.classList.add('active');
+            element.style.color = '#111827';
+            element.style.fontWeight = '900';
+            // 添加灵魂小黑条
+            element.innerHTML += '<div class="tab-underline" style="position: absolute; bottom: -13px; left: 50%; transform: translateX(-50%); width: 20px; height: 3px; background: #111827; border-radius: 2px;"></div>';
+        }
+        
+        // 3. 切换内容显示
+        document.querySelectorAll('.asset-content').forEach(el => el.style.display = 'none');
+        const targetContent = document.getElementById('asset-' + tabId);
+        if (targetContent) targetContent.style.display = 'block';
+
+        // 4. 智能拉取数据
+        if (tabId === 'posts' && typeof window.App.loadMyPosts === 'function') window.App.loadMyPosts();
+        if (tabId === 'footprint' && typeof window.renderFootprints === 'function') window.renderFootprints();
+    } catch (error) {
+        console.error("🚨 切换 Asset Tab 失败:", error);
+    }
+};
+
+// 页面刚加载时，顺手刷一次
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         if (window.App.refreshProfileUI) window.App.refreshProfileUI();
     }, 200);
 });
-
 window.App = window.App || {};
 
 // ============================================================================
