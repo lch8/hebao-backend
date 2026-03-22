@@ -46,8 +46,8 @@ export const ProfileEngine = {
                 let contentObj = { items: [] };
                 try { contentObj = typeof post.content === 'string' ? JSON.parse(post.content) : post.content; } catch(e) {}
                 
+                // 1. 处理闲置的物品列表 (原有逻辑保留)
                 let itemsHtml = '';
-                // 抓取第一件物品的信息，用来生成海报
                 let firstItemPrice = '面议';
                 let firstItemImg = post.image_url || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800';
 
@@ -76,11 +76,43 @@ export const ProfileEngine = {
 
                 // 提取卡片类型前缀
                 const typeTag = post.title.includes('[闲置]') ? '📦 闲置' : (post.title.includes('[互助]') ? '🤝 悬赏' : '🏕️ 搭子');
-                const cleanTitle = post.title.replace(/\[.*?\]\s*/, ''); // 去掉方括号前缀
-                
-                // 处理标题里可能有单引号导致 JS 报错的问题
+                const cleanTitle = post.title.replace(/\[.*?\]\s*/, '');
                 const safeTitleForJS = cleanTitle.replace(/'/g, "\\'");
 
+                // ==========================================
+                // 🌟 2. 核心新增：搭子局长专属管理面板 (+1 按钮)
+                // ==========================================
+                let partnerManageHtml = '';
+                if (typeTag === '🏕️ 搭子' && contentObj.maxPeople) {
+                    const joined = parseInt(contentObj.joinedCount) || 1;
+                    const max = parseInt(contentObj.maxPeople) || 2;
+                    
+                    if (joined < max) {
+                        partnerManageHtml = `
+                            <div style="margin-top: 12px; padding: 12px; background: #F8FAFC; border-radius: 12px; border: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center;">
+                                <div style="display:flex; flex-direction:column; gap:2px;">
+                                    <span style="font-size: 11px; color: #64748B; font-weight: bold;">队伍进度</span>
+                                    <span style="font-size: 14px; color: #111827; font-weight: 900;">${joined} / ${max} 人</span>
+                                </div>
+                                <button onclick="window.App.approvePartner(${post.id})" style="background: #10B981; color: white; border: none; padding: 8px 16px; border-radius: 10px; font-size: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(16,185,129,0.2); transition: 0.2s;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">
+                                    ✅ 迎新入队 (+1)
+                                </button>
+                            </div>
+                        `;
+                    } else {
+                        partnerManageHtml = `
+                            <div style="margin-top: 12px; padding: 12px; background: #F8FAFC; border-radius: 12px; border: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center;">
+                                <div style="display:flex; flex-direction:column; gap:2px;">
+                                    <span style="font-size: 11px; color: #64748B; font-weight: bold;">队伍进度</span>
+                                    <span style="font-size: 14px; color: #111827; font-weight: 900;">${joined} / ${max} 人</span>
+                                </div>
+                                <span style="font-size: 12px; color: #EF4444; font-weight: bold; background: #FEE2E2; padding: 6px 12px; border-radius: 8px;">车门已焊死 (满员)</span>
+                            </div>
+                        `;
+                    }
+                }
+
+                // 3. 组装整张卡片
                 html += `
                     <div class="my-post-card" id="myPost_${post.id}" style="background:#FFF; border-radius:16px; padding:16px; margin-bottom:15px; box-shadow:0 4px 15px rgba(0,0,0,0.03); border:1px solid #F3F4F6;">
                         <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">
@@ -90,10 +122,12 @@ export const ProfileEngine = {
                         <div style="font-size:11px; color:#9CA3AF; margin-bottom:10px; font-weight:bold;">发布于: ${new Date(post.created_at).toLocaleString()}</div>
                         
                         <div>${itemsHtml}</div>
+                        
+                        ${partnerManageHtml}
 
                         <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed #E5E7EB; display: flex; justify-content: flex-end;">
                             <button onclick="window.App.generateAndSharePoster('${safeTitleForJS}', '${firstItemPrice}', '${firstItemImg}', '${typeTag}')" style="background:#E0F2FE; color:#0284C7; border:1px solid #BAE6FD; padding:8px 16px; border-radius:12px; font-size:13px; font-weight:900; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow: 0 2px 4px rgba(2,132,199,0.1); transition: 0.1s;" onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='scale(1)'">
-                                <span style="font-size:16px;">📤</span> 生成海报，发微信群引流！
+                                <span style="font-size:16px;">📤</span> 生成专属海报，去引流！
                             </button>
                         </div>
                     </div>`;
@@ -101,7 +135,6 @@ export const ProfileEngine = {
             container.innerHTML = html;
         });
     },
-
     // 3. 彻底删除帖子 (联动云端)
     async deleteMyPost(postId) {
         if(!confirm("⚠️ 确定要彻底删除这条发布吗？删除后无法恢复！")) return;
@@ -158,6 +191,60 @@ export const ProfileEngine = {
                 showToast("✅ 已成功标记为售出！", "success");
                 post.content = newContentStr; 
                 this.renderMyPosts(); 
+                if(window.App.loadCommunityPosts) window.App.loadCommunityPosts(); 
+            } else {
+                throw new Error(data.error);
+            }
+        } catch(e) {
+            showToast("更新失败: " + e.message, "error");
+        }
+    }
+    // ==========================================
+    // 🌟 5. 局长专属：通过搭子入局申请 (+1 逻辑)
+    // ==========================================
+    async approvePartner(postId) {
+        if(!confirm("🎉 确认同意这位小伙伴入局吗？\n\n(确认后队伍人数将 +1，一旦满员大厅的进度条将自动关闭报名通道！)")) return;
+        
+        try {
+            const token = localStorage.getItem('hebao_token');
+            if (!token) return showToast("登录状态已过期，请重新登录", "warning");
+
+            // 从本地缓存里捞出这个帖子
+            const post = window.myPostsCache.find(p => p.id === postId);
+            if(!post) return;
+            
+            // 解析配置 JSON
+            let contentObj = typeof post.content === 'string' ? JSON.parse(post.content) : post.content;
+            
+            const currentJoined = parseInt(contentObj.joinedCount) || 1;
+            const max = parseInt(contentObj.maxPeople) || 2;
+            
+            if (currentJoined >= max) {
+                return showToast("⚠️ 哎呀，队伍已经满员啦！", "warning");
+            }
+            
+            // 🌟 核心：人数进度 +1
+            contentObj.joinedCount = currentJoined + 1;
+            const newContentStr = JSON.stringify(contentObj);
+
+            // 通知后端更新数据库
+            const res = await fetch('/api/update-post', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ postId, content: newContentStr })
+            });
+            const data = await res.json();
+            
+            if(data.success) {
+                showToast(`✅ 迎新成功！当前队伍 ${contentObj.joinedCount}/${max} 人`, "success");
+                
+                // 1. 更新本地缓存
+                post.content = newContentStr; 
+                
+                // 2. 重新渲染“我的发布”面板，按钮可能会变成“已满员”
+                this.renderMyPosts(); 
+                
+                // 3. 通知大厅集市重新拉取数据，让所有人的进度条同步往前走！
                 if(window.App.loadCommunityPosts) window.App.loadCommunityPosts(); 
             } else {
                 throw new Error(data.error);
