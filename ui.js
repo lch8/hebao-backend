@@ -952,17 +952,96 @@ window.App.switchPublishTab = function(type) {
 };
 
 // ============================================================================
-// 🌟 个人主页 UI 状态持久化引擎 (消除功能冗余版)
+// 🛡️ 管家信用分 & 社交赴约率 动态核算大脑
 // ============================================================================
 window.App = window.App || {};
 
+window.App.calculateCreditScore = function() {
+    // 如果未登录，直接返回初始分 100
+    if (localStorage.getItem('hebao_logged_in') !== 'true') return 100;
+
+    let baseScore = 100; // 基础分
+    
+    // 🎓 1. 实名认证 (+30分，最强背书)
+    if (localStorage.getItem('hp_email_verified') === 'true') {
+        baseScore += 30;
+    }
+
+    // ✏️ 2. 完善资料 (+5分)
+    const name = localStorage.getItem('hp_name');
+    const avatar = localStorage.getItem('hp_avatar');
+    if (name && avatar && name !== '新晋荷包蛋' && name !== '荷包蛋') {
+        baseScore += 5;
+    }
+
+    // 📦 3. 社区贡献 (+5分/次，封顶+50分)
+    let postCount = 0;
+    if (window.myPostsCache && Array.isArray(window.myPostsCache)) {
+        postCount = window.myPostsCache.length;
+    } else {
+        const cachedPosts = JSON.parse(localStorage.getItem('hp_my_posts') || '[]');
+        postCount = cachedPosts.length;
+    }
+    baseScore += Math.min(50, postCount * 5);
+
+    // 🚨 4. 扣分项 (读取由于违规或举报导致的惩罚扣分)
+    const penalty = parseInt(localStorage.getItem('hp_credit_penalty')) || 0;
+    baseScore -= penalty;
+
+    // 安全阀：将分数死死锁在 0 到 200 之间
+    baseScore = Math.max(0, Math.min(200, baseScore));
+
+    // 保存最新信用分
+    localStorage.setItem('hebao_credit', baseScore);
+    localStorage.setItem('hp_credit', baseScore); 
+
+    // =====================================
+    // 🕊️ 鸽子记录与赴约率核算引擎
+    // =====================================
+    let flakeCount = parseInt(localStorage.getItem('hp_flake_count')) || 0; // 放鸽子次数
+    let joinedEvents = parseInt(localStorage.getItem('hp_joined_events')) || 0; // 参加的总局数
+    let attendanceRate = 100; 
+    
+    if (joinedEvents > 0) {
+        // 计算赴约率 = ((总局数 - 鸽子数) / 总局数) * 100
+        attendanceRate = Math.max(0, Math.round(((joinedEvents - flakeCount) / joinedEvents) * 100));
+    }
+    localStorage.setItem('hp_attendance_rate', attendanceRate + '%');
+
+    // =====================================
+    // 🔄 实时同步到页面 UI 的数字仪表盘
+    // =====================================
+    const creditEl = document.getElementById('statCredit');
+    if (creditEl) {
+        creditEl.innerText = baseScore;
+        // 分段变色：极佳(绿)、良好(橙)、极差(红)
+        if (baseScore >= 130) creditEl.style.color = '#10B981'; 
+        else if (baseScore >= 100) creditEl.style.color = '#F59E0B'; 
+        else creditEl.style.color = '#EF4444'; 
+    }
+
+    const flakeEl = document.getElementById('statFlakes');
+    if (flakeEl) {
+        flakeEl.innerText = flakeCount;
+        // 有鸽子记录就亮红灯警告！
+        if (flakeCount > 0) flakeEl.style.color = '#EF4444'; 
+        else flakeEl.style.color = '#111827';
+    }
+
+    return baseScore;
+};
+
+// ============================================================================
+// 🌟 个人主页 UI 状态持久化引擎 (已挂载动态计算引擎)
+// ============================================================================
 window.App.refreshProfileUI = function() {
-    // 1. 从本地存储安全读取用户数据
     const isLoggedIn = localStorage.getItem('hebao_logged_in') === 'true';
     const email = localStorage.getItem('hebao_email') || '未绑定邮箱';
-    const credit = localStorage.getItem('hebao_credit') || localStorage.getItem('hp_credit') || 100;
     const name = localStorage.getItem('hp_name') || '新晋荷包蛋';
-    const isVerified = localStorage.getItem('hp_email_verified') === 'true'; // 读取认证状态
+    const isVerified = localStorage.getItem('hp_email_verified') === 'true'; 
+
+    // 💥 核心：不再读死数据！每次来到“我的”页面，立刻触发重新计算
+    const currentCredit = window.App.calculateCreditScore();
 
     const subInfoEl = document.getElementById('profileSubInfo');
     const nameEl = document.getElementById('profileName');
@@ -971,36 +1050,27 @@ window.App.refreshProfileUI = function() {
     const statsPanel = document.getElementById('userStatsPanel');
 
     if (isLoggedIn) {
-        // 2. 注入高颜值徽章
+        // 渲染头像旁边的微缩版信用徽章
         if (subInfoEl && window.App.getUserBadgeHtml) {
-            subInfoEl.innerHTML = window.App.getUserBadgeHtml(email, credit);
+            subInfoEl.innerHTML = window.App.getUserBadgeHtml(email, currentCredit);
         }
-        
         if (nameEl) nameEl.innerText = name;
-
-        // 更新信用分面板
-        const creditEl = document.getElementById('statCredit');
-        if (creditEl) creditEl.innerText = credit;
         
-        // 隐藏游客提示，显示真实数据面板
+        // 显隐面板
         if (guestBlock) guestBlock.style.display = 'none';
         if (statsPanel) statsPanel.style.display = 'flex';
+        if (unverifiedBanner) unverifiedBanner.style.display = isVerified ? 'none' : 'flex';
 
-        // 🌟 核心：如果用户已经认证过大学邮箱，立刻隐藏那条黑色的催促横幅！
-        if (unverifiedBanner) {
-            unverifiedBanner.style.display = isVerified ? 'none' : 'flex';
-        }
-
-        // 🌟 自动切回“我的发布”作为默认展示区
+        // 刷新发布数据
         if (window.App.loadMyPosts) window.App.loadMyPosts();
 
     } else {
-        // 恢复未登录状态
+        // 游客状态还原
         if (subInfoEl) subInfoEl.innerHTML = '<span style="background:#F1F5F9; color:#64748B; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold;">Lv.0 游客</span>';
         if (nameEl) nameEl.innerText = '管家游客';
         if (statsPanel) statsPanel.style.display = 'none';
         if (guestBlock) guestBlock.style.display = 'flex';
-        if (unverifiedBanner) unverifiedBanner.style.display = 'none'; // 游客不弹认证，弹登录
+        if (unverifiedBanner) unverifiedBanner.style.display = 'none'; 
     }
 };
 
