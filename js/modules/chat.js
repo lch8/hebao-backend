@@ -141,7 +141,46 @@ export const ChatEngine = {
                 }
 
                 safeDOM.execute('msgEmptyState', el => el.style.display = 'none');
-                let html = '';
+                let html = ''; // 原本的代码
+                
+                // ==========================================
+                // 🌟 新增：在消息列表最顶部注入【搭子入队申请】卡片
+                // ==========================================
+                const mockApps = JSON.parse(localStorage.getItem('hp_mock_applications') || '[]');
+                const pendingApps = mockApps.filter(app => app.status === 'pending');
+                
+                pendingApps.forEach(app => {
+                    html += `
+                    <div style="background: #FFF; border-radius: 16px; padding: 16px; border: 1px solid #F1F5F9; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div style="width: 36px; height: 36px; border-radius: 18px; background: #F3E8FF; display: flex; align-items: center; justify-content: center; font-size: 18px;">🔔</div>
+                                <div>
+                                    <div style="font-size: 14px; font-weight: 900; color: #111827;">搭子入队申请</div>
+                                    <div style="font-size: 11px; color: #64748B;">待审批</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="font-size: 13px; color: #475569; line-height: 1.6; margin-bottom: 16px;">
+                            <span onclick="if(window.App.SocialEngine) window.App.SocialEngine.openUserProfile('${app.applicantId}')" style="font-weight: 900; color: #3B82F6; cursor: pointer;">@${app.applicantName}</span> 
+                            申请加入你的组局 <span style="font-weight: 900; color: #111827;">【${app.postTitle}】</span>。
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button onclick="if(window.App.SocialEngine) window.App.SocialEngine.openUserProfile('${app.applicantId}')" style="flex: 1; background: #F8FAFC; color: #475569; border: none; padding: 10px; border-radius: 10px; font-weight: 900; font-size: 13px; cursor: pointer;">👀 看主页</button>
+                            <button onclick="window.App.approveApplication(this, '${app.id}', '${app.postId}', '${app.applicantName}')" style="flex: 1.5; background: #10B981; color: #FFF; border: none; padding: 10px; border-radius: 10px; font-weight: 900; font-size: 13px; cursor: pointer;">✅ 通过申请</button>
+                            <button onclick="window.App.rejectApplication(this, '${app.id}')" style="flex: 1; background: #FEF2F2; color: #EF4444; border: none; padding: 10px; border-radius: 10px; font-weight: 900; font-size: 13px; cursor: pointer;">婉拒</button>
+                        </div>
+                    </div>`;
+                });
+
+                // 修复空状态判断逻辑
+                if (conversations.length === 0 && pendingApps.length === 0) {
+                    list.innerHTML = '';
+                    safeDOM.execute('msgEmptyState', el => el.style.display = 'flex');
+                    this.updateGlobalBadge(0);
+                    return;
+                }
+                safeDOM.execute('msgEmptyState', el => el.style.display = 'none');
                 
                 conversations.forEach(conv => {
                     const date = new Date(conv.last_time + 'Z');
