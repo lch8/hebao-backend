@@ -68,10 +68,7 @@ export const ProfileEngine = {
                                 </div>
                                 ${isSold 
                                     ? `<div style="font-size:11px; color:#9CA3AF; font-weight:900; background:#F3F4F6; padding:4px 10px; border-radius:12px;">已出</div>` 
-                                    : `<div style="display: flex; gap: 8px;">
-                                           <button onclick="window.App.updateItemPrice(${post.id}, '${item.id}', ${item.price || 0})" style="background:#F1F5F9; border:none; padding:6px 12px; border-radius:14px; font-size:12px; font-weight:bold; color:#475569; cursor:pointer; transition: 0.2s;" onmousedown="this.style.background='#E2E8F0'" onmouseup="this.style.background='#F1F5F9'">改价</button>
-                                           <button onclick="window.App.markItemSold(${post.id}, '${item.id}')" style="background:#10B981; border:none; padding:6px 14px; border-radius:14px; font-size:12px; font-weight:bold; color:#FFF; cursor:pointer; box-shadow: 0 2px 6px rgba(16,185,129,0.2);">卖掉了</button>
-                                       </div>`
+                                    : `<button onclick="window.App.markItemSold(${post.id}, '${item.id}')" style="background:#10B981; border:none; padding:6px 14px; border-radius:14px; font-size:12px; font-weight:bold; color:#FFF; cursor:pointer; box-shadow: 0 2px 6px rgba(16,185,129,0.2);">卖掉了</button>`
                                 }
                             </div>`;
                     });
@@ -289,40 +286,58 @@ export const ProfileEngine = {
     },
 
     // ==========================================
-    // 🎉 局长专属：同意搭子入伙 (0延迟版)
+    // 🌟 5. 局长专属：通过搭子入局申请 (+1 逻辑)
     // ==========================================
     async approvePartner(postId) {
-        if(!confirm("🎉 确认同意这位小伙伴入局吗？")) return;
+        if(!confirm("🎉 确认同意这位小伙伴入局吗？\n\n(确认后队伍人数将 +1，一旦满员大厅的进度条将自动关闭报名通道！)")) return;
         
-        const token = localStorage.getItem('hebao_token');
-        if (!token) return;
-
-        const post = window.myPostsCache.find(p => String(p.id) === String(postId));
-        if(!post) return;
-        
-        let contentObj = typeof post.content === 'string' ? JSON.parse(post.content) : post.content;
-        const currentJoined = parseInt(contentObj.joinedCount) || 1;
-        const max = parseInt(contentObj.maxPeople) || 2;
-        
-        if (currentJoined >= max) return window.App.showToast ? window.App.showToast("⚠️ 哎呀，队伍已经满员啦！", "warning") : null;
-        
-        contentObj.joinedCount = currentJoined + 1;
-        const newContentStr = JSON.stringify(contentObj);
-
-        // 🚀 乐观更新
-        post.content = newContentStr; 
-        this.renderMyPosts(); 
-        this.syncToMarket(postId, contentObj, newContentStr, 'partner');
-        
-        if (window.App.showToast) window.App.showToast(`✅ 迎新成功！当前队伍 ${contentObj.joinedCount}/${max} 人`, "success");
-
         try {
-            fetch('/api/update-post', {
+            const token = localStorage.getItem('hebao_token');
+            if (!token) return showToast("登录状态已过期，请重新登录", "warning");
+
+            // 从本地缓存里捞出这个帖子
+            const post = window.myPostsCache.find(p => p.id === postId);
+            if(!post) return;
+            
+            // 解析配置 JSON
+            let contentObj = typeof post.content === 'string' ? JSON.parse(post.content) : post.content;
+            
+            const currentJoined = parseInt(contentObj.joinedCount) || 1;
+            const max = parseInt(contentObj.maxPeople) || 2;
+            
+            if (currentJoined >= max) {
+                return showToast("⚠️ 哎呀，队伍已经满员啦！", "warning");
+            }
+            
+            // 🌟 核心：人数进度 +1
+            contentObj.joinedCount = currentJoined + 1;
+            const newContentStr = JSON.stringify(contentObj);
+
+            // 通知后端更新数据库
+            const res = await fetch('/api/update-post', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({ postId, content: newContentStr })
             });
-        } catch(e) { console.warn(e); }
+            const data = await res.json();
+            
+            if(data.success) {
+                showToast(`✅ 迎新成功！当前队伍 ${contentObj.joinedCount}/${max} 人`, "success");
+                
+                // 1. 更新本地缓存
+                post.content = newContentStr; 
+                
+                // 2. 重新渲染“我的发布”面板，按钮可能会变成“已满员”
+                this.renderMyPosts(); 
+                
+                // 3. 通知大厅集市重新拉取数据，让所有人的进度条同步往前走！
+                if(window.App.loadCommunityPosts) window.App.loadCommunityPosts(); 
+            } else {
+                throw new Error(data.error);
+            }
+        } catch(e) {
+            showToast("更新失败: " + e.message, "error");
+        }
     }
 };
 
