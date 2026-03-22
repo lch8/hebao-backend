@@ -204,11 +204,17 @@ window.switchAssetTab = function(tabId, element) {
         if (tabId === 'posts' && typeof window.App.loadMyPosts === 'function') window.App.loadMyPosts();
         if (tabId === 'footprint' && typeof window.renderFootprints === 'function') window.renderFootprints();
         
-        // 🌟 新增：触发收藏列表渲染 (你可以复用之前写过的 showMyCollections 逻辑，把它挂载到容器里)
+        // 🌟 核心修复：点击收藏 Tab 时，直接呼叫你原来写好的收藏函数！
         if (tabId === 'collections') {
-            const cl = document.getElementById('myCollectionsList');
-            if(cl && !cl.innerHTML.includes('暂无')) cl.innerHTML = '<div style="text-align:center; padding:40px 0; color:#9CA3AF;">暂无收藏</div>';
-            // if (typeof window.App.loadMyCollections === 'function') window.App.loadMyCollections();
+            if (typeof window.App.showMyCollections === 'function') {
+                // 显示加载中状态
+                const cl = document.getElementById('myCollectionsList');
+                if (cl && cl.innerHTML.includes('暂无收藏')) {
+                    cl.innerHTML = '<div style="text-align:center; padding:40px 0; color:#9CA3AF;"><span class="pulse-dot" style="background:#10B981;"></span> 数据加载中...</div>';
+                }
+                // 呼叫你的函数
+                window.App.showMyCollections();
+            }
         }
     } catch (error) {
         console.error("🚨 切换 Asset Tab 失败:", error);
