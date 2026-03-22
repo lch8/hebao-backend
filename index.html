@@ -417,67 +417,123 @@
     </div>
 </div>
 
-        <div style="padding: 0 20px; margin-top: 10px;">
-            <div class="vip-banner" onclick="window.App.openModal('emailVerifyModal')" style="background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%); padding: 16px 20px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 8px 20px rgba(15,23,42,0.15); cursor: pointer; position: relative; overflow: hidden;">
-                <div style="position: absolute; top: -20px; right: -20px; width: 80px; height: 80px; background: rgba(251,191,36,0.15); filter: blur(20px); border-radius: 50%;"></div>
+        <div id="page-profile" class="page-section" style="padding: 0; background: #F8FAFC; min-height: 100vh; padding-bottom: 100px;">
+    
+    <div style="background: linear-gradient(180deg, #E0F2FE 0%, #F8FAFC 100%); padding: 50px 20px 20px 20px; position: relative;">
+        <div style="position: absolute; top: 15px; right: 20px; font-size: 20px; color: #64748B; cursor: pointer; transition: 0.2s;" onclick="window.App.openModal('settingsModal')" onmousedown="this.style.transform='scale(0.9)'" onmouseup="this.style.transform='scale(1)'">⚙️</div>
+
+        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px;">
+            <div onclick="if(localStorage.getItem('hebao_logged_in')==='true') document.getElementById('userAvatarInput').click(); else window.App.openModal('loginModal');"
+                 style="position: relative; cursor: pointer; flex-shrink: 0; transition: transform 0.2s;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">
                 
-                <div style="position: relative; z-index: 1;">
-                    <div style="font-size: 15px; font-weight: 900; color: #FBBF24; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">🎓 认证大学/职场邮箱</div>
-                    <div style="font-size: 11px; color: #94A3B8;">点亮真实身份标签，闲置曝光率 +300%</div>
-                </div>
-                <div style="background: linear-gradient(135deg, #FDE68A 0%, #F59E0B 100%); color: #78350F; font-size: 12px; font-weight: 900; padding: 6px 14px; border-radius: 20px; z-index: 1; box-shadow: 0 2px 8px rgba(245,158,11,0.3);">去点亮</div>
+                <div id="profileEmojiAvatar" class="p-avatar" style="width: 72px; height: 72px; border-radius: 36px; background: #FFF; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; font-size: 36px; border: 3px solid #10B981;">😎</div>
+                <img id="profileRealAvatar" src="" style="display: none; width: 72px; height: 72px; border-radius: 36px; object-fit: cover; border: 3px solid #10B981; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+                
+                <div style="position: absolute; bottom: 0; right: 0; background: #111827; width: 22px; height: 22px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #FFF; border: 2px solid #FFF;">📷</div>
             </div>
+            <input type="file" id="userAvatarInput" accept="image/*" style="display:none;" onchange="window.App.uploadCustomAvatar(event)">
+
+            <div class="p-info" style="flex: 1; cursor: pointer;" onclick="if(localStorage.getItem('hebao_logged_in')==='true') window.App.openEditProfile(); else window.App.openModal('loginModal');">
+                <div id="profileName" style="font-size: 22px; font-weight: 900; color: #111827; margin-bottom: 6px; letter-spacing: -0.5px;">管家新人</div>
+                <div id="profileSubInfo" style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
+                    <span style="font-size: 12px; color: #64748B;">加载身份中...</span>
+                </div>
+            </div>
+            <div style="color: #94A3B8; font-size: 24px; font-weight: 300; padding-right: 10px;">›</div>
         </div>
 
-        <div style="padding: 0 20px; margin-top: 20px;">
-            <div class="menu-list" style="background: #FFF; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); overflow: hidden;">
-                <div class="menu-item" onclick="window.App.openModal('creditInfoModal')" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #F8FAFC; cursor: pointer;">
-                    <div style="display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: bold; color: #334155;">
-                        <div style="width: 32px; height: 32px; border-radius: 10px; background: #FEF2F2; display: flex; align-items: center; justify-content: center; font-size: 16px;">🛡️</div>
-                        管家信用分规则
-                    </div>
-                    <div style="color: #CBD5E1; font-weight: bold; font-size: 18px;">›</div>
-                </div>
-                <div class="menu-item" onclick="window.App.showMyCollections()" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid #F8FAFC; cursor: pointer;">
-                    <div style="display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: bold; color: #334155;">
-                        <div style="width: 32px; height: 32px; border-radius: 10px; background: #FDF4FF; display: flex; align-items: center; justify-content: center; font-size: 16px;">💖</div>
-                        我的收藏
-                    </div>
-                    <div style="color: #CBD5E1; font-weight: bold; font-size: 18px;">›</div>
-                </div>
-                <div class="menu-item" onclick="alert('有问题请添加客服微信：HebaoHelper')" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; cursor: pointer;">
-                    <div style="display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: bold; color: #334155;">
-                        <div style="width: 32px; height: 32px; border-radius: 10px; background: #F0FDF4; display: flex; align-items: center; justify-content: center; font-size: 16px;">🎧</div>
-                        联系管家客服
-                    </div>
-                    <div style="color: #CBD5E1; font-weight: bold; font-size: 18px;">›</div>
-                </div>
+        <div id="userStatsPanel" style="display: none; background: #FFF; border-radius: 16px; padding: 16px 0; box-shadow: 0 4px 15px rgba(0,0,0,0.02); justify-content: space-around;">
+            <div style="text-align: center; flex: 1;">
+                <div style="font-size: 18px; font-weight: 900; color: #10B981; font-family: monospace;" id="statCredit">100</div>
+                <div style="font-size: 11px; color: #64748B; font-weight: bold; margin-top: 4px;">信用分</div>
+            </div>
+            <div style="width: 1px; background: #F1F5F9;"></div>
+            <div style="text-align: center; flex: 1;">
+                <div style="font-size: 18px; font-weight: 900; color: #111827; font-family: monospace;" id="statSaved">0</div>
+                <div style="font-size: 11px; color: #64748B; font-weight: bold; margin-top: 4px;">收藏干货</div>
+            </div>
+            <div style="width: 1px; background: #F1F5F9;"></div>
+            <div style="text-align: center; flex: 1;">
+                <div style="font-size: 18px; font-weight: 900; color: #111827; font-family: monospace;" id="statDays">1</div>
+                <div style="font-size: 11px; color: #64748B; font-weight: bold; margin-top: 4px;">荷村天数</div>
             </div>
         </div>
-
-        <div style="padding: 0 20px; margin-top: 25px;">
-            <div class="asset-tabs" style="display: flex; gap: 24px; border-bottom: 1px solid #E2E8F0; padding-bottom: 12px; margin-bottom: 20px;">
-                <div class="a-tab active" onclick="switchAssetTab('footprint', this)">👣 避雷足迹</div>
-                <div class="a-tab" onclick="switchAssetTab('posts', this)">📦 我的发布</div>
-                <div class="a-tab" onclick="switchAssetTab('reviews', this)">💬 收到评价</div>
-            </div>
-
-            <div id="asset-footprint" class="asset-content active"><div id="footprintList"></div></div>
-            <div id="asset-posts" class="asset-content" style="display:none;">
-                <div class="empty-state" id="postsEmptyState" style="text-align: center; padding: 40px 0; color: #94A3B8;">
-                    <div style="font-size: 32px; margin-bottom: 10px;">📭</div>
-                    你还没有发布过闲置/互助哦
-                </div>
-                <div id="myPostsList"></div>
-            </div>
-            <div id="asset-reviews" class="asset-content" style="display:none;">
-                <div class="empty-state" id="reviewsEmptyState" style="text-align: center; padding: 40px 0; color: #94A3B8;">还没有收到评价</div>
-            </div>
-        </div>
-        
-        <div style="height: 100px;"></div>
     </div>
 
+    <div style="padding: 0 16px;">
+        <div id="guestLoginBlock" class="guest-login-block" style="display: none; margin-top: 16px; background: #FFF; padding: 14px 16px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); justify-content: space-between; align-items: center;">
+            <div>
+                <div style="font-size: 14px; font-weight: 900; color: #111827;">解锁全部特权</div>
+                <div style="font-size: 11px; color: #9CA3AF; margin-top: 2px;">同步二手交易与避雷记录</div>
+            </div>
+            <button onclick="window.App.openModal('loginModal')" style="background: #111827; color: #FFF; border: none; padding: 10px 18px; border-radius: 20px; font-size: 13px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(17,24,39,0.2);">立即登录</button>
+        </div>
+
+        <div id="unverifiedBanner" class="vip-banner" onclick="window.App.openModal('emailVerifyModal')" style="display: none; margin-top: 16px; background: linear-gradient(135deg, #111827 0%, #374151 100%); padding: 16px 20px; border-radius: 16px; justify-content: space-between; align-items: center; box-shadow: 0 8px 20px rgba(17,24,39,0.15); cursor: pointer; position: relative; overflow: hidden;">
+            <div style="position: absolute; top: -20px; right: -20px; width: 80px; height: 80px; background: rgba(251,191,36,0.15); filter: blur(20px); border-radius: 50%;"></div>
+            <div style="position: relative; z-index: 1;">
+                <div style="font-size: 15px; font-weight: 900; color: #FCD34D; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">🎓 认证大学邮箱</div>
+                <div style="font-size: 11px; color: #94A3B8;">点亮真实身份标签，闲置曝光率 +300%</div>
+            </div>
+            <button style="background: linear-gradient(135deg, #FDE68A 0%, #F59E0B 100%); color: #78350F; font-size: 12px; font-weight: 900; border: none; padding: 8px 16px; border-radius: 20px; z-index: 1; box-shadow: 0 2px 8px rgba(245,158,11,0.3); cursor: pointer;">去点亮</button>
+        </div>
+
+        <div style="background: #FFF; border-radius: 20px; padding: 20px 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); margin-top: 16px;">
+            <div style="display: flex; gap: 24px; border-bottom: 1px solid #F1F5F9; padding-bottom: 12px; margin-bottom: 16px;">
+                <div class="a-tab active" onclick="window.switchAssetTab('posts', this)" style="font-size: 15px; font-weight: 900; color: #111827; cursor: pointer; position: relative;">
+                    📦 我的发布
+                    <div class="tab-underline" style="position: absolute; bottom: -13px; left: 50%; transform: translateX(-50%); width: 20px; height: 3px; background: #111827; border-radius: 2px;"></div>
+                </div>
+                <div class="a-tab" onclick="window.switchAssetTab('footprint', this)" style="font-size: 15px; font-weight: bold; color: #64748B; cursor: pointer; position: relative;">👣 避雷足迹</div>
+                <div class="a-tab" onclick="window.switchAssetTab('reviews', this)" style="font-size: 15px; font-weight: bold; color: #64748B; cursor: pointer; position: relative;">💬 收到评价</div>
+            </div>
+
+            <div id="asset-posts" class="asset-content active" style="display: block;">
+                <div id="myPostsList">
+                    <div style="text-align:center; padding:40px 0; color:#9CA3AF;"><span class="pulse-dot" style="background:#10B981;"></span> 拉取数据中...</div>
+                </div>
+                <div class="empty-state" id="postsEmptyState" style="display:none; text-align: center; padding: 40px 0; color: #94A3B8;">
+                    <div style="font-size: 32px; margin-bottom: 10px;">📭</div>你还没有发布过闲置哦
+                </div>
+            </div>
+            
+            <div id="asset-footprint" class="asset-content" style="display: none;">
+                <div id="footprintList">
+                    <div style="text-align:center; padding:40px 0; color:#9CA3AF;">暂无扫码记录哦</div>
+                </div>
+            </div>
+
+            <div id="asset-reviews" class="asset-content" style="display: none;">
+                <div style="text-align:center; padding:40px 0; color:#9CA3AF;">暂无评价</div>
+            </div>
+        </div>
+
+        <div style="background: #FFF; border-radius: 20px; padding: 8px 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); margin-top: 16px;">
+            <div onclick="window.App.openModal('creditInfoModal')" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid #F8FAFC; cursor: pointer;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 32px; height: 32px; border-radius: 10px; background: #FEF2F2; display: flex; align-items: center; justify-content: center; font-size: 16px;">🛡️</div>
+                    <span style="font-size: 14px; font-weight: 900; color: #111827;">管家信用分规则</span>
+                </div>
+                <span style="color: #CBD5E1; font-weight: bold; font-size: 18px;">›</span>
+            </div>
+            <div onclick="window.App.showMyCollections()" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 0; border-bottom: 1px solid #F8FAFC; cursor: pointer;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 32px; height: 32px; border-radius: 10px; background: #FDF4FF; display: flex; align-items: center; justify-content: center; font-size: 16px;">💖</div>
+                    <span style="font-size: 14px; font-weight: 900; color: #111827;">我的收藏</span>
+                </div>
+                <span style="color: #CBD5E1; font-weight: bold; font-size: 18px;">›</span>
+            </div>
+            <div onclick="alert('有问题请添加客服微信：HebaoHelper')" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 0; cursor: pointer;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 32px; height: 32px; border-radius: 10px; background: #F0FDF4; display: flex; align-items: center; justify-content: center; font-size: 16px;">🎧</div>
+                    <span style="font-size: 14px; font-weight: 900; color: #111827;">联系管家客服</span>
+                </div>
+                <span style="color: #CBD5E1; font-weight: bold; font-size: 18px;">›</span>
+            </div>
+        </div>
+
+    </div>
+</div>
    <div id="page-details" class="page-section" style="background: #F8FAFC; min-height: 100vh; padding-bottom: 0; position: relative;">
         
         <div onclick="goBack()" style="position: absolute; top: max(15px, env(safe-area-inset-top)); left: 15px; width: 36px; height: 36px; background: rgba(255,255,255,0.85); border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: bold; color: #111827; cursor: pointer; z-index: 101; backdrop-filter: blur(10px); box-shadow: 0 4px 12px rgba(0,0,0,0.08);">‹</div>
