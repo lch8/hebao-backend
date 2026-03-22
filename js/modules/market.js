@@ -275,9 +275,16 @@ export const MarketEngine = {
             const titleStr = post.title.replace('[找搭子] ', '').replace('[搭子] ', '');
             let cleanDesc = String(post.contentObj?.desc || post.contentObj?.text || '').replace(/\\n/g, '\n').replace(/⏱️ 时间：.*?\n👥 队伍：.*?\n\n/g, '').trim();
             const city = post.contentObj?.city || '荷兰';
+            const date = post.contentObj?.time || post.contentObj?.date || '待定'; 
             const tagStr = post.contentObj?.tag || '组局';
-            const joined = parseInt(post.contentObj?.joinedCount) || 1; const max = parseInt(post.contentObj?.maxPeople) || 2;      
+            const joined = parseInt(post.contentObj?.joinedCount) || 1; 
+            const max = parseInt(post.contentObj?.maxPeople) || 2;      
             const isHost = currentUserId === post.user_id;              
+
+            // 🌟 核心提取：读取帖子的鸽子次数 (模拟后端拉取，如果后端没字段就去读本地的缓存模拟)
+            // 真实生产环境：这里应该直接用 post.flakeCount 或者 post.author_flakeCount
+            const flakeCount = parseInt(post.flakeCount) || 0;
+            const attendanceRate = post.attendanceRate || '100%';
 
             html += `
             <div class="waterfall-item" style="break-inside: avoid; background:#FFF; border-radius:12px; padding:10px; margin-bottom:8px; box-shadow:0 4px 12px rgba(0,0,0,0.03); border:1px solid #F3E8FF; cursor:pointer; display:flex; flex-direction:column; gap:8px;" onclick="window.App.initiatePartnerChat('${post.id}')">
@@ -287,16 +294,28 @@ export const MarketEngine = {
                     <span style="font-size:9px; font-weight:bold; color:#475569; background:#F8FAFC; padding:2px 6px; border-radius:4px;">📍 ${city}</span>
                 </div>
                 <div style="font-size:11px; color:#64748B; line-height:1.5; display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; white-space: pre-line;">${cleanDesc || '快来和我一起吧！'}</div>
+                
                 <div style="background: #F8FAFC; border-radius: 6px; padding: 6px; border: 1px solid #E2E8F0; margin-top: auto;">
                     <div style="display: flex; justify-content: space-between; font-size: 9px; font-weight: 900; color: #111827; margin-bottom: 4px;"><span>进度 ${joined}/${max}</span><span style="color: #10B981;">缺 ${max - joined}</span></div>
                     <div style="width: 100%; height: 4px; background: #E2E8F0; border-radius: 2px; overflow: hidden;"><div style="width: ${Math.min(100, (joined/max)*100)}%; height: 100%; background: #10B981; border-radius: 2px;"></div></div>
                 </div>
+
                 <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #F1F5F9; padding-top:8px;">
                     <div style="display:flex; align-items:center; gap:4px; overflow:hidden; flex:1;">
                         <span style="font-size:14px; background:#F5F3FF; width:20px; height:20px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">${post.avatar}</span>
-                        <span style="font-size:10px; font-weight:bold; color:#475569; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${post.author}</span>
+                        <div style="display:flex; flex-direction:column; gap:2px; overflow:hidden;">
+                            <span style="font-size:10px; font-weight:bold; color:#475569; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${post.author}</span>
+                            
+                            <div style="display:flex; gap:2px;">
+                                <span style="font-size:8px; color:#059669; font-weight:bold; background:#D1FAE5; padding:1px 4px; border-radius:4px; white-space:nowrap;">🏃 赴约 ${attendanceRate}</span>
+                                ${flakeCount > 0 ? 
+                                    `<span style="font-size:8px; color:#DC2626; font-weight:bold; background:#FEE2E2; padding:1px 4px; border-radius:4px; white-space:nowrap;">🕊️ 鸽 ${flakeCount}</span>` 
+                                    : ''
+                                }
+                            </div>
+                        </div>
                     </div>
-                    ${isHost ? `<div style="font-size:9px; font-weight:900; color:#64748B; background:#F1F5F9; padding:4px 6px; border-radius:6px; flex-shrink:0;">👑</div>` : `<div style="font-size:9px; font-weight:900; color:#FFF; background:#111827; padding:4px 6px; border-radius:6px; flex-shrink:0;">✋ 申请</div>`}
+                    ${isHost ? `<div style="font-size:9px; font-weight:900; color:#64748B; background:#F1F5F9; padding:4px 6px; border-radius:6px; flex-shrink:0; align-self:flex-start;">👑</div>` : `<div style="font-size:9px; font-weight:900; color:#FFF; background:#111827; padding:4px 6px; border-radius:6px; flex-shrink:0; align-self:flex-start;">✋ 申请</div>`}
                 </div>
             </div>`;
         });
