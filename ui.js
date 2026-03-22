@@ -695,7 +695,7 @@ window.App.openPublishSheet = function() {
 window.App = window.App || {};
 
 // ============================================================================
-// 🚀 全能发布引擎：解除多余校验，适配精简版闲置表单
+// 🚀 全能发布引擎：解除多余校验，适配精简版闲置表单 + 解决数据库同步延迟
 // ============================================================================
 window.App.submitPost = async function() {
     const uuid = localStorage.getItem('hebao_uuid');
@@ -715,7 +715,6 @@ window.App.submitPost = async function() {
     const city = document.getElementById('postCity')?.value.trim();
     const zip = document.getElementById('postZip')?.value.trim();
     
-    // 如果 requireCity 是 true，且城市为空，才报错！
     if (window.App.requireCity !== false && !city) {
         return window.App.showToast ? window.App.showToast("线下互动需要定位，请务必填写所在城市哦！📍", "warning") : alert("请填写所在城市");
     }
@@ -742,7 +741,6 @@ window.App.submitPost = async function() {
             desc = document.getElementById('partnerDesc')?.value.trim();
             if (!desc) throw new Error("请介绍一下你的计划哦");
             
-            // 🌟 读取时间和组局人数
             const timeDesc = document.getElementById('partnerTime')?.value.trim() || '时间随意';
             const maxPeople = parseInt(document.getElementById('partnerMaxPeople')?.value) || 2;
             
@@ -750,22 +748,13 @@ window.App.submitPost = async function() {
             title = `[搭子] ${cleanCat}`;
             const finalDesc = `⏱️ 时间：${timeDesc}\n👥 队伍：1 / ${maxPeople} 人已就位\n\n${desc}`;
             
-            // 🌟 存入 payload，给后续的“加入群聊”功能留好数据结构
             payloadContent = { 
-                desc: finalDesc, 
-                tag: cleanCat, 
-                urgent: isUrgent ? '十万火急' : '普通', 
-                city: city, 
-                zip: zip,
-                time: timeDesc,
-                maxPeople: maxPeople,
-                joinedCount: 1, // 发起人自己占1个坑
-                joinedUsers: [uuid] // 预留：存入群聊成员的 UUID
+                desc: finalDesc, tag: cleanCat, urgent: isUrgent ? '十万火急' : '普通', city: city, zip: zip,
+                time: timeDesc, maxPeople: maxPeople, joinedCount: 1, joinedUsers: [uuid] 
             };
         }
         else if (type === 'idle') {
-            const catEl = document.querySelector('#idleCategoryCapsules .active');
-            if(!catEl) throw new Error("请选择物品分类");
+            // 🚨 致命 Bug 修复：这里删除了对全局分类(#idleCategoryCapsules)的强制校验！
             
             desc = document.getElementById('idleDesc')?.value.trim();
             if (!desc) throw new Error("请简单描述一下你的闲置物品");
@@ -776,43 +765,33 @@ window.App.submitPost = async function() {
             let totalIdlePrice = 0;
             const itemsToProcess = [];
 
-            // 1. 瞬间收集所有卡片数据，算出总价
             for (let i = 0; i < imgCards.length; i++) {
                 const card = imgCards[i];
                 const itemPrice = card.querySelector('.item-price').value;
                 if (itemPrice) totalIdlePrice += parseFloat(itemPrice);
                 
-                // 🌟 读取这件物品的专属分类
                 const itemCategory = card.querySelector('.item-category').value;
                 
                 itemsToProcess.push({
                     previewUrl: card.querySelector('img').src,
                     itemName: card.querySelector('.item-name').value,
                     itemPrice: itemPrice,
-                    itemCategory: itemCategory, // 记录专属分类
+                    itemCategory: itemCategory, 
                     index: i
                 });
             }
-            price = totalIdlePrice;
 
-            // =========================================================
-            // 🚀 核心性能飙升：多线程并发处理图片与上传！
-            // =========================================================
             let completedCount = 0;
             btn.innerText = `🚀 正在准备上传 (0/${itemsToProcess.length})...`;
 
-            // 使用 map 启动所有上传任务（同时跑！）
             const uploadPromises = itemsToProcess.map(async (item) => {
                 let finalBase64 = item.previewUrl.split(',')[1];
-                
-                // 如果有打标签的AI函数，执行它
                 if (window.App.addTagToImage) {
                     finalBase64 = await window.App.addTagToImage(item.previewUrl, item.itemName, item.itemPrice);
                 }
 
                 let finalUrl = 'data:image/jpeg;base64,' + finalBase64;
                 try {
-                    // 传给 Vercel 图床 API
                     const upRes = await fetch('/api/upload', { 
                         method: 'POST', 
                         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -822,7 +801,6 @@ window.App.submitPost = async function() {
                     if (upData.success) finalUrl = upData.url;
                 } catch(e) { console.warn("云端图床未连接", e); }
 
-                // 🌟 UX 魔法：每传完一张，实时更新按钮上的进度！
                 completedCount++;
                 btn.innerText = `🚀 图片上传中 (${completedCount}/${itemsToProcess.length})...`;
 
@@ -836,12 +814,11 @@ window.App.submitPost = async function() {
                 };
             });
 
-            // 🌟 等待所有并发任务一次性冲线！
             const finalItemsData = await Promise.all(uploadPromises);
 
-            // const cleanCat = catEl.innerText.replace(/[^a-zA-Z\u4e00-\u9fa5\/]/g, '').trim();
+            price = totalIdlePrice;
             title = `[闲置] 大清仓`; 
-            const cleanCat = "综合闲置"; // 兜底
+            const cleanCat = "综合闲置"; 
             payloadContent = { desc, location: city, items: finalItemsData, type: cleanCat, urgent: isUrgent ? '十万火急' : '普通', city: city, zip: zip };
         }
 
@@ -873,8 +850,10 @@ window.App.submitPost = async function() {
             localStorage.setItem('hp_points', Math.max(0, currentPts - 5));
         }
 
+        // 清理 UI (更新为新版的超大虚线框)
         const previewContainer = document.getElementById('idleImgPreviewContainer');
-        if (previewContainer) previewContainer.innerHTML = `<div class="upload-btn" onclick="document.getElementById('idleImgInput').click()" style="width: 100px; height: 100px; flex-shrink: 0; background: #F8FAFC; border: 1px dashed #CBD5E1; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; color: #94A3B8;"><span style="font-size: 24px;">📸</span><span style="font-size: 11px; font-weight: bold; margin-top: 6px;">加图片</span></div>`;
+        if (previewContainer) previewContainer.innerHTML = `<div class="upload-btn" onclick="document.getElementById('idleImgInput').click()" style="width: 140px; height: 180px; flex-shrink: 0; background: #F8FAFC; border: 2px dashed #CBD5E1; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; color: #64748B;"><span style="font-size: 32px;">📸</span><span style="font-size: 12px; font-weight: bold; margin-top: 8px;">传照片上传物品</span></div>`;
+        window.idleImages = []; // 清空暂存池
         
         const cityInput = document.getElementById('postCity');
         const zipInput = document.getElementById('postZip');
@@ -883,21 +862,27 @@ window.App.submitPost = async function() {
 
         if (typeof window.switchTab === 'function') window.switchTab('market', document.querySelector('.tab-item[onclick*="market"]'));
         if (typeof window.switchMarketTab === 'function') window.switchMarketTab(type); 
-        if (window.App.loadCommunityPosts) window.App.loadCommunityPosts();
+        
+        // =========================================================
+        // 🌟 核心修复：1.5秒缓冲延迟，完美错开数据库主从同步的时间差！
+        // =========================================================
+        setTimeout(() => {
+            if (window.App.loadCommunityPosts) window.App.loadCommunityPosts();
+        }, 1500);
 
-        // 1. 从刚才发帖的数据里，提取海报需要的干货
+        // 提取海报需要的干货
         let posterImg = (type === 'idle' && payloadContent.items && payloadContent.items.length > 0) ? payloadContent.items[0].url : '';
         let posterTag = type === 'idle' ? '📦 闲置' : (type === 'help' ? '🤝 悬赏' : '🏕️ 搭子');
-        let posterTitle = title.replace(/\[.*?\]\s*/, ''); // 把 "[闲置] 卷发棒" 去掉前缀，变成 "卷发棒"
+        let posterTitle = title.replace(/\[.*?\]\s*/, ''); 
         let posterPrice = price > 0 ? price : '面议';
+        let posterExtraDesc = desc.substring(0, 30); // 截取悬赏/搭子的核心正文
 
-        // 2. 延迟 0.6 秒弹窗（等页面切换的动画走完，体验极其丝滑）
+        // 延迟 0.6 秒弹窗（等页面切换的动画走完，体验极其丝滑）
         setTimeout(() => {
             const wantShare = confirm("🎉 帖子已发布！\n\n是否一键生成带有【高校认证】和【信用背书】的高级海报？");
             if (wantShare) {
                 if (window.App.generateAndSharePoster) {
-                    // 召唤 Canvas 海报印钞机
-                    window.App.generateAndSharePoster(posterTitle, posterPrice, posterImg, posterTag);
+                    window.App.generateAndSharePoster(posterTitle, posterPrice, posterImg, posterTag, posterExtraDesc);
                 } else {
                     if (window.App.showToast) window.App.showToast("海报引擎尚未加载", "warning");
                 }
