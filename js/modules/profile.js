@@ -1,5 +1,5 @@
 // ============================================================================
-// js/modules/profile.js - 用户个人中心与发布管理引擎
+// js/modules/profile.js - 用户个人中心与发布管理引擎 (带引流海报)
 // ============================================================================
 import { safeDOM } from '../core/dom.js';
 import { showToast } from '../core/toast.js';
@@ -47,7 +47,14 @@ export const ProfileEngine = {
                 try { contentObj = typeof post.content === 'string' ? JSON.parse(post.content) : post.content; } catch(e) {}
                 
                 let itemsHtml = '';
+                // 抓取第一件物品的信息，用来生成海报
+                let firstItemPrice = '面议';
+                let firstItemImg = post.image_url || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800';
+
                 if (contentObj && contentObj.items && contentObj.items.length > 0) {
+                    firstItemPrice = contentObj.items[0].price || '面议';
+                    firstItemImg = contentObj.items[0].url || post.image_url;
+
                     contentObj.items.forEach(item => {
                         const isSold = item.is_sold;
                         itemsHtml += `
@@ -60,7 +67,7 @@ export const ProfileEngine = {
                                     </div>
                                 </div>
                                 ${isSold 
-                                    ? `<div style="font-size:11px; color:#9CA3AF; font-weight:900; background:#F3F4F6; padding:4px 10px; border-radius:12px;">已售空</div>` 
+                                    ? `<div style="font-size:11px; color:#9CA3AF; font-weight:900; background:#F3F4F6; padding:4px 10px; border-radius:12px;">已出</div>` 
                                     : `<button onclick="window.App.markItemSold(${post.id}, '${item.id}')" style="background:#10B981; border:none; padding:6px 14px; border-radius:14px; font-size:12px; font-weight:bold; color:#FFF; cursor:pointer; box-shadow: 0 2px 6px rgba(16,185,129,0.2);">卖掉了</button>`
                                 }
                             </div>`;
@@ -70,6 +77,9 @@ export const ProfileEngine = {
                 // 提取卡片类型前缀
                 const typeTag = post.title.includes('[闲置]') ? '📦 闲置' : (post.title.includes('[互助]') ? '🤝 悬赏' : '🏕️ 搭子');
                 const cleanTitle = post.title.replace(/\[.*?\]\s*/, ''); // 去掉方括号前缀
+                
+                // 处理标题里可能有单引号导致 JS 报错的问题
+                const safeTitleForJS = cleanTitle.replace(/'/g, "\\'");
 
                 html += `
                     <div class="my-post-card" id="myPost_${post.id}" style="background:#FFF; border-radius:16px; padding:16px; margin-bottom:15px; box-shadow:0 4px 15px rgba(0,0,0,0.03); border:1px solid #F3F4F6;">
@@ -78,7 +88,14 @@ export const ProfileEngine = {
                             <button onclick="window.App.deleteMyPost(${post.id})" style="background:#FEF2F2; color:#DC2626; border:1px solid #FECACA; padding:4px 12px; border-radius:14px; font-size:12px; font-weight:bold; cursor:pointer;">删除</button>
                         </div>
                         <div style="font-size:11px; color:#9CA3AF; margin-bottom:10px; font-weight:bold;">发布于: ${new Date(post.created_at).toLocaleString()}</div>
+                        
                         <div>${itemsHtml}</div>
+
+                        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed #E5E7EB; display: flex; justify-content: flex-end;">
+                            <button onclick="window.App.generateAndSharePoster('${safeTitleForJS}', '${firstItemPrice}', '${firstItemImg}', '${typeTag}')" style="background:#E0F2FE; color:#0284C7; border:1px solid #BAE6FD; padding:8px 16px; border-radius:12px; font-size:13px; font-weight:900; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow: 0 2px 4px rgba(2,132,199,0.1); transition: 0.1s;" onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='scale(1)'">
+                                <span style="font-size:16px;">📤</span> 生成海报，发微信群引流！
+                            </button>
+                        </div>
                     </div>`;
             });
             container.innerHTML = html;
@@ -125,7 +142,7 @@ export const ProfileEngine = {
             let contentObj = typeof post.content === 'string' ? JSON.parse(post.content) : post.content;
             const itemIndex = contentObj.items.findIndex(i => i.id === itemId);
             if(itemIndex > -1) {
-                contentObj.items[itemIndex].is_sold = true; // 🌟 核心：改变状态
+                contentObj.items[itemIndex].is_sold = true; 
             }
             
             const newContentStr = JSON.stringify(contentObj);
@@ -139,9 +156,9 @@ export const ProfileEngine = {
             
             if(data.success) {
                 showToast("✅ 已成功标记为售出！", "success");
-                post.content = newContentStr; // 更新本地缓存
-                this.renderMyPosts(); // 刷新卖家面板
-                if(window.App.loadCommunityPosts) window.App.loadCommunityPosts(); // 同步刷新大集市瀑布流！
+                post.content = newContentStr; 
+                this.renderMyPosts(); 
+                if(window.App.loadCommunityPosts) window.App.loadCommunityPosts(); 
             } else {
                 throw new Error(data.error);
             }
@@ -150,3 +167,13 @@ export const ProfileEngine = {
         }
     }
 };
+
+// 挂载到全局
+if (typeof window !== 'undefined') {
+    window.App = window.App || {};
+    Object.keys(ProfileEngine).forEach(key => {
+        if (typeof ProfileEngine[key] === 'function') {
+            window.App[key] = ProfileEngine[key].bind(ProfileEngine);
+        }
+    });
+}
