@@ -80,12 +80,15 @@ window.App.renderFilterBar = function(tab) {
 window.App.onFilterChange = function(tab, key, value) {
     window.App.currentMarketFilter[tab][key] = value;
     window.App.renderFilterBar(tab); 
-    // 触发重新渲染
     if (tab === 'idle') window.App.renderMarketIdle();
     if (tab === 'help') window.App.renderMarketHelp();
     if (tab === 'partner') window.App.renderMarketPartner();
+    
+    // 🌟 兜底魔法：筛选结束后，强行唤醒当前版块的显示状态，拒绝隐身！
+    if (typeof window.switchMarketTab === 'function') {
+        window.switchMarketTab(tab);
+    }
 };
-
 // 🌟 核心魔法：无视新老数据结构的“全局模糊扫描器”
 const fuzzyMatch = (post, keyword) => {
     if (keyword === 'all') return true;
@@ -171,10 +174,22 @@ export const MarketEngine = {
         if (!el) {
             const parent = document.getElementById('page-market');
             if (parent) { el = document.createElement('div'); el.id = id; parent.appendChild(el); }
+            el.style.display = 'none'; // 仅在初次创建时隐藏
         }
-        el.style.display = isGrid ? 'grid' : 'none';
+        
         el.style.padding = '0 12px 100px'; 
-        if (isGrid) { el.style.gridTemplateColumns = '1fr 1fr'; el.style.gap = '8px'; el.style.alignItems = 'start'; }
+        if (isGrid) { 
+            el.style.display = 'grid'; 
+            el.style.gridTemplateColumns = '1fr 1fr'; 
+            el.style.gap = '8px'; 
+            el.style.alignItems = 'start'; 
+        } else {
+            // 🌟 致命 Bug 修复处：
+            // 如果面板本来就是显示状态（比如你正在看悬赏版块），绝对不能强行把它改成 none！
+            if (el.style.display !== 'none') {
+                el.style.display = 'block';
+            }
+        }
         return el;
     },
 
