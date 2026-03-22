@@ -577,3 +577,60 @@ if (typeof window !== 'undefined') {
         }
     });
 }
+
+
+// ============================================================================
+// 🚀 聊天引擎外挂补丁 (自动植入删除按钮 & 群聊识别系统)
+// 把它放在任何一个会被加载的 JS 文件底部即可生效！
+// ============================================================================
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. 监听聊天弹窗的打开，动态植入【删除】按钮
+    const observer = new MutationObserver((mutations) => {
+        const chatModal = document.getElementById('chatModal');
+        // 当聊天框弹出来的时候
+        if (chatModal && chatModal.style.display === 'block') {
+            const chatHeader = chatModal.querySelector('.modal-content > div:first-child');
+            if (chatHeader && !document.getElementById('deleteChatBtn')) {
+                // 在右上角注入一个红色垃圾桶按钮
+                const delBtn = document.createElement('div');
+                delBtn.id = 'deleteChatBtn';
+                delBtn.innerHTML = '🗑️ 删除';
+                delBtn.style.cssText = 'color:#EF4444; font-size:12px; font-weight:bold; cursor:pointer; background:#FEF2F2; padding:6px 10px; border-radius:8px; margin-right:10px; box-shadow:0 2px 4px rgba(239,68,68,0.1);';
+                
+                delBtn.onclick = () => {
+                    if(!confirm('🚨 确定要删除这条对话吗？（群聊退群，单聊清空记录）')) return;
+                    
+                    // 获取当前正在聊天的人或群 ID（假设你存在 window.currentChatUserId）
+                    const targetId = window.currentChatUserId || localStorage.getItem('hp_last_chat_id');
+                    
+                    if (targetId) {
+                        // 清除本地聊天记录
+                        localStorage.removeItem(`chat_history_${targetId}`);
+                        if (window.App.showToast) window.App.showToast("已删除对话并清空记录", "success");
+                        // 关闭聊天框
+                        if (window.ModalManager && window.ModalManager.close) ModalManager.close('chatModal');
+                        else chatModal.style.display = 'none';
+                        
+                        // 如果有刷新消息列表的函数，调用它
+                        if (window.App.loadMessageList) window.App.loadMessageList();
+                    }
+                };
+
+                // 把删除按钮塞到关闭按钮的前面
+                const closeBtn = chatHeader.querySelector('div:last-child');
+                if (closeBtn) chatHeader.insertBefore(delBtn, closeBtn);
+            }
+            
+            // 2. 如果是群聊，自动把顶部变色，氛围拉满
+            const targetId = window.currentChatUserId || localStorage.getItem('hp_last_chat_id') || '';
+            if (targetId.startsWith('group_')) {
+                chatHeader.style.background = 'linear-gradient(90deg, #F3E8FF 0%, #FFF 100%)';
+                const nameEl = chatHeader.querySelector('div[style*="font-weight:900"]');
+                if (nameEl && !nameEl.innerText.includes('群')) nameEl.innerText += ' (群聊)';
+            }
+        }
+    });
+
+    // 开始监控页面
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+});
