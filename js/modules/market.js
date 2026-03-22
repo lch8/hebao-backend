@@ -120,16 +120,12 @@ export const MarketEngine = {
                     commonData.title = title.replace('[闲置] ', '');
                     commonData.img = post.image_url || '';
 
-                    // ==========================================
-                    // 🌟 核心修复：实时动态计算最新总价与售罄状态
-                    // ==========================================
                     let currentTotalPrice = 0;
                     let allSold = true;
 
                     if (payload && payload.items && payload.items.length > 0) {
                         payload.items.forEach(i => {
                             if (!i.is_sold) {
-                                // 只要有一个没卖掉，就累加价格，且没有售罄
                                 currentTotalPrice += parseFloat(i.price) || 0;
                                 allSold = false; 
                             }
@@ -137,15 +133,18 @@ export const MarketEngine = {
                         commonData.price = currentTotalPrice;
                         commonData.isAllSold = allSold;
                     } else {
-                        // 兜底逻辑
                         commonData.price = post.likes || 0;
                         commonData.isAllSold = false;
                     }
-
                     idleItems.push(commonData);
                 }
-                else if (title.includes('[互助]')) helpItems.push(commonData);
-                else if (title.includes('[找搭子]')) partnerItems.push(commonData);
+                else if (title.includes('[互助]')) {
+                    helpItems.push(commonData);
+                }
+                // 🌟 核心修复点：同时兼容老帖子的“[找搭子]”和新帖子的“[搭子]”
+                else if (title.includes('[搭子]') || title.includes('[找搭子]')) {
+                    partnerItems.push(commonData);
+                }
             });
 
             window.App.marketDataCache = { idle: idleItems, help: helpItems, partner: partnerItems };
