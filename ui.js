@@ -819,7 +819,7 @@ window.App.submitPost = async function() {
                     id: 'item_' + Date.now() + '_' + item.index,
                     name: item.itemName || '闲置好物',
                     price: item.itemPrice || 0,
-                    category: item.itemCategory,  <-- 加上这行
+                    category: item.itemCategory, 
                     url: finalUrl,
                     is_sold: false
                 };
