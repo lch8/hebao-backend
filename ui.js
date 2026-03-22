@@ -1233,73 +1233,102 @@ if (typeof window !== 'undefined') {
         }
     };
 }
-
-// ============================================================================
-// 🚀 终极外挂：拦截 ChatEngine，100% 植入删除按钮与群聊样式
-// ============================================================================
 document.addEventListener('DOMContentLoaded', () => {
-    // 延迟 1 秒，等待 ChatEngine 彻底加载完毕
+    // 延迟 1 秒，等待全局变量彻底加载完毕
     setTimeout(() => {
-        // 如果找到了聊天引擎，且还没有被我们拦截过
-        if (window.ChatEngine && window.ChatEngine.openChat && !window.ChatEngine._isIntercepted) {
+        // 如果找到了单人资料 Modal 的渲染器getUserBadgeHtml，且还没有被拦截
+        if (window.App && window.App.getUserBadgeHtml && !window.App._isIntercepted) {
             
-            const originalOpenChat = window.ChatEngine.openChat; // 保存原版函数
-            
-            // 覆写原版函数！
-            window.ChatEngine.openChat = function(...args) {
-                // 1. 先照常打开聊天框
-                originalOpenChat.apply(this, args);
-                
-                // 2. 聊天框出来后，暴力植入删除按钮
-                setTimeout(() => {
-                    const chatModal = document.getElementById('chatModal');
-                    if (!chatModal) return;
+            // 🌟 核心修复1：给 ChatEngine.openChat 寄生一个"点击头像"功能
+            if (window.ChatEngine && window.ChatEngine.openChat) {
+                const originalOpenChat = window.ChatEngine.openChat; 
+                // args = [id, name, avatar, postId, title, likes, ..., isGroup]
+                window.ChatEngine.openChat = function(...args) {
+                    originalOpenChat.apply(this, args);
                     
-                    const chatHeader = chatModal.querySelector('.modal-content > div:first-child');
-                    if (chatHeader && !document.getElementById('deleteChatBtn')) {
-                        const delBtn = document.createElement('div');
-                        delBtn.id = 'deleteChatBtn';
-                        delBtn.innerHTML = '🗑️ 删除';
-                        // 极致的 UI 设计：红色警示色，带微小阴影和按压缩放动画
-                        delBtn.style.cssText = 'color:#EF4444; font-size:12px; font-weight:900; cursor:pointer; background:#FEF2F2; padding:6px 12px; border-radius:8px; margin-right:10px; box-shadow:0 2px 4px rgba(239,68,68,0.1); transition: transform 0.2s;';
-                        delBtn.onmousedown = () => delBtn.style.transform = 'scale(0.9)';
-                        delBtn.onmouseup = () => delBtn.style.transform = 'scale(1)';
-                        
-                        // 绑定一键删除核心逻辑
-                        delBtn.onclick = () => {
-                            if(!confirm('🚨 确定要删除这条对话吗？\n（群聊将退出队伍，单聊将永久清空记录）')) return;
-                            
-                            const targetId = args[0]; // 第一个参数是 userId 或 groupId
-                            localStorage.removeItem(`chat_history_${targetId}`); // 抹除本地记录
-                            
-                            if (window.App.showToast) window.App.showToast("✅ 已成功删除该对话", "success");
-                            if (window.ModalManager) window.ModalManager.close('chatModal');
-                            else chatModal.style.display = 'none';
-                            
-                            // 自动刷新外层的消息列表
-                            if (window.App.renderMessageList) window.App.renderMessageList();
-                        };
+                    setTimeout(() => {
+                        const chatModal = document.getElementById('chatModal');
+                        if (!chatModal) return;
+                        const chatHeader = chatModal.querySelector('.modal-content > div:first-child');
+                        if (!chatHeader) return;
 
-                        const closeBtn = chatHeader.querySelector('div:last-child');
-                        if (closeBtn) chatHeader.insertBefore(delBtn, closeBtn);
-                    }
-                    
-                    // 🌟 群聊识别系统：根据 groupId 自动变换头部颜色
-                    const targetId = String(args[0]);
-                    if (targetId.startsWith('group_')) {
-                        chatHeader.style.background = 'linear-gradient(90deg, #F3E8FF 0%, #FFF 100%)';
-                        const nameEl = chatHeader.querySelector('div[style*="font-weight:900"]');
-                        // 自动在名字后加上 (群聊) 标识
-                        if (nameEl && !nameEl.innerText.includes('群聊')) nameEl.innerText += ' (群聊)';
-                    } else {
-                        // 恢复单聊白色背景
-                        chatHeader.style.background = '#FFF'; 
-                    }
-                }, 100);
-            };
+                        // (A) 改装 header：左侧头像和名字点击，弹出个人资料！
+                        const avatarEl = chatHeader.querySelector('div[style*="font-size:24px"]');
+                        if (avatarEl && !avatarEl.id) {
+                            avatarEl.id = 'chatHeaderAvatar';
+                            avatarEl.style.cursor = 'pointer';
+                            // 这里要提取 args[0]，把 group_ 前缀去掉
+                            const targetUserId = String(args[0]).replace('group_', ''); 
+                            avatarEl.onclick = () => window.App.SocialEngine.openUserProfile(targetUserId);
+                        }
+                        
+                        // (B) 改装 header：右上角植入尊贵的 "…" 菜单
+                        if (!document.getElementById('chatOptionsBtn')) {
+                            const optBtn = document.createElement('div');
+                            optBtn.id = 'chatOptionsBtn';
+                            optBtn.innerHTML = '⋮'; // 三点功能菜单图标
+                            optBtn.style.cssText = 'color:#64748B; font-size:18px; font-weight:900; cursor:pointer; background:#F1F5F9; padding:4px 10px; border-radius:8px; margin-right:10px; transition: transform 0.2s;';
+                            optBtn.onmousedown = () => optBtn.style.transform = 'scale(0.9)';
+                            optBtn.onmouseup = () => optBtn.style.transform = 'scale(1)';
+                            
+                            // 绑定打开功能菜单
+                            optBtn.onclick = () => ModalManager.open('chatOptionsMenuModal');
+
+                            const closeBtn = chatHeader.querySelector('div:last-child');
+                            if (closeBtn) chatHeader.insertBefore(optBtn, closeBtn);
+                        }
+
+                        // (C) 改装 header：如果是群聊，自动变换头部颜色
+                        const targetId = String(args[0]);
+                        if (targetId.startsWith('group_')) {
+                            chatHeader.style.background = 'linear-gradient(90deg, #F3E8FF 0%, #FFF 100%)';
+                        } else { chatHeader.style.background = '#FFF'; }
+
+                    }, 100);
+                };
+            }
             
+            // 🌟 核心修复2：全场头像监听器
+            // 监听页面上任何点击事件，如果是点击了带有Lv徽章的头像区域，直接弹出资料！
+            document.body.addEventListener('click', (e) => {
+                const avatarDiv = e.target.closest('div[style*="border-radius:12px"]'); 
+                if (avatarDiv && avatarDiv.innerText.includes('Lv.')) {
+                    // 模拟找到用户ID (演示逻辑：这里需要和瀑布流渲染器结合，在头像上加上 userId 数据)
+                    window.App.SocialEngine.openUserProfile('test_user_id');
+                }
+            });
+
             // 打上标记，防止重复拦截
-            window.ChatEngine._isIntercepted = true;
+            window.App._isIntercepted = true;
         }
     }, 1000); 
 });
+
+// ============================================================================
+// CAMP 社交大脑 (Social Engine)
+// 负责处理个人资料、关注、邀请、维权。
+// ============================================================================
+window.App.SocialEngine = {
+    // 1. 打开指定用户的资料页 (热核重写版，建立信任漏斗)
+    openUserProfile: function(targetUserId) {
+        // (真实后端逻辑：根据 UserId 拉取对方的真实数据)
+        // 演示逻辑：从本地拉取模拟数据
+        ModalManager.open('userProfileModal');
+    },
+
+    // 2. 关注/取消关注用户
+    toggleFollowUser: function(targetUserId) {
+        // (真实后端逻辑：向服务器发送 API，在 hp_user_follows 数据库中插入一条记录)
+        window.App.showToast("🎉 已成功关注该管家！", "success");
+        // 更新按钮 UI (略)
+    },
+
+    // 3. 邀请该用户加入自己的搭子队伍
+    inviteToTeam: function(targetUserId) {
+        if(!localStorage.getItem('hp_my_teams')) {
+            return window.App.showToast("🚨 你目前还没有建立任何搭子局哦", "error");
+        }
+        window.App.showToast("🏕️ 邀请已发出！在'消息'列表等待对方答复", "info");
+        ModalManager.close('userProfileModal');
+    }
+};
