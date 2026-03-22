@@ -674,11 +674,13 @@ window.App.submitPost = async function() {
     const cardUrgent = document.getElementById('cardUrgent');
     const isUrgent = cardUrgent && cardUrgent.classList.contains('active-urgent');
 
-    // 🌟 强校验城市
+    // 🌟 智能校验城市 (线上求助不校验)
     const city = document.getElementById('postCity')?.value.trim();
     const zip = document.getElementById('postZip')?.value.trim();
-    if (!city) {
-        return window.App.showToast ? window.App.showToast("为了方便大家寻找，请务必填写所在城市哦！", "warning") : alert("请填写所在城市");
+    
+    // 如果 requireCity 是 true，且城市为空，才报错！
+    if (window.App.requireCity !== false && !city) {
+        return window.App.showToast ? window.App.showToast("线下互动需要定位，请务必填写所在城市哦！📍", "warning") : alert("请填写所在城市");
     }
 
     const btn = event.currentTarget || document.querySelector('#publishSheet button');
@@ -850,6 +852,47 @@ window.App.submitPost = async function() {
     }
 };
 
+
+// 🌟 核心引擎：根据当前 Tab 和选项，智能显示/隐藏城市输入框，并控制校验逻辑
+window.App.checkSmartLocation = function() {
+    const locBlock = document.getElementById('smartLocationBlock');
+    if (!locBlock) return;
+
+    const type = window.App.currentPublishType || 'help';
+
+    if (type === 'idle' || type === 'partner') {
+        // 闲置和搭子，必须填地址
+        locBlock.style.display = 'flex';
+        window.App.requireCity = true;
+    } else if (type === 'help') {
+        // 悬赏：检查是否选了“纯线上解决”
+        const isOnline = document.querySelector('#helpLocationCapsules .active')?.innerText.includes('线上');
+        if (isOnline) {
+            // 线上悬赏，藏掉城市输入框，且关闭校验！
+            locBlock.style.display = 'none';
+            window.App.requireCity = false;
+        } else {
+            locBlock.style.display = 'flex';
+            window.App.requireCity = true;
+        }
+    }
+};
+
+// 重写 Tab 切换方法，让它每次切换都触发一次检查
+const originalSwitchPublishTab = window.App.switchPublishTab;
+window.App.switchPublishTab = function(type) {
+    // 1. 调用原来的显隐逻辑
+    if (originalSwitchPublishTab) originalSwitchPublishTab(type);
+    
+    // 2. 动态修改标题
+    const titleEl = document.getElementById('publishModalTitle');
+    if (type === 'idle') titleEl.innerText = '发布闲置物品';
+    if (type === 'help') titleEl.innerText = '发布求助悬赏';
+    if (type === 'partner') titleEl.innerText = '发起搭子组局';
+
+    // 3. 触发智能位置检查
+    window.App.checkSmartLocation();
+};
 
 // ============================================================================
 // 🌟 个人主页 UI 状态持久化引擎
