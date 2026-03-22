@@ -563,23 +563,39 @@ export const MarketEngine = {
         safeDOM.execute('chatInput', input => input.value = `哈喽！我看到你的悬赏【${cleanTitle}】，我可以接单哦，请问还需要吗？`);
     },
 
+    // 🌟 核心重构：找搭子点击事件 (审批流模式)
     initiatePartnerChat(postId) {
         const post = (window.App.marketDataCache?.partner || []).find(p => String(p.id) === String(postId));
         if (!post) return window.App.showToast("哎呀，帖子似乎走丢了", "error");
         
-        // 🌟 自动判断是否是局长，局长点进去进入【群聊视图】，申请人点进去进入【私聊申请视图】
         const currentUserId = localStorage.getItem('hebao_uuid');
         const isHost = currentUserId === post.user_id;
         const cleanTitle = post.title.replace('[找搭子] ', '').replace('[搭子] ', '');
         
         if (isHost) {
-            // 局长打开的是“群聊房间”
+            // 局长点自己的帖子，依然是进入“群聊房间”看大家聊天
             ChatEngine.openChat(`group_${post.id}`, '👥 ' + cleanTitle + ' (群聊)', '🏕️', post.id, `你的搭子队伍`, 0, '', true, 'group_chat');
-            safeDOM.execute('chatInput', input => input.value = `欢迎大家加入【${cleanTitle}】！`);
         } else {
-            // 用户打开的是和局长的 1v1 私聊申请
-            ChatEngine.openChat(post.user_id || 'test_id', post.author_name || '发起人', post.avatar || '👻', post.id, `搭子局: ${cleanTitle}`, 0, '', false, 'partner');
-            safeDOM.execute('chatInput', input => input.value = `哈喽！我对你的搭子局【${cleanTitle}】很感兴趣，能加我一个吗？🙋`);
+            // 🌟 访客点击：不再直接拉起私聊，而是发送“入队申请”
+            if (confirm(`确定要申请加入【${cleanTitle}】吗？\n局长将在消息列表收到你的申请和资料。`)) {
+                
+                // (真实环境：调用后端 API 发送 Notification)
+                window.App.showToast("✅ 申请已发送！请耐心等待局长审核", "success");
+
+                // 本地模拟：把申请记录塞进缓存，假装发给了局长
+                let mockApps = JSON.parse(localStorage.getItem('hp_mock_applications') || '[]');
+                mockApps.push({
+                    id: 'app_' + Date.now(),
+                    postId: post.id,
+                    postTitle: cleanTitle,
+                    applicantId: currentUserId,
+                    applicantName: localStorage.getItem('hp_name') || '热心管家',
+                    applicantAvatar: localStorage.getItem('hp_avatar') || '😎',
+                    status: 'pending',
+                    time: new Date().toLocaleString()
+                });
+                localStorage.setItem('hp_mock_applications', JSON.stringify(mockApps));
+            }
         }
     }
 };
