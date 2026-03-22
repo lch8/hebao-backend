@@ -655,62 +655,46 @@
 
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <div style="font-size: 20px; font-weight: 900; color: #111827;" id="publishModalTitle">发布求助悬赏</div>
-        <div onclick="window.App.closePublishSheet()" style="background: #F1F5F9; width: 32px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; color: #64748B; font-weight: bold; cursor: pointer; transition: 0.2s;" onmousedown="this.style.background='#E2E8F0'">✕</div>
+        <div onclick="window.App.closePublishSheet()" style="background: #F1F5F9; width: 32px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; color: #64748B; font-weight: bold; cursor: pointer; transition: 0.2s;">✕</div>
     </div>
 
     <div style="max-height: 75vh; overflow-y: auto; padding-bottom: 20px; scrollbar-width: none;">
         
         <div style="display: flex; background: #F3F4F6; border-radius: 14px; padding: 4px; margin-bottom: 24px;">
-            <div onclick="window.App.switchPublishTab('idle')" class="pub-tab" id="pubTabIdle" style="flex: 1; text-align: center; padding: 10px 0; font-size: 14px; font-weight: bold; border-radius: 10px; cursor: pointer; color: #64748B; transition: 0.2s;">📦 闲置</div>
-            <div onclick="window.App.switchPublishTab('help')" class="pub-tab active" id="pubTabHelp" style="flex: 1; text-align: center; padding: 10px 0; font-size: 14px; font-weight: bold; border-radius: 10px; cursor: pointer; background: #FFF; color: #111827; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: 0.2s;">🤝 悬赏</div>
-            <div onclick="window.App.switchPublishTab('partner')" class="pub-tab" id="pubTabPartner" style="flex: 1; text-align: center; padding: 10px 0; font-size: 14px; font-weight: bold; border-radius: 10px; cursor: pointer; color: #64748B; transition: 0.2s;">🏕️ 搭子</div>
+            <div onclick="window.App.switchPublishTab('idle')" class="pub-tab" id="pubTabIdle" style="flex: 1; text-align: center; padding: 10px 0; font-size: 14px; font-weight: bold; border-radius: 10px; cursor: pointer; color: #64748B;">📦 闲置</div>
+            <div onclick="window.App.switchPublishTab('help')" class="pub-tab active" id="pubTabHelp" style="flex: 1; text-align: center; padding: 10px 0; font-size: 14px; font-weight: bold; border-radius: 10px; cursor: pointer; background: #FFF; color: #111827; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">🤝 悬赏</div>
+            <div onclick="window.App.switchPublishTab('partner')" class="pub-tab" id="pubTabPartner" style="flex: 1; text-align: center; padding: 10px 0; font-size: 14px; font-weight: bold; border-radius: 10px; cursor: pointer; color: #64748B;">🏕️ 搭子</div>
         </div>
 
         <div id="publishFormIdle" style="display: none;">
             <div style="margin-bottom: 24px;">
+                <div style="font-size: 13px; font-weight: 900; color: #111827; margin-bottom: 10px;">添加物品照片与独立分类 (最多9件)</div>
                 <div id="idleImgPreviewContainer" style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px;">
-                    <div class="upload-btn" onclick="document.getElementById('idleImgInput').click()" style="width: 100px; height: 100px; flex-shrink: 0; background: #F8FAFC; border: 2px dashed #CBD5E1; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; color: #64748B; transition: 0.2s;">
-                        <span style="font-size: 28px;">📸</span>
-                        <span style="font-size: 12px; font-weight: bold; margin-top: 4px;">传照片(9)</span>
+                    <div class="upload-btn" onclick="document.getElementById('idleImgInput').click()" style="width: 140px; height: 180px; flex-shrink: 0; background: #F8FAFC; border: 2px dashed #CBD5E1; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; color: #64748B;">
+                        <span style="font-size: 32px;">📸</span>
+                        <span style="font-size: 12px; font-weight: bold; margin-top: 8px;">传照片上传物品</span>
                     </div>
                 </div>
                 <input type="file" id="idleImgInput" multiple accept="image/*" style="display:none" onchange="window.App.handleMultiImageSelect(event)">
             </div>
 
-            <div style="margin-bottom: 20px;">
-                <div style="font-size: 13px; font-weight: 900; color: #111827; margin-bottom: 10px;">物品分类</div>
-                <div id="idleCategoryCapsules">
-                    <span class="publish-capsule active" onclick="window.App.togglePublishCapsule(this)">📱 数码</span>
-                    <span class="publish-capsule" onclick="window.App.togglePublishCapsule(this)">🛏️ 家具家电</span>
-                    <span class="publish-capsule" onclick="window.App.togglePublishCapsule(this)">🚲 出行</span>
-                    <span class="publish-capsule" onclick="window.App.togglePublishCapsule(this)">💄 美妆衣物</span>
-                    <span class="publish-capsule" onclick="window.App.togglePublishCapsule(this)">📦 其他</span>
-                </div>
-            </div>
-
-            <textarea id="idleDesc" placeholder="简单描述一下物品：几成新？有什么瑕疵？带不带小票..." style="width: 100%; box-sizing: border-box; border: none; background: #F8FAFC; border-radius: 16px; padding: 16px; font-size: 15px; height: 100px; margin-bottom: 10px; outline: none; resize: none;"></textarea>
+            <textarea id="idleDesc" placeholder="简单概括一下这次出闲置的原因吧 (如：毕业清仓，多件可小刀)..." style="width: 100%; box-sizing: border-box; border: none; background: #F8FAFC; border-radius: 16px; padding: 16px; font-size: 15px; height: 90px; margin-bottom: 10px; outline: none; resize: none;"></textarea>
         </div>
 
         <div id="publishFormHelp" style="display: block;">
-            <div style="background: linear-gradient(135deg, #FDF4FF 0%, #F3E8FF 100%); padding: 16px; border-radius: 16px; margin-bottom: 24px; border: 1px solid #E9D5FF;">
-                <div style="font-weight: 900; color: #7E22CE; margin-bottom: 10px; font-size: 14px; display: flex; align-items: center;"><span style="font-size: 16px; margin-right: 6px;">✨</span> 一句话召唤管家自动填表</div>
-                <textarea id="aiPublishInput" placeholder="例如：明天早上7点，从海牙带两个大箱子去机场，赏金50欧..." style="width: 100%; box-sizing: border-box; border: none; border-radius: 12px; padding: 12px; font-size: 14px; resize: none; height: 70px; background: rgba(255,255,255,0.7); outline: none;"></textarea>
-                <button onclick="window.App.triggerAIFill()" style="width: 100%; background: #9333EA; color: white; border: none; padding: 12px; border-radius: 12px; font-weight: bold; margin-top: 10px; cursor: pointer; box-shadow: 0 4px 12px rgba(147,51,234,0.2);">🪄 智能识别并填充</button>
-            </div>
-            
             <div style="margin-bottom: 20px;">
-                <div style="font-size: 13px; font-weight: 900; color: #111827; margin-bottom: 10px;">帮我做什么？</div>
+                <div style="font-size: 13px; font-weight: 900; color: #111827; margin-bottom: 10px;">帮我做什么？(点击自动套用模板)</div>
                 <div id="helpCategoryCapsules">
-                    <span class="publish-capsule active" onclick="window.App.togglePublishCapsule(this)">🚗 接送机</span>
-                    <span class="publish-capsule" onclick="window.App.togglePublishCapsule(this)">🪑 搬家装配</span>
-                    <span class="publish-capsule" onclick="window.App.togglePublishCapsule(this)">🐱 代喂宠物</span>
-                    <span class="publish-capsule" onclick="window.App.togglePublishCapsule(this)">💻 辅导解题</span>
-                    <span class="publish-capsule" onclick="window.App.togglePublishCapsule(this)">🛠️ 其他求助</span>
+                    <span class="publish-capsule active" onclick="window.App.applyHelpTemplate('接送机', this)">🚗 接送机</span>
+                    <span class="publish-capsule" onclick="window.App.applyHelpTemplate('搬家装配', this)">🪑 搬家装配</span>
+                    <span class="publish-capsule" onclick="window.App.applyHelpTemplate('代喂宠物', this)">🐱 代喂宠物</span>
+                    <span class="publish-capsule" onclick="window.App.applyHelpTemplate('辅导解题', this)">💻 辅导解题</span>
+                    <span class="publish-capsule" onclick="window.App.applyHelpTemplate('其他求助', this)">🛠️ 其他求助</span>
                 </div>
             </div>
 
             <div style="margin-bottom: 20px;">
-                <div style="font-size: 13px; font-weight: 900; color: #111827; margin-bottom: 10px;">互助范围 (决定是否需要填城市)</div>
+                <div style="font-size: 13px; font-weight: 900; color: #111827; margin-bottom: 10px;">互助范围</div>
                 <div id="helpLocationCapsules">
                     <span class="publish-capsule active" onclick="window.App.togglePublishCapsule(this); window.App.checkSmartLocation()">📍 线下见面</span>
                     <span class="publish-capsule" onclick="window.App.togglePublishCapsule(this); window.App.checkSmartLocation()">💻 纯线上解决</span>
@@ -723,18 +707,27 @@
                 <span style="position: absolute; left: 16px; top: 40px; font-size: 18px; color: #64748B;">€</span>
             </div>
 
-            <textarea id="helpDesc" placeholder="具体需要帮什么忙？有特殊要求吗..." style="width: 100%; box-sizing: border-box; border: none; background: #F8FAFC; border-radius: 16px; padding: 16px; font-size: 15px; height: 90px; margin-bottom: 10px; outline: none; resize: none;"></textarea>
+            <textarea id="helpDesc" placeholder="请填写具体要求..." style="width: 100%; box-sizing: border-box; border: 1px solid #E2E8F0; background: #FFF; border-radius: 16px; padding: 16px; font-size: 14px; height: 160px; margin-bottom: 10px; outline: none; resize: none; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);"></textarea>
         </div>
 
         <div id="publishFormPartner" style="display: none;">
             <div style="margin-bottom: 20px;">
                 <div style="font-size: 13px; font-weight: 900; color: #111827; margin-bottom: 10px;">想组什么局？</div>
                 <div id="partnerTypeCapsules">
-                    <span class="publish-capsule active" onclick="window.App.togglePublishCapsule(this)">🍔 探店饭搭子</span>
+                    <span class="publish-capsule active" onclick="window.App.togglePublishCapsule(this)">🍔 饭搭子</span>
                     <span class="publish-capsule" onclick="window.App.togglePublishCapsule(this)">✈️ 旅游看展</span>
                     <span class="publish-capsule" onclick="window.App.togglePublishCapsule(this)">🏋️ 运动健身</span>
                     <span class="publish-capsule" onclick="window.App.togglePublishCapsule(this)">📚 考前自习</span>
+                    <span class="publish-capsule" onclick="window.App.togglePublishCapsule(this)">🎮 游戏开黑</span>
+                    <span class="publish-capsule" onclick="window.App.togglePublishCapsule(this)">🎤 KTV/蹦迪</span>
+                    <span class="publish-capsule" onclick="window.App.togglePublishCapsule(this)">🛍️ 逛街拼单</span>
+                    <span class="publish-capsule" onclick="window.App.togglePublishCapsule(this)">🚗 拼车出行</span>
                 </div>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <div style="font-size: 13px; font-weight: 900; color: #111827; margin-bottom: 10px;">期望时间 ⏱️</div>
+                <input type="text" id="partnerTime" placeholder="例如：本周六下午 / 明天晚上 / 时间随意" style="width: 100%; box-sizing: border-box; border: none; background: #F8FAFC; border-radius: 12px; padding: 14px 16px; font-size: 14px; outline: none; font-weight: bold;">
             </div>
 
             <div style="margin-bottom: 24px;">
@@ -746,7 +739,7 @@
                 </div>
             </div>
 
-            <textarea id="partnerDesc" placeholder="简单介绍一下你的计划，或者期望的具体时间..." style="width: 100%; box-sizing: border-box; border: none; background: #F8FAFC; border-radius: 16px; padding: 16px; font-size: 15px; height: 100px; margin-bottom: 10px; outline: none; resize: none;"></textarea>
+            <textarea id="partnerDesc" placeholder="简单介绍一下你的计划，去哪里，大概预算多少..." style="width: 100%; box-sizing: border-box; border: none; background: #F8FAFC; border-radius: 16px; padding: 16px; font-size: 15px; height: 100px; margin-bottom: 10px; outline: none; resize: none;"></textarea>
         </div>
 
         <div id="smartLocationBlock" style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 16px; border-radius: 16px; margin-bottom: 24px; display: flex; gap: 12px;">
@@ -761,25 +754,6 @@
             </div>
         </div>
 
-        <div style="margin-bottom: 10px;">
-            <div style="font-size: 13px; font-weight: 900; color: #111827; margin-bottom: 10px;">曝光与加急服务</div>
-            <div class="urgent-card active-normal" id="cardNormal" onclick="window.App.selectUrgentLevel('normal')">
-                <div>
-                    <div style="font-weight: 900; font-size: 14px; color: #111827;">📦 普通发布 <span style="font-size:10px; font-weight:normal; color:#6B7280; background:#E5E7EB; padding:2px 6px; border-radius:4px;">免费</span></div>
-                    <div style="font-size: 11px; color: #6B7280; margin-top: 4px;">按时间顺序自然曝光</div>
-                </div>
-                <div style="font-size: 18px;">✅</div>
-            </div>
-
-            <div class="urgent-card" id="cardUrgent" onclick="window.App.selectUrgentLevel('urgent')">
-                <div>
-                    <div style="font-weight: 900; font-size: 14px; color: #EF4444;">🚨 十万火急 <span style="font-size:10px; font-weight:bold; color:#B91C1C; background:#FEE2E2; padding:2px 6px; border-radius:4px;">💎 5 积分</span></div>
-                    <div style="font-size: 11px; color: #EF4444; margin-top: 4px;">全站置顶 5 小时，红色强警示！</div>
-                </div>
-                <div style="font-size: 18px; opacity: 0.3;" id="urgentCheck">⭕️</div>
-            </div>
-        </div>
-        
         <button onclick="window.App.submitPost()" style="width: 100%; background: #111827; color: white; border: none; padding: 16px; border-radius: 16px; font-weight: 900; font-size: 16px; cursor: pointer; box-shadow: 0 8px 20px rgba(17,24,39,0.25); margin-top: 10px; transition: 0.2s;" onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform='scale(1)'">🚀 立即发布</button>
     </div>
 </div>
