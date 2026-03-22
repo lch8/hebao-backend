@@ -1004,25 +1004,70 @@ document.addEventListener('DOMContentLoaded', () => {
 
 window.App = window.App || {};
 
-// 🌟 悬赏：智能模板注入引擎
-window.App.applyHelpTemplate = function(type, clickedEl) {
-    window.App.togglePublishCapsule(clickedEl);
-    window.App.checkSmartLocation(); // 同步检查位置
+// ============================================================================
+// 🌟 荷包管家：智能发布向导引擎 (模板注入 + 定位显隐)
+// ============================================================================
 
-    const descEl = document.getElementById('helpDesc');
-    
-    // 如果用户已经写了很长的话，不要粗暴覆盖他的心血
-    if (descEl.value.length > 20 && !descEl.value.includes('：')) {
-        return; 
-    }
+if (typeof window !== 'undefined') {
+    window.App = window.App || {};
 
-    const templates = {
-        '接送机': "📍 出发地：\n🏁 目的地：\n⏰ 出发时间：\n👥 人数/行李数：\n⚠️ 其他要求：",
-        '搬家装配': "📦 搬运物品清单：\n🏢 起点(楼层/有无电梯)：\n🏢 终点(楼层/有无电梯)：\n👥 需要几人帮忙：\n⏳ 预计用时：",
-        '代喂宠物': "🐈 宠物类型(猫/狗/其他)：\n📅 代喂日期：\n🔄 上门频率：\n🔑 钥匙交接方式：\n⚠️ 注意事项：",
-        '辅导解题': "📚 学科/专业：\n❓ 遇到的具体问题：\n💻 希望上课形式(线上/线下)：",
-        '其他求助': ""
+    // 1. 悬赏模板注入引擎
+    window.App.applyHelpTemplate = function(type, clickedEl) {
+        // 切换胶囊的高亮状态
+        if (window.App.togglePublishCapsule) {
+            window.App.togglePublishCapsule(clickedEl);
+        }
+        
+        // 顺便检查一下是否要隐藏“所在城市” (比如他选了线上辅导)
+        if (window.App.checkSmartLocation) {
+            window.App.checkSmartLocation(); 
+        }
+
+        const descEl = document.getElementById('helpDesc');
+        if (!descEl) return;
+        
+        // 人性化设计：如果用户已经自己手写了超过20个字，就不要用模板去覆盖他的心血
+        if (descEl.value.length > 20 && !descEl.value.includes('：')) {
+            return; 
+        }
+
+        // 模板字典
+        const templates = {
+            '接送机': "📍 出发地：\n🏁 目的地：\n⏰ 出发时间：\n👥 人数/行李数：\n⚠️ 其他要求：",
+            '搬家装配': "📦 搬运物品清单：\n🏢 起点(楼层/有无电梯)：\n🏢 终点(楼层/有无电梯)：\n👥 需要几人帮忙：\n⏳ 预计用时：",
+            '代喂宠物': "🐈 宠物类型(猫/狗/其他)：\n📅 代喂日期：\n🔄 上门频率：\n🔑 钥匙交接方式：\n⚠️ 注意事项：",
+            '辅导解题': "📚 学科/专业：\n❓ 遇到的具体问题：\n💻 希望上课形式(线上/线下)：",
+            '其他求助': ""
+        };
+
+        // 瞬间填入文本框
+        descEl.value = templates[type] || "";
     };
 
-    descEl.value = templates[type] || "";
-};
+    // 2. 智能地理位置检查引擎
+    window.App.checkSmartLocation = function() {
+        const locBlock = document.getElementById('smartLocationBlock');
+        if (!locBlock) return;
+
+        const type = window.App.currentPublishType || 'help';
+
+        if (type === 'idle' || type === 'partner') {
+            // 闲置和搭子，必须显示地址框
+            locBlock.style.display = 'flex';
+            window.App.requireCity = true;
+        } else if (type === 'help') {
+            // 悬赏：检查是否选了“纯线上解决”
+            const activeLoc = document.querySelector('#helpLocationCapsules .active');
+            const isOnline = activeLoc ? activeLoc.innerText.includes('线上') : false;
+            
+            if (isOnline) {
+                // 线上悬赏，藏掉城市输入框，且关闭强校验！
+                locBlock.style.display = 'none';
+                window.App.requireCity = false;
+            } else {
+                locBlock.style.display = 'flex';
+                window.App.requireCity = true;
+            }
+        }
+    };
+}
