@@ -278,10 +278,10 @@ export const MarketEngine = {
     },
 
     // ==========================================
-    // 🤝 渲染器：悬赏 (双列瀑布流 + 极致重点高亮)
+    // 🤝 渲染器：悬赏 (极致窄边双列瀑布流)
     // ==========================================
     renderMarketHelp() {
-        // 🌟 核心修改：将 isGrid 参数改为 true，开启双列瀑布流容器
+        // 🌟 致命修正：这里的 true 决定了它必须是双列瀑布流！
         const container = this.getContainer('helpListContainer', true);
         if (!container) return;
 
@@ -301,32 +301,34 @@ export const MarketEngine = {
         processData.forEach(post => {
             const isUrgent = post.contentObj?.urgent === '十万火急';
             const titleStr = post.title.replace('[互助] ', '');
-            const descStr = post.contentObj?.desc || post.contentObj?.text || '点击查看详情...';
+            let descStr = post.contentObj?.desc || post.contentObj?.text || '';
+            // 清洗发帖时残留的富文本噪音
+            descStr = descStr.replace(/搬运物品清单：|起点.*：|终点.*：|需要几人帮忙：/g, ' ').trim();
             const city = post.contentObj?.city || '荷兰';
 
-            // 🌟 视觉重构：适应窄列距，垂直排版，价格绝对巨大化
+            // 🌟 视觉重构：双列卡片布局，使用 margin-top: auto 把底部推向最下方对齐
             html += `
-            <div class="waterfall-item" style="background:#FFF; border-radius:12px; padding:12px; margin-bottom:8px; box-shadow:0 4px 12px rgba(0,0,0,0.03); border:1px solid ${isUrgent ? '#FECACA' : '#F1F5F9'}; cursor:pointer; transition: transform 0.2s;" onmousedown="this.style.transform='scale(0.97)'" onmouseup="this.style.transform='scale(1)'" onclick="window.App.initiateHelpChat('${post.id}')">
+            <div class="waterfall-item" style="background:#FFF; border-radius:12px; padding:10px; margin-bottom:8px; box-shadow:0 4px 12px rgba(0,0,0,0.03); border:1px solid ${isUrgent ? '#FECACA' : '#F1F5F9'}; cursor:pointer; display:flex; flex-direction:column; gap:8px;" onclick="window.App.initiateHelpChat('${post.id}')">
                 
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                    <div style="font-size:20px; font-weight:900; color:#EF4444; letter-spacing:-0.5px;">€${post.likes || 0}</div>
-                    ${isUrgent ? `<div style="background:#FEF2F2; color:#DC2626; padding:2px 6px; border-radius:6px; font-size:10px; font-weight:900;">🚨 急单</div>` : ''}
+                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                    <div style="font-size:18px; font-weight:900; color:#EF4444; line-height:1; letter-spacing:-0.5px;">€${post.likes || 0}</div>
+                    ${isUrgent ? `<div style="background:#FEF2F2; color:#DC2626; padding:2px 4px; border-radius:4px; font-size:9px; font-weight:900;">🚨 急单</div>` : ''}
                 </div>
                 
-                <div style="font-size:14px; font-weight:900; color:#111827; line-height:1.4; margin-bottom:6px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${titleStr}</div>
-                <div style="font-size:11px; color:#64748B; line-height:1.5; margin-bottom:12px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${descStr}</div>
+                <div style="font-size:13px; font-weight:900; color:#111827; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${titleStr}</div>
+                <div style="font-size:11px; color:#64748B; line-height:1.4; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;">${descStr}</div>
                 
-                <div style="display:flex; gap:4px; margin-bottom:12px; flex-wrap:wrap;">
-                    <span style="font-size:9px; font-weight:bold; color:#D97706; background:#FFFBEB; padding:3px 6px; border-radius:6px;">💰 悬赏</span>
-                    <span style="font-size:9px; font-weight:bold; color:#475569; background:#F8FAFC; padding:3px 6px; border-radius:6px;">📍 ${city}</span>
+                <div style="display:flex; gap:4px; flex-wrap:wrap;">
+                    <span style="font-size:9px; font-weight:bold; color:#D97706; background:#FFFBEB; padding:2px 6px; border-radius:4px;">💰 悬赏</span>
+                    <span style="font-size:9px; font-weight:bold; color:#475569; background:#F8FAFC; padding:2px 6px; border-radius:4px;">📍 ${city}</span>
                 </div>
                 
-                <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #F1F5F9; padding-top:10px;">
-                    <div style="display:flex; align-items:center; gap:6px; overflow:hidden; flex:1;">
-                        <span style="font-size:16px; background:#F1F5F9; width:22px; height:22px; border-radius:11px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">${post.avatar}</span>
-                        <span style="font-size:11px; font-weight:bold; color:#475569; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${post.author}</span>
+                <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #F1F5F9; padding-top:8px; margin-top:auto;">
+                    <div style="display:flex; align-items:center; gap:4px; overflow:hidden; flex:1;">
+                        <span style="font-size:14px; background:#F1F5F9; width:20px; height:20px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">${post.avatar}</span>
+                        <span style="font-size:10px; font-weight:bold; color:#475569; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${post.author}</span>
                     </div>
-                    <div style="font-size:11px; font-weight:900; color:#10B981; background:#ECFDF5; padding:4px 8px; border-radius:8px; flex-shrink:0;">去赚</div>
+                    <div style="font-size:10px; font-weight:900; color:#10B981; background:#ECFDF5; padding:4px 8px; border-radius:6px; flex-shrink:0;">去赚</div>
                 </div>
             </div>`;
         });
@@ -334,10 +336,10 @@ export const MarketEngine = {
     },
 
     // ==========================================
-    // 🏕️ 渲染器：找搭子 (双列瀑布流 + 迷你进度条)
+    // 🏕️ 渲染器：找搭子 (极致窄边双列瀑布流)
     // ==========================================
     renderMarketPartner() {
-        // 🌟 核心修改：将 isGrid 参数改为 true，开启双列瀑布流容器
+        // 🌟 致命修正：这里的 true 决定了它必须是双列瀑布流！
         const container = this.getContainer('partnerListContainer', true);
         if (!container) return;
 
@@ -375,6 +377,8 @@ export const MarketEngine = {
 
         processData.forEach(post => {
             const titleStr = post.title.replace('[找搭子] ', '').replace('[搭子] ', '');
+            
+            // 🌟 彻底清洗“Word文档式”拼接文本，只留真言
             let rawDesc = post.contentObj?.desc || post.contentObj?.text || '';
             let cleanDesc = rawDesc;
             if (rawDesc.includes('\\n\\n')) cleanDesc = rawDesc.split('\\n\\n').pop();
@@ -383,6 +387,10 @@ export const MarketEngine = {
             const city = post.contentObj?.city || '荷兰';
             const date = post.contentObj?.time || post.contentObj?.date || '待定'; 
             
+            // 🌟 智能去重：如果分类标签和标题一模一样（比如标题是"饭搭子"，标签也是"饭搭子"），就不显示标签了
+            const tagStr = post.contentObj?.tag || '组局';
+            const showTag = tagStr !== titleStr; 
+
             const joined = parseInt(post.contentObj?.joinedCount) || 1; 
             const max = parseInt(post.contentObj?.maxPeople) || 2;      
             const remain = max - joined > 0 ? max - joined : 0;
@@ -390,39 +398,38 @@ export const MarketEngine = {
             const isHost = currentUserId === post.user_id;              
             const safeTitle = titleStr.replace(/'/g, "\\'");
 
-            // 🌟 视觉重构：窄卡片适配，精简文字，进度条高度浓缩
+            // 🌟 视觉重构：小红书双列适配，字体更紧凑，进度条极限微缩
             html += `
-            <div class="waterfall-item" style="background:#FFF; border-radius:12px; padding:12px; margin-bottom:8px; box-shadow:0 4px 12px rgba(0,0,0,0.03); border:1px solid #F3E8FF; cursor:pointer; transition: transform 0.2s;" onmousedown="this.style.transform='scale(0.97)'" onmouseup="this.style.transform='scale(1)'" onclick="window.App.initiatePartnerChat('${post.id}')">
+            <div class="waterfall-item" style="background:#FFF; border-radius:12px; padding:10px; margin-bottom:8px; box-shadow:0 4px 12px rgba(0,0,0,0.03); border:1px solid #F3E8FF; cursor:pointer; display:flex; flex-direction:column; gap:8px;" onclick="window.App.initiatePartnerChat('${post.id}')">
                 
-                <div style="font-size:14px; font-weight:900; color:#4C1D95; line-height:1.4; margin-bottom:6px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${titleStr}</div>
+                <div style="font-size:13px; font-weight:900; color:#4C1D95; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${titleStr}</div>
                 
-                <div style="display:flex; gap:4px; margin-bottom:8px; flex-wrap:wrap;">
-                    <span style="font-size:9px; font-weight:bold; color:#7E22CE; background:#F3E8FF; padding:3px 6px; border-radius:6px;">${post.contentObj?.tag || '组局'}</span>
-                    <span style="font-size:9px; font-weight:bold; color:#475569; background:#F8FAFC; padding:3px 6px; border-radius:6px;">⏰ ${date}</span>
+                <div style="display:flex; gap:4px; flex-wrap:wrap;">
+                    ${showTag ? `<span style="font-size:9px; font-weight:bold; color:#7E22CE; background:#F3E8FF; padding:2px 6px; border-radius:4px;">${tagStr}</span>` : ''}
+                    <span style="font-size:9px; font-weight:bold; color:#475569; background:#F8FAFC; padding:2px 6px; border-radius:4px;">⏰ ${date}</span>
                 </div>
 
-                <div style="font-size:11px; color:#64748B; line-height:1.5; margin-bottom:10px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${cleanDesc || '快来和我一起吧！'}</div>
+                <div style="font-size:11px; color:#64748B; line-height:1.4; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;">${cleanDesc || '快来和我一起吧！'}</div>
                 
-                <div style="background: #F8FAFC; border-radius: 8px; padding: 8px; margin-bottom: 12px; border: 1px solid #E2E8F0;">
-                    <div style="display: flex; justify-content: space-between; font-size: 10px; font-weight: 900; color: #111827; margin-bottom: 6px;">
-                        <span>🏃 进度 ${joined}/${max}</span>
+                <div style="background: #F8FAFC; border-radius: 6px; padding: 6px; border: 1px solid #E2E8F0; margin-top: auto;">
+                    <div style="display: flex; justify-content: space-between; font-size: 9px; font-weight: 900; color: #111827; margin-bottom: 4px;">
+                        <span>进度 ${joined}/${max}</span>
                         <span style="color: #10B981;">缺 ${remain}</span>
                     </div>
                     <div style="width: 100%; height: 4px; background: #E2E8F0; border-radius: 2px; overflow: hidden;">
-                        <div style="width: ${percent}%; height: 100%; background: #10B981; border-radius: 2px; transition: width 0.5s ease;"></div>
+                        <div style="width: ${percent}%; height: 100%; background: #10B981; border-radius: 2px;"></div>
                     </div>
                 </div>
 
-                <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #F1F5F9; padding-top:10px;">
-                    <div style="display:flex; align-items:center; gap:6px; overflow:hidden; flex:1;">
-                        <span style="font-size:16px; background:#F5F3FF; width:22px; height:22px; border-radius:11px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">${post.avatar}</span>
-                        <span style="font-size:11px; font-weight:bold; color:#475569; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${post.author}</span>
+                <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #F1F5F9; padding-top:8px;">
+                    <div style="display:flex; align-items:center; gap:4px; overflow:hidden; flex:1;">
+                        <span style="font-size:14px; background:#F5F3FF; width:20px; height:20px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">${post.avatar}</span>
+                        <span style="font-size:10px; font-weight:bold; color:#475569; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${post.author}</span>
                     </div>
-                    
                     ${isHost ? 
-                        `<div style="font-size:10px; font-weight:900; color:#64748B; background:#F1F5F9; padding:4px 8px; border-radius:8px; flex-shrink:0;">👑 管理</div>` 
+                        `<div style="font-size:9px; font-weight:900; color:#64748B; background:#F1F5F9; padding:4px 6px; border-radius:6px; flex-shrink:0;">👑</div>` 
                         : 
-                        `<div style="font-size:10px; font-weight:900; color:#FFF; background:#111827; padding:4px 8px; border-radius:8px; flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.1);">✋ 申请</div>`
+                        `<div style="font-size:9px; font-weight:900; color:#FFF; background:#111827; padding:4px 6px; border-radius:6px; flex-shrink:0;">✋ 申请</div>`
                     }
                 </div>
             </div>`;
