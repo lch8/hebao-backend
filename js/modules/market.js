@@ -278,11 +278,10 @@ export const MarketEngine = {
     },
 
     // ==========================================
-    // 🤝 渲染器：悬赏 (真·双列防篡改瀑布流)
+    // 🤝 渲染器：悬赏 (双列瀑布流 + 原生换行保留)
     // ==========================================
     renderMarketHelp() {
-        // 🌟 防御降级：这里传 false，把外层容器的控制权交还给 Tab 切换器
-        const container = this.getContainer('helpListContainer', false);
+        const container = this.getContainer('helpListContainer', true);
         if (!container) return;
 
         let processData = [...(window.App.marketDataCache?.help || [])];
@@ -293,21 +292,22 @@ export const MarketEngine = {
         else if (state.sort === 'reward') processData.sort((a, b) => (parseFloat(b.likes) || 0) - (parseFloat(a.likes) || 0));
 
         if (processData.length === 0) { 
-            container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:60px 0;">暂无符合条件的悬赏哦~</div>'; 
+            container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:60px 0; grid-column:span 2;">暂无符合条件的悬赏哦~</div>'; 
             return; 
         }
 
-        // 🌟 核心魔法：使用内层 Wrapper，利用 column-count 原生瀑布流排版！
         let html = '<div style="column-count: 2; column-gap: 8px;">';
         
         processData.forEach(post => {
             const isUrgent = post.contentObj?.urgent === '十万火急';
             const titleStr = post.title.replace('[互助] ', '');
+            
+            // 🌟 修复换行丢失：把可能被转义的 \n 恢复成真实换行
             let descStr = post.contentObj?.desc || post.contentObj?.text || '';
-            descStr = descStr.replace(/搬运物品清单：|起点.*：|终点.*：|需要几人帮忙：/g, ' ').trim();
+            descStr = String(descStr).replace(/\\n/g, '\n').trim(); 
+            
             const city = post.contentObj?.city || '荷兰';
 
-            // 🌟 核心魔法 2：加上 break-inside: avoid; 防止一张卡片被劈成两半跨列显示
             html += `
             <div class="waterfall-item" style="break-inside: avoid; background:#FFF; border-radius:12px; padding:10px; margin-bottom:8px; box-shadow:0 4px 12px rgba(0,0,0,0.03); border:1px solid ${isUrgent ? '#FECACA' : '#F1F5F9'}; cursor:pointer; display:flex; flex-direction:column; gap:8px;" onclick="window.App.initiateHelpChat('${post.id}')">
                 
@@ -317,7 +317,8 @@ export const MarketEngine = {
                 </div>
                 
                 <div style="font-size:13px; font-weight:900; color:#111827; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${titleStr}</div>
-                <div style="font-size:11px; color:#64748B; line-height:1.4; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;">${descStr}</div>
+                
+                <div style="font-size:11px; color:#64748B; line-height:1.5; display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; white-space: pre-line;">${descStr}</div>
                 
                 <div style="display:flex; gap:4px; flex-wrap:wrap;">
                     <span style="font-size:9px; font-weight:bold; color:#D97706; background:#FFFBEB; padding:2px 6px; border-radius:4px;">💰 悬赏</span>
@@ -334,15 +335,14 @@ export const MarketEngine = {
             </div>`;
         });
         
-        html += '</div>'; // 闭合 Wrapper
+        html += '</div>';
         container.innerHTML = html;
     },
 
     // ==========================================
-    // 🏕️ 渲染器：找搭子 (真·双列防篡改瀑布流)
+    // 🏕️ 渲染器：找搭子 (双列瀑布流 + 原生换行保留)
     // ==========================================
     renderMarketPartner() {
-        // 🌟 防御降级：这里传 false
         const container = this.getContainer('partnerListContainer', false);
         if (!container) return;
 
@@ -375,18 +375,16 @@ export const MarketEngine = {
             return; 
         }
 
-        // 🌟 核心魔法：瀑布流 Wrapper
         let html = '<div style="column-count: 2; column-gap: 8px;">';
-
         const currentUserId = localStorage.getItem('hebao_uuid');
 
         processData.forEach(post => {
             const titleStr = post.title.replace('[找搭子] ', '').replace('[搭子] ', '');
             
+            // 🌟 修复换行并精准脱除自动拼接的前缀
             let rawDesc = post.contentObj?.desc || post.contentObj?.text || '';
-            let cleanDesc = rawDesc;
-            if (rawDesc.includes('\\n\\n')) cleanDesc = rawDesc.split('\\n\\n').pop();
-            else if (rawDesc.includes('\n\n')) cleanDesc = rawDesc.split('\n\n').pop();
+            let cleanDesc = String(rawDesc).replace(/\\n/g, '\n');
+            cleanDesc = cleanDesc.replace(/⏱️ 时间：.*?\n👥 队伍：.*?\n\n/g, '').trim();
 
             const city = post.contentObj?.city || '荷兰';
             const date = post.contentObj?.time || post.contentObj?.date || '待定'; 
@@ -400,7 +398,6 @@ export const MarketEngine = {
             const percent = Math.min(100, (joined / max) * 100);
             const isHost = currentUserId === post.user_id;              
 
-            // 🌟 加上 break-inside: avoid;
             html += `
             <div class="waterfall-item" style="break-inside: avoid; background:#FFF; border-radius:12px; padding:10px; margin-bottom:8px; box-shadow:0 4px 12px rgba(0,0,0,0.03); border:1px solid #F3E8FF; cursor:pointer; display:flex; flex-direction:column; gap:8px;" onclick="window.App.initiatePartnerChat('${post.id}')">
                 
@@ -411,7 +408,7 @@ export const MarketEngine = {
                     <span style="font-size:9px; font-weight:bold; color:#475569; background:#F8FAFC; padding:2px 6px; border-radius:4px;">⏰ ${date}</span>
                 </div>
 
-                <div style="font-size:11px; color:#64748B; line-height:1.4; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;">${cleanDesc || '快来和我一起吧！'}</div>
+                <div style="font-size:11px; color:#64748B; line-height:1.5; display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; white-space: pre-line;">${cleanDesc || '快来和我一起吧！'}</div>
                 
                 <div style="background: #F8FAFC; border-radius: 6px; padding: 6px; border: 1px solid #E2E8F0; margin-top: auto;">
                     <div style="display: flex; justify-content: space-between; font-size: 9px; font-weight: 900; color: #111827; margin-bottom: 4px;">
@@ -437,7 +434,7 @@ export const MarketEngine = {
             </div>`;
         });
         
-        html += '</div>'; // 闭合 Wrapper
+        html += '</div>';
         container.innerHTML = html;
     },
     // ==========================================
