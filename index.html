@@ -766,70 +766,101 @@
 
 
 
-    <div id="userProfileModal" class="modal-overlay" style="display: none; align-items: flex-end; padding: 0;">
-    <div class="modal-content" style="width: 100%; border-radius: 20px 20px 0 0; border: none; padding: 20px; animation: slideUp 0.3s ease;">
+    <div id="chatOptionsMenuModal" class="modal-overlay" style="display: none; align-items: flex-end; padding: 0; z-index: 99999;">
+    <div class="modal-content" style="width: 100%; border-radius: 20px 20px 0 0; border: none; padding: 10px 10px 20px; background: #FFF;">
+        <div style="width: 40px; height: 4px; background: #E2E8F0; border-radius: 2px; margin: 0 auto 10px;"></div>
         
+        <div style="border-radius: 16px; overflow: hidden; background: #FFF; border: 1px solid #F1F5F9; margin-bottom: 10px;">
+            <button onclick="window.App.TransactionEngine.confirmTradeSuccess(); document.getElementById('chatOptionsMenuModal').style.display='none';" style="display: flex; width: 100%; align-items: center; justify-content: space-between; padding: 16px; border: none; background: transparent; cursor: pointer;">
+                <span style="font-size: 15px; font-weight: 900; color: #059669;">✅ 确认闲置/悬赏完成</span>
+                <span style="color: #A1A1AA; font-size: 12px; font-weight: bold;">+5分 ›</span>
+            </button>
+            <button onclick="alert('局后结算功能即将上线！'); document.getElementById('chatOptionsMenuModal').style.display='none';" style="display: flex; width: 100%; align-items: center; justify-content: space-between; padding: 16px; border: none; border-top: 1px solid #F1F5F9; background: transparent; cursor: pointer;">
+                <span style="font-size: 15px; font-weight: 900; color: #7C3AED;">🏕️ CAMP 点名与结算</span>
+                <span style="color: #A1A1AA; font-size: 12px; font-weight: bold;">局后管理 ›</span>
+            </button>
+            <button onclick="window.App.TransactionEngine.reportUser(); document.getElementById('chatOptionsMenuModal').style.display='none';" style="display: flex; width: 100%; align-items: center; justify-content: space-between; padding: 16px; border: none; border-top: 1px solid #F1F5F9; background: transparent; cursor: pointer;">
+                <span style="font-size: 15px; font-weight: 900; color: #EF4444;">🚩 举报违规/维权</span>
+                <span style="color: #A1A1AA; font-size: 12px; font-weight: bold;">管家介入 ›</span>
+            </button>
+        </div>
+
+        <div style="border-radius: 16px; overflow: hidden; background: #FFF; border: 1px solid #FEE2E2;">
+            <button onclick="alert('聊天记录已清空！'); document.getElementById('chatOptionsMenuModal').style.display='none';" style="display: flex; width: 100%; align-items: center; justify-content: center; padding: 16px; border: none; background: transparent; cursor: pointer;">
+                <span style="font-size: 15px; font-weight: 900; color: #EF4444;">🗑️ 清空聊天记录 (退出)</span>
+            </button>
+        </div>
+        <button onclick="document.getElementById('chatOptionsMenuModal').style.display='none'" style="display: block; width: 100%; text-align: center; margin-top: 10px; background: #F1F5F9; color: #111827; padding: 16px; border-radius: 16px; font-size: 15px; font-weight: 900; border: none; cursor: pointer;">取消</button>
+    </div>
+</div>
+
+<div id="userProfileModal" class="modal-overlay" style="display: none; align-items: flex-end; padding: 0; z-index: 99999;">
+    <div class="modal-content" style="width: 100%; border-radius: 20px 20px 0 0; border: none; padding: 24px; background: #FFF;">
         <div style="display: flex; gap: 16px; align-items: center; margin-bottom: 24px;">
-            <div style="font-size: 48px; background: #F1F5F9; width: 64px; height: 64px; border-radius: 32px; display: flex; align-items: center; justify-content: center; position: relative;">
-                <span id="profTargetAvatar">😎</span>
-                <span style="position: absolute; bottom: -2px; right: -2px; font-size: 16px;">✅</span>
-            </div>
+            <div style="font-size: 48px; background: #F8FAFC; width: 64px; height: 64px; border-radius: 32px; display: flex; align-items: center; justify-content: center; border: 2px solid #10B981;">😎</div>
             <div style="flex: 1;">
-                <div style="display: flex; align-items: center; gap: 6px;">
-                    <div style="font-size: 18px; font-weight: 900; color: #111827;" id="profTargetName">荷包蛋管理员</div>
-                </div>
-                <div style="font-size: 12px; color: #64748B; margin-top: 2px;">TUD 认证校友</div>
+                <div style="font-size: 20px; font-weight: 900; color: #111827; margin-bottom: 4px;" id="profTargetName">热心荷包蛋</div>
+                <div style="font-size: 12px; color: #64748B; background: #F1F5F9; padding: 2px 6px; border-radius: 4px; display: inline-block; font-weight: bold;">TUD 认证校友</div>
             </div>
-            <button class="close-btn" onclick="ModalManager.close('userProfileModal')" style="padding: 10px 16px; border-radius: 12px;">× Close</button>
+            <div onclick="document.getElementById('userProfileModal').style.display='none'" style="background: #F1F5F9; width: 32px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; color: #64748B; font-weight: bold; cursor: pointer;">✕</div>
         </div>
 
         <div style="display: flex; gap: 10px; margin-bottom: 24px;">
             <div style="flex: 1; background: #FFFBEB; padding: 16px; border-radius: 16px; border: 1px solid #FDE68A; text-align: center;">
                 <div style="font-size: 11px; color: #D97706; font-weight: bold; margin-bottom: 4px;">管家信用分</div>
-                <div style="font-size: 28px; font-weight: 900; color: #F59E0B; font-family: monospace;" id="profTargetCredit">130</div>
+                <div style="font-size: 28px; font-weight: 900; color: #F59E0B; font-family: monospace;">135</div>
             </div>
             <div style="flex: 1; background: #ECFDF5; padding: 16px; border-radius: 16px; border: 1px solid #A7F3D0; text-align: center;">
                 <div style="font-size: 11px; color: #059669; font-weight: bold; margin-bottom: 4px;">找搭子赴约率</div>
-                <div style="font-size: 28px; font-weight: 900; color: #10B981; font-family: monospace;" id="profTargetAttendance">100%</div>
+                <div style="font-size: 28px; font-weight: 900; color: #10B981; font-family: monospace;">100%</div>
             </div>
         </div>
 
         <div style="display: flex; gap: 10px;">
-            <button id="profFollowBtn" style="flex: 1; background: #FFF; color: #111827; border: 1px solid #E2E8F0; padding: 14px; border-radius: 14px; font-weight: 900; font-size: 14px; cursor: pointer;">✨ 关注</button>
-            <button id="profInviteBtn" style="flex: 1; background: #FFF; color: #7C3AED; border: 1px solid #F3E8FF; padding: 14px; border-radius: 14px; font-weight: 900; font-size: 14px; cursor: pointer;">🏕️ 邀请组队</button>
-            <button id="profChatBtn" style="flex: 1; background: #111827; color: white; border: none; padding: 14px; border-radius: 14px; font-weight: 900; font-size: 14px; cursor: pointer;">✋ 私聊申请</button>
+            <button onclick="window.App.showToast('🎉 关注成功！', 'success')" style="flex: 1; background: #FFF; color: #111827; border: 2px solid #E2E8F0; padding: 14px; border-radius: 14px; font-weight: 900; font-size: 15px; cursor: pointer;">✨ 关注</button>
+            <button onclick="document.getElementById('userProfileModal').style.display='none'" style="flex: 1; background: #111827; color: white; border: none; padding: 14px; border-radius: 14px; font-weight: 900; font-size: 15px; cursor: pointer;">✋ 私聊</button>
         </div>
     </div>
 </div>
 
-<div id="chatOptionsMenuModal" class="modal-overlay" style="display: none; align-items: flex-end; padding: 0;">
-    <div class="modal-content" style="width: 100%; border-radius: 20px 20px 0 0; border: none; padding: 10px 10px 20px; animation: slideUp 0.3s ease;">
-        <div style="width: 40px; height: 4px; background: #E2E8F0; border-radius: 2px; margin: 0 auto 10px;"></div>
+<div id="inviteTeamModal" class="modal-overlay" style="display: none; align-items: flex-end; padding: 0; z-index: 99999;">
+    <div class="modal-content" style="width: 100%; border-radius: 20px 20px 0 0; border: none; padding: 24px; background: #F8FAFC; height: 75vh; display: flex; flex-direction: column;">
         
-        <div style="border-radius: 16px; overflow: hidden; background: #FFF; border: 1px solid #F1F5F9; margin-bottom: 10px;">
-            <button class="menu-item-btn" onclick="window.App.TransactionEngine.confirmTradeSuccess()" style="display: flex; width: 100%; align-items: center; justify-content: space-between; padding: 16px; border: none; background: transparent; cursor: pointer;">
-                <span style="font-size: 14px; font-weight: bold; color: #059669;">✅ 确认线下交易完成</span>
-                <span style="color: #A1A1AA;">+5分 ›</span>
-            </button>
-            
-            <button class="menu-item-btn" style="display: flex; width: 100%; align-items: center; justify-content: space-between; padding: 16px; border: none; border-top: 1px solid #F1F5F9; background: transparent; cursor: pointer;">
-                <span style="font-size: 14px; font-weight: bold; color: #7C3AED;">CAMP 点名与结算鸽子</span>
-                <span style="color: #A1A1AA;">局后 ›</span>
-            </button>
-            
-            <button class="menu-item-btn" onclick="window.App.TransactionEngine.reportUser()" style="display: flex; width: 100%; align-items: center; justify-content: space-between; padding: 16px; border: none; border-top: 1px solid #F1F5F9; background: transparent; cursor: pointer;">
-                <span style="font-size: 14px; font-weight: bold; color: #EF4444;">🚩 举报违规/维权</span>
-                <span style="color: #A1A1AA;">人工核实 ›</span>
-            </button>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div style="font-size: 18px; font-weight: 900; color: #111827;">🏕️ 邀请好友加入队伍</div>
+            <div onclick="document.getElementById('inviteTeamModal').style.display='none'" style="background: #E2E8F0; width: 32px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; color: #475569; font-weight: bold; cursor: pointer;">✕</div>
         </div>
 
-        <div style="border-radius: 16px; overflow: hidden; background: #FFF; border: 1px solid #FEE2E2;">
-            <button class="menu-item-btn" style="display: flex; width: 100%; align-items: center; justify-content: center; padding: 16px; border: none; background: transparent; cursor: pointer;">
-                <span style="font-size: 14px; font-weight: bold; color: #EF4444;">🗑️ 清空聊天记录 (退出队伍)</span>
-            </button>
+        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+            <input type="text" id="inviteTargetId" placeholder="输入管家 ID 精准邀请..." style="flex: 1; border: 1px solid #E2E8F0; border-radius: 12px; padding: 12px 16px; font-size: 14px; outline: none;">
+            <button onclick="window.App.sendTeamInvite()" style="background: #7C3AED; color: white; border: none; padding: 0 20px; border-radius: 12px; font-weight: 900; font-size: 14px; cursor: pointer; box-shadow: 0 4px 10px rgba(124,58,237,0.2);">发送</button>
         </div>
 
-        <button onclick="ModalManager.close('chatOptionsMenuModal')" style="display: block; width: 100%; text-align: center; margin-top: 10px; background: #F1F5F9; color: #111827; padding: 16px; border-radius: 16px; font-size: 14px; font-weight: bold; border: none; cursor: pointer;">取消</button>
+        <div style="font-size: 13px; font-weight: 900; color: #64748B; margin-bottom: 12px;">👥 我的互关 / 粉丝</div>
+        
+        <div style="flex: 1; overflow-y: auto; background: #FFF; border-radius: 16px; border: 1px solid #E2E8F0; padding: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #F1F5F9;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 24px; background: #F1F5F9; width: 40px; height: 40px; border-radius: 20px; display: flex; align-items: center; justify-content: center;">🐼</span>
+                    <div>
+                        <div style="font-size: 14px; font-weight: 900; color: #111827;">熬夜冠军</div>
+                        <div style="font-size: 10px; color: #059669; font-weight: bold; background: #D1FAE5; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 4px;">赴约率 100%</div>
+                    </div>
+                </div>
+                <button onclick="window.App.sendTeamInvite(this)" style="background: #F3E8FF; color: #7C3AED; border: none; padding: 8px 16px; border-radius: 10px; font-weight: 900; font-size: 12px; cursor: pointer;">邀请</button>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 24px; background: #F1F5F9; width: 40px; height: 40px; border-radius: 20px; display: flex; align-items: center; justify-content: center;">🦊</span>
+                    <div>
+                        <div style="font-size: 14px; font-weight: 900; color: #111827;">早八打工人</div>
+                        <div style="font-size: 10px; color: #059669; font-weight: bold; background: #D1FAE5; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 4px;">靠谱新人</div>
+                    </div>
+                </div>
+                <button onclick="window.App.sendTeamInvite(this)" style="background: #F3E8FF; color: #7C3AED; border: none; padding: 8px 16px; border-radius: 10px; font-weight: 900; font-size: 12px; cursor: pointer;">邀请</button>
+            </div>
+        </div>
     </div>
 </div>
 
