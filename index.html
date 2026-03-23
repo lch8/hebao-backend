@@ -842,7 +842,31 @@
     @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
     .menu-item-btn:active { background-color: #F8FAFC; }
 </style>
-    
+
+
+    <div id="rewardGroupModal" class="modal-overlay" style="display: none; align-items: center; justify-content: center; padding: 20px; z-index: 999999; background: rgba(0,0,0,0.6);" onclick="if(event.target === this) this.style.display='none'">
+    <div class="modal-content" style="width: 100%; max-width: 320px; border-radius: 24px; border: none; padding: 24px; background: linear-gradient(180deg, #F0FDF4 0%, #FFF 100%); box-shadow: 0 10px 40px rgba(0,0,0,0.2); text-align: center; position: relative; animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+        
+        <div onclick="document.getElementById('rewardGroupModal').style.display='none'" style="position: absolute; top: 16px; right: 16px; background: #F1F5F9; width: 30px; height: 30px; border-radius: 15px; display: flex; align-items: center; justify-content: center; color: #64748B; font-weight: bold; cursor: pointer; transition: 0.2s;" onmousedown="this.style.transform='scale(0.9)'" onmouseup="this.style.transform='scale(1)'">✕</div>
+        
+        <div style="font-size: 50px; margin-bottom: 10px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));">🎉</div>
+        <div style="font-size: 20px; font-weight: 900; color: #065F46; margin-bottom: 8px;">恭喜你通过测试！</div>
+        
+        <div style="font-size: 13px; color: #047857; line-height: 1.6; margin-bottom: 20px; padding: 0 10px;">
+            你已具备在荷兰安全生存的能力 🛡️<br>
+            快扫码加入 <b>【26Fall 官方认证新生群】</b><br>
+            <span style="font-size: 11px; opacity: 0.8;">群内全为真实学生，无中介微商打扰</span>
+        </div>
+        
+        <div style="background: #FFF; padding: 10px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: inline-block; margin-bottom: 16px; border: 1px solid #A7F3D0;">
+            
+            <img id="groupQrCode" src="https://via.placeholder.com/200?text=等待上传新生群二维码" style="width: 180px; height: 180px; border-radius: 8px; object-fit: cover;">
+            
+        </div>
+        
+        <div style="font-size: 11px; color: #9CA3AF; font-weight: bold;">长按保存二维码，或截图后在微信扫一扫</div>
+    </div>
+</div>
     
 <script>
         window.addEventListener('error', function(e) {
