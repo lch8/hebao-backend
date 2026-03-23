@@ -11,6 +11,15 @@ import { showToast } from './core/toast.js';
 import { ModalManager } from './components/modals.js';
 import { safeDOM } from './core/dom.js';
 import { ProfileEngine } from './modules/profile.js';
+
+window.App.showRewardModal = function() {
+    const modal = document.getElementById('rewardGroupModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        // 手机端给个震撼的震动反馈
+        if (navigator.vibrate) navigator.vibrate([100, 50, 100]); 
+    }
+};
 // ============================================================================
 // 🎨 UI 界面与强制发布菜单引擎
 // ============================================================================
