@@ -1332,3 +1332,91 @@ window.App.SocialEngine = {
         ModalManager.close('userProfileModal');
     }
 };
+
+// ============================================================================
+// 🛠️ 终极修补：邀请入队核心逻辑 & 聊天框头部空间坐标劫持
+// ============================================================================
+
+window.App = window.App || {};
+
+// 1. 补齐丢失的邀请面板唤醒功能
+window.App.openInviteModal = function(postId) {
+    window.App.currentInvitePostId = postId; // 记录当前是给哪个帖子拉人
+    const modal = document.getElementById('inviteTeamModal');
+    if (modal) {
+        modal.style.display = 'flex';
+    } else {
+        if(window.App.showToast) window.App.showToast("邀请面板未加载，请检查 index.html", "error");
+    }
+};
+
+// 2. 补齐发送邀请的核心逻辑
+window.App.sendTeamInvite = function(btnElement) {
+    const inputEl = document.getElementById('inviteTargetId');
+    const targetId = inputEl ? inputEl.value.trim() : '';
+    
+    if (btnElement) {
+        // 如果是点击底下的粉丝列表按钮
+        btnElement.innerText = "已发送";
+        btnElement.style.background = "#E2E8F0";
+        btnElement.style.color = "#9CA3AF";
+        btnElement.style.pointerEvents = "none";
+    } else {
+        // 如果是输入 ID 邀请
+        if (!targetId) return window.App.showToast ? window.App.showToast("请输入管家 ID", "warning") : alert("请输入管家 ID");
+        if (inputEl) inputEl.value = '';
+    }
+    
+    if(window.App.showToast) window.App.showToast("🏕️ 邀请已成功发送给对方！", "success");
+    
+    // 延迟关闭弹窗
+    setTimeout(() => {
+        const modal = document.getElementById('inviteTeamModal');
+        if (modal) modal.style.display = 'none';
+    }, 800);
+};
+
+// ==========================================
+// 3. 聊天头部“空间坐标”暴力劫持法 
+// (无视原有的 SVG/HTML，依靠物理位置强制拦截)
+// ==========================================
+document.addEventListener('click', (e) => {
+    // 我们知道聊天头部的中间名字的 ID 是 chatPartnerName (从 chat-4.js 里看到的)
+    const nameEl = document.getElementById('chatPartnerName');
+    if (!nameEl) return;
+    
+    // 向上找到整个聊天头部容器
+    const chatHeader = nameEl.parentElement;
+    if (!chatHeader) return;
+
+    // 如果用户的点击，发生在这个聊天头部区域里
+    if (chatHeader.contains(e.target)) {
+        
+        // 获取点击的横坐标 (屏幕最左边是 0，最右边是屏幕宽度)
+        const clickX = e.clientX;
+        const screenWidth = window.innerWidth;
+
+        // (区域 A) 左侧 60px：通常是“< 返回”按钮，我们直接放行，什么都不做
+        if (clickX < 60) return;
+
+        // (区域 B) 右侧 60px：绝对是“...”选项图标，暴力拦截，强行弹出 O2O 菜单！
+        if (clickX > screenWidth - 60) {
+            e.preventDefault();
+            e.stopPropagation();
+            const menu = document.getElementById('chatOptionsMenuModal');
+            if (menu) menu.style.display = 'flex';
+            return;
+        }
+
+        // (区域 C) 中间区域：肯定是点名字/头像，暴力拦截，弹出对方个人资料！
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // 顺便把资料卡片里的名字换成聊天对象的名字
+        const profName = document.getElementById('profTargetName');
+        if (profName) profName.innerText = nameEl.innerText;
+        
+        const profile = document.getElementById('userProfileModal');
+        if (profile) profile.style.display = 'flex';
+    }
+}, true); // 使用捕获阶段，抢在所有原生事件前面执行！
