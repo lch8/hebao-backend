@@ -289,7 +289,7 @@ export const ChatEngine = {
     },
 
     // ------------------------------------------------------------------------
-    // 4. 小红书气泡渲染引擎
+    // 4. 小红书/抖音级 气泡渲染引擎 (水滴非对称圆角 + 重力对齐)
     // ------------------------------------------------------------------------
     async loadChatHistory(isPolling = false) {
         if (!currentChatPartnerId) return;
@@ -304,7 +304,6 @@ export const ChatEngine = {
             if (data.success) {
                 const messages = data.messages || [];
 
-                // 🌟 收到新消息时，如果是当前打开的聊天框，自动更新已读时间戳！
                 if (messages.length > lastMessageCount && isPolling) {
                     const readTimestamps = JSON.parse(localStorage.getItem('hp_chat_reads') || '{}');
                     readTimestamps[currentChatPartnerId] = Date.now();
@@ -316,7 +315,7 @@ export const ChatEngine = {
 
                 safeDOM.execute('chatMsgList', list => {
                     if (messages.length === 0) {
-                        list.innerHTML = `<div style="text-align:center; padding: 40px; color:#9CA3AF; font-size: 12px;">你们还没有聊过天，发句“哈喽”破个冰吧！🧊</div>`;
+                        list.innerHTML = `<div style="text-align:center; padding: 60px 20px; color:#94A3B8; font-size: 13px; font-weight: bold;">你们还没有聊过天<br><span style="font-size:24px; display:block; margin-top:10px;">👋</span></div>`;
                         return;
                     }
 
@@ -327,43 +326,44 @@ export const ChatEngine = {
                         const timeStr = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
                         
                         const themAvatarHtml = currentChatPartnerAvatar.length > 10 
-                            ? `<img src="${currentChatPartnerAvatar}" style="width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0; border:1px solid #E2E8F0;">`
-                            : `<div style="font-size:20px; width:36px; height:36px; border-radius:50%; background:#F1F5F9; display:flex; align-items:center; justify-content:center; flex-shrink:0;">${currentChatPartnerAvatar}</div>`;
+                            ? `<img src="${currentChatPartnerAvatar}" style="width:38px; height:38px; border-radius:50%; object-fit:cover; flex-shrink:0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #F8FAFC;">`
+                            : `<div style="font-size:20px; width:38px; height:38px; border-radius:50%; background:#FFF; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #F1F5F9;">${currentChatPartnerAvatar}</div>`;
                             
                         const myAvatarHtml = myAvatar.length > 10 
-                            ? `<img src="${myAvatar}" style="width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0; border:1px solid #E2E8F0;">`
-                            : `<div style="font-size:20px; width:36px; height:36px; border-radius:50%; background:#F1F5F9; display:flex; align-items:center; justify-content:center; flex-shrink:0;">${myAvatar}</div>`;
+                            ? `<img src="${myAvatar}" style="width:38px; height:38px; border-radius:50%; object-fit:cover; flex-shrink:0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #F8FAFC;">`
+                            : `<div style="font-size:20px; width:38px; height:38px; border-radius:50%; background:#FFF; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #F1F5F9;">${myAvatar}</div>`;
 
                         if (isMe) {
                             html += `
-                            <div style="display:flex; justify-content:flex-end; align-items:flex-start; gap:8px;">
-                                <div style="display:flex; flex-direction:column; align-items:flex-end; max-width:75%;">
-                                    <div style="background:#2563EB; color:#FFF; padding:12px 16px; border-radius:20px 4px 20px 20px; font-size:15px; line-height:1.5; word-break:break-all; box-shadow:0 4px 12px rgba(37,99,235,0.15);">${msg.content}</div>
-                                    <div style="font-size:11px; color:#9CA3AF; margin-top:4px;">${timeStr}</div>
+                            <div style="display:flex; justify-content:flex-end; align-items:flex-end; gap:10px; margin-bottom: 6px;">
+                                <div style="display:flex; flex-direction:column; align-items:flex-end; max-width:72%;">
+                                    <div style="background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); color: #FFF; padding: 12px 18px; border-radius: 22px 22px 4px 22px; font-size: 15px; line-height: 1.5; word-break: break-all; box-shadow: 0 4px 15px rgba(37,99,235,0.2); letter-spacing: 0.3px;">${msg.content}</div>
+                                    <div style="font-size:11px; color:#94A3B8; margin-top:6px; margin-right:4px; font-weight: 500;">${timeStr}</div>
                                 </div>
                                 ${myAvatarHtml}
                             </div>`;
                         } else {
                             html += `
-                            <div style="display:flex; justify-content:flex-start; align-items:flex-start; gap:8px;">
+                            <div style="display:flex; justify-content:flex-start; align-items:flex-end; gap:10px; margin-bottom: 6px;">
                                 ${themAvatarHtml}
-                                <div style="display:flex; flex-direction:column; align-items:flex-start; max-width:75%;">
-                                    <div style="background:#FFF; color:#111827; padding:12px 16px; border-radius:4px 20px 20px 20px; font-size:15px; line-height:1.5; word-break:break-all; box-shadow:0 2px 10px rgba(0,0,0,0.03); border:1px solid #F1F5F9;">${msg.content}</div>
-                                    <div style="font-size:11px; color:#9CA3AF; margin-top:4px;">${timeStr}</div>
+                                <div style="display:flex; flex-direction:column; align-items:flex-start; max-width:72%;">
+                                    <div style="background: #FFF; color: #111827; padding: 12px 18px; border-radius: 22px 22px 22px 4px; font-size: 15px; line-height: 1.5; word-break: break-all; box-shadow: 0 4px 15px rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.02); letter-spacing: 0.3px;">${msg.content}</div>
+                                    <div style="font-size:11px; color:#94A3B8; margin-top:6px; margin-left:4px; font-weight: 500;">${timeStr}</div>
                                 </div>
                             </div>`;
                         }
                     });
                     
                     list.innerHTML = html;
-                    list.scrollTop = list.scrollHeight; 
+                    // 平滑滚动到底部
+                    list.scrollTo({ top: list.scrollHeight, behavior: 'smooth' });
                 });
             }
         } catch (error) { console.error("🚨 拉取消息失败:", error); }
     },
 
     // ------------------------------------------------------------------------
-    // 5. 发送消息
+    // 5. 发送消息 (UI 同步升级)
     // ------------------------------------------------------------------------
     async sendChatMessage() {
         const input = document.getElementById('chatInput');
@@ -377,22 +377,31 @@ export const ChatEngine = {
 
         const myAvatar = localStorage.getItem('hp_real_avatar') || '😎';
         const myAvatarHtml = myAvatar.length > 10 
-            ? `<img src="${myAvatar}" style="width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0; border:1px solid #E2E8F0;">`
-            : `<div style="font-size:20px; width:36px; height:36px; border-radius:50%; background:#F1F5F9; display:flex; align-items:center; justify-content:center; flex-shrink:0;">${myAvatar}</div>`;
+            ? `<img src="${myAvatar}" style="width:38px; height:38px; border-radius:50%; object-fit:cover; flex-shrink:0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #F8FAFC;">`
+            : `<div style="font-size:20px; width:38px; height:38px; border-radius:50%; background:#FFF; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #F1F5F9;">${myAvatar}</div>`;
 
         safeDOM.execute('chatMsgList', list => {
             if (lastMessageCount === 0) list.innerHTML = '';
             const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            // 插入一条半透明的“发送中”气泡
             list.insertAdjacentHTML('beforeend', `
-                <div style="display:flex; justify-content:flex-end; align-items:flex-start; gap:8px; opacity:0.6;">
-                    <div style="display:flex; flex-direction:column; align-items:flex-end; max-width:75%;">
-                        <div style="background:#2563EB; color:#FFF; padding:12px 16px; border-radius:20px 4px 20px 20px; font-size:15px; line-height:1.5; word-break:break-all; box-shadow:0 4px 12px rgba(37,99,235,0.15);">${text}</div>
-                        <div style="font-size:11px; color:#9CA3AF; margin-top:4px;">${timeStr}</div>
+                <div style="display:flex; justify-content:flex-end; align-items:flex-end; gap:10px; margin-bottom: 6px; opacity:0.7; transform: translateY(10px); transition: all 0.3s ease-out;" id="tempMsg_${lastMessageCount}">
+                    <div style="display:flex; flex-direction:column; align-items:flex-end; max-width:72%;">
+                        <div style="background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); color: #FFF; padding: 12px 18px; border-radius: 22px 22px 4px 22px; font-size: 15px; line-height: 1.5; word-break: break-all; box-shadow: 0 4px 15px rgba(37,99,235,0.2); letter-spacing: 0.3px;">${text}</div>
+                        <div style="font-size:11px; color:#94A3B8; margin-top:6px; margin-right:4px; font-weight: 500;">${timeStr}</div>
                     </div>
                     ${myAvatarHtml}
                 </div>
             `);
-            list.scrollTop = list.scrollHeight;
+            
+            // 触发动画帧
+            setTimeout(() => {
+                const tempMsg = document.getElementById(`tempMsg_${lastMessageCount - 1}`);
+                if (tempMsg) tempMsg.style.transform = 'translateY(0)';
+            }, 10);
+
+            list.scrollTo({ top: list.scrollHeight, behavior: 'smooth' });
         });
         
         input.value = '';
@@ -409,7 +418,7 @@ export const ChatEngine = {
             this.loadChatHistory();
         } catch(e) { 
             console.error("🚨 消息发送失败:", e);
-            showToast("发送失败，请检查网络", "error"); 
+            if (window.App && window.App.showToast) window.App.showToast("发送失败，请检查网络", "error"); 
         }
     },
 
