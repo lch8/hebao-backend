@@ -1376,87 +1376,87 @@ window.App.sendTeamInvite = function(btnElement) {
     }, 800);
 };
 
-// ============================================================================
-// 🛠️ 终极修补 V3：突破 Z-Index 层级结界 & ID 锁定暴力劫持
-// ============================================================================
+// // ============================================================================
+// // 🛠️ 终极修补 V3：突破 Z-Index 层级结界 & ID 锁定暴力劫持
+// // ============================================================================
 
-// 1. 突破 DOM 结界：在页面加载时，把三个弹窗强行抓取到 <body> 的最外层
-document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(() => {
-        ['chatOptionsMenuModal', 'userProfileModal', 'inviteTeamModal'].forEach(id => {
-            const modal = document.getElementById(id);
-            if (modal) {
-                document.body.appendChild(modal); 
-                modal.style.zIndex = '2147483647'; // 赋予网页物理极限的最高层级
-            }
-        });
-    }, 500);
-});
+// // 1. 突破 DOM 结界：在页面加载时，把三个弹窗强行抓取到 <body> 的最外层
+// document.addEventListener('DOMContentLoaded', () => {
+//     setTimeout(() => {
+//         ['chatOptionsMenuModal', 'userProfileModal', 'inviteTeamModal'].forEach(id => {
+//             const modal = document.getElementById(id);
+//             if (modal) {
+//                 document.body.appendChild(modal); 
+//                 modal.style.zIndex = '2147483647'; // 赋予网页物理极限的最高层级
+//             }
+//         });
+//     }, 500);
+// });
 
-// 2. 重新定义全场景点击劫持
-document.addEventListener('click', (e) => {
-    // 获取当前是否在聊天界面
-    const chatModal = document.getElementById('chatModal') || document.getElementById('page-chat') || document.querySelector('.chat-container');
-    if (!chatModal || chatModal.style.display === 'none') return;
+// // 2. 重新定义全场景点击劫持
+// document.addEventListener('click', (e) => {
+//     // 获取当前是否在聊天界面
+//     const chatModal = document.getElementById('chatModal') || document.getElementById('page-chat') || document.querySelector('.chat-container');
+//     if (!chatModal || chatModal.style.display === 'none') return;
 
-    // ==========================================
-    // 拦截点 A：菜单按钮 (右上角三个点)
-    // ==========================================
-    const text = e.target.innerText || '';
-    if (text.includes('⋮') || text.includes('...')) {
-        e.preventDefault(); 
-        e.stopPropagation();
-        const menu = document.getElementById('chatOptionsMenuModal');
-        if (menu) { menu.style.display = 'flex'; menu.style.zIndex = '2147483647'; }
-        return;
-    }
+//     // ==========================================
+//     // 拦截点 A：菜单按钮 (右上角三个点)
+//     // ==========================================
+//     const text = e.target.innerText || '';
+//     if (text.includes('⋮') || text.includes('...')) {
+//         e.preventDefault(); 
+//         e.stopPropagation();
+//         const menu = document.getElementById('chatOptionsMenuModal');
+//         if (menu) { menu.style.display = 'flex'; menu.style.zIndex = '2147483647'; }
+//         return;
+//     }
 
-    // ==========================================
-    // 拦截点 B：个人资料卡片 (名字 / 头像)
-    // ==========================================
+//     // ==========================================
+//     // 拦截点 B：个人资料卡片 (名字 / 头像)
+//     // ==========================================
     
-    // 触发条件 1：精确点中了头部的名字
-    const isHeaderName = e.target.id === 'chatPartnerName' || e.target.closest('#chatPartnerName');
+//     // 触发条件 1：精确点中了头部的名字
+//     const isHeaderName = e.target.id === 'chatPartnerName' || e.target.closest('#chatPartnerName');
     
-    // 触发条件 2：点中了头部中间偏上区域 (高度<100px 且 避开左右两边的返回/菜单按钮)
-    const isHeaderMiddle = (e.clientY < 100) && (e.clientX > 80) && (e.clientX < window.innerWidth - 80) && chatModal.contains(e.target);
+//     // 触发条件 2：点中了头部中间偏上区域 (高度<100px 且 避开左右两边的返回/菜单按钮)
+//     const isHeaderMiddle = (e.clientY < 100) && (e.clientX > 80) && (e.clientX < window.innerWidth - 80) && chatModal.contains(e.target);
     
-    // 触发条件 3：(神级细节) 点击了聊天列表里的对方头像！
-    const isMsgAvatar = e.target.closest('#chatMsgList') && (e.target.tagName === 'IMG' || e.target.tagName === 'DIV') && (e.target.style.borderRadius === '50%' || (e.target.style.width === '36px' && e.target.style.height === '36px'));
+//     // 触发条件 3：(神级细节) 点击了聊天列表里的对方头像！
+//     const isMsgAvatar = e.target.closest('#chatMsgList') && (e.target.tagName === 'IMG' || e.target.tagName === 'DIV') && (e.target.style.borderRadius === '50%' || (e.target.style.width === '36px' && e.target.style.height === '36px'));
 
-    if (isHeaderName || isHeaderMiddle || isMsgAvatar) {
-        e.preventDefault();
-        e.stopPropagation();
+//     if (isHeaderName || isHeaderMiddle || isMsgAvatar) {
+//         e.preventDefault();
+//         e.stopPropagation();
         
-        const profile = document.getElementById('userProfileModal');
-        if (!profile) {
-            if(window.App && window.App.showToast) window.App.showToast("资料卡组件未加载，请检查 HTML", "error");
-            return;
-        }
+//         const profile = document.getElementById('userProfileModal');
+//         if (!profile) {
+//             if(window.App && window.App.showToast) window.App.showToast("资料卡组件未加载，请检查 HTML", "error");
+//             return;
+//         }
 
-        // 智能同步：把聊天对象的名字塞进资料卡
-        const nameEl = document.getElementById('chatPartnerName');
-        const profName = document.getElementById('profTargetName');
-        if (profName && nameEl) {
-            profName.innerText = nameEl.innerText.replace(' (群聊)', '');
-        }
+//         // 智能同步：把聊天对象的名字塞进资料卡
+//         const nameEl = document.getElementById('chatPartnerName');
+//         const profName = document.getElementById('profTargetName');
+//         if (profName && nameEl) {
+//             profName.innerText = nameEl.innerText.replace(' (群聊)', '');
+//         }
 
-        // 智能同步：把聊天对象的头像塞进资料卡
-        const profAvatar = document.getElementById('profTargetAvatar');
-        if (profAvatar) {
-            if (e.target.tagName === 'IMG') {
-                // 如果点的是真正的图片头像
-                profAvatar.innerHTML = `<img src="${e.target.src}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
-            } else if (e.target.tagName === 'DIV' && e.target.innerText.length <= 2) {
-                // 如果点的是 Emoji 头像
-                profAvatar.innerText = e.target.innerText;
-            } else {
-                profAvatar.innerText = '😎'; // 兜底头像
-            }
-        }
+//         // 智能同步：把聊天对象的头像塞进资料卡
+//         const profAvatar = document.getElementById('profTargetAvatar');
+//         if (profAvatar) {
+//             if (e.target.tagName === 'IMG') {
+//                 // 如果点的是真正的图片头像
+//                 profAvatar.innerHTML = `<img src="${e.target.src}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+//             } else if (e.target.tagName === 'DIV' && e.target.innerText.length <= 2) {
+//                 // 如果点的是 Emoji 头像
+//                 profAvatar.innerText = e.target.innerText;
+//             } else {
+//                 profAvatar.innerText = '😎'; // 兜底头像
+//             }
+//         }
 
-        // 强制弹出并置顶
-        profile.style.display = 'flex';
-        profile.style.zIndex = '2147483647';
-    }
-}, true); // true: 抢在所有事件最前面执行！
+//         // 强制弹出并置顶
+//         profile.style.display = 'flex';
+//         profile.style.zIndex = '2147483647';
+//     }
+// }, true); // true: 抢在所有事件最前面执行！
