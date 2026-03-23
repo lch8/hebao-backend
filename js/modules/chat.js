@@ -147,16 +147,40 @@ export const ChatEngine = {
                 // 🌟 新增：在消息列表最顶部注入【搭子入队申请】卡片
                 // ==========================================
                 const mockApps = JSON.parse(localStorage.getItem('hp_mock_applications') || '[]');
-                const pendingApps = mockApps.filter(app => app.status === 'pending');
+                
+                // 🚨 修复：只能看到别人发给我的申请！(过滤 hostId === uid)
+                let pendingApps = mockApps.filter(app => app.status === 'pending' && String(app.hostId) === String(uid));
+
+                // 🎯 上帝模式测试：为了方便老板你单机测试审批流，
+                // 如果你发布了搭子局，且没人申请，系统自动生成一个“熬夜冠军”的虚拟申请供你测试通过！
+                if (pendingApps.length === 0) {
+                    const myPartnerPosts = (window.allCommunityPostsCache || []).filter(p => String(p.user_id) === String(uid) && p.title.includes('[搭子]'));
+                    if (myPartnerPosts.length > 0) {
+                        const randomPost = myPartnerPosts[0];
+                        pendingApps.push({
+                            id: 'test_app_123',
+                            postId: randomPost.id,
+                            postTitle: randomPost.title.replace('[找搭子] ', '').replace('[搭子] ', ''),
+                            hostId: String(uid),
+                            applicantId: 'test_fan_001',
+                            applicantName: '熬夜冠军',
+                            applicantAvatar: '🐼',
+                            status: 'pending'
+                        });
+                    }
+                }
+
+                // 将待审批数量加到全局底部的总红点里！
+                totalUnreadCount += pendingApps.length;
                 
                 pendingApps.forEach(app => {
                     html += `
                     <div style="background: #FFF; border-radius: 16px; padding: 16px; border: 1px solid #F1F5F9; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 10px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                             <div style="display: flex; align-items: center; gap: 8px;">
-                                <div style="width: 36px; height: 36px; border-radius: 18px; background: #F3E8FF; display: flex; align-items: center; justify-content: center; font-size: 18px;">🔔</div>
+                                <div style="width: 36px; height: 36px; border-radius: 18px; background: #FEF2F2; display: flex; align-items: center; justify-content: center; font-size: 16px;">🔔</div>
                                 <div>
-                                    <div style="font-size: 14px; font-weight: 900; color: #111827;">搭子入队申请</div>
+                                    <div style="font-size: 14px; font-weight: 900; color: #EF4444;">搭子入队申请</div>
                                     <div style="font-size: 11px; color: #64748B;">待审批</div>
                                 </div>
                             </div>
@@ -167,8 +191,8 @@ export const ChatEngine = {
                         </div>
                         <div style="display: flex; gap: 10px;">
                             <button onclick="if(window.App.SocialEngine) window.App.SocialEngine.openUserProfile('${app.applicantId}')" style="flex: 1; background: #F8FAFC; color: #475569; border: none; padding: 10px; border-radius: 10px; font-weight: 900; font-size: 13px; cursor: pointer;">👀 看主页</button>
-                            <button onclick="window.App.approveApplication(this, '${app.id}', '${app.postId}', '${app.applicantName}')" style="flex: 1.5; background: #10B981; color: #FFF; border: none; padding: 10px; border-radius: 10px; font-weight: 900; font-size: 13px; cursor: pointer;">✅ 通过申请</button>
-                            <button onclick="window.App.rejectApplication(this, '${app.id}')" style="flex: 1; background: #FEF2F2; color: #EF4444; border: none; padding: 10px; border-radius: 10px; font-weight: 900; font-size: 13px; cursor: pointer;">婉拒</button>
+                            <button onclick="window.App.approveApplication(this, '${app.id}', '${app.postId}', '${app.applicantName}')" style="flex: 1.5; background: #10B981; color: #FFF; border: none; padding: 10px; border-radius: 10px; font-weight: 900; font-size: 13px; cursor: pointer; box-shadow: 0 2px 8px rgba(16,185,129,0.2);">✅ 通过申请</button>
+                            <button onclick="window.App.rejectApplication(this, '${app.id}')" style="flex: 1; background: #F1F5F9; color: #64748B; border: none; padding: 10px; border-radius: 10px; font-weight: 900; font-size: 13px; cursor: pointer;">婉拒</button>
                         </div>
                     </div>`;
                 });
