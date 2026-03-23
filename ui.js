@@ -589,3 +589,77 @@ document.addEventListener('click', (e) => {
         profile.style.zIndex = '2147483647';
     }
 }, true);
+
+
+// ============================================================================
+// 🧠 前端实时数据计算引擎 (替代后端数据库字段)
+// ============================================================================
+window.App = window.App || {};
+
+// 核心：遍历大厅缓存，算出某个用户的【闲置成交数】和【组局成功数】
+window.App.calculateUserStats = function(targetUserId) {
+    const allPosts = window.allCommunityPostsCache || [];
+    let soldCount = 0;
+    let successCampCount = 0;
+
+    allPosts.forEach(post => {
+        // 如果是这个人的帖子
+        if (String(post.user_id) === String(targetUserId)) {
+            let contentObj = {};
+            try { contentObj = typeof post.content === 'string' ? JSON.parse(post.content) : post.content; } catch(e) {}
+            
+            // 1. 计算闲置：数一数他名下有多少个 items 是 is_sold: true 的
+            if (post.title.includes('[闲置]') && contentObj.items) {
+                contentObj.items.forEach(item => {
+                    if (item.is_sold) soldCount++;
+                });
+            }
+            
+            // 2. 计算搭子局：只要报名人数 > 1，就算作一次成功的拼团
+            if (post.title.includes('[搭子]')) {
+                const joined = parseInt(contentObj.joinedCount) || 1;
+                if (joined > 1) successCampCount++;
+            }
+        }
+    });
+
+    // 默认初始赴约率 100%，如果有成功的局，加上局数体现其活跃度
+    return { tradeCount: soldCount, activeCamps: successCampCount, attendanceRate: 100 };
+};
+
+// ============================================================================
+// 🚀 重写 SocialEngine.openUserProfile：点开头像展示实时算出的数据！
+// ============================================================================
+if (window.App.SocialEngine) {
+    window.App.SocialEngine.openUserProfile = function(targetUserId) {
+        const modal = document.getElementById('userProfileModal');
+        if (!modal) return;
+
+        // 1. 呼叫上方引擎，实时计算此人战绩
+        const stats = window.App.calculateUserStats(targetUserId);
+
+        // 2. 将数据注入到我们刚才清理好的干净相框 (profTargetStats) 里
+        const statsBox = document.getElementById('profTargetStats');
+        if (statsBox) {
+            statsBox.innerHTML = `
+                <div style="flex: 1; background: #F8FAFC; padding: 16px; border-radius: 16px; border: 1px solid #E2E8F0; text-align: center;">
+                    <div style="font-size: 11px; color: #64748B; font-weight: bold; margin-bottom: 4px;">闲置卖出</div>
+                    <div style="font-size: 24px; font-weight: 900; color: #111827; font-family: monospace;">${stats.tradeCount} <span style="font-size: 12px; color:#9CA3AF;">件</span></div>
+                </div>
+                <div style="flex: 1; background: #ECFDF5; padding: 16px; border-radius: 16px; border: 1px solid #A7F3D0; text-align: center;">
+                    <div style="font-size: 11px; color: #059669; font-weight: bold; margin-bottom: 4px;">组局成功</div>
+                    <div style="font-size: 24px; font-weight: 900; color: #10B981; font-family: monospace;">${stats.activeCamps} <span style="font-size: 12px; color:#9CA3AF;">次</span></div>
+                </div>
+            `;
+        }
+
+        // 获取对方邮件来渲染徽章 (如果有)
+        const chatEmail = document.getElementById('chatPartnerEmail') ? document.getElementById('chatPartnerEmail').innerText : '';
+        const badgeEl = document.getElementById('profTargetBadge');
+        if (badgeEl && window.App.getUserBadgeHtml) {
+            badgeEl.outerHTML = window.App.getUserBadgeHtml(chatEmail);
+        }
+
+        modal.style.display = 'flex';
+    };
+}
