@@ -1376,47 +1376,72 @@ window.App.sendTeamInvite = function(btnElement) {
     }, 800);
 };
 
-// ==========================================
-// 3. 聊天头部“空间坐标”暴力劫持法 
-// (无视原有的 SVG/HTML，依靠物理位置强制拦截)
-// ==========================================
+// ============================================================================
+// 🛠️ 终极修补：突破 Z-Index 层级结界 & 智能屏幕百分比点击劫持
+// ============================================================================
+
+// 1. 突破 DOM 结界：在页面加载时，把三个弹窗强行抓取到 <body> 的最外层，无视任何页面的层级遮挡！
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        ['chatOptionsMenuModal', 'userProfileModal', 'inviteTeamModal'].forEach(id => {
+            const modal = document.getElementById(id);
+            if (modal) {
+                document.body.appendChild(modal); // 核心：移出原本的各种 div，直接挂在 body 根节点下
+                modal.style.zIndex = '2147483647'; // 核心：赋予网页物理极限的最高层级！(32位最大值)
+            }
+        });
+    }, 500); // 稍微延迟一下，确保 HTML 已经完全加载
+});
+
+// 2. 重写精准的点击劫持 (适配各种大小的手机屏幕)
 document.addEventListener('click', (e) => {
-    // 我们知道聊天头部的中间名字的 ID 是 chatPartnerName (从 chat-4.js 里看到的)
-    const nameEl = document.getElementById('chatPartnerName');
-    if (!nameEl) return;
-    
-    // 向上找到整个聊天头部容器
-    const chatHeader = nameEl.parentElement;
-    if (!chatHeader) return;
+    // 获取当前是否在聊天界面
+    const chatPage = document.getElementById('page-chat') || document.querySelector('.chat-container') || document.getElementById('chatModal');
+    if (!chatPage || chatPage.style.display === 'none') return;
 
-    // 如果用户的点击，发生在这个聊天头部区域里
-    if (chatHeader.contains(e.target)) {
-        
-        // 获取点击的横坐标 (屏幕最左边是 0，最右边是屏幕宽度)
-        const clickX = e.clientX;
-        const screenWidth = window.innerWidth;
+    // 锁定聊天头部容器
+    const chatHeader = chatPage.querySelector('.modal-content > div:first-child') || chatPage.querySelector('.chat-header') || document.getElementById('chatPartnerName')?.parentElement;
+    if (!chatHeader || !chatHeader.contains(e.target)) return; // 没点在头部区域，直接放行
 
-        // (区域 A) 左侧 60px：通常是“< 返回”按钮，我们直接放行，什么都不做
-        if (clickX < 60) return;
+    // 获取点击横坐标
+    const clickX = e.clientX;
+    const screenWidth = window.innerWidth;
 
-        // (区域 B) 右侧 60px：绝对是“...”选项图标，暴力拦截，强行弹出 O2O 菜单！
-        if (clickX > screenWidth - 60) {
-            e.preventDefault();
-            e.stopPropagation();
-            const menu = document.getElementById('chatOptionsMenuModal');
-            if (menu) menu.style.display = 'flex';
-            return;
-        }
+    // (区域 A) 左侧 20% 的屏幕：返回按钮区域，放行原生逻辑
+    if (clickX < screenWidth * 0.2) return;
 
-        // (区域 C) 中间区域：肯定是点名字/头像，暴力拦截，弹出对方个人资料！
+    // (区域 B) 右侧 20% 的屏幕：菜单按钮区域，暴力弹出
+    if (clickX > screenWidth * 0.8 || e.target.innerText.includes('⋮') || e.target.innerText.includes('...')) {
         e.preventDefault();
         e.stopPropagation();
-        
-        // 顺便把资料卡片里的名字换成聊天对象的名字
-        const profName = document.getElementById('profTargetName');
-        if (profName) profName.innerText = nameEl.innerText;
-        
-        const profile = document.getElementById('userProfileModal');
-        if (profile) profile.style.display = 'flex';
+        const menu = document.getElementById('chatOptionsMenuModal');
+        if (menu) menu.style.display = 'flex';
+        return;
     }
-}, true); // 使用捕获阶段，抢在所有原生事件前面执行！
+
+    // (区域 C) 中间 60% 的屏幕：肯定是点名字或头像区域，弹出单人资料卡！
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // 抓取聊天对象的名字并同步到资料卡
+    const nameEl = document.getElementById('chatPartnerName') || chatHeader.querySelector('div[style*="font-weight:900"]');
+    const profName = document.getElementById('profTargetName');
+    if (profName && nameEl) {
+        profName.innerText = nameEl.innerText.replace(' (群聊)', ''); // 去除群聊后缀
+    }
+    
+    // 抓取聊天对象的头像并同步到资料卡
+    const avatarEl = chatHeader.querySelector('div[style*="border-radius:"]') || chatHeader.querySelector('img');
+    const profAvatar = document.getElementById('profTargetAvatar');
+    if (profAvatar && avatarEl) {
+        if (avatarEl.tagName === 'IMG') {
+            profAvatar.innerHTML = `<img src="${avatarEl.src}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+        } else {
+            profAvatar.innerText = avatarEl.innerText;
+        }
+    }
+
+    const profile = document.getElementById('userProfileModal');
+    if (profile) profile.style.display = 'flex';
+    
+}, true); // true: 抢在它原生自带的代码前面执行拦截
