@@ -362,45 +362,27 @@
   <div id="page-profile" class="page-section" style="padding: 0; background: #F8FAFC; min-height: 100vh; padding-bottom: 100px;">
     
     <div style="background: linear-gradient(180deg, #E0F2FE 0%, #F8FAFC 100%); padding: 50px 20px 20px 20px; position: relative;">
-        <div style="position: absolute; top: 15px; right: 20px; font-size: 20px; color: #64748B; cursor: pointer; transition: 0.2s;" onclick="window.App.openModal('settingsModal')" onmousedown="this.style.transform='scale(0.9)'" onmouseup="this.style.transform='scale(1)'">⚙️</div>
+    <div style="position: absolute; top: 15px; right: 20px; font-size: 20px; color: #64748B; cursor: pointer; transition: 0.2s;" onclick="window.App.openModal('settingsModal')" onmousedown="this.style.transform='scale(0.9)'" onmouseup="this.style.transform='scale(1)'">⚙️</div>
 
-        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px;">
-            <div onclick="if(localStorage.getItem('hebao_logged_in')==='true') document.getElementById('userAvatarInput').click(); else window.App.openModal('loginModal');"
-                 style="position: relative; cursor: pointer; flex-shrink: 0; transition: transform 0.2s;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">
-                
-                <div id="profileEmojiAvatar" class="p-avatar" style="width: 72px; height: 72px; border-radius: 36px; background: #FFF; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; font-size: 36px; border: 3px solid #10B981;">😎</div>
-                <img id="profileRealAvatar" src="" style="display: none; width: 72px; height: 72px; border-radius: 36px; object-fit: cover; border: 3px solid #10B981; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-                
-                <div style="position: absolute; bottom: 0; right: 0; background: #111827; width: 22px; height: 22px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #FFF; border: 2px solid #FFF;">📷</div>
-            </div>
-            <input type="file" id="userAvatarInput" accept="image/*" style="display:none;" onchange="window.App.uploadCustomAvatar(event)">
-
-            <div class="p-info" style="flex: 1; cursor: pointer;" onclick="if(localStorage.getItem('hebao_logged_in')==='true') window.App.openEditProfile(); else window.App.openModal('loginModal');">
-                <div id="profileName" style="font-size: 22px; font-weight: 900; color: #111827; margin-bottom: 6px; letter-spacing: -0.5px;">管家新人</div>
-                <div id="profileSubInfo" style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
-                    <span style="font-size: 12px; color: #64748B;">加载身份中...</span>
-                </div>
-            </div>
-            <div style="color: #94A3B8; font-size: 24px; font-weight: 300; padding-right: 10px;">›</div>
+    <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px;">
+        <div onclick="if(localStorage.getItem('hebao_logged_in')==='true') document.getElementById('userAvatarInput').click(); else window.App.openModal('loginModal');" style="position: relative; cursor: pointer; flex-shrink: 0; transition: transform 0.2s;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">
+            <div id="profileEmojiAvatar" class="p-avatar" style="width: 72px; height: 72px; border-radius: 36px; background: #FFF; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center; font-size: 36px; border: 3px solid #10B981;">😎</div>
+            <img id="profileRealAvatar" src="" style="display: none; width: 72px; height: 72px; border-radius: 36px; object-fit: cover; border: 3px solid #10B981; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+            <div style="position: absolute; bottom: 0; right: 0; background: #111827; width: 22px; height: 22px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #FFF; border: 2px solid #FFF;">📷</div>
         </div>
+        <input type="file" id="userAvatarInput" accept="image/*" style="display:none;" onchange="window.App.uploadCustomAvatar(event)">
 
-        <!-- <div id="userStatsPanel" style="display: none; background: #FFF; border-radius: 16px; padding: 16px 0; box-shadow: 0 4px 15px rgba(0,0,0,0.02); justify-content: space-around;">
-            <div style="text-align: center; flex: 1;">
-                <div style="font-size: 18px; font-weight: 900; color: #10B981; font-family: monospace;" id="statCredit">100</div>
-                <div style="font-size: 11px; color: #64748B; font-weight: bold; margin-top: 4px;">信用分</div>
+        <div class="p-info" style="flex: 1; cursor: pointer;" onclick="if(localStorage.getItem('hebao_logged_in')==='true') window.App.openEditProfile(); else window.App.openModal('loginModal');">
+            <div id="profileName" style="font-size: 22px; font-weight: 900; color: #111827; margin-bottom: 6px; letter-spacing: -0.5px;">管家新人</div>
+            <div id="profileSubInfo" style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
+                <span style="font-size: 12px; color: #64748B;">加载身份中...</span>
             </div>
-            <div style="width: 1px; background: #F1F5F9;"></div>
-            <div style="text-align: center; flex: 1;">
-                <div style="font-size: 18px; font-weight: 900; color: #111827; font-family: monospace;" id="statSaved">0</div>
-                <div style="font-size: 11px; color: #64748B; font-weight: bold; margin-top: 4px;">收藏干货</div>
-            </div>
-            <div style="width: 1px; background: #F1F5F9;"></div>
-            <div style="text-align: center; flex: 1;">
-                <div style="font-size: 18px; font-weight: 900; color: #111827; font-family: monospace;" id="statDays">1</div>
-                <div style="font-size: 11px; color: #64748B; font-weight: bold; margin-top: 4px;">荷村天数</div>
-            </div>
-        </div> -->
+        </div>
     </div>
+
+    <div id="userStatsPanel" style="display: none; background: #FFF; border-radius: 16px; padding: 16px 0; box-shadow: 0 4px 15px rgba(0,0,0,0.02); justify-content: space-around;">
+    </div>
+</div>
 
     <div style="padding: 0 16px;">
         <div id="guestLoginBlock" class="guest-login-block" style="display: none; margin-top: 16px; background: #FFF; padding: 14px 16px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); justify-content: space-between; align-items: center;">
@@ -796,33 +778,24 @@
 
 <div id="userProfileModal" class="modal-overlay" style="display: none; align-items: flex-end; padding: 0; z-index: 99999;">
     <div class="modal-content" style="width: 100%; border-radius: 20px 20px 0 0; border: none; padding: 24px; background: #FFF;">
+        
         <div style="display: flex; gap: 16px; align-items: center; margin-bottom: 24px;">
-            <div style="font-size: 48px; background: #F8FAFC; width: 64px; height: 64px; border-radius: 32px; display: flex; align-items: center; justify-content: center; border: 2px solid #10B981;">😎</div>
+            <div id="profTargetAvatar" style="font-size: 48px; background: #F8FAFC; width: 64px; height: 64px; border-radius: 32px; display: flex; align-items: center; justify-content: center; border: 2px solid #10B981; overflow: hidden;">😎</div>
             <div style="flex: 1;">
                 <div style="font-size: 20px; font-weight: 900; color: #111827; margin-bottom: 4px;" id="profTargetName">热心荷包蛋</div>
-                <div style="font-size: 12px; color: #64748B; background: #F1F5F9; padding: 2px 6px; border-radius: 4px; display: inline-block; font-weight: bold;">TUD 认证校友</div>
+                <div id="profTargetBadge" style="font-size: 12px; color: #64748B; background: #F1F5F9; padding: 2px 6px; border-radius: 4px; display: inline-block; font-weight: bold;">神秘身份</div>
             </div>
             <div onclick="document.getElementById('userProfileModal').style.display='none'" style="background: #F1F5F9; width: 32px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; color: #64748B; font-weight: bold; cursor: pointer;">✕</div>
         </div>
 
-        <div style="display: flex; gap: 10px; margin-bottom: 24px;">
-            <div style="flex: 1; background: #FFFBEB; padding: 16px; border-radius: 16px; border: 1px solid #FDE68A; text-align: center;">
-                <div style="font-size: 11px; color: #D97706; font-weight: bold; margin-bottom: 4px;">管家信用分</div>
-                <div style="font-size: 28px; font-weight: 900; color: #F59E0B; font-family: monospace;">135</div>
-            </div>
-            <div style="flex: 1; background: #ECFDF5; padding: 16px; border-radius: 16px; border: 1px solid #A7F3D0; text-align: center;">
-                <div style="font-size: 11px; color: #059669; font-weight: bold; margin-bottom: 4px;">找搭子赴约率</div>
-                <div style="font-size: 28px; font-weight: 900; color: #10B981; font-family: monospace;">100%</div>
-            </div>
-        </div>
+        <div id="profTargetStats" style="display: flex; gap: 10px; margin-bottom: 24px;"></div>
 
         <div style="display: flex; gap: 10px;">
-            <button onclick="window.App.showToast('🎉 关注成功！', 'success')" style="flex: 1; background: #FFF; color: #111827; border: 2px solid #E2E8F0; padding: 14px; border-radius: 14px; font-weight: 900; font-size: 15px; cursor: pointer;">✨ 关注</button>
+            <button onclick="if(window.App.showToast) window.App.showToast('🎉 关注成功！', 'success')" style="flex: 1; background: #FFF; color: #111827; border: 2px solid #E2E8F0; padding: 14px; border-radius: 14px; font-weight: 900; font-size: 15px; cursor: pointer;">✨ 关注</button>
             <button onclick="document.getElementById('userProfileModal').style.display='none'" style="flex: 1; background: #111827; color: white; border: none; padding: 14px; border-radius: 14px; font-weight: 900; font-size: 15px; cursor: pointer;">✋ 私聊</button>
         </div>
     </div>
 </div>
-
 <div id="inviteTeamModal" class="modal-overlay" style="display: none; align-items: flex-end; padding: 0; z-index: 99999;">
     <div class="modal-content" style="width: 100%; border-radius: 20px 20px 0 0; border: none; padding: 24px; background: #F8FAFC; height: 75vh; display: flex; flex-direction: column;">
         
