@@ -1547,3 +1547,119 @@ window.App.refreshProfileUI = function() {
         }
     }, 100);
 };
+
+// ============================================================================
+// 🛡️ 荷包管家：真实信誉引擎 (Anti-Fraud 防刷单去重版)
+// ============================================================================
+window.App = window.App || {};
+
+window.App.TransactionEngine = {
+    // 1. 确认闲置/悬赏交易 (🌟 核心：只计算 Distinct Users)
+    confirmTradeSuccess: function() {
+        // 从聊天框抓取当前聊天对象的名字作为唯一 ID (真实环境应使用 UserID)
+        const partnerNameEl = document.getElementById('chatPartnerName');
+        const partnerId = partnerNameEl ? partnerNameEl.innerText.replace(' (群聊)', '') : 'unknown_user';
+        
+        if (!partnerId || partnerId === 'unknown_user') return;
+
+        // 拉取本地的“已交易对象白名单”
+        let tradedUsers = JSON.parse(localStorage.getItem('hp_traded_users') || '[]');
+        
+        if (tradedUsers.includes(partnerId)) {
+            // 如果已经和这个人交易过了，防刷单机制拦截！
+            if (window.App.showToast) window.App.showToast("✅ 交易已确认！(注：与同一用户的多次交易仅计为 1 次信誉背书)", "info");
+        } else {
+            // 新交易对象，存入白名单，数据真实 +1
+            tradedUsers.push(partnerId);
+            localStorage.setItem('hp_traded_users', JSON.stringify(tradedUsers));
+            if (window.App.showToast) window.App.showToast("🎉 交易确认成功！真实成交人数 +1", "success");
+        }
+        
+        // 自动刷新背后的资料面板
+        if (window.App.refreshProfileUI) window.App.refreshProfileUI();
+        
+        // 自动关掉菜单
+        const menu = document.getElementById('chatOptionsMenuModal');
+        if (menu) menu.style.display = 'none';
+    },
+
+    // 2. 举报与维权 (扣除违规记录)
+    reportUser: function() {
+        if(!confirm("🚩 确定要举报该用户吗？\n恶意举报将影响您自身的社区信誉。")) return;
+        if (window.App.showToast) window.App.showToast("🚨 举报已提交管家人工审核", "success");
+        const menu = document.getElementById('chatOptionsMenuModal');
+        if (menu) menu.style.display = 'none';
+    }
+};
+
+// ============================================================================
+// 🎨 个人主页与弹窗面板 UI 重构 (去除抽象信用分，展示真实去重数据)
+// ============================================================================
+
+// 覆写之前的刷新统计面板逻辑
+const originalRefreshStats = window.App.refreshProfileUI;
+window.App.refreshProfileUI = function() {
+    if(originalRefreshStats) originalRefreshStats();
+    
+    setTimeout(() => {
+        const statsPanel = document.getElementById('userStatsPanel');
+        if (statsPanel && localStorage.getItem('hebao_logged_in') === 'true') {
+            
+            // 🌟 读取去重后的真实成交人数
+            const tradedUsers = JSON.parse(localStorage.getItem('hp_traded_users') || '[]');
+            const tradeCount = tradedUsers.length;
+
+            // 🌟 赴约率计算 (模拟本地数据)
+            const attendedUsers = JSON.parse(localStorage.getItem('hp_attended_users') || '["user1", "user2", "user3"]'); // 默认3次完美赴约
+            const flakeCount = parseInt(localStorage.getItem('hp_flake_count')) || 0;
+            const totalCamps = attendedUsers.length + flakeCount;
+            let attendanceRate = 100;
+            if (totalCamps > 0) {
+                attendanceRate = Math.round((attendedUsers.length / totalCamps) * 100);
+            }
+            
+            const rateColor = attendanceRate >= 80 ? '#10B981' : (attendanceRate >= 60 ? '#F59E0B' : '#EF4444');
+
+            // 渲染极其清爽、无阶级感的四大核心指标
+            statsPanel.innerHTML = `
+                <div style="text-align: center; flex: 1;">
+                    <div style="font-size: 18px; font-weight: 900; color: #111827; font-family: monospace;">${tradeCount}</div>
+                    <div style="font-size: 11px; color: #64748B; font-weight: bold; margin-top: 4px;">闲置成交</div>
+                </div>
+                <div style="text-align: center; flex: 1;">
+                    <div style="font-size: 18px; font-weight: 900; color: ${rateColor}; font-family: monospace;">${attendanceRate}%</div>
+                    <div style="font-size: 11px; color: #64748B; font-weight: bold; margin-top: 4px;">赴约率</div>
+                </div>
+                <div style="text-align: center; flex: 1; cursor: pointer; position: relative;" onclick="if(window.App.openFollowList) window.App.openFollowList('following')">
+                    <div style="font-size: 18px; font-weight: 900; color: #111827; font-family: monospace;">12</div>
+                    <div style="font-size: 11px; color: #64748B; font-weight: bold; margin-top: 4px;">关注</div>
+                    <div style="position: absolute; top: -2px; right: 12px; width: 6px; height: 6px; background: #EF4444; border-radius: 50%;"></div>
+                </div>
+                <div style="text-align: center; flex: 1; cursor: pointer;" onclick="if(window.App.openFollowList) window.App.openFollowList('followers')">
+                    <div style="font-size: 18px; font-weight: 900; color: #111827; font-family: monospace;">38</div>
+                    <div style="font-size: 11px; color: #64748B; font-weight: bold; margin-top: 4px;">粉丝</div>
+                </div>
+            `;
+        }
+    }, 100);
+};
+
+// 顺便把聊天框里点头像弹出的“他人资料卡”也同步瘦身
+document.addEventListener('DOMContentLoaded', () => {
+    const userProfileModal = document.getElementById('userProfileModal');
+    if (userProfileModal) {
+        const statsBox = userProfileModal.querySelector('div[style*="margin-bottom: 24px"]');
+        if (statsBox) {
+            statsBox.innerHTML = `
+                <div style="flex: 1; background: #F8FAFC; padding: 16px; border-radius: 16px; border: 1px solid #E2E8F0; text-align: center;">
+                    <div style="font-size: 11px; color: #64748B; font-weight: bold; margin-bottom: 4px;">闲置/悬赏成交</div>
+                    <div style="font-size: 24px; font-weight: 900; color: #111827; font-family: monospace;">12 <span style="font-size: 12px; color:#9CA3AF;">人</span></div>
+                </div>
+                <div style="flex: 1; background: #ECFDF5; padding: 16px; border-radius: 16px; border: 1px solid #A7F3D0; text-align: center;">
+                    <div style="font-size: 11px; color: #059669; font-weight: bold; margin-bottom: 4px;">找搭子赴约率</div>
+                    <div style="font-size: 24px; font-weight: 900; color: #10B981; font-family: monospace;">100%</div>
+                </div>
+            `;
+        }
+    }
+});
