@@ -563,42 +563,48 @@ export const MarketEngine = {
         safeDOM.execute('chatInput', input => input.value = `哈喽！我看到你的悬赏【${cleanTitle}】，我可以接单哦，请问还需要吗？`);
     },
 
-    // 🌟 核心重构：找搭子点击事件 (审批流模式)
+    // 🌟 核心重构：找搭子点击事件 (带真实消息通知流)
     initiatePartnerChat(postId) {
         const post = (window.App.marketDataCache?.partner || []).find(p => String(p.id) === String(postId));
         if (!post) return window.App.showToast("哎呀，帖子似乎走丢了", "error");
         
         const currentUserId = localStorage.getItem('hebao_uuid');
-        const isHost = currentUserId === post.user_id;
+        const isHost = String(currentUserId) === String(post.user_id);
         const cleanTitle = post.title.replace('[找搭子] ', '').replace('[搭子] ', '');
         
         if (isHost) {
-            // 局长点自己的帖子，依然是进入“群聊房间”看大家聊天
             ChatEngine.openChat(`group_${post.id}`, '👥 ' + cleanTitle + ' (群聊)', '🏕️', post.id, `你的搭子队伍`, 0, '', true, 'group_chat');
         } else {
-            // 🌟 访客点击：不再直接拉起私聊，而是发送“入队申请”
             if (confirm(`确定要申请加入【${cleanTitle}】吗？\n局长将在消息列表收到你的申请和资料。`)) {
                 
-                // (真实环境：调用后端 API 发送 Notification)
-                window.App.showToast("✅ 申请已发送！请耐心等待局长审核", "success");
+                // 1. 🌟 发送一条真实的私信给局长，触发红点提示！
+                if (window.App.getAuthHeaders) {
+                    fetch('/api/send-message', {
+                        method: 'POST',
+                        headers: window.App.getAuthHeaders(),
+                        body: JSON.stringify({ senderId: currentUserId, receiverId: post.user_id, postId: post.id, content: `【系统提示】我想申请加入你的搭子局【${cleanTitle}】，请前往消息列表审批！🙋` })
+                    }).catch(e=>console.log(e));
+                }
 
-                // 本地模拟：把申请记录塞进缓存，假装发给了局长
+                // 2. 存入待审批流 (🌟 核心修复：加上 hostId 绑定局长！)
                 let mockApps = JSON.parse(localStorage.getItem('hp_mock_applications') || '[]');
                 mockApps.push({
                     id: 'app_' + Date.now(),
                     postId: post.id,
                     postTitle: cleanTitle,
+                    hostId: String(post.user_id), // 🎯 明确指定审批人是局长
                     applicantId: currentUserId,
                     applicantName: localStorage.getItem('hp_name') || '热心管家',
-                    applicantAvatar: localStorage.getItem('hp_avatar') || '😎',
+                    applicantAvatar: localStorage.getItem('hp_real_avatar') || '😎',
                     status: 'pending',
                     time: new Date().toLocaleString()
                 });
                 localStorage.setItem('hp_mock_applications', JSON.stringify(mockApps));
+
+                window.App.showToast("✅ 申请已发送！请耐心等待局长审核", "success");
             }
         }
     }
-};
 
 if (typeof window !== 'undefined') {
     window.App = window.App || {};
