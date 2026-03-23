@@ -533,21 +533,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 给单人资料页“瘦身”，去掉旧分数
         const userProfileModal = document.getElementById('userProfileModal');
-        if (userProfileModal) {
-            const statsBox = userProfileModal.querySelector('div[style*="margin-bottom: 24px"]');
-            if (statsBox) {
-                statsBox.innerHTML = `
-                    <div style="flex: 1; background: #F8FAFC; padding: 16px; border-radius: 16px; border: 1px solid #E2E8F0; text-align: center;">
-                        <div style="font-size: 11px; color: #64748B; font-weight: bold; margin-bottom: 4px;">闲置/悬赏成交</div>
-                        <div style="font-size: 24px; font-weight: 900; color: #111827; font-family: monospace;">12 <span style="font-size: 12px; color:#9CA3AF;">人</span></div>
-                    </div>
-                    <div style="flex: 1; background: #ECFDF5; padding: 16px; border-radius: 16px; border: 1px solid #A7F3D0; text-align: center;">
-                        <div style="font-size: 11px; color: #059669; font-weight: bold; margin-bottom: 4px;">找搭子赴约率</div>
-                        <div style="font-size: 24px; font-weight: 900; color: #10B981; font-family: monospace;">100%</div>
-                    </div>
-                `;
-            }
-        }
     }, 500);
 });
 
