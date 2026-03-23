@@ -651,17 +651,28 @@ window.App.renderStarterTasks = function() {
     }
 };
 
-// 3. 丝滑的打勾音效与反馈
+// 3. 丝滑的打勾音效与反馈 (带通关奖励检测)
 window.App.toggleTask = function(id) {
     let completedTasks = JSON.parse(localStorage.getItem('hp_completed_tasks') || '[]');
+    let isNewlyCompleted = false;
+
     if(completedTasks.includes(id)) {
         completedTasks = completedTasks.filter(item => item !== id); // 取消勾选
     } else {
         completedTasks.push(id); // 勾选
+        isNewlyCompleted = true;
         if(window.App.showToast) window.App.showToast('🎉 阶段任务 +1', 'success');
     }
+    
     localStorage.setItem('hp_completed_tasks', JSON.stringify(completedTasks));
     window.App.renderStarterTasks(); // 重新渲染触发动画
+
+    // 🌟 门禁检测：总共 9 个任务，如果刚刚完成了最后一个
+    if (isNewlyCompleted && completedTasks.length >= 9) {
+        setTimeout(() => {
+            window.App.showRewardModal();
+        }, 800); // 延迟 0.8 秒，等那个绿色的打勾动画飞完再弹窗，体验绝佳！
+    }
 };
 
 // 延迟 500ms 自动渲染首页任务
@@ -890,6 +901,12 @@ window.App.showSgResult = function() {
             });
         }
     }, 100);
+    // 🌟 门禁检测：如果生存摸底考成绩 >= 100 分 (及格线)
+    if (balance >= 100) {
+        setTimeout(() => {
+            window.App.showRewardModal();
+        }, 1500); // 延迟 1.5 秒，先让新生看一眼自己的牛逼战绩，再用通关弹窗给他一个暴击惊喜！
+    }
 };
 
 // 页面加载完毕后自动渲染首页的战绩Banner
