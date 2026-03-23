@@ -604,7 +604,7 @@ export const MarketEngine = {
                 window.App.showToast("✅ 申请已发送！请耐心等待局长审核", "success");
             }
         }
-    },
+    };
 
 if (typeof window !== 'undefined') {
     window.App = window.App || {};
