@@ -776,23 +776,23 @@
     </div>
 </div>
 
-<div id="userProfileModal" class="modal-overlay" style="display: none; align-items: flex-end; padding: 0; z-index: 99999;">
-    <div class="modal-content" style="width: 100%; border-radius: 20px 20px 0 0; border: none; padding: 24px; background: #FFF;">
+<div id="userProfileModal" class="modal-overlay" style="display: none; align-items: center; justify-content: center; padding: 20px; z-index: 99999; background: rgba(0,0,0,0.5);" onclick="if(event.target === this) this.style.display='none'">
+    <div class="modal-content" style="width: 100%; max-width: 340px; border-radius: 24px; border: none; padding: 24px; background: #FFF; box-shadow: 0 10px 40px rgba(0,0,0,0.2); animation: popIn 0.3s ease;">
         
-        <div style="display: flex; gap: 16px; align-items: center; margin-bottom: 24px;">
-            <div id="profTargetAvatar" style="font-size: 48px; background: #F8FAFC; width: 64px; height: 64px; border-radius: 32px; display: flex; align-items: center; justify-content: center; border: 2px solid #10B981; overflow: hidden;">😎</div>
-            <div style="flex: 1;">
-                <div style="font-size: 20px; font-weight: 900; color: #111827; margin-bottom: 4px;" id="profTargetName">热心荷包蛋</div>
+        <div style="display: flex; gap: 16px; align-items: center; margin-bottom: 20px;">
+            <div id="profTargetAvatar" style="font-size: 48px; background: #F8FAFC; width: 64px; height: 64px; border-radius: 32px; display: flex; align-items: center; justify-content: center; border: 2px solid #10B981; overflow: hidden; flex-shrink: 0;">😎</div>
+            <div style="flex: 1; overflow: hidden;">
+                <div style="font-size: 18px; font-weight: 900; color: #111827; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" id="profTargetName">热心荷包蛋</div>
                 <div id="profTargetBadge" style="font-size: 12px; color: #64748B; background: #F1F5F9; padding: 2px 6px; border-radius: 4px; display: inline-block; font-weight: bold;">神秘身份</div>
             </div>
-            <div onclick="document.getElementById('userProfileModal').style.display='none'" style="background: #F1F5F9; width: 32px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; color: #64748B; font-weight: bold; cursor: pointer;">✕</div>
+            <div onclick="document.getElementById('userProfileModal').style.display='none'" style="background: #F1F5F9; width: 32px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; color: #64748B; font-weight: bold; cursor: pointer; flex-shrink: 0;">✕</div>
         </div>
 
         <div id="profTargetStats" style="display: flex; gap: 10px; margin-bottom: 24px;"></div>
 
         <div style="display: flex; gap: 10px;">
-            <button onclick="if(window.App.showToast) window.App.showToast('🎉 关注成功！', 'success')" style="flex: 1; background: #FFF; color: #111827; border: 2px solid #E2E8F0; padding: 14px; border-radius: 14px; font-weight: 900; font-size: 15px; cursor: pointer;">✨ 关注</button>
-            <button onclick="document.getElementById('userProfileModal').style.display='none'" style="flex: 1; background: #111827; color: white; border: none; padding: 14px; border-radius: 14px; font-weight: 900; font-size: 15px; cursor: pointer;">✋ 私聊</button>
+            <button onclick="if(window.App.showToast) window.App.showToast('🎉 关注成功！', 'success')" style="flex: 1; background: #FFF; color: #111827; border: 2px solid #E2E8F0; padding: 12px; border-radius: 14px; font-weight: 900; font-size: 14px; cursor: pointer;">✨ 关注</button>
+            <button onclick="document.getElementById('userProfileModal').style.display='none'" style="flex: 1; background: #111827; color: white; border: none; padding: 12px; border-radius: 14px; font-weight: 900; font-size: 14px; cursor: pointer;">✋ 私聊</button>
         </div>
     </div>
 </div>
