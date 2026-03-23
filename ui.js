@@ -1460,3 +1460,90 @@ document.addEventListener('click', (e) => {
         profile.style.zIndex = '2147483647';
     }
 }, true); // true: 抢在所有事件最前面执行！
+
+// ============================================================================
+// 🚀 社交关系链引擎：关注 / 粉丝列表 (UI 动态注入版)
+// ============================================================================
+window.App.openFollowList = function(type) {
+    let modal = document.getElementById('followListModal');
+    if (!modal) {
+        const html = `
+        <div id="followListModal" class="modal-overlay" style="display: none; align-items: flex-end; padding: 0; z-index: 2147483647;">
+            <div class="modal-content" style="width: 100%; border-radius: 20px 20px 0 0; border: none; padding: 24px; background: #F8FAFC; height: 75vh; display: flex; flex-direction: column;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div style="font-size: 18px; font-weight: 900; color: #111827;" id="followModalTitle">我的关注</div>
+                    <div onclick="document.getElementById('followListModal').style.display='none'" style="background: #E2E8F0; width: 32px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; color: #475569; font-weight: bold; cursor: pointer;">✕</div>
+                </div>
+                <div id="followListContainer" style="flex: 1; overflow-y: auto; background: #FFF; border-radius: 16px; border: 1px solid #E2E8F0; padding: 10px;">
+                </div>
+            </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', html);
+        modal = document.getElementById('followListModal');
+    }
+
+    document.getElementById('followModalTitle').innerText = type === 'following' ? '我的关注 (12)' : '我的粉丝 (38)';
+    const container = document.getElementById('followListContainer');
+
+    // 渲染演示数据 (真实环境接入后端 API)
+    const data = type === 'following' ? [
+        { name: '荷包蛋局长', avatar: '😎', tag: '互相关注' },
+        { name: '鹿特丹学长', avatar: '🎓', tag: '已关注' }
+    ] : [
+        { name: '熬夜冠军', avatar: '🐼', tag: '互相关注' },
+        { name: '早八打工人', avatar: '🦊', tag: '回关' }
+    ];
+
+    let listHtml = '';
+    data.forEach(user => {
+        const btnStyle = user.tag === '回关' ? 'background: #111827; color: #FFF;' : 'background: #F1F5F9; color: #64748B;';
+        listHtml += `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #F1F5F9;">
+            <div style="display: flex; align-items: center; gap: 12px; cursor: pointer;" onclick="window.App.SocialEngine.openUserProfile('mock_id')">
+                <div style="font-size: 24px; background: #F8FAFC; width: 44px; height: 44px; border-radius: 22px; display: flex; align-items: center; justify-content: center;">${user.avatar}</div>
+                <div>
+                    <div style="font-size: 15px; font-weight: 900; color: #111827;">${user.name}</div>
+                    <div style="font-size: 11px; color: #059669; font-weight: bold; background: #D1FAE5; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 4px;">靠谱居民</div>
+                </div>
+            </div>
+            <button style="border: none; padding: 6px 14px; border-radius: 12px; font-weight: 900; font-size: 12px; cursor: pointer; ${btnStyle}">${user.tag}</button>
+        </div>`;
+    });
+    container.innerHTML = listHtml;
+    modal.style.display = 'flex';
+};
+
+// 🌟 拦截并重写个人主页的数据面板，塞入“关注”和“粉丝”
+const originalRefreshStats = window.App.refreshProfileUI;
+window.App.refreshProfileUI = function() {
+    if(originalRefreshStats) originalRefreshStats();
+    setTimeout(() => {
+        const statsPanel = document.getElementById('userStatsPanel');
+        if (statsPanel && localStorage.getItem('hebao_logged_in') === 'true') {
+            const credit = localStorage.getItem('hebao_credit') || 100;
+            const flakes = localStorage.getItem('hp_flake_count') || 0;
+            const creditColor = credit >= 130 ? '#10B981' : (credit >= 100 ? '#F59E0B' : '#EF4444');
+            const flakeColor = flakes > 0 ? '#EF4444' : '#111827';
+            
+            statsPanel.innerHTML = `
+                <div style="text-align: center; flex: 1;">
+                    <div style="font-size: 18px; font-weight: 900; color: ${creditColor}; font-family: monospace;">${credit}</div>
+                    <div style="font-size: 11px; color: #64748B; font-weight: bold; margin-top: 4px;">信用分</div>
+                </div>
+                <div style="text-align: center; flex: 1;">
+                    <div style="font-size: 18px; font-weight: 900; color: ${flakeColor}; font-family: monospace;">${flakes}</div>
+                    <div style="font-size: 11px; color: #64748B; font-weight: bold; margin-top: 4px;">鸽子(次)</div>
+                </div>
+                <div style="text-align: center; flex: 1; cursor: pointer; position: relative;" onclick="window.App.openFollowList('following')">
+                    <div style="font-size: 18px; font-weight: 900; color: #111827; font-family: monospace;">12</div>
+                    <div style="font-size: 11px; color: #64748B; font-weight: bold; margin-top: 4px;">关注</div>
+                    <div style="position: absolute; top: -2px; right: 12px; width: 6px; height: 6px; background: #EF4444; border-radius: 50%;"></div>
+                </div>
+                <div style="text-align: center; flex: 1; cursor: pointer;" onclick="window.App.openFollowList('followers')">
+                    <div style="font-size: 18px; font-weight: 900; color: #111827; font-family: monospace;">38</div>
+                    <div style="font-size: 11px; color: #64748B; font-weight: bold; margin-top: 4px;">粉丝</div>
+                </div>
+            `;
+        }
+    }, 100);
+};
