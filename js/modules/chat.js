@@ -151,24 +151,7 @@ export const ChatEngine = {
                 // 🚨 修复：只能看到别人发给我的申请！(过滤 hostId === uid)
                 let pendingApps = mockApps.filter(app => app.status === 'pending' && String(app.hostId) === String(uid));
 
-                // 🎯 上帝模式测试：为了方便老板你单机测试审批流，
-                // 如果你发布了搭子局，且没人申请，系统自动生成一个“熬夜冠军”的虚拟申请供你测试通过！
-                if (pendingApps.length === 0) {
-                    const myPartnerPosts = (window.allCommunityPostsCache || []).filter(p => String(p.user_id) === String(uid) && p.title.includes('[搭子]'));
-                    if (myPartnerPosts.length > 0) {
-                        const randomPost = myPartnerPosts[0];
-                        pendingApps.push({
-                            id: 'test_app_123',
-                            postId: randomPost.id,
-                            postTitle: randomPost.title.replace('[找搭子] ', '').replace('[搭子] ', ''),
-                            hostId: String(uid),
-                            applicantId: 'test_fan_001',
-                            applicantName: '熬夜冠军',
-                            applicantAvatar: '🐼',
-                            status: 'pending'
-                        });
-                    }
-                }
+                
 
                 // 将待审批数量加到全局底部的总红点里！
                 totalUnreadCount += pendingApps.length;
@@ -471,7 +454,7 @@ window.App.approveApplication = async function(btnElement, appId, postId, applic
 
         // 1. 从前端所有帖子的缓存里找到这个帖子
         const allPosts = window.allCommunityPostsCache || [];
-        const post = allPosts.find(p => p.id === postId);
+        const post = allPosts.find(p => String(p.id) === String(postId));
         if(!post) throw new Error("帖子数据不存在");
         
         let contentObj = typeof post.content === 'string' ? JSON.parse(post.content) : post.content;
