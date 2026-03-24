@@ -258,45 +258,42 @@ window.App.showProChart = async function(type) {
 // ==========================================
 // 🌟 自动唤醒大盘卡片：带断网兜底的强力渲染引擎
 // ==========================================
+// ==========================================
+// 📈 修复版：大盘数据卡片 (防崩溃兜底)
+// ==========================================
 window.App.initMarketCards = async function() {
-    // 🛡️ 兜底数据：如果 API 挂了或在本地没起后端，就显示这个，保证 UI 永远好看！
-    const fallbackData = {
-        exchange: { current: 7.82, change: 0.03 },
+    // 🛡️ 强制兜底数据：网络不通时显示这个
+    const fallback = {
+        exchange: { current: 7.82, change: 0.02 },
         energy: { current: 0.24 },
         mortgage: { current: 3.85 }
     };
 
-    const renderCards = (data) => {
-        // 1. 更新汇率卡片
-        const exEl = document.getElementById('market-exchange');
-        if (exEl) {
-            const sign = data.exchange.change >= 0 ? '↑' : '↓';
-            const color = data.exchange.change >= 0 ? '#EF4444' : '#10B981';
-            exEl.innerHTML = `${data.exchange.current} <span style="font-size:12px; color:${color}; margin-left:2px;">${sign}${Math.abs(data.exchange.change)}</span>`;
-            exEl.style.color = color;
-        }
-        
-        // 2. 更新电价卡片
-        const enEl = document.getElementById('market-energy');
-        if (enEl) enEl.innerText = `€${data.energy.current}`;
-        
-        // 3. 更新房贷卡片
-        const moEl = document.getElementById('market-mortgage');
-        if (moEl) moEl.innerText = `${data.mortgage.current}%`;
+    const render = (data) => {
+        try {
+            const exEl = document.getElementById('market-exchange');
+            if (exEl) {
+                const color = (data.exchange && data.exchange.change >= 0) ? '#EF4444' : '#10B981';
+                const sign = (data.exchange && data.exchange.change >= 0) ? '↑' : '↓';
+                const current = data.exchange ? data.exchange.current : '--';
+                const change = data.exchange ? Math.abs(data.exchange.change) : '0';
+                exEl.innerHTML = `${current} <span style="font-size:12px; color:${color}; margin-left:2px;">${sign}${change}</span>`;
+                exEl.style.color = color;
+            }
+            const enEl = document.getElementById('market-energy');
+            if (enEl) enEl.innerText = data.energy ? `€${data.energy.current}` : '--';
+            const moEl = document.getElementById('market-mortgage');
+            if (moEl) moEl.innerText = data.mortgage ? `${data.mortgage.current}%` : '--';
+        } catch (err) { console.error("渲染卡片失败:", err); }
     };
 
     try {
         const res = await fetch('/api/get-market');
         const result = await res.json();
-        
-        if (result.success && result.data) {
-            renderCards(result.data); // 走真实 API 数据
-        } else {
-            renderCards(fallbackData); // 走兜底数据
-        }
+        render(result.success && result.data ? result.data : fallback);
     } catch (e) {
-        console.warn("大盘数据 API 请求失败，启动本地兜底渲染", e);
-        renderCards(fallbackData); // 断网也走兜底数据
+        console.warn("API 504/超时，启动本地兜底");
+        render(fallback);
     }
 };
 
