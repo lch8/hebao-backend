@@ -1246,3 +1246,92 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, 100); 
 });
+// ============================================================================
+// 🚀 究极防弹版：搭子入队申请引擎 (修复无弹窗、找不到帖子、Header报错问题)
+// ============================================================================
+window.App = window.App || {};
+
+window.App.initiatePartnerChat = window.initiatePartnerChat = function(postId) {
+    console.log("👉 引擎启动！正在尝试申请入队，目标帖子 ID:", postId);
+
+    // 1. 地毯式搜索：翻遍本地所有可能的缓存库找这篇帖子！
+    let allPosts = window.allCommunityPostsCache || [];
+    if (window.App.marketDataCache && window.App.marketDataCache.partner) {
+        allPosts = [...allPosts, ...window.App.marketDataCache.partner];
+    }
+
+    const post = allPosts.find(p => String(p.id) === String(postId));
+    
+    // 🚨 拦截点 1：找不到帖子
+    if (!post) {
+        console.error("❌ 找不到该帖子数据！当前缓存库里的帖子有:", allPosts);
+        if (window.App.showToast) window.App.showToast("哎呀，帖子数据走丢了，请刷新一下大厅！", "error");
+        else alert("帖子数据丢失，请刷新页面");
+        return;
+    }
+
+    const currentUserId = localStorage.getItem('hebao_uuid');
+    
+    // 🚨 拦截点 2：没登录
+    if (!currentUserId) {
+        if (window.App.showToast) window.App.showToast("请先登录哦！", "warning");
+        return;
+    }
+
+    const isHost = String(currentUserId) === String(post.user_id);
+    const cleanTitle = (post.title || '搭子局').replace(/\[找搭子\]\s*/, '').replace(/\[搭子\]\s*/, '');
+    
+    // 3. 执行核心业务逻辑
+    if (isHost) {
+        // 局长自己点，直接进入群聊
+        if (window.App.openChat) {
+            window.App.openChat(`group_${post.id}`, '👥 ' + cleanTitle + ' (群聊)', '🏕️', post.id, `你的搭子队伍`, 0, '', true, 'group_chat');
+        } else if (window.ChatEngine && window.ChatEngine.openChat) {
+            window.ChatEngine.openChat(`group_${post.id}`, '👥 ' + cleanTitle + ' (群聊)', '🏕️', post.id, `你的搭子队伍`, 0, '', true, 'group_chat');
+        }
+    } else {
+        // 路人点，强行唤起确认弹窗！
+        if (confirm(`确定要申请加入【${cleanTitle}】吗？\n局长将在消息列表收到你的申请和资料。`)) {
+            
+            // 🌟 直接手动组装高权限 Header，防止 getAuthHeaders 丢失报错！
+            const token = localStorage.getItem('hebao_token') || '';
+            const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+
+            // (1) 发送私信通知局长触发红点
+            fetch('/api/send-message', {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({ senderId: currentUserId, receiverId: post.user_id, postId: post.id, content: `【系统提示】我想申请加入你的搭子局【${cleanTitle}】，请前往消息列表审批！🙋` })
+            }).catch(e => console.log("私信通知发送失败", e));
+
+            // (2) 写入 Turso 数据库的真实申请流！
+            fetch('/api/apply-partner', {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({
+                    postId: post.id,
+                    postTitle: cleanTitle,
+                    hostId: String(post.user_id), 
+                    applicantId: currentUserId,
+                    applicantName: localStorage.getItem('hp_name') || '热心管家',
+                    applicantAvatar: localStorage.getItem('hp_real_avatar') || localStorage.getItem('hp_avatar') || '😎'
+                })
+            }).then(res => res.json()).then(data => {
+                if (data.success) {
+                    if (window.App.showToast) window.App.showToast("✅ 申请已发送！请耐心等待局长审核", "success");
+                    else alert("✅ 申请已发送！");
+                } else {
+                    if (window.App.showToast) window.App.showToast("发送失败: " + (data.error || "未知错误"), "error");
+                }
+            }).catch(err => {
+                console.error("🚀 网络请求失败:", err);
+                if (window.App.showToast) window.App.showToast("网络拥堵，申请发送失败", "error");
+            });
+        }
+    }
+};
+
+// 以防有的按钮写的是 ChatEngine.initiatePartnerChat
+if (window.ChatEngine) {
+    window.ChatEngine.initiatePartnerChat = window.App.initiatePartnerChat;
+}
