@@ -564,7 +564,7 @@ export const MarketEngine = {
     },
 
     // 🌟 核心重构：找搭子点击事件 (带真实消息通知流)
-    initiatePartnerChat(postId) {
+   initiatePartnerChat(postId) {
         const post = (window.App.marketDataCache?.partner || []).find(p => String(p.id) === String(postId));
         if (!post) return window.App.showToast("哎呀，帖子似乎走丢了", "error");
         
@@ -577,31 +577,39 @@ export const MarketEngine = {
         } else {
             if (confirm(`确定要申请加入【${cleanTitle}】吗？\n局长将在消息列表收到你的申请和资料。`)) {
                 
-                // 1. 🌟 发送一条真实的私信给局长，触发红点提示！
                 if (window.App.getAuthHeaders) {
+                    // 1. 🌟 发送一条真实的私信给局长，触发红点提示！
                     fetch('/api/send-message', {
                         method: 'POST',
                         headers: window.App.getAuthHeaders(),
                         body: JSON.stringify({ senderId: currentUserId, receiverId: post.user_id, postId: post.id, content: `【系统提示】我想申请加入你的搭子局【${cleanTitle}】，请前往消息列表审批！🙋` })
-                    }).catch(e=>console.log(e));
+                    }).catch(e => console.log("私信通知发送失败", e));
+
+                    // 2. 🌟 核心换血：真实网络请求，存入 Turso 数据库！
+                    fetch('/api/apply-partner', {
+                        method: 'POST',
+                        headers: window.App.getAuthHeaders(),
+                        body: JSON.stringify({
+                            postId: post.id,
+                            postTitle: cleanTitle,
+                            hostId: String(post.user_id), 
+                            applicantId: currentUserId,
+                            applicantName: localStorage.getItem('hp_name') || '热心管家',
+                            applicantAvatar: localStorage.getItem('hp_real_avatar') || '😎'
+                        })
+                    }).then(res => res.json()).then(data => {
+                        if (data.success) {
+                            window.App.showToast("✅ 申请已发送！请耐心等待局长审核", "success");
+                        } else {
+                            window.App.showToast("发送失败: " + (data.error || "未知错误"), "error");
+                        }
+                    }).catch(err => {
+                        console.error(err);
+                        window.App.showToast("网络拥堵，申请发送失败", "error");
+                    });
+                } else {
+                    window.App.showToast("身份信息过期，请重新登录", "error");
                 }
-
-                // 2. 存入待审批流 (🌟 核心修复：加上 hostId 绑定局长！)
-                let mockApps = JSON.parse(localStorage.getItem('hp_mock_applications') || '[]');
-                mockApps.push({
-                    id: 'app_' + Date.now(),
-                    postId: post.id,
-                    postTitle: cleanTitle,
-                    hostId: String(post.user_id), // 🎯 明确指定审批人是局长
-                    applicantId: currentUserId,
-                    applicantName: localStorage.getItem('hp_name') || '热心管家',
-                    applicantAvatar: localStorage.getItem('hp_real_avatar') || '😎',
-                    status: 'pending',
-                    time: new Date().toLocaleString()
-                });
-                localStorage.setItem('hp_mock_applications', JSON.stringify(mockApps));
-
-                window.App.showToast("✅ 申请已发送！请耐心等待局长审核", "success");
             }
         }
     }
