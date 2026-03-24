@@ -132,8 +132,24 @@ export const ChatEngine = {
                 latestConversationTime = topConvTime;
             }
 
+            // ==========================================
+            // 🌟 核心大换血：从 Turso 数据库拉取真实的待审批申请！
+            // ==========================================
+            let pendingApps = [];
+            try {
+                const appRes = await fetch(`/api/get-applications?userId=${uid}`);
+                const appData = await appRes.json();
+                if (appData.success) {
+                    // 后端接口已经帮我们过滤好了 status='pending' 和 hostId=uid
+                    pendingApps = appData.applications || [];
+                }
+            } catch(e) { 
+                console.error("拉取搭子申请失败", e); 
+            }
+
             safeDOM.execute('conversationList', list => {
-                if (conversations.length === 0) {
+                // 修复空状态判断逻辑：聊天为空 且 申请也为空
+                if (conversations.length === 0 && pendingApps.length === 0) {
                     list.innerHTML = '';
                     safeDOM.execute('msgEmptyState', el => el.style.display = 'flex');
                     this.updateGlobalBadge(0); // 清空角标
@@ -141,21 +157,12 @@ export const ChatEngine = {
                 }
 
                 safeDOM.execute('msgEmptyState', el => el.style.display = 'none');
-                let html = ''; // 原本的代码
+                let html = '';
                 
-                // ==========================================
-                // 🌟 新增：在消息列表最顶部注入【搭子入队申请】卡片
-                // ==========================================
-                const mockApps = JSON.parse(localStorage.getItem('hp_mock_applications') || '[]');
-                
-                // 🚨 修复：只能看到别人发给我的申请！(过滤 hostId === uid)
-                let pendingApps = mockApps.filter(app => app.status === 'pending' && String(app.hostId) === String(uid));
-
-                
-
                 // 将待审批数量加到全局底部的总红点里！
                 totalUnreadCount += pendingApps.length;
                 
+                // 渲染真实的入队申请卡片
                 pendingApps.forEach(app => {
                     html += `
                     <div style="background: #FFF; border-radius: 16px; padding: 16px; border: 1px solid #F1F5F9; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 10px;">
@@ -180,15 +187,7 @@ export const ChatEngine = {
                     </div>`;
                 });
 
-                // 修复空状态判断逻辑
-                if (conversations.length === 0 && pendingApps.length === 0) {
-                    list.innerHTML = '';
-                    safeDOM.execute('msgEmptyState', el => el.style.display = 'flex');
-                    this.updateGlobalBadge(0);
-                    return;
-                }
-                safeDOM.execute('msgEmptyState', el => el.style.display = 'none');
-                
+                // 渲染私聊记录
                 conversations.forEach(conv => {
                     const date = new Date(conv.last_time + 'Z');
                     const msgTimeMs = date.getTime();
@@ -199,7 +198,6 @@ export const ChatEngine = {
                     const partnerName = conv.partner_name || `校友_${conv.partner_id.substring(0, 4)}`;
                     const partnerAvatar = conv.partner_avatar || '😎';
 
-                    // 🌟 核心算法：如果这条消息的时间，晚于该用户的本地已读时间，且当前没打开他的聊天框，就是未读！
                     const lastReadTime = readTimestamps[conv.partner_id] || 0;
                     let isUnread = false;
                     if (msgTimeMs > lastReadTime && currentChatPartnerId !== conv.partner_id) {
@@ -207,7 +205,6 @@ export const ChatEngine = {
                         totalUnreadCount++;
                     }
 
-                    // 如果未读，在列表右侧加个醒目的红点
                     const unreadDotHtml = isUnread ? `<div style="width: 10px; height: 10px; background: #EF4444; border-radius: 50%; box-shadow: 0 0 0 2px #FFF; margin-left: 8px; flex-shrink: 0;"></div>` : '';
 
                     const avatarHtml = partnerAvatar.length > 10 
@@ -232,6 +229,7 @@ export const ChatEngine = {
                         </div>
                     </div>`;
                 });
+                
                 list.innerHTML = html;
                 
                 // 🌟 更新底部导航栏的总角标
