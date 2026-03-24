@@ -1319,3 +1319,72 @@ window.App = window.App || {};
 window.App.initiatePartnerChat = diagnosticInitiateChat;
 if (window.MarketEngine) window.MarketEngine.initiatePartnerChat = diagnosticInitiateChat;
 if (window.ChatEngine) window.ChatEngine.initiatePartnerChat = diagnosticInitiateChat;
+// ============================================================================
+// 🛡️ 霸道劫持版：强制接管大厅的【申请入队】按钮 (专治点击没反应)
+// ============================================================================
+document.addEventListener('click', function(e) {
+    // 1. 扫描被点击的元素，看看它是不是“申请入队”按钮
+    const isApplyBtn = e.target.innerText && e.target.innerText.includes('申请入队');
+    const hasApplyAction = e.target.closest('[onclick*="initiatePartnerChat"]');
+
+    if (isApplyBtn || hasApplyAction) {
+        // 2. 强行拔掉原有的控制线！防止它去调那个坏掉的旧函数
+        e.preventDefault();
+        e.stopPropagation();
+
+        // 3. 从按钮上把 PostID 抠出来
+        let postId = null;
+        const targetEl = hasApplyAction || e.target;
+        const onclickStr = targetEl.getAttribute('onclick') || '';
+        const match = onclickStr.match(/['"]([^'"]+)['"]/);
+
+        if (match) {
+            postId = match[1];
+        } else {
+            return alert("🔴 劫持成功，但无法从按钮上提取到 PostID，请检查 HTML！");
+        }
+
+        // 4. 寻找帖子真实数据
+        let allPosts = window.allCommunityPostsCache || [];
+        if (window.App && window.App.marketDataCache && window.App.marketDataCache.partner) {
+            allPosts = [...allPosts, ...window.App.marketDataCache.partner];
+        }
+
+        const post = allPosts.find(p => String(p.id) === String(postId));
+        if (!post) return alert(`🔴 劫持成功，但在缓存里找不到这篇帖子！ID: ${postId}`);
+
+        const currentUserId = localStorage.getItem('hebao_uuid');
+        if (!currentUserId) return alert("🔴 系统检测到你未登录！");
+
+        const cleanTitle = (post.title || '搭子局').replace(/\[找搭子\]\s*/, '').replace(/\[搭子\]\s*/, '');
+
+        // 5. 呼叫最终的确认弹窗！
+        if (confirm(`【强制劫持成功】\n确定要申请加入【${cleanTitle}】吗？\n局长将在消息列表收到你的申请！`)) {
+            
+            const token = localStorage.getItem('hebao_token') || '';
+            const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+
+            // 发送私信红点提示
+            fetch('/api/send-message', {
+                method: 'POST', headers: headers,
+                body: JSON.stringify({ senderId: currentUserId, receiverId: post.user_id, postId: post.id, content: `【系统提示】我想申请加入你的搭子局【${cleanTitle}】，请前往消息列表审批！🙋` })
+            }).catch(e => console.log(e));
+
+            // 发送真实 Turso 申请
+            fetch('/api/apply-partner', {
+                method: 'POST', headers: headers,
+                body: JSON.stringify({
+                    postId: post.id, postTitle: cleanTitle, hostId: String(post.user_id), applicantId: currentUserId,
+                    applicantName: localStorage.getItem('hp_name') || '热心管家', applicantAvatar: localStorage.getItem('hp_real_avatar') || localStorage.getItem('hp_avatar') || '😎'
+                })
+            }).then(res => res.json()).then(data => {
+                if (data.success) {
+                    alert("✅ Turso 数据库写入成功！\n全链路跑通！现在你可以切回局长账号去审批了！");
+                    if(window.App && window.App.showToast) window.App.showToast("申请已发送", "success");
+                } else {
+                    alert("🔴 后端 API 拒绝了请求: " + data.error);
+                }
+            }).catch(err => alert("🔴 网络请求直接崩溃: " + err));
+        }
+    }
+}, true); // 注意这个 true，代表我们在捕获阶段强行拦截，霸道至极！
