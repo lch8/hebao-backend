@@ -468,38 +468,64 @@ window.App.SocialEngine = {
     }
 };
 
+// ----------------------------------------------------------------------------
+// 🚀 满血修复：真实关注引擎与列表渲染 (自带 DOM 动态注入)
+// ----------------------------------------------------------------------------
 window.App.openFollowList = function(type) {
     let modal = document.getElementById('followListModal');
+    
+    // 🚨 修复核心：如果网页里没有这个弹窗，就自动用 JS 创建一个高级弹窗！
     if (!modal) {
         document.body.insertAdjacentHTML('beforeend', `
         <div id="followListModal" class="modal-overlay" style="display: none; align-items: flex-end; padding: 0; z-index: 2147483647;">
-            <div class="modal-content" style="width: 100%; border-radius: 20px 20px 0 0; border: none; padding: 24px; background: #F8FAFC; height: 75vh; display: flex; flex-direction: column;">
+            <div class="modal-content" style="width: 100%; border-radius: 20px 20px 0 0; border: none; padding: 24px; background: #F8FAFC; height: 75vh; display: flex; flex-direction: column; animation: slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1);">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <div style="font-size: 18px; font-weight: 900; color: #111827;" id="followModalTitle">我的列表</div>
-                    <div onclick="document.getElementById('followListModal').style.display='none'" style="background: #E2E8F0; width: 32px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; color: #475569; font-weight: bold; cursor: pointer;">✕</div>
+                    <div onclick="document.getElementById('followListModal').style.display='none'" style="background: #E2E8F0; width: 32px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; color: #475569; font-weight: bold; cursor: pointer; transition: 0.2s;" onmousedown="this.style.transform='scale(0.9)'" onmouseup="this.style.transform='scale(1)'">✕</div>
                 </div>
                 <div id="followListContainer" style="flex: 1; overflow-y: auto; background: #FFF; border-radius: 16px; border: 1px solid #E2E8F0; padding: 10px;"></div>
             </div>
         </div>`);
         modal = document.getElementById('followListModal');
     }
-    document.getElementById('followModalTitle').innerText = type === 'following' ? '我的关注' : '我的粉丝';
     
-    // 模拟数据渲染
-    const data = type === 'following' ? [{ name: '荷包蛋局长', avatar: '😎', tag: '互相关注' }] : [{ name: '熬夜冠军', avatar: '🐼', tag: '回关' }];
+    document.getElementById('followModalTitle').innerText = type === 'following' ? '我的关注' : '我的粉丝';
+    const container = document.getElementById('followListContainer');
+    
+    // 🌟 读取真实缓存数组
+    const data = type === 'following' 
+        ? JSON.parse(localStorage.getItem('hp_following') || '[]')
+        : JSON.parse(localStorage.getItem('hp_followers') || '[]');
+
+    if (data.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding: 40px; color: #9CA3AF; font-size: 13px;">列表空空如也，快去大厅多活跃一下吧！</div>`;
+        modal.style.display = 'flex';
+        return;
+    }
+
     let listHtml = '';
+    const myFollowing = JSON.parse(localStorage.getItem('hp_following') || '[]');
+
     data.forEach(user => {
-        const btnStyle = user.tag === '回关' ? 'background: #111827; color: #FFF;' : 'background: #F1F5F9; color: #64748B;';
+        // 判断状态：已关注 / 互相关注 / 回关
+        const isFollowing = myFollowing.find(u => u.id === user.id);
+        const btnStyle = isFollowing ? 'background: #F1F5F9; color: #64748B;' : 'background: #111827; color: #FFF;';
+        const btnText = isFollowing ? (type === 'followers' ? '互相关注' : '已关注') : '回关';
+        
         listHtml += `
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #F1F5F9;">
-            <div style="display: flex; align-items: center; gap: 12px; cursor: pointer;" onclick="window.App.SocialEngine.openUserProfile('mock_id')">
+            <div style="display: flex; align-items: center; gap: 12px; cursor: pointer;" onclick="document.getElementById('followListModal').style.display='none'; window.App.SocialEngine.openUserProfile('${user.id}', '${user.name}', '${user.avatar}')">
                 <div style="font-size: 24px; background: #F8FAFC; width: 44px; height: 44px; border-radius: 22px; display: flex; align-items: center; justify-content: center;">${user.avatar}</div>
-                <div><div style="font-size: 15px; font-weight: 900; color: #111827;">${user.name}</div><div style="font-size: 11px; color: #059669; font-weight: bold; background: #D1FAE5; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 4px;">靠谱居民</div></div>
+                <div>
+                    <div style="font-size: 15px; font-weight: 900; color: #111827;">${user.name}</div>
+                    <div style="font-size: 11px; color: #059669; font-weight: bold; background: #D1FAE5; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 4px;">荷包蛋</div>
+                </div>
             </div>
-            <button style="border: none; padding: 6px 14px; border-radius: 12px; font-weight: 900; font-size: 12px; cursor: pointer; ${btnStyle}">${user.tag}</button>
+            <button onclick="window.App.SocialEngine.toggleFollowUser('${user.id}', '${user.name}', '${user.avatar}'); setTimeout(() => window.App.openFollowList('${type}'), 100);" style="border: none; padding: 6px 14px; border-radius: 12px; font-weight: 900; font-size: 12px; cursor: pointer; transition: 0.2s; ${btnStyle}">${btnText}</button>
         </div>`;
     });
-    document.getElementById('followListContainer').innerHTML = listHtml;
+    
+    container.innerHTML = listHtml;
     modal.style.display = 'flex';
 };
 
