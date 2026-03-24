@@ -1313,78 +1313,92 @@ const diagnosticInitiateChat = function(postId) {
     }
 };
 
-// 🕸️ 天罗地网绑定法：不管你的 HTML 里写的是调用哪个对象，全部强制接管！
-window.initiatePartnerChat = diagnosticInitiateChat;
+// ============================================================================
+// 🛡️ 荷包管家：最高权限社交引擎 (真·全网联通版)
+// ============================================================================
+
 window.App = window.App || {};
-window.App.initiatePartnerChat = diagnosticInitiateChat;
-if (window.MarketEngine) window.MarketEngine.initiatePartnerChat = diagnosticInitiateChat;
-if (window.ChatEngine) window.ChatEngine.initiatePartnerChat = diagnosticInitiateChat;
-// ============================================================================
-// 🛡️ 霸道劫持版：强制接管大厅的【申请入队】按钮 (专治点击没反应)
-// ============================================================================
-document.addEventListener('click', function(e) {
-    // 1. 扫描被点击的元素，看看它是不是“申请入队”按钮
-    const isApplyBtn = e.target.innerText && e.target.innerText.includes('申请入队');
-    const hasApplyAction = e.target.closest('[onclick*="initiatePartnerChat"]');
 
-    if (isApplyBtn || hasApplyAction) {
-        // 2. 强行拔掉原有的控制线！防止它去调那个坏掉的旧函数
-        e.preventDefault();
-        e.stopPropagation();
+// 强制接管所有搭子申请逻辑
+window.App.initiatePartnerChat = window.initiatePartnerChat = async function(postId) {
+    console.log("🚀 社交引擎启动，目标帖子:", postId);
 
-        // 3. 从按钮上把 PostID 抠出来
-        let postId = null;
-        const targetEl = hasApplyAction || e.target;
-        const onclickStr = targetEl.getAttribute('onclick') || '';
-        const match = onclickStr.match(/['"]([^'"]+)['"]/);
-
-        if (match) {
-            postId = match[1];
-        } else {
-            return alert("🔴 劫持成功，但无法从按钮上提取到 PostID，请检查 HTML！");
-        }
-
-        // 4. 寻找帖子真实数据
-        let allPosts = window.allCommunityPostsCache || [];
-        if (window.App && window.App.marketDataCache && window.App.marketDataCache.partner) {
-            allPosts = [...allPosts, ...window.App.marketDataCache.partner];
-        }
-
-        const post = allPosts.find(p => String(p.id) === String(postId));
-        if (!post) return alert(`🔴 劫持成功，但在缓存里找不到这篇帖子！ID: ${postId}`);
-
-        const currentUserId = localStorage.getItem('hebao_uuid');
-        if (!currentUserId) return alert("🔴 系统检测到你未登录！");
-
-        const cleanTitle = (post.title || '搭子局').replace(/\[找搭子\]\s*/, '').replace(/\[搭子\]\s*/, '');
-
-        // 5. 呼叫最终的确认弹窗！
-        if (confirm(`【强制劫持成功】\n确定要申请加入【${cleanTitle}】吗？\n局长将在消息列表收到你的申请！`)) {
-            
-            const token = localStorage.getItem('hebao_token') || '';
-            const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
-
-            // 发送私信红点提示
-            fetch('/api/send-message', {
-                method: 'POST', headers: headers,
-                body: JSON.stringify({ senderId: currentUserId, receiverId: post.user_id, postId: post.id, content: `【系统提示】我想申请加入你的搭子局【${cleanTitle}】，请前往消息列表审批！🙋` })
-            }).catch(e => console.log(e));
-
-            // 发送真实 Turso 申请
-            fetch('/api/apply-partner', {
-                method: 'POST', headers: headers,
-                body: JSON.stringify({
-                    postId: post.id, postTitle: cleanTitle, hostId: String(post.user_id), applicantId: currentUserId,
-                    applicantName: localStorage.getItem('hp_name') || '热心管家', applicantAvatar: localStorage.getItem('hp_real_avatar') || localStorage.getItem('hp_avatar') || '😎'
-                })
-            }).then(res => res.json()).then(data => {
-                if (data.success) {
-                    alert("✅ Turso 数据库写入成功！\n全链路跑通！现在你可以切回局长账号去审批了！");
-                    if(window.App && window.App.showToast) window.App.showToast("申请已发送", "success");
-                } else {
-                    alert("🔴 后端 API 拒绝了请求: " + data.error);
-                }
-            }).catch(err => alert("🔴 网络请求直接崩溃: " + err));
-        }
+    // 1. 寻找帖子数据
+    let allPosts = window.allCommunityPostsCache || [];
+    if (window.App.marketDataCache && window.App.marketDataCache.partner) {
+        allPosts = [...allPosts, ...window.App.marketDataCache.partner];
     }
-}, true); // 注意这个 true，代表我们在捕获阶段强行拦截，霸道至极！
+    const post = allPosts.find(p => String(p.id) === String(postId));
+
+    if (!post) {
+        console.error("找不到帖子:", postId);
+        return window.App.showToast ? window.App.showToast("帖子数据加载中，请稍后", "info") : null;
+    }
+
+    const currentUserId = localStorage.getItem('hebao_uuid');
+    if (!currentUserId) return window.App.showToast("请先登录哦", "warning");
+
+    // 如果是自己发的帖子，直接进群
+    if (String(currentUserId) === String(post.user_id)) {
+        const cleanTitle = post.title.replace(/\[.*?\]\s*/, '');
+        if (window.App.openChat) {
+            window.App.openChat(`group_${post.id}`, '👥 ' + cleanTitle, '🏕️', post.id, `你的队伍`, 0, '', true, 'group_chat');
+        }
+        return;
+    }
+
+    // 🌟 核心改进：不再使用 confirm()，直接进入申请流程并提示用户
+    if (window.App.showToast) window.App.showToast("⌛ 正在发送申请...", "info");
+
+    const token = localStorage.getItem('hebao_token') || '';
+    const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
+    const cleanTitle = post.title.replace(/\[.*?\]\s*/, '');
+
+    try {
+        // A. 给局长发私信 (红点通知)
+        fetch('/api/send-message', {
+            method: 'POST', headers: headers,
+            body: JSON.stringify({ 
+                senderId: currentUserId, 
+                receiverId: post.user_id, 
+                postId: post.id, 
+                content: `【系统提示】我想申请加入你的搭子局【${cleanTitle}】，请前往消息列表审批！🙋` 
+            })
+        });
+
+        // B. 写入 Turso 数据库 (真实申请记录)
+        const res = await fetch('/api/apply-partner', {
+            method: 'POST', headers: headers,
+            body: JSON.stringify({
+                postId: post.id,
+                postTitle: cleanTitle,
+                hostId: String(post.user_id),
+                applicantId: currentUserId,
+                applicantName: localStorage.getItem('hp_name') || '热心管家',
+                applicantAvatar: localStorage.getItem('hp_real_avatar') || localStorage.getItem('hp_avatar') || '😎'
+            })
+        });
+
+        const data = await res.json();
+        
+        if (data.success) {
+            console.log("✅ 申请成功写入数据库");
+            // 🌟 终极反馈：不弹窗，直接在屏幕中央显示漂亮的绿色成功提示
+            if (window.App.showToast) {
+                window.App.showToast("✅ 申请已发送！请等待局长审批", "success");
+            } else {
+                alert("✅ 申请已发送！");
+            }
+        } else {
+            throw new Error(data.error);
+        }
+    } catch (err) {
+        console.error("申请失败:", err);
+        if (window.App.showToast) window.App.showToast("发送失败，请稍后重试", "error");
+    }
+};
+
+// 确保 ChatEngine 也用这个函数
+if (window.ChatEngine) {
+    window.ChatEngine.initiatePartnerChat = window.App.initiatePartnerChat;
+}
