@@ -1247,91 +1247,75 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 100); 
 });
 // ============================================================================
-// 🚀 究极防弹版：搭子入队申请引擎 (修复无弹窗、找不到帖子、Header报错问题)
+// 🚨 终极雷达探针版：搭子入队申请引擎 (用于精准定位静默失败)
 // ============================================================================
-window.App = window.App || {};
+const diagnosticInitiateChat = function(postId) {
+    // 探针 1：测试按钮是否真的连上了这个函数！
+    alert("🟢 探针 1: 按钮点击成功！接收到的 PostID 是: " + postId);
 
-window.App.initiatePartnerChat = window.initiatePartnerChat = function(postId) {
-    console.log("👉 引擎启动！正在尝试申请入队，目标帖子 ID:", postId);
-
-    // 1. 地毯式搜索：翻遍本地所有可能的缓存库找这篇帖子！
     let allPosts = window.allCommunityPostsCache || [];
-    if (window.App.marketDataCache && window.App.marketDataCache.partner) {
+    if (window.App && window.App.marketDataCache && window.App.marketDataCache.partner) {
         allPosts = [...allPosts, ...window.App.marketDataCache.partner];
     }
 
     const post = allPosts.find(p => String(p.id) === String(postId));
     
-    // 🚨 拦截点 1：找不到帖子
+    // 探针 2：测试有没有在缓存里找到帖子
     if (!post) {
-        console.error("❌ 找不到该帖子数据！当前缓存库里的帖子有:", allPosts);
-        if (window.App.showToast) window.App.showToast("哎呀，帖子数据走丢了，请刷新一下大厅！", "error");
-        else alert("帖子数据丢失，请刷新页面");
+        alert(`🔴 探针 2 死亡: 找不到帖子！\n当前内存里共有 ${allPosts.length} 个帖子。\n你的 PostID ${postId} 不在里面！`);
         return;
     }
 
+    alert("🟢 探针 3: 成功找到帖子！标题是: " + post.title);
+
     const currentUserId = localStorage.getItem('hebao_uuid');
     
-    // 🚨 拦截点 2：没登录
+    // 探针 4：测试登录态
     if (!currentUserId) {
-        if (window.App.showToast) window.App.showToast("请先登录哦！", "warning");
+        alert("🔴 探针 4 死亡: 系统认为你没登录 (找不到 hebao_uuid)！");
         return;
     }
 
     const isHost = String(currentUserId) === String(post.user_id);
     const cleanTitle = (post.title || '搭子局').replace(/\[找搭子\]\s*/, '').replace(/\[搭子\]\s*/, '');
     
-    // 3. 执行核心业务逻辑
     if (isHost) {
-        // 局长自己点，直接进入群聊
-        if (window.App.openChat) {
-            window.App.openChat(`group_${post.id}`, '👥 ' + cleanTitle + ' (群聊)', '🏕️', post.id, `你的搭子队伍`, 0, '', true, 'group_chat');
-        } else if (window.ChatEngine && window.ChatEngine.openChat) {
-            window.ChatEngine.openChat(`group_${post.id}`, '👥 ' + cleanTitle + ' (群聊)', '🏕️', post.id, `你的搭子队伍`, 0, '', true, 'group_chat');
-        }
+        alert("🟢 探针 5: 你是局长本人，准备拉起群聊...");
+        if (window.App.openChat) window.App.openChat(`group_${post.id}`, '👥 ' + cleanTitle, '🏕️', post.id, `你的队伍`, 0, '', true, 'group_chat');
+        else if (window.ChatEngine && window.ChatEngine.openChat) window.ChatEngine.openChat(`group_${post.id}`, '👥 ' + cleanTitle, '🏕️', post.id, `你的队伍`, 0, '', true, 'group_chat');
     } else {
-        // 路人点，强行唤起确认弹窗！
-        if (confirm(`确定要申请加入【${cleanTitle}】吗？\n局长将在消息列表收到你的申请和资料。`)) {
+        // 探针 6：呼叫 Confirm 弹窗！
+        if (confirm(`【探针 6: 弹窗测试】\n确定要申请加入【${cleanTitle}】吗？`)) {
             
-            // 🌟 直接手动组装高权限 Header，防止 getAuthHeaders 丢失报错！
+            alert("🟢 探针 7: 弹窗确认完毕，准备发射云端请求！");
+            
             const token = localStorage.getItem('hebao_token') || '';
             const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` };
 
-            // (1) 发送私信通知局长触发红点
+            // 1. 发送私信
             fetch('/api/send-message', {
-                method: 'POST',
-                headers: headers,
+                method: 'POST', headers: headers,
                 body: JSON.stringify({ senderId: currentUserId, receiverId: post.user_id, postId: post.id, content: `【系统提示】我想申请加入你的搭子局【${cleanTitle}】，请前往消息列表审批！🙋` })
-            }).catch(e => console.log("私信通知发送失败", e));
+            }).catch(e => console.log(e));
 
-            // (2) 写入 Turso 数据库的真实申请流！
+            // 2. 发送云端申请
             fetch('/api/apply-partner', {
-                method: 'POST',
-                headers: headers,
+                method: 'POST', headers: headers,
                 body: JSON.stringify({
-                    postId: post.id,
-                    postTitle: cleanTitle,
-                    hostId: String(post.user_id), 
-                    applicantId: currentUserId,
-                    applicantName: localStorage.getItem('hp_name') || '热心管家',
-                    applicantAvatar: localStorage.getItem('hp_real_avatar') || localStorage.getItem('hp_avatar') || '😎'
+                    postId: post.id, postTitle: cleanTitle, hostId: String(post.user_id), applicantId: currentUserId,
+                    applicantName: localStorage.getItem('hp_name') || '热心管家', applicantAvatar: localStorage.getItem('hp_real_avatar') || localStorage.getItem('hp_avatar') || '😎'
                 })
             }).then(res => res.json()).then(data => {
-                if (data.success) {
-                    if (window.App.showToast) window.App.showToast("✅ 申请已发送！请耐心等待局长审核", "success");
-                    else alert("✅ 申请已发送！");
-                } else {
-                    if (window.App.showToast) window.App.showToast("发送失败: " + (data.error || "未知错误"), "error");
-                }
-            }).catch(err => {
-                console.error("🚀 网络请求失败:", err);
-                if (window.App.showToast) window.App.showToast("网络拥堵，申请发送失败", "error");
-            });
+                if (data.success) alert("✅ 探针 8: 云端数据库写入成功！全链路跑通！");
+                else alert("🔴 探针 8 死亡: API 返回报错: " + data.error);
+            }).catch(err => alert("🔴 探针 8 死亡: 网络请求直接崩溃！" + err));
         }
     }
 };
 
-// 以防有的按钮写的是 ChatEngine.initiatePartnerChat
-if (window.ChatEngine) {
-    window.ChatEngine.initiatePartnerChat = window.App.initiatePartnerChat;
-}
+// 🕸️ 天罗地网绑定法：不管你的 HTML 里写的是调用哪个对象，全部强制接管！
+window.initiatePartnerChat = diagnosticInitiateChat;
+window.App = window.App || {};
+window.App.initiatePartnerChat = diagnosticInitiateChat;
+if (window.MarketEngine) window.MarketEngine.initiatePartnerChat = diagnosticInitiateChat;
+if (window.ChatEngine) window.ChatEngine.initiatePartnerChat = diagnosticInitiateChat;
