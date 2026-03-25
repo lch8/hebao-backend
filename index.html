@@ -77,16 +77,12 @@
                 <div onclick="window.App.openScanner()" style="background: rgba(255,255,255,0.7); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); cursor: pointer; backdrop-filter: blur(4px);">📸</div>
             </div>
             
-            <!-- <div class="rb-mode-switcher" style="background: rgba(255, 255, 255, 0.4); padding: 4px; border-radius: 16px; display: flex; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); backdrop-filter: blur(10px);">
-                <div class="rb-mode-btn active" onclick="window.App.switchRbMode('starter')" style="flex: 1; text-align: center; padding: 8px 0; font-size: 13px; font-weight: bold; border-radius: 12px; cursor: pointer;">🐣 新手村</div>
-                <div class="rb-mode-btn" onclick="window.App.switchRbMode('advanced')" style="flex: 1; text-align: center; padding: 8px 0; font-size: 13px; font-weight: bold; border-radius: 12px; cursor: pointer;">🥓 进阶篇</div>
-                <div class="rb-mode-btn" onclick="window.App.switchRbMode('pro')" style="flex: 1; text-align: center; padding: 8px 0; font-size: 13px; font-weight: bold; border-radius: 12px; cursor: pointer;">💼 Pro玩家</div>
-            </div> -->
             <div style="background: #FFF; padding: 4px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); display: flex; justify-content: space-around; margin: 0 12px 12px 12px; border: 1px solid #F1F5F9;">
-    <div style="flex: 1; text-align: center; padding: 6px 0; font-size: 13px; font-weight: bold; background: #F8FAFC; border-radius: 8px; color: #111827; margin: 0 2px; cursor: pointer;">🐣 新手村</div>
-    <div style="flex: 1; text-align: center; padding: 6px 0; font-size: 13px; font-weight: bold; color: #64748B; margin: 0 2px; cursor: pointer;">🥓 进阶篇</div>
-    <div style="flex: 1; text-align: center; padding: 6px 0; font-size: 13px; font-weight: bold; color: #64748B; margin: 0 2px; cursor: pointer;">💼 Pro玩家</div>
-</div>
+                <div onclick="if(window.App && window.App.switchRbMode) window.App.switchRbMode('starter');" style="flex: 1; text-align: center; padding: 8px 0; font-size: 13px; font-weight: bold; border-radius: 8px; cursor: pointer; color: #111827; background: #F8FAFC;">🐣 新手村</div>
+                <div onclick="if(window.App && window.App.switchRbMode) window.App.switchRbMode('advanced');" style="flex: 1; text-align: center; padding: 8px 0; font-size: 13px; font-weight: bold; border-radius: 8px; cursor: pointer; color: #64748B;">🥓 进阶篇</div>
+                <div onclick="if(window.App && window.App.switchRbMode) window.App.switchRbMode('pro');" style="flex: 1; text-align: center; padding: 8px 0; font-size: 13px; font-weight: bold; border-radius: 8px; cursor: pointer; color: #64748B;">💼 Pro玩家</div>
+            </div>
+        </div>
         </div>
 
        <div id="rbStarterMode" style="padding-bottom: 80px;">
@@ -207,11 +203,7 @@
         </div>
     
 
-            <div style="background: #FFF; padding: 4px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); display: flex; justify-content: space-around; margin: 0 12px 10px 12px; border: 1px solid #F1F5F9;">
-    <div onclick="if(window.App && window.App.switchRbMode) window.App.switchRbMode('starter');" style="flex: 1; text-align: center; padding: 8px 0; font-size: 13px; font-weight: bold; border-radius: 8px; cursor: pointer; color: #111827; background: #F8FAFC;">🐣 新手村</div>
-    <div onclick="if(window.App && window.App.switchRbMode) window.App.switchRbMode('advanced');" style="flex: 1; text-align: center; padding: 8px 0; font-size: 13px; font-weight: bold; border-radius: 8px; cursor: pointer; color: #64748B;">🥓 进阶篇</div>
-    <div onclick="if(window.App && window.App.switchRbMode) window.App.switchRbMode('pro');" style="flex: 1; text-align: center; padding: 8px 0; font-size: 13px; font-weight: bold; border-radius: 8px; cursor: pointer; color: #64748B;">💼 Pro玩家</div>
-</div>
+            
 
 <div id="rbWikiMode" style="display: none;">
     
