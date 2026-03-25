@@ -697,7 +697,7 @@ export const WikiEngine = {
             console.error(e);
             listContainer.innerHTML = '<div style="text-align:center; padding:30px; color:#EF4444; font-size:12px;">🚨 情报拉取失败，请刷新重试</div>';
         }
-    };
+    },
 // 💥 暴力绑定机制 + 注入详情抽屉弹窗引擎
 if (typeof window !== 'undefined') {
     window.App = window.App || {};
