@@ -1,4 +1,93 @@
 // ============================================================================
+// 💅 荷包管家 Pro 级 UI 瘦身补丁 (去玩具感，提升信息密度)
+// ============================================================================
+if (!document.getElementById('proUiPatch')) {
+    const style = document.createElement('style');
+    style.id = 'proUiPatch';
+    style.innerHTML = `
+        /* 1. 顶部雷达和避雷针：改为左右并排，或者紧凑型上下排列 */
+        .tools-compact-container {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .tools-compact-container > div {
+            flex: 1;
+            padding: 12px 14px !important; /* 缩小过大的留白 */
+            border-radius: 12px !important; /* 去除夸张的大圆角 */
+            margin: 0 !important;
+        }
+        
+        /* 2. 搜索和分类栏紧凑化 */
+        .compact-search { padding: 8px 16px !important; border-radius: 10px !important; margin-bottom: 12px !important; }
+        .compact-tabs { gap: 8px !important; margin-bottom: 16px !important; overflow-x: auto; }
+        .compact-tabs button { padding: 6px 14px !important; border-radius: 8px !important; font-size: 13px !important; }
+
+        /* 🌟 3. 核心大招：攻略列表强制变为“双列网格 (Grid)” (小红书风) */
+        .wiki-grid-container {
+            display: grid !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 12px !important;
+            align-items: start;
+        }
+
+        /* 4. 重塑攻略卡片 UI：高冷、紧凑、专业 */
+        .wiki-card-pro {
+            background: #FFF;
+            border-radius: 12px !important;
+            padding: 14px !important;
+            border: 1px solid #E2E8F0 !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03) !important;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            transition: 0.2s;
+        }
+        .wiki-card-pro:active { transform: scale(0.98); }
+        
+        /* 限制文字行数，避免卡片过长 */
+        .wiki-title-pro {
+            font-size: 14px !important;
+            font-weight: 900 !important;
+            color: #111827 !important;
+            line-height: 1.4 !important;
+            display: -webkit-box;
+            -webkit-line-clamp: 2; /* 标题最多2行 */
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .wiki-desc-pro {
+            font-size: 12px !important;
+            color: #64748B !important;
+            line-height: 1.5 !important;
+            background: transparent !important;
+            padding: 0 !important;
+            border: none !important;
+            display: -webkit-box;
+            -webkit-line-clamp: 3; /* 正文最多3行，多余显示省略号 */
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            margin: 4px 0 !important;
+        }
+        
+        /* 底部评论入口变得轻量化 */
+        .wiki-btn-pro {
+            margin-top: auto;
+            background: #F8FAFC !important;
+            color: #475569 !important;
+            padding: 8px 0 !important;
+            border-radius: 8px !important;
+            font-size: 12px !important;
+            font-weight: bold !important;
+            text-align: center;
+            border: 1px solid #F1F5F9 !important;
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+
+// ============================================================================
 // js/main.js - 荷包管家核心调度引擎 (霸道修正版)
 // ============================================================================
 import { ScannerEngine } from './modules/scanner.js';
