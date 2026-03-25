@@ -570,135 +570,134 @@ export const WikiEngine = {
     }
     },
 
+  // ==========================================
+    // ☁️ 1. 提交评论到 Turso 边缘数据库
     // ==========================================
-// ☁️ 1. 提交评论到 Turso 边缘数据库
-// ==========================================
-window.submitWikiComment = async function() {
-    const input = document.getElementById('wikiCommentInput');
-    if (!input) return;
-    const text = input.value.trim();
-    
-    if (!text) return window.App.showToast ? window.App.showToast("写点什么再发送吧！", "warning") : alert("写点什么吧");
+    async submitWikiComment() {
+        const input = document.getElementById('wikiCommentInput');
+        if (!input) return;
+        const text = input.value.trim();
+        
+        if (!text) return window.App.showToast ? window.App.showToast("写点什么再发送吧！", "warning") : alert("写点什么吧");
 
-    // 从全局变量读取当前卡片 ID (兼容你在 app.js 里定义的变量)
-    const targetId = window.currentWikiIdForComment || (typeof currentWikiIdForComment !== 'undefined' ? currentWikiIdForComment : 'unknown_wiki');
-    const userId = localStorage.getItem('hebao_uuid');
+        // 从全局变量读取当前卡片 ID
+        const targetId = window.currentWikiIdForComment || (typeof currentWikiIdForComment !== 'undefined' ? currentWikiIdForComment : 'unknown_wiki');
+        const userId = localStorage.getItem('hebao_uuid');
 
-    if (!userId) return window.App.showToast ? window.App.showToast("请先登录才能发布情报哦", "warning") : alert("请先登录");
+        if (!userId) return window.App.showToast ? window.App.showToast("请先登录才能发布情报哦", "warning") : alert("请先登录");
 
-    const btn = event.currentTarget || document.querySelector('#wikiCommentModal button');
-    const originalText = btn.innerText;
-    btn.innerText = "发送中...";
-    btn.style.pointerEvents = 'none';
+        const btn = event.currentTarget || document.querySelector('#wikiCommentModal button');
+        const originalText = btn.innerText;
+        btn.innerText = "发送中...";
+        btn.style.pointerEvents = 'none';
 
-    try {
-        // 呼叫上一轮写好的 Vercel 云端 API
-        const res = await fetch('/api/add-comment', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                targetId: targetId,
-                userId: userId,
-                userName: localStorage.getItem('hp_name') || '热心荷包蛋',
-                userAvatar: localStorage.getItem('hp_real_avatar') || localStorage.getItem('hp_avatar') || '😎',
-                userEmail: localStorage.getItem('hp_email') || '',
-                content: text
-            })
-        });
-
-        const data = await res.json();
-        if (data.success) {
-            input.value = ''; // 清空输入框
-            if (window.App.showToast) window.App.showToast("✅ 情报发布成功！", "success");
-            
-            // 发送成功后，立刻拉取云端数据刷新列表！
-            if (window.renderWikiComments) window.renderWikiComments();
-        } else {
-            throw new Error(data.error);
-        }
-    } catch(e) {
-        console.error(e);
-        if (window.App.showToast) window.App.showToast("网络拥堵，发送失败", "error");
-    } finally {
-        btn.innerText = originalText;
-        btn.style.pointerEvents = 'auto';
-    }
-};
-
-// ==========================================
-// ☁️ 2. 从 Turso 拉取全网真实评论
-// ==========================================
-window.renderWikiComments = async function() {
-    const listContainer = document.getElementById('wikiCommentList');
-    if (!listContainer) return;
-
-    const targetId = window.currentWikiIdForComment || (typeof currentWikiIdForComment !== 'undefined' ? currentWikiIdForComment : null);
-    if (!targetId) return;
-
-    // 显示高级的加载动画
-    listContainer.innerHTML = '<div style="text-align:center; padding:40px 0; color:#9CA3AF; font-size:12px;">📡 正在连接云端情报局...</div>';
-
-    try {
-        const res = await fetch(`/api/get-comments?targetId=${targetId}`);
-        const data = await res.json();
-
-        if (data.success) {
-            const comments = data.comments;
-            if (comments.length === 0) {
-                listContainer.innerHTML = `
-                    <div style="text-align:center; padding:60px 0; color:#9CA3AF; font-size:13px;">
-                        <div style="font-size:32px; margin-bottom:10px; opacity:0.5;">🛋️</div>
-                        沙发空缺中<br>快来分享你的真实踩坑经验吧！
-                    </div>`;
-                return;
-            }
-
-            let html = '';
-            comments.forEach(cmt => {
-                // 动态生成校友徽章 (复用我们之前的百变厂牌函数)
-                const badgeHtml = (window.App && window.App.getUserBadgeHtml) ? window.App.getUserBadgeHtml(cmt.userEmail) : '';
-                
-                // 处理时间显示 (例如 11:35 AM)
-                const d = new Date(cmt.createdAt + 'Z');
-                const timeStr = d.toLocaleTimeString('en-US', { hour: '2-digit', minute:'2-digit' });
-                
-                // 处理头像是 Emoji 还是 真人照片
-                const avatarHtml = cmt.userAvatar.length > 10 
-                    ? `<img src="${cmt.userAvatar}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`
-                    : cmt.userAvatar;
-
-                // 渲染单条评论卡片
-                html += `
-                <div style="display: flex; gap: 12px; margin-bottom: 20px;">
-                    <div onclick="if(window.App.SocialEngine) window.App.SocialEngine.openUserProfile('${cmt.userId}')" style="width: 36px; height: 36px; border-radius: 18px; background: #F8FAFC; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; cursor: pointer; border: 1px solid #E2E8F0; overflow: hidden;">
-                        ${avatarHtml}
-                    </div>
-                    <div style="flex: 1;">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
-                            <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
-                                <span style="font-size: 14px; font-weight: 900; color: #111827;">${cmt.userName}</span>
-                                ${badgeHtml}
-                            </div>
-                            <span style="font-size: 11px; color: #9CA3AF; flex-shrink: 0;">${timeStr}</span>
-                        </div>
-                        <div style="background: #F8FAFC; padding: 10px 14px; border-radius: 4px 16px 16px 16px; font-size: 13px; color: #334155; line-height: 1.6; display: inline-block; border: 1px solid #F1F5F9;">
-                            ${cmt.content}
-                        </div>
-                    </div>
-                </div>`;
+        try {
+            const res = await fetch('/api/add-comment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    targetId: targetId,
+                    userId: userId,
+                    userName: localStorage.getItem('hp_name') || '热心荷包蛋',
+                    userAvatar: localStorage.getItem('hp_real_avatar') || localStorage.getItem('hp_avatar') || '😎',
+                    userEmail: localStorage.getItem('hp_email') || '',
+                    content: text
+                })
             });
-            listContainer.innerHTML = html;
-            
-            // 让滚动条优雅地滚到最底部，看最新评论
-            setTimeout(() => {
-                listContainer.scrollTop = listContainer.scrollHeight;
-            }, 150);
+
+            const data = await res.json();
+            if (data.success) {
+                input.value = ''; // 清空输入框
+                if (window.App.showToast) window.App.showToast("✅ 情报发布成功！", "success");
+                
+                // 🌟 发送成功后，调用当前对象里的方法刷新列表
+                if (this.renderWikiComments) this.renderWikiComments();
+                else if (window.renderWikiComments) window.renderWikiComments();
+            } else {
+                throw new Error(data.error);
+            }
+        } catch(e) {
+            console.error(e);
+            if (window.App.showToast) window.App.showToast("网络拥堵，发送失败", "error");
+        } finally {
+            if (btn) {
+                btn.innerText = originalText;
+                btn.style.pointerEvents = 'auto';
+            }
         }
-    } catch (e) {
-        console.error(e);
-        listContainer.innerHTML = '<div style="text-align:center; padding:30px; color:#EF4444; font-size:12px;">🚨 情报拉取失败，请刷新重试</div>';
-    }
-};
+    }, // 👈 注意这里有一个逗号，因为这是对象里的一个方法
+
+    // ==========================================
+    // ☁️ 2. 从 Turso 拉取全网真实评论
+    // ==========================================
+    async renderWikiComments() {
+        const listContainer = document.getElementById('wikiCommentList');
+        if (!listContainer) return;
+
+        const targetId = window.currentWikiIdForComment || (typeof currentWikiIdForComment !== 'undefined' ? currentWikiIdForComment : null);
+        if (!targetId) return;
+
+        // 显示高级的加载动画
+        listContainer.innerHTML = '<div style="text-align:center; padding:40px 0; color:#9CA3AF; font-size:12px;">📡 正在连接云端情报局...</div>';
+
+        try {
+            const res = await fetch(`/api/get-comments?targetId=${targetId}`);
+            const data = await res.json();
+
+            if (data.success) {
+                const comments = data.comments;
+                if (comments.length === 0) {
+                    listContainer.innerHTML = `
+                        <div style="text-align:center; padding:60px 0; color:#9CA3AF; font-size:13px;">
+                            <div style="font-size:32px; margin-bottom:10px; opacity:0.5;">🛋️</div>
+                            沙发空缺中<br>快来分享你的真实踩坑经验吧！
+                        </div>`;
+                    return;
+                }
+
+                let html = '';
+                comments.forEach(cmt => {
+                    // 动态生成校友徽章
+                    const badgeHtml = (window.App && window.App.getUserBadgeHtml) ? window.App.getUserBadgeHtml(cmt.userEmail) : '';
+                    
+                    const d = new Date(cmt.createdAt + 'Z');
+                    const timeStr = d.toLocaleTimeString('en-US', { hour: '2-digit', minute:'2-digit' });
+                    
+                    const avatarHtml = cmt.userAvatar.length > 10 
+                        ? `<img src="${cmt.userAvatar}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`
+                        : cmt.userAvatar;
+
+                    html += `
+                    <div style="display: flex; gap: 12px; margin-bottom: 20px;">
+                        <div onclick="if(window.App.SocialEngine) window.App.SocialEngine.openUserProfile('${cmt.userId}')" style="width: 36px; height: 36px; border-radius: 18px; background: #F8FAFC; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; cursor: pointer; border: 1px solid #E2E8F0; overflow: hidden;">
+                            ${avatarHtml}
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
+                                <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
+                                    <span style="font-size: 14px; font-weight: 900; color: #111827;">${cmt.userName}</span>
+                                    ${badgeHtml}
+                                </div>
+                                <span style="font-size: 11px; color: #9CA3AF; flex-shrink: 0;">${timeStr}</span>
+                            </div>
+                            <div style="background: #F8FAFC; padding: 10px 14px; border-radius: 4px 16px 16px 16px; font-size: 13px; color: #334155; line-height: 1.6; display: inline-block; border: 1px solid #F1F5F9;">
+                                ${cmt.content}
+                            </div>
+                        </div>
+                    </div>`;
+                });
+                listContainer.innerHTML = html;
+                
+                // 让滚动条优雅地滚到最底部
+                setTimeout(() => {
+                    listContainer.scrollTop = listContainer.scrollHeight;
+                }, 150);
+            }
+        } catch (e) {
+            console.error(e);
+            listContainer.innerHTML = '<div style="text-align:center; padding:30px; color:#EF4444; font-size:12px;">🚨 情报拉取失败，请刷新重试</div>';
+        }
+    };
 // 💥 暴力绑定机制 + 注入详情抽屉弹窗引擎
 if (typeof window !== 'undefined') {
     window.App = window.App || {};
