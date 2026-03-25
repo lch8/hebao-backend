@@ -1,11 +1,11 @@
 // ============================================================================
-// 💅 荷包管家 Pro 级 UI 瘦身补丁 (去玩具感，提升信息密度)
+// 💅 荷包管家 Pro 级 UI 提效补丁 (小红书同款双列 Grid 版)
 // ============================================================================
-if (!document.getElementById('proUiPatch')) {
+if (!document.getElementById('proUiPatchSafe')) {
     const style = document.createElement('style');
-    style.id = 'proUiPatch';
+    style.id = 'proUiPatchSafe'; // 沿用 ID 以防止冲突
     style.innerHTML = `
-        /* 1. 顶部雷达和避雷针：改为左右并排，或者紧凑型上下排列 */
+        /* 1. 顶部雷达和避雷针：改为左右并排，更紧凑 */
         .tools-compact-container {
             display: flex;
             gap: 12px;
@@ -17,13 +17,12 @@ if (!document.getElementById('proUiPatch')) {
             border-radius: 12px !important; /* 去除夸张的大圆角 */
             margin: 0 !important;
         }
-        
-        /* 2. 搜索和分类栏紧凑化 */
+        /* 分类和搜索栏紧凑化 */
         .compact-search { padding: 8px 16px !important; border-radius: 10px !important; margin-bottom: 12px !important; }
         .compact-tabs { gap: 8px !important; margin-bottom: 16px !important; overflow-x: auto; }
         .compact-tabs button { padding: 6px 14px !important; border-radius: 8px !important; font-size: 13px !important; }
-
-        /* 🌟 3. 核心大招：攻略列表强制变为“双列网格 (Grid)” (小红书风) */
+        
+        /* 🌟 2. 核心大招：攻略列表强制变为真正的“双列瀑布流 Grid” (小红书风) */
         .wiki-grid-container {
             display: grid !important;
             grid-template-columns: repeat(2, 1fr) !important;
@@ -31,57 +30,48 @@ if (!document.getElementById('proUiPatch')) {
             align-items: start;
         }
 
-        /* 4. 重塑攻略卡片 UI：高冷、紧凑、专业 */
-        .wiki-card-pro {
-            background: #FFF;
+        /* 3. 重塑滑动组件：使其完美适配双列，绝不卡死 */
+        .pro-swipe-wrapper {
+            position: relative !important;
+            overflow: hidden !important;
             border-radius: 12px !important;
-            padding: 14px !important;
-            border: 1px solid #E2E8F0 !important;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.03) !important;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            transition: 0.2s;
+            width: 100% !important;
+            height: 100% !important;
+            margin-bottom: 0 !important;
         }
-        .wiki-card-pro:active { transform: scale(0.98); }
+        /* 防止滑动时底座的文字错位 */
+        .save-bg, .delete-bg { font-size: 11px !important; }
         
-        /* 限制文字行数，避免卡片过长 */
-        .wiki-title-pro {
-            font-size: 14px !important;
-            font-weight: 900 !important;
-            color: #111827 !important;
-            line-height: 1.4 !important;
-            display: -webkit-box;
-            -webkit-line-clamp: 2; /* 标题最多2行 */
-            -webkit-box-orient: vertical;
-            overflow: hidden;
+        /* 核心：现代化卡片质感 (去油，提升信息密度) */
+        .pro-wiki-card {
+            border-radius: 12px !important; padding: 12px !important; box-shadow: 0 2px 8px rgba(0,0,0,0.04) !important;
+            border: 1px solid #F1F5F9 !important; background: #FFF !important; min-height: 110px;
+            display: flex; flex-direction: column;
+            /* 仅给背景色加动画，坚决不碰 transform，保护滑动逻辑 */
+            transition: background 0.2s;
+            cursor: pointer;
         }
-        .wiki-desc-pro {
-            font-size: 12px !important;
-            color: #64748B !important;
-            line-height: 1.5 !important;
-            background: transparent !important;
-            padding: 0 !important;
-            border: none !important;
-            display: -webkit-box;
-            -webkit-line-clamp: 3; /* 正文最多3行，多余显示省略号 */
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            margin: 4px 0 !important;
-        }
+        .pro-wiki-card:active { background: #F8FAFC !important; }
+
+        /* 🌟 4. 重塑头部排版：图标和标题同行，适配窄卡片 */
+        .pro-wk-header { display: flex !important; flex-direction: column !important; align-items: flex-start !important; }
+        .pro-wk-icon { margin: 0 !important; font-size: 18px !important; background: none !important; width: auto !important; height: auto !important; }
+        .pro-wk-tag { font-size: 10px !important; padding: 2px 6px !important; border-radius: 4px !important; font-weight: bold !important; margin: 0 !important; white-space: nowrap; }
+        .pro-wk-info { width: 100% !important; margin: 0 !important; }
         
-        /* 底部评论入口变得轻量化 */
-        .wiki-btn-pro {
-            margin-top: auto;
-            background: #F8FAFC !important;
-            color: #475569 !important;
-            padding: 8px 0 !important;
-            border-radius: 8px !important;
-            font-size: 12px !important;
-            font-weight: bold !important;
-            text-align: center;
-            border: 1px solid #F1F5F9 !important;
-        }
+        /* 紧凑型标题和正文截断 */
+        .pro-wk-title { font-size: 14px !important; font-weight: 900 !important; line-height: 1.4 !important; margin-bottom: 6px !important; color: #111827 !important; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .pro-wk-summary { font-size: 12px !important; color: #64748B !important; line-height: 1.5 !important; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        
+        /* 🌟 5. 细节层与评论按钮优化 (CSS 驱动的折叠) */
+        .pro-wk-detail { margin-top: 12px !important; padding-top: 12px !important; border-top: 1px solid #F1F5F9 !important; display: none; }
+        /* 利用 CSS class 控制展开/收起 */
+        .pro-wiki-card.expanded .pro-wk-detail, 
+        .pro-wiki-card.open .pro-wk-detail,
+        .pro-wiki-card.active .pro-wk-detail { display: flex !important; flex-direction: column !important; }
+        
+        .pro-wk-step { font-size: 12px !important; color: #475569 !important; line-height: 1.6 !important; margin-bottom: 12px !important; }
+        .pro-wk-btn { background: #F8FAFC !important; color: #475569 !important; padding: 8px 0 !important; border-radius: 8px !important; font-size: 12px !important; font-weight: bold !important; text-align: center !important; border: 1px solid #E2E8F0 !important; margin-top: 0 !important; cursor: pointer; }
     `;
     document.head.appendChild(style);
 }
