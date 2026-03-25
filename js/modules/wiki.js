@@ -435,46 +435,51 @@ export const WikiEngine = {
 // 💅 Pro 级极致紧凑版：强行压缩间距，强制图标标题同行
 // ==========================================
 renderWikiList(searchQuery = '') {
-    // 🌟 1. 全局缝隙压缩器 & 紧凑 UI 补丁
+    // 🌟 1. 终极无缝压缩器 & 像素级对齐补丁
     if (!document.getElementById('proUiPatchSafe')) {
         const style = document.createElement('style');
         style.id = 'proUiPatchSafe'; 
         style.innerHTML = `
-            /* 🚀 暴力压缩全局多余的留白 (针对上半部分的雷达、搜索框等) */
+            /* 🚀 暴力压缩上半部分留白 */
             div[style*="margin-bottom: 15px"], 
-            div[style*="margin-bottom: 15px"], 
-            div[style*="margin-bottom: 20px"],
-            div[style*="margin-bottom: 20px"] {
-                margin-bottom: 6px !important;
-            }
-            .search-container, .search-box, .category-tabs { margin-bottom: 6px !important; }
+            div[style*="margin-bottom: 20px"] { margin-bottom: 6px !important; }
+            .search-container, .search-box, .category-tabs { margin-bottom: 4px !important; }
 
-            /* 列表容器极致紧凑 */
-            .wiki-grid-container { display: flex !important; flex-direction: column !important; gap: 8px !important; padding: 0 4px !important; }
+            /* 列表容器：压缩卡片之间的缝隙 */
+            .wiki-grid-container { display: flex !important; flex-direction: column !important; gap: 6px !important; padding: 0 4px !important; }
             .swipe-wrapper { margin-bottom: 0 !important; border-radius: 12px !important; width: 100% !important; position: relative !important; overflow: hidden !important; }
             .swipe-bg { font-size: 12px !important; }
             
-            /* 🌟 卡片本体去油瘦身 */
+            /* 🌟 卡片本体：极限去油瘦身！Padding 砍到 10px，去掉内部 gap */
             .pro-wiki-card {
-                border-radius: 12px !important; padding: 12px 14px !important; box-shadow: 0 2px 8px rgba(0,0,0,0.03) !important;
-                border: 1px solid #F1F5F9 !important; background: #FFF !important; min-height: auto;
-                display: flex; flex-direction: column; gap: 6px;
-                transition: background 0.2s; cursor: pointer;
+                border-radius: 12px !important; 
+                padding: 10px 12px !important; /* 👈 极限压缩内边距 */
+                box-shadow: 0 2px 8px rgba(0,0,0,0.03) !important;
+                border: 1px solid #F1F5F9 !important; 
+                background: #FFF !important; 
+                min-height: auto;
+                display: flex; 
+                flex-direction: column; 
+                /* 删除了 gap: 6px，由内部元素自己控制间距，消灭无用空白 */
+                transition: background 0.2s; 
+                cursor: pointer;
             }
             .pro-wiki-card:active { background: #F8FAFC !important; }
 
-            /* 去掉原有的多余边距 */
+            /* 头部容器 */
             .pro-wk-header { display: flex !important; flex-direction: column !important; width: 100% !important; margin: 0 !important; }
-            .pro-wk-summary { font-size: 13px !important; color: #64748B !important; line-height: 1.5 !important; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 4px !important;}
             
-            /* CSS 折叠引擎 */
+            /* 简介文字：压缩字体和行高 */
+            .pro-wk-summary { font-size: 12px !important; color: #64748B !important; line-height: 1.4 !important; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 6px !important;}
+            
+            /* CSS 折叠引擎：压缩展开后的缝隙 */
             .pro-wk-detail { margin-top: 8px !important; padding-top: 10px !important; border-top: 1px solid #F1F5F9 !important; display: none; }
             .pro-wiki-card.expanded .pro-wk-detail, 
             .pro-wiki-card.open .pro-wk-detail,
             .pro-wiki-card.active .pro-wk-detail { display: flex !important; flex-direction: column !important; }
             
-            .pro-wk-step { font-size: 12px !important; color: #475569 !important; line-height: 1.6 !important; margin-bottom: 6px !important; }
-            .pro-wk-btn { background: #F8FAFC !important; color: #475569 !important; padding: 8px 0 !important; border-radius: 8px !important; font-size: 12px !important; font-weight: bold !important; text-align: center !important; border: 1px solid #E2E8F0 !important; margin-top: 0 !important; cursor: pointer; }
+            .pro-wk-step { font-size: 12px !important; color: #475569 !important; line-height: 1.5 !important; margin-bottom: 8px !important; }
+            .pro-wk-btn { background: #F8FAFC !important; color: #475569 !important; padding: 6px 0 !important; border-radius: 8px !important; font-size: 12px !important; font-weight: bold !important; text-align: center !important; border: 1px solid #E2E8F0 !important; margin-top: 0 !important; cursor: pointer; }
         `;
         document.head.appendChild(style);
     }
@@ -521,15 +526,16 @@ renderWikiList(searchQuery = '') {
                 const safeTitle = encodeURIComponent(w.postTemplate.title || '').replace(/'/g, "%27");
                 const safeContent = encodeURIComponent(w.postTemplate.content || '').replace(/'/g, "%27");
                 actionHtml = `
-                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #E2E8F0;">
+                <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed #E2E8F0;">
                     <button onclick="if(window.App && window.App.quickPost) window.App.quickPost('${w.postTemplate.tab}', '${safeTitle}', '${safeContent}'); event.stopPropagation();" 
-                        style="width: 100%; background: linear-gradient(135deg, #111827 0%, #374151 100%); color: #FFF; border: none; padding: 10px; border-radius: 10px; font-size: 12px; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(17,24,39,0.15);">
+                        style="width: 100%; background: linear-gradient(135deg, #111827 0%, #374151 100%); color: #FFF; border: none; padding: 8px; border-radius: 8px; font-size: 12px; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(17,24,39,0.15);">
                         🚀 ${w.postTemplate.btnText}
                     </button>
                 </div>`;
             }
 
-            const displayDesc = w.desc || w.summary || '';
+            // 获取简介内容并处理两端空格
+            const displayDesc = (w.desc || w.summary || '').trim();
             const displayDetail = w.detailContent || w.details || '';
             const tagBg = w.tagColor ? `${w.tagColor}1A` : '#FEF3C7';
             const tagColor = w.tagColor ? w.tagColor : '#D97706';
@@ -545,13 +551,13 @@ renderWikiList(searchQuery = '') {
                     <div class="wk-header pro-wk-header">
                         <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; width: 100%;">
                             <div style="display: flex; align-items: flex-start; gap: 6px; flex: 1; min-width: 0;">
-                                <span style="font-size: 18px; line-height: 1.2; flex-shrink: 0; margin-top: 1px;">${w.icon || '📌'}</span>
-                                <span style="font-size: 15px; font-weight: 900; color: #111827; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${w.title}</span>
+                                <span style="font-size: 16px; line-height: 1.4; flex-shrink: 0;">${w.icon || '📌'}</span>
+                                <span style="font-size: 15px; font-weight: 900; color: #111827; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${w.title}</span>
                             </div>
                             <span style="font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; flex-shrink: 0; color:${tagColor}; background:${tagBg}; margin-top: 2px;">${w.tag || '干货'}</span>
                         </div>
                         
-                        <div class="wk-summary pro-wk-summary">${displayDesc}</div>
+                        ${displayDesc ? `<div class="wk-summary pro-wk-summary">${displayDesc}</div>` : ''}
                     </div>
                     
                     <div class="wk-detail pro-wk-detail" onclick="event.stopPropagation()">
@@ -564,7 +570,7 @@ renderWikiList(searchQuery = '') {
             </div>`;
         });
 
-        html += `<button class="btn-ai-create" onclick="if(window.App && window.App.injectIfNeeded) window.App.injectIfNeeded('aiWikiModal'); document.getElementById('aiWikiModal').style.display='flex'" style="margin-top: 10px; border-radius: 12px;">✨ AI 自动提取长文并录入</button>`;
+        html += `<button class="btn-ai-create" onclick="if(window.App && window.App.injectIfNeeded) window.App.injectIfNeeded('aiWikiModal'); document.getElementById('aiWikiModal').style.display='flex'" style="margin-top: 8px; border-radius: 12px; padding: 10px;">✨ AI 自动提取长文并录入</button>`;
         
         list.innerHTML = html;
     });
