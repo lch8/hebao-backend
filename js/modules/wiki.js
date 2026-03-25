@@ -431,108 +431,144 @@ export const WikiEngine = {
     switchWikiTab(category, el) { document.querySelectorAll('.w-tab').forEach(tab => tab.classList.remove('active')); el.classList.add('active'); currentRbCategory = category; this.renderWikiList(); },
     filterWiki() { this.renderWikiList(safeDOM.getValue('wikiSearchInput').toLowerCase()); },
 
+// ==========================================
+// 💅 Pro 级极致紧凑版：强行压缩间距，强制图标标题同行
+// ==========================================
 renderWikiList(searchQuery = '') {
-        safeDOM.execute('wikiListContainer', list => {
-            // 🌟 核心大换血：退掉 Flex，激活真正的 Grid 布局！
-            list.className = 'wiki-grid-container';
-            
-            let html = '';
-            const deletedData = JSON.parse(localStorage.getItem('hp_wiki_deleted') || '[]'); 
-            const savedData = JSON.parse(localStorage.getItem('hp_wiki_saved') || '[]');
-            const customWikis = JSON.parse(localStorage.getItem('hp_custom_wikis') || '[]'); 
-            
-            // 🚨 核心修复：直接读取局部作用域的 wikiData，而不是去 window 上找！
-            let rawWikiData = [];
-            try { 
-                rawWikiData = typeof wikiData !== 'undefined' ? wikiData : []; 
-            } catch(e) { 
-                console.error("读取本地干货数据失败", e); 
+    // 🌟 1. 全局缝隙压缩器 & 紧凑 UI 补丁
+    if (!document.getElementById('proUiPatchSafe')) {
+        const style = document.createElement('style');
+        style.id = 'proUiPatchSafe'; 
+        style.innerHTML = `
+            /* 🚀 暴力压缩全局多余的留白 (针对上半部分的雷达、搜索框等) */
+            div[style*="margin-bottom: 15px"], 
+            div[style*="margin-bottom: 16px"], 
+            div[style*="margin-bottom: 20px"],
+            div[style*="margin-bottom: 24px"] {
+                margin-bottom: 8px !important;
             }
+            .search-container, .search-box, .category-tabs { margin-bottom: 8px !important; }
+
+            /* 列表容器极致紧凑 */
+            .wiki-grid-container { display: flex !important; flex-direction: column !important; gap: 8px !important; padding: 0 4px !important; }
+            .swipe-wrapper { margin-bottom: 0 !important; border-radius: 12px !important; width: 100% !important; position: relative !important; overflow: hidden !important; }
+            .swipe-bg { font-size: 12px !important; }
             
-            const allWikis = [...rawWikiData, ...customWikis];
-
-            let filteredData = allWikis.filter(w => {
-                if (!w) return false;
-                
-                const cardMode = w.mode || 'advanced';
-                const sysMode = typeof currentRbMode !== 'undefined' ? currentRbMode : 'advanced';
-                if (cardMode !== sysMode) return false;
-                
-                if (deletedData.includes(w.id) || savedData.includes(w.id)) return false;
-                
-                const sysCat = typeof currentRbCategory !== 'undefined' ? currentRbCategory : 'all';
-                const catMatch = (sysCat === 'all') ? true : w.category === sysCat;
-                
-                const sQ = (searchQuery || '').toLowerCase();
-                const titleStr = (w.title || '').toLowerCase();
-                const descStr = (w.desc || w.summary || '').toLowerCase();
-                const searchMatch = titleStr.includes(sQ) || descStr.includes(sQ);
-                
-                return catMatch && searchMatch;
-            });
-
-            if (filteredData.length === 0) { 
-                list.innerHTML = '<div style="grid-column: 1 / -1; text-align:center; color:#9CA3AF; padding: 60px 0;">该分类下暂无干货啦！<br><br><span style="font-size:12px; cursor:pointer; color:#10B981; text-decoration:underline;" onclick="localStorage.removeItem(\'hp_wiki_deleted\'); localStorage.removeItem(\'hp_wiki_saved\'); if(window.App && window.App.renderWikiList) window.App.renderWikiList(); else if(typeof renderWikiList === \'function\') renderWikiList();">点我重置所有卡片</span></div>'; 
-            } else {
-                filteredData.forEach(w => {
-                    // 发帖按钮 HTML (适配窄卡片，减少内边距)
-                    let actionHtml = '';
-                    if (w.postTemplate) {
-                        const safeTitle = encodeURIComponent(w.postTemplate.title || '').replace(/'/g, "%27");
-                        const safeContent = encodeURIComponent(w.postTemplate.content || '').replace(/'/g, "%27");
-                        actionHtml = `
-                        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed #E2E8F0;">
-                            <button onclick="if(window.App && window.App.quickPost) window.App.quickPost('${w.postTemplate.tab}', '${safeTitle}', '${safeContent}'); event.stopPropagation();" 
-                                style="width: 100%; background: linear-gradient(135deg, #111827 0%, #374151 100%); color: #FFF; border: none; padding: 10px; border-radius: 10px; font-size: 12px; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(17,24,39,0.15);">
-                                🚀 ${w.postTemplate.btnText}
-                            </button>
-                        </div>`;
-                    }
-
-                    const displayDesc = w.desc || w.summary || '';
-                    const displayDetail = w.detailContent || w.details || '';
-                    const tagBg = w.tagColor ? `${w.tagColor}1A` : '#FEF3C7';
-                    const tagColor = w.tagColor ? w.tagColor : '#D97706';
-                    const safeWikiTitle = (w.title || '').replace(/'/g, "\\'");
-
-                    // 🌟 核心 HTML：完美融合 Pro UI + Swipe 滑动 + 折叠详情 (双列版模板)
-                    html += `
-                    <div class="wiki-grid-item" id="grid_item_${w.id}">
-                        <div class="pro-swipe-wrapper" id="swipe_${w.id}">
-                            <div class="swipe-bg save-bg" style="font-size:11px;">⭐ 收藏</div>
-                            <div class="swipe-bg delete-bg" style="font-size:11px;">🗑️ 懂了</div>
-                            
-                            <div class="wiki-card swipe-front pro-wiki-card" id="front_${w.id}" onclick="if(window.App && window.App.toggleWikiCard) window.App.toggleWikiCard(this); else if(typeof toggleWikiCard === 'function') toggleWikiCard(this);" ontouchstart="if(window.App && window.App.hSwipeStart) window.App.hSwipeStart(event, '${w.id}')" ontouchmove="if(window.App && window.App.hSwipeMove) window.App.hSwipeMove(event, '${w.id}')" ontouchend="if(window.App && window.App.hSwipeEnd) window.App.hSwipeEnd(event, '${w.id}')">
-                                
-                                <div class="wk-header pro-wk-header">
-                                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 6px;">
-                                        <div class="wk-icon pro-wk-icon">${w.icon || '📌'}</div>
-                                        <span class="wk-tag pro-wk-tag" style="color:${tagColor}; background:${tagBg};">${w.tag || '干货'}</span>
-                                    </div>
-                                    <div class="wk-info pro-wk-info">
-                                        <div class="wk-title pro-wk-title">${w.title}</div>
-                                        <div class="wk-summary pro-wk-summary">${displayDesc}</div>
-                                    </div>
-                                </div>
-                                
-                                <div class="wk-detail pro-wk-detail" onclick="event.stopPropagation()">
-                                    <div class="wk-step pro-wk-step">${displayDetail}</div>
-                                    <div class="wk-ugc-btn pro-wk-btn" onclick="if(window.App && window.App.openWikiComments) window.App.openWikiComments('${w.id}', '${safeWikiTitle}'); else if (window.openWikiComments) window.openWikiComments('${w.id}', '${safeWikiTitle}')">💬 查看踩坑情报</div>
-                                    ${actionHtml}
-                                </div>
-                                
-                            </div>
-                        </div>
-                    </div>`;
-                });
+            /* 🌟 卡片本体去油瘦身 */
+            .pro-wiki-card {
+                border-radius: 12px !important; padding: 12px 14px !important; box-shadow: 0 2px 8px rgba(0,0,0,0.03) !important;
+                border: 1px solid #F1F5F9 !important; background: #FFF !important; min-height: auto;
+                display: flex; flex-direction: column; gap: 6px;
+                transition: background 0.2s; cursor: pointer;
             }
+            .pro-wiki-card:active { background: #F8FAFC !important; }
+
+            /* 去掉原有的多余边距 */
+            .pro-wk-header { display: flex !important; flex-direction: column !important; width: 100% !important; margin: 0 !important; }
+            .pro-wk-summary { font-size: 13px !important; color: #64748B !important; line-height: 1.5 !important; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 4px !important;}
             
-            // 顶部 AI 按钮 (让它横跨两列 grid-column: 1 / -1)
-            html += `<button class="btn-ai-create" onclick="if(window.App && window.App.injectIfNeeded) window.App.injectIfNeeded('aiWikiModal'); document.getElementById('aiWikiModal').style.display='flex'" style="grid-column: 1 / -1; margin-top: 10px; border-radius: 12px;">✨ AI 自动提取长文并录入</button>`;
+            /* CSS 折叠引擎 */
+            .pro-wk-detail { margin-top: 8px !important; padding-top: 10px !important; border-top: 1px solid #F1F5F9 !important; display: none; }
+            .pro-wiki-card.expanded .pro-wk-detail, 
+            .pro-wiki-card.open .pro-wk-detail,
+            .pro-wiki-card.active .pro-wk-detail { display: flex !important; flex-direction: column !important; }
             
-            list.innerHTML = html;
+            .pro-wk-step { font-size: 12px !important; color: #475569 !important; line-height: 1.6 !important; margin-bottom: 10px !important; }
+            .pro-wk-btn { background: #F8FAFC !important; color: #475569 !important; padding: 8px 0 !important; border-radius: 8px !important; font-size: 12px !important; font-weight: bold !important; text-align: center !important; border: 1px solid #E2E8F0 !important; margin-top: 0 !important; cursor: pointer; }
+        `;
+        document.head.appendChild(style);
+    }
+
+    safeDOM.execute('wikiListContainer', list => {
+        list.className = 'wiki-grid-container';
+        let html = '';
+        
+        const deletedData = JSON.parse(localStorage.getItem('hp_wiki_deleted') || '[]'); 
+        const savedData = JSON.parse(localStorage.getItem('hp_wiki_saved') || '[]');
+        const customWikis = JSON.parse(localStorage.getItem('hp_custom_wikis') || '[]'); 
+        
+        let rawWikiData = [];
+        try { rawWikiData = typeof wikiData !== 'undefined' ? wikiData : []; } catch(e) {}
+        const allWikis = [...rawWikiData, ...customWikis];
+
+        let filteredData = allWikis.filter(w => {
+            if (!w) return false;
+            const cardMode = w.mode || 'advanced';
+            const sysMode = typeof currentRbMode !== 'undefined' ? currentRbMode : 'advanced';
+            if (cardMode !== sysMode) return false;
+            
+            if (deletedData.includes(w.id) || savedData.includes(w.id)) return false;
+            
+            const sysCat = typeof currentRbCategory !== 'undefined' ? currentRbCategory : 'all';
+            const catMatch = (sysCat === 'all') ? true : w.category === sysCat;
+            
+            const sQ = (searchQuery || '').toLowerCase();
+            const titleStr = (w.title || '').toLowerCase();
+            const descStr = (w.desc || w.summary || '').toLowerCase();
+            const searchMatch = titleStr.includes(sQ) || descStr.includes(sQ);
+            
+            return catMatch && searchMatch;
         });
-    },
+
+        if (filteredData.length === 0) { 
+            list.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding: 60px 0;">该分类下暂无干货啦！<br><br><span style="font-size:12px; cursor:pointer; color:#10B981; text-decoration:underline;" onclick="localStorage.removeItem(\'hp_wiki_deleted\'); localStorage.removeItem(\'hp_wiki_saved\'); if(window.App && window.App.renderWikiList) window.App.renderWikiList(); else if(typeof renderWikiList === \'function\') renderWikiList();">点我重置所有卡片</span></div>'; 
+            return;
+        }
+
+        filteredData.forEach(w => {
+            let actionHtml = '';
+            if (w.postTemplate) {
+                const safeTitle = encodeURIComponent(w.postTemplate.title || '').replace(/'/g, "%27");
+                const safeContent = encodeURIComponent(w.postTemplate.content || '').replace(/'/g, "%27");
+                actionHtml = `
+                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #E2E8F0;">
+                    <button onclick="if(window.App && window.App.quickPost) window.App.quickPost('${w.postTemplate.tab}', '${safeTitle}', '${safeContent}'); event.stopPropagation();" 
+                        style="width: 100%; background: linear-gradient(135deg, #111827 0%, #374151 100%); color: #FFF; border: none; padding: 10px; border-radius: 10px; font-size: 12px; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(17,24,39,0.15);">
+                        🚀 ${w.postTemplate.btnText}
+                    </button>
+                </div>`;
+            }
+
+            const displayDesc = w.desc || w.summary || '';
+            const displayDetail = w.detailContent || w.details || '';
+            const tagBg = w.tagColor ? `${w.tagColor}1A` : '#FEF3C7';
+            const tagColor = w.tagColor ? w.tagColor : '#D97706';
+            const safeWikiTitle = (w.title || '').replace(/'/g, "\\'");
+
+            html += `
+            <div class="swipe-wrapper" id="swipe_${w.id}">
+                <div class="swipe-bg save-bg" style="border-radius: 12px 0 0 12px;">⭐ 收藏</div>
+                <div class="swipe-bg delete-bg" style="border-radius: 0 12px 12px 0;">🗑️ 懂了</div>
+                
+                <div class="wiki-card swipe-front pro-wiki-card" id="front_${w.id}" onclick="if(window.App && window.App.toggleWikiCard) window.App.toggleWikiCard(this); else if(typeof toggleWikiCard === 'function') toggleWikiCard(this);" ontouchstart="if(window.App && window.App.hSwipeStart) window.App.hSwipeStart(event, '${w.id}')" ontouchmove="if(window.App && window.App.hSwipeMove) window.App.hSwipeMove(event, '${w.id}')" ontouchend="if(window.App && window.App.hSwipeEnd) window.App.hSwipeEnd(event, '${w.id}')">
+                    
+                    <div class="wk-header pro-wk-header">
+                        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; width: 100%;">
+                            <div style="display: flex; align-items: flex-start; gap: 6px; flex: 1; min-width: 0;">
+                                <span style="font-size: 18px; line-height: 1.2; flex-shrink: 0; margin-top: 1px;">${w.icon || '📌'}</span>
+                                <span style="font-size: 15px; font-weight: 900; color: #111827; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${w.title}</span>
+                            </div>
+                            <span style="font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; flex-shrink: 0; color:${tagColor}; background:${tagBg}; margin-top: 2px;">${w.tag || '干货'}</span>
+                        </div>
+                        
+                        <div class="wk-summary pro-wk-summary">${displayDesc}</div>
+                    </div>
+                    
+                    <div class="wk-detail pro-wk-detail" onclick="event.stopPropagation()">
+                        <div class="wk-step pro-wk-step">${displayDetail}</div>
+                        <div class="wk-ugc-btn pro-wk-btn" onclick="if(window.App && window.App.openWikiComments) window.App.openWikiComments('${w.id}', '${safeWikiTitle}'); else if (window.openWikiComments) window.openWikiComments('${w.id}', '${safeWikiTitle}')">💬 查看踩坑情报</div>
+                        ${actionHtml}
+                    </div>
+                    
+                </div>
+            </div>`;
+        });
+
+        html += `<button class="btn-ai-create" onclick="if(window.App && window.App.injectIfNeeded) window.App.injectIfNeeded('aiWikiModal'); document.getElementById('aiWikiModal').style.display='flex'" style="margin-top: 10px; border-radius: 12px;">✨ AI 自动提取长文并录入</button>`;
+        
+        list.innerHTML = html;
+    });
+},
 
     // ==========================================
     // 🌟 原生防弹版：干货区网友评论抽屉弹窗引擎
