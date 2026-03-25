@@ -433,73 +433,90 @@ export const WikiEngine = {
 
     renderWikiList(searchQuery = '') {
         safeDOM.execute('wikiListContainer', list => {
+            // 🌟 核心注入：强制让外层容器变成双列 Grid 网格！
+            list.className = 'wiki-grid-container';
+            
             let html = '';
             const deletedData = JSON.parse(localStorage.getItem('hp_wiki_deleted') || '[]'); 
             const savedData = JSON.parse(localStorage.getItem('hp_wiki_saved') || '[]');
             const customWikis = JSON.parse(localStorage.getItem('hp_custom_wikis') || '[]'); 
             
-            // 🌟 1. 数据源切换：使用我们新导入的 30 张高定 wikiData！
-            const allWikis = [...wikiData, ...customWikis];
+            const allWikis = [...(window.wikiData || []), ...customWikis];
 
             let filteredData = allWikis.filter(w => {
-                // 💡 兼容处理：新数据如果没写 mode，默认属于 'advanced' 进阶篇
                 const cardMode = w.mode || 'advanced';
-                if (cardMode !== currentRbMode) return false;
+                if (typeof currentRbMode !== 'undefined' && cardMode !== currentRbMode) return false;
                 
                 if (deletedData.includes(w.id) || savedData.includes(w.id)) return false;
-                const catMatch = currentRbCategory === 'all' ? true : w.category === currentRbCategory;
+                const catMatch = (typeof currentRbCategory !== 'undefined' && currentRbCategory === 'all') ? true : w.category === currentRbCategory;
                 
-                // 🌟 2. 字段名更新：适配新数据的 desc 字段
                 const searchMatch = w.title.toLowerCase().includes(searchQuery) || (w.desc || w.summary || '').toLowerCase().includes(searchQuery);
                 return catMatch && searchMatch;
             });
 
             if (filteredData.length === 0) { 
-                list.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding: 60px 0;">该分类下暂无干货啦！<br><br><span style="font-size:12px; cursor:pointer; color:#10B981; text-decoration:underline;" onclick="localStorage.removeItem(\'hp_wiki_deleted\'); localStorage.removeItem(\'hp_wiki_saved\'); window.App.renderWikiList();">点我重置所有卡片</span></div>'; 
+                // 暂无数据时，让提示框横跨两列
+                list.innerHTML = '<div style="grid-column: 1 / -1; text-align:center; color:#9CA3AF; padding: 60px 0;">该分类下暂无干货啦！<br><br><span style="font-size:12px; cursor:pointer; color:#10B981; text-decoration:underline;" onclick="localStorage.removeItem(\'hp_wiki_deleted\'); localStorage.removeItem(\'hp_wiki_saved\'); if(window.App && window.App.renderWikiList) window.App.renderWikiList();">点我重置所有卡片</span></div>'; 
             } else {
                 filteredData.forEach(w => {
-                    // 🌟 3. 动态渲染：一键发帖找搭子按钮引擎
+                    // 🌟 适配版一键发帖按钮：稍微缩减内边距，适应半屏卡片
                     let actionHtml = '';
                     if (w.postTemplate) {
                         const safeTitle = encodeURIComponent(w.postTemplate.title).replace(/'/g, "%27");
                         const safeContent = encodeURIComponent(w.postTemplate.content).replace(/'/g, "%27");
                         actionHtml = `
-                        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #E5E7EB;">
-                            <button onclick="window.App.quickPost('${w.postTemplate.tab}', '${safeTitle}', '${safeContent}'); event.stopPropagation();" 
-                                style="width: 100%; background: linear-gradient(135deg, #111827 0%, #374151 100%); color: #FFF; border: none; padding: 14px; border-radius: 16px; font-size: 14px; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 15px rgba(17,24,39,0.2); transition: transform 0.1s;"
-                                onmousedown="this.style.transform='scale(0.98)'" 
+                        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed #E2E8F0;">
+                            <button onclick="if(window.App.quickPost) window.App.quickPost('${w.postTemplate.tab}', '${safeTitle}', '${safeContent}'); event.stopPropagation();" 
+                                style="width: 100%; background: linear-gradient(135deg, #111827 0%, #374151 100%); color: #FFF; border: none; padding: 10px; border-radius: 10px; font-size: 12px; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(17,24,39,0.15); transition: 0.2s;"
+                                onmousedown="this.style.transform='scale(0.96)'" 
                                 onmouseup="this.style.transform='scale(1)'">
-                                ${w.postTemplate.btnText}
+                                🚀 ${w.postTemplate.btnText}
                             </button>
                         </div>`;
                     }
 
-                    // 兼容新老字段
                     const displayDesc = w.desc || w.summary || '';
                     const displayDetail = w.detailContent || w.details || '';
-                    const tagColorStr = w.tagColor ? `style="color: ${w.tagColor}; background: ${w.tagColor}1A;"` : '';
+                    // 标签颜色容错
+                    const tagBg = w.tagColor ? `${w.tagColor}1A` : '#FEF3C7';
+                    const tagColor = w.tagColor ? w.tagColor : '#D97706';
+                    // 确保传递给评论函数的标题不包含会破坏JS引号的单引号
+                    const safeWikiTitle = w.title.replace(/'/g, "\\'");
 
+                    // 🌟 核心 HTML 大换血：完美融合 Pro UI + Swipe 滑动 + 折叠详情
                     html += `
-                    <div class="swipe-wrapper" id="swipe_${w.id}">
-                        <div class="swipe-bg save-bg">⭐ 收藏</div><div class="swipe-bg delete-bg">🗑️ 懂了</div>
-                        <div class="wiki-card swipe-front" id="front_${w.id}" onclick="window.App.toggleWikiCard(this)" ontouchstart="window.App.hSwipeStart(event, '${w.id}')" ontouchmove="window.App.hSwipeMove(event, '${w.id}')" ontouchend="window.App.hSwipeEnd(event, '${w.id}')">
-                            <div class="wk-header">
-                                <div class="wk-icon">${w.icon}</div>
-                                <div class="wk-info">
-                                    <div class="wk-title">${w.title} <span class="wk-tag" ${tagColorStr}>${w.tag}</span></div>
-                                    <div class="wk-summary">${displayDesc}</div>
-                                </div>
+                    <div class="swipe-wrapper" id="swipe_${w.id}" style="position: relative; overflow: hidden; border-radius: 12px;">
+                        <div class="swipe-bg save-bg" style="font-size:12px;">⭐ 收藏</div>
+                        <div class="swipe-bg delete-bg" style="font-size:12px;">🗑️ 懂了</div>
+                        
+                        <div class="wiki-card-pro swipe-front" id="front_${w.id}" onclick="if(window.App.toggleWikiCard) window.App.toggleWikiCard(this)" ontouchstart="if(window.App.hSwipeStart) window.App.hSwipeStart(event, '${w.id}')" ontouchmove="if(window.App.hSwipeMove) window.App.hSwipeMove(event, '${w.id}')" ontouchend="if(window.App.hSwipeEnd) window.App.hSwipeEnd(event, '${w.id}')" style="min-height: 110px;">
+                            
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                <div style="font-size: 18px;">${w.icon || '📌'}</div>
+                                <div style="font-size: 10px; color: ${tagColor}; background: ${tagBg}; padding: 2px 6px; border-radius: 4px; font-weight: bold;">${w.tag || '干货'}</div>
                             </div>
-                            <div class="wk-detail" onclick="event.stopPropagation()">
-                                <div class="wk-step">${displayDetail}</div>
-                                <div class="wk-ugc-btn" onclick="window.App.openWikiComments('${w.id}', '${w.title}')">💬 查看荷包蛋补充 & 踩坑情报</div>
+                            
+                            <div class="wiki-title-pro">${w.title}</div>
+                            <div class="wiki-desc-pro">${displayDesc}</div>
+                            
+                            <div class="wk-detail" style="display: none; flex-direction: column; margin-top: 12px; border-top: 1px solid #F1F5F9; padding-top: 12px;" onclick="event.stopPropagation()">
+                                <div style="font-size: 12px; color: #475569; line-height: 1.6; margin-bottom: 12px;">${displayDetail}</div>
+                                
+                                <div class="wiki-btn-pro" onclick="if(window.App.openWikiComments) window.App.openWikiComments('${w.id}', '${safeWikiTitle}'); else if (window.openWikiComments) window.openWikiComments('${w.id}', '${safeWikiTitle}')">
+                                    💬 查看踩坑情报
+                                </div>
+                                
                                 ${actionHtml}
                             </div>
+
                         </div>
                     </div>`;
                 });
             }
-            html += `<button class="btn-ai-create" onclick="window.App.injectIfNeeded('aiWikiModal'); document.getElementById('aiWikiModal').style.display='flex'">✨ AI 自动提取长文并录入</button>`;
+            
+            // 🌟 让底部的 AI 按钮横跨两列 (grid-column: 1 / -1)
+            html += `<button class="btn-ai-create" onclick="if(window.App.injectIfNeeded) window.App.injectIfNeeded('aiWikiModal'); document.getElementById('aiWikiModal').style.display='flex'" style="grid-column: 1 / -1; margin-top: 10px; border-radius: 12px;">✨ AI 自动提取长文并录入</button>`;
+            
             list.innerHTML = html;
         });
     },
