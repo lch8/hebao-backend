@@ -442,12 +442,12 @@ renderWikiList(searchQuery = '') {
         style.innerHTML = `
             /* 🚀 暴力压缩全局多余的留白 (针对上半部分的雷达、搜索框等) */
             div[style*="margin-bottom: 15px"], 
-            div[style*="margin-bottom: 16px"], 
+            div[style*="margin-bottom: 15px"], 
             div[style*="margin-bottom: 20px"],
-            div[style*="margin-bottom: 24px"] {
-                margin-bottom: 8px !important;
+            div[style*="margin-bottom: 20px"] {
+                margin-bottom: 6px !important;
             }
-            .search-container, .search-box, .category-tabs { margin-bottom: 8px !important; }
+            .search-container, .search-box, .category-tabs { margin-bottom: 6px !important; }
 
             /* 列表容器极致紧凑 */
             .wiki-grid-container { display: flex !important; flex-direction: column !important; gap: 8px !important; padding: 0 4px !important; }
@@ -473,7 +473,7 @@ renderWikiList(searchQuery = '') {
             .pro-wiki-card.open .pro-wk-detail,
             .pro-wiki-card.active .pro-wk-detail { display: flex !important; flex-direction: column !important; }
             
-            .pro-wk-step { font-size: 12px !important; color: #475569 !important; line-height: 1.6 !important; margin-bottom: 10px !important; }
+            .pro-wk-step { font-size: 12px !important; color: #475569 !important; line-height: 1.6 !important; margin-bottom: 6px !important; }
             .pro-wk-btn { background: #F8FAFC !important; color: #475569 !important; padding: 8px 0 !important; border-radius: 8px !important; font-size: 12px !important; font-weight: bold !important; text-align: center !important; border: 1px solid #E2E8F0 !important; margin-top: 0 !important; cursor: pointer; }
         `;
         document.head.appendChild(style);
