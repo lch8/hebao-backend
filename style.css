@@ -74,6 +74,52 @@ body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "S
 .page-section.active { display: block; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
+/* 强制干掉原有的 .wk-icon 的圆形背景和边框！让它变成纯净的文字图标 */
+.pro-wk-icon {
+    background: transparent !important;
+    border: none !important;
+    width: auto !important;
+    height: auto !important;
+    border-radius: 0 !important;
+    font-size: 18px !important;
+    line-height: 1.4 !important; /* 和标题行高一致 */
+    margin-right: 6px !important;
+}
+
+/* 确保一行显示：图标 + 标题 */
+.pro-wk-title-container {
+    display: flex !important;
+    align-items: flex-start !important; /* 顶部对齐 */
+    gap: 0 !important;
+    flex: 1;
+}
+
+/* 标题字重降级，更精致 */
+.pro-wk-title {
+    font-weight: 800 !important; /* 从 900 降到 800 */
+    font-size: 15px !important;
+    line-height: 1.4 !important;
+}
+
+/* 假设你选中态的 class 是 .active */
+.category-tabs .active {
+    background: #FFF !important; /* 白底 */
+    color: #0F172A !important; /* 深色字 */
+    border: none !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important; /* 仅用阴影凸显 */
+    font-weight: 800 !important;
+}
+.category-tabs .inactive {
+    background: transparent !important;
+    color: #64748B !important;
+    border: none !important;
+}
+.pro-wiki-card {
+    /* 保留微阴影，弱化边框 */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03) !important;
+    border: 1px solid rgba(241, 245, 249, 0.5) !important; 
+}
+
 /* ================= 2. 底部导航与发布 ================= */
 /* ============================================================================
    🎨 架构师重构：苹果级毛玻璃底栏 & 悬浮加号 (替换原有的 tab-bar 样式)
