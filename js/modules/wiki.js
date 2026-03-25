@@ -453,7 +453,7 @@ renderWikiList(searchQuery = '') {
             /* 🌟 卡片本体：极限去油瘦身！Padding 砍到 10px，去掉内部 gap */
             .pro-wiki-card {
                 border-radius: 12px !important; 
-                padding: 10px 12px !important; /* 👈 极限压缩内边距 */
+                padding: 8px 10px !important; /* 👈 极限压缩内边距 */
                 box-shadow: 0 2px 8px rgba(0,0,0,0.03) !important;
                 border: 1px solid #F1F5F9 !important; 
                 background: #FFF !important; 
