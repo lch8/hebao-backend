@@ -508,7 +508,8 @@ export const WikiEngine = {
     // 🌟 原生防弹版：干货区网友评论抽屉弹窗引擎
     // ==========================================
     openWikiComments(wikiId, wikiTitle) {
-        currentWikiIdForComment = wikiId;
+        window.currentWikiIdForComment = wikiId; 
+    currentWikiIdForComment = wikiId;
         
         // 1. 清理旧弹窗防重叠
         const existing = document.getElementById('wikiCommentOverlay');
@@ -564,6 +565,9 @@ export const WikiEngine = {
         document.getElementById('wikiCommentInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') this.submitWikiComment();
         });
+        if (window.renderWikiComments) {
+        window.renderWikiComments(); // 打开弹窗时立刻去云端拉取评论！
+    }
     },
 
     // ==========================================
