@@ -91,51 +91,62 @@ import { safeDOM } from './core/dom.js';
 import { ProfileEngine } from './modules/profile.js';
 
 // ==========================================
-// 🗺️ 荷村探索档案引擎 (只负责读取和渲染)
+// 🗺️ 荷村智能探索引擎 (节日拦截 + 小镇轮播)
 // ==========================================
 window.App = window.App || {};
 
 window.App.renderTodayExplore = function() {
-    // 1. 直接读取你在 daily-cards.js 里写好的数据！
-    const data = window.App.dailyCardsData || [];
-    if (data.length === 0) return;
+    // 1. 获取今天的月和日 (格式: MM-DD)
+    const today = new Date();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const currentDate = `${month}-${day}`;
     
-    // 根据一年中的第几天，每天固定抽一张
-    const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
-    const index = dayOfYear % data.length;
-    const today = data[index];
-    
-    // 把数据塞进首页的 3D 卡片里
+    let todayData = null;
+
+    // 2. 🚦 优先拦截：今天是不是特殊节日？
+    const holidayCards = window.App.holidayCardsData || [];
+    const holidayMatch = holidayCards.find(c => c.date === currentDate);
+
+    if (holidayMatch) {
+        // 命中节日！直接展示节日彩蛋
+        todayData = holidayMatch;
+    } else {
+        // 3. 正常日子：在小镇库里按一年中的第几天循环抽一张
+        const townCards = window.App.townCardsData || [];
+        if (townCards.length === 0) return;
+        
+        const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
+        todayData = townCards[dayOfYear % townCards.length];
+    }
+
+    // 4. 开始渲染数据到 3D 卡片
     const imgObj = document.getElementById('frontExploreImg');
     if (imgObj) {
-        // 🛡️ 核心修复：每次换图前，重新绑定 onerror 保镖！
+        // 终极防碎图保镖
         imgObj.onerror = function() {
-            console.warn("发现碎图！已自动切换至备用风车风景图 🛡️");
-            this.onerror = null; // 防止备用图也挂了导致无限死循环
-            // 备用绝美图：极其稳定的荷兰小孩堤防风车图
+            console.warn("发现碎图！已自动切换至备用绝美风景图 🛡️");
+            this.onerror = null; 
             this.src = 'https://images.unsplash.com/photo-1464692805480-a69dfaafdb0d?auto=format&fit=crop&w=800&q=80';
             this.style.objectPosition = 'center 30%'; 
         };
-        
-        // 注入今日的图片和剪裁比例
-        imgObj.src = today.imgUrl; 
-        imgObj.style.objectPosition = today.crop || 'center'; 
+        imgObj.src = todayData.imgUrl; 
+        imgObj.style.objectPosition = todayData.crop || 'center'; 
     }
     
-    // 注入其他文字数据
-    document.getElementById('frontExploreTag').innerText = today.tag || '#探索';
-    document.getElementById('frontExploreTitle').innerText = today.title || '未知档案';
-    document.getElementById('exploreCopyright').innerText = today.copyright || '© Licensed Content';
+    // 注入文字
+    document.getElementById('frontExploreTag').innerText = todayData.tag || '#探索';
+    document.getElementById('frontExploreTitle').innerText = todayData.title || '未知档案';
+    document.getElementById('exploreCopyright').innerText = todayData.copyright || '© Licensed Content';
     
-    // 记得这里要用 innerHTML，才能渲染加粗和换行！
     const descObj = document.getElementById('backExploreDesc');
     if (descObj) {
-        descObj.innerHTML = today.desc || '档案数据正在赶来的路上...';
+        descObj.innerHTML = todayData.desc || '档案数据正在赶来的路上...';
     }
 };
-// 页面加载完成后自动翻牌
+
+// 页面加载完成后自动触发
 document.addEventListener('DOMContentLoaded', () => {
-    // 确保数据文件优先加载后，再执行渲染
     setTimeout(() => {
         if(window.App.renderTodayExplore) window.App.renderTodayExplore();
     }, 100);
