@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>👑 荷包管家 - 每日档案审阅后台</title>
+    <script src="./js/data/daily-cards.js"></script>
+    <style>
+        body { background: #F1F5F9; padding: 30px; font-family: sans-serif; margin: 0; }
+        .header { margin-bottom: 30px; }
+        .header h1 { margin: 0 0 10px 0; color: #111827; }
+        .header p { margin: 0; color: #64748B; font-weight: bold; }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px; }
+        .card { background: #FFF; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #E2E8F0; }
+        
+        /* 模拟 App 里那块 380px 高的区域 */
+        .img-box { height: 280px; width: 100%; background: #E2E8F0; position: relative; }
+        .img-box img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 20px 15px; background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%); color: white; }
+        .overlay-title { font-size: 20px; font-weight: 900; margin-bottom: 5px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .overlay-tag { font-size: 11px; background: rgba(255,255,255,0.3); padding: 3px 8px; border-radius: 6px; font-weight: bold; backdrop-filter: blur(4px); display: inline-block; }
+        
+        .info { padding: 15px; background: #FFF; }
+        .test-input { width: 100%; box-sizing: border-box; padding: 10px 12px; margin-top: 10px; border: 1px solid #CBD5E1; border-radius: 8px; background: #F8FAFC; font-size: 12px; outline: none; }
+        .test-input:focus { border-color: #10B981; background: #FFF; }
+        
+        .crop-input { width: 100%; box-sizing: border-box; padding: 8px 12px; margin-top: 8px; border: 1px solid #CBD5E1; border-radius: 8px; background: #FFF; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>👑 荷包管家 - 每日档案审阅后台</h1>
+        <p>一览无余：所有档案的图片剪裁、文案检查、换图测试</p>
+    </div>
+
+    <div class="grid" id="adminGrid"></div>
+
+    <script>
+        const grid = document.getElementById('adminGrid');
+        const dataList = window.App.dailyCardsData || [];
+
+        if(dataList.length === 0) {
+            grid.innerHTML = "<h3>🚨 未读取到数据，请检查 js/data/daily-cards.js 路径是否正确。</h3>";
+        }
+
+        dataList.forEach((item, index) => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            // 实时渲染卡片
+            card.innerHTML = `
+                <div class="img-box">
+                    <img id="img-${index}" src="${item.imgUrl}" style="object-position: ${item.crop || 'center'};" onerror="this.src='https://via.placeholder.com/800x600?text=图片已失效(404)'">
+                    <div class="overlay">
+                        <div class="overlay-tag">${item.tag}</div>
+                        <div class="overlay-title">${item.title}</div>
+                    </div>
+                </div>
+                <div class="info">
+                    <div style="font-size: 12px; color: #64748B; font-weight: bold; margin-bottom: 6px;">🆔 ID: ${item.id}</div>
+                    
+                    <div style="font-size: 12px; font-weight: bold; color: #111827; margin-top: 10px;">🔄 实时换图测试 (不修改源文件)：</div>
+                    <input type="text" class="test-input" placeholder="贴入新的图片链接查看效果..." oninput="document.getElementById('img-${index}').src = this.value">
+                    
+                    <div style="font-size: 12px; font-weight: bold; color: #111827; margin-top: 10px;">✂️ 实时调整剪裁 (如 top, bottom, center 20%)：</div>
+                    <input type="text" class="crop-input" value="${item.crop || 'center'}" oninput="document.getElementById('img-${index}').style.objectPosition = this.value">
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    </script>
+</body>
+</html>
