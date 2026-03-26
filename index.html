@@ -10,6 +10,49 @@
     <link rel="stylesheet" href="./style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.css"/>
     <script src="https://cdn.jsdelivr.net/npm/driver.js@1.0.1/dist/driver.js.iife.js"></script>
+    <style>
+        /* 💎 荷村档案 - 3D 拟物翻转引擎 */
+        .integrated-flip-card {
+            background-color: transparent;
+            width: 100%;
+            height: 380px; /* 强制固定高度，完美撑满下半部分空白 */
+            perspective: 1500px; /* 3D 镜头景深 */
+            cursor: pointer;
+            animation: cardFadeIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1);
+        }
+        @keyframes cardFadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .integrated-flip-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1); /* 物理回弹动画曲线 */
+            transform-style: preserve-3d; /* 保留 3D 空间 */
+        }
+
+        /* 触发翻转的动作 */
+        .integrated-flip-card.flipped .integrated-flip-inner {
+            transform: rotateY(180deg);
+        }
+
+        /* 正反面的共有底座 */
+        .integrated-front, .integrated-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden; /* Safari 兼容 */
+            backface-visibility: hidden; /* 翻转后隐藏背面 */
+            overflow: hidden;
+        }
+
+        /* 背面初始翻转 180 度藏在后面 */
+        .integrated-back {
+            transform: rotateY(180deg);
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
 </head>
 
 <body>
@@ -86,7 +129,7 @@
 
     <div id="rbStarterMode" style="padding-bottom: 80px;">
         <div id="survivalBannerContainer" style="padding: 0 20px; margin-bottom: 30px; margin-top: 10px;"></div>
-        <div id="dailyExploreEntry" onclick="if(window.App.openDailyExplore) window.App.openDailyExplore()" style="margin: 0 20px 20px; background: linear-gradient(135deg, #111827 0%, #374151 100%); border-radius: 16px; padding: 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; box-shadow: 0 8px 20px rgba(17,24,39,0.15); transition: 0.2s;" onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='scale(1)'">
+        <!-- <div id="dailyExploreEntry" onclick="if(window.App.openDailyExplore) window.App.openDailyExplore()" style="margin: 0 20px 20px; background: linear-gradient(135deg, #111827 0%, #374151 100%); border-radius: 16px; padding: 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; box-shadow: 0 8px 20px rgba(17,24,39,0.15); transition: 0.2s;" onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='scale(1)'">
     <div style="display: flex; align-items: center; gap: 12px;">
         <div style="width: 44px; height: 44px; background: rgba(255,255,255,0.1); border-radius: 12px; display: flex; justify-content: center; align-items: center; font-size: 24px;">🎁</div>
         <div>
@@ -95,9 +138,9 @@
         </div>
     </div>
     <div style="background: rgba(255,255,255,0.15); color: #FFF; font-size: 12px; font-weight: 900; padding: 6px 12px; border-radius: 10px;">去抽取 ›</div>
-</div>
+</div> -->
 
-<div id="dailyExploreModal" class="modal-overlay" style="display: none; align-items: center; justify-content: center; padding: 20px; z-index: 999999; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);" onclick="if(event.target === this) this.style.display='none'">
+<!-- <div id="dailyExploreModal" class="modal-overlay" style="display: none; align-items: center; justify-content: center; padding: 20px; z-index: 999999; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);" onclick="if(event.target === this) this.style.display='none'">
     
     <div class="flip-card" id="dailyFlipCard" onclick="this.classList.toggle('flipped')">
         <div class="flip-card-inner">
@@ -123,7 +166,7 @@
 
         </div>
     </div>
-</div>
+</div> -->
 
         <div class="full-modal" id="survivalGameModal" style="display: none; background: #111827; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 999999; flex-direction: column;">
             <div style="padding: 15px 20px; padding-top: max(15px, env(safe-area-inset-top)); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #374151; background: #1F2937; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
@@ -161,6 +204,34 @@
                 
                 <div id="sgRecommendation" style="width: 100%; max-width: 320px; margin-top: 30px; text-align: left;"></div>
                 <button onclick="document.getElementById('survivalGameModal').style.display='none'; if(window.App && window.App.renderSurvivalBanner) window.App.renderSurvivalBanner();" style="margin-top: 30px; margin-bottom: 30px; background: #E5E7EB; color: #4B5563; border: none; padding: 12px 30px; border-radius: 20px; font-size: 14px; font-weight: bold;">退出并保存战绩</button>
+            </div>
+        </div>
+
+        <div style="padding: 0 20px 20px 20px;">
+            <div class="integrated-flip-card" id="todayExploreCard" onclick="this.classList.toggle('flipped')">
+                <div class="integrated-flip-inner">
+                    
+                    <div class="integrated-front" style="border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.03);">
+                        <img id="frontExploreImg" src="" style="width: 100%; height: 100%; object-fit: cover; object-position: center;">
+                        <div style="position: absolute; bottom: 0; left: 0; right: 0; padding: 25px 20px 15px 20px; background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.3) 60%, transparent 100%);">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                <div id="frontExploreTag" style="font-size: 11px; background: rgba(255,255,255,0.2); color: #FFF; padding: 4px 10px; border-radius: 8px; font-weight: 900; border: 1px solid rgba(255,255,255,0.3); backdrop-filter: blur(4px);">#加载中...</div>
+                                <span style="font-size: 10px; color: rgba(255,255,255,0.6); font-weight: bold;" id="exploreCopyright">© Licensed Content</span>
+                            </div>
+                            <h2 style="font-size: 22px; font-weight: 900; color: #FFF; margin: 0 0 8px 0; line-height: 1.3; text-shadow: 0 2px 8px rgba(0,0,0,0.5);" id="frontExploreTitle">加载中...</h2>
+                            <span style="font-size: 12px; color: rgba(255,255,255,0.8); font-weight: bold; background: rgba(0,0,0,0.4); padding: 4px 12px; border-radius: 20px; backdrop-filter: blur(4px);">👆 点击翻转，查看这枚档案的秘密</span>
+                        </div>
+                    </div>
+
+                    <div class="integrated-back" style="background: #FFF; border-radius: 20px; padding: 30px 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); border: 1px solid #E2E8F0;">
+                        <div style="flex: 1; overflow-y: auto; text-align: left; padding-bottom: 10px;">
+                            <div style="font-size: 13px; color: #64748B; font-weight: bold; margin-bottom: 8px;">📖 档案详情</div>
+                            <p style="font-size: 14px; color: #475569; line-height: 1.7; margin: 0; text-align: justify;" id="backExploreDesc">数据正在赶来的路上...</p>
+                        </div>
+                        <span style="font-size: 12px; color: #94A3B8; margin-top: 15px; font-weight: bold; text-align: center;">再点击图片，翻转回正面</span>
+                    </div>
+
+                </div>
             </div>
         </div>
 
