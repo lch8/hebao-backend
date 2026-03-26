@@ -100,23 +100,39 @@ window.App.renderTodayExplore = function() {
     const data = window.App.dailyCardsData || [];
     if (data.length === 0) return;
     
-    // 2. 根据一年中的第几天，每天固定抽一张
+    // 根据一年中的第几天，每天固定抽一张
     const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
     const index = dayOfYear % data.length;
     const today = data[index];
     
-    // 3. 把数据塞进首页的 3D 卡片里
+    // 把数据塞进首页的 3D 卡片里
     const imgObj = document.getElementById('frontExploreImg');
-    if(imgObj){
-        imgObj.src = today.imgUrl; // 匹配数据里的 imgUrl 字段
-        imgObj.style.objectPosition = today.crop || 'center'; // 执行你配置的完美剪裁比例！
+    if (imgObj) {
+        // 🛡️ 核心修复：每次换图前，重新绑定 onerror 保镖！
+        imgObj.onerror = function() {
+            console.warn("发现碎图！已自动切换至备用风车风景图 🛡️");
+            this.onerror = null; // 防止备用图也挂了导致无限死循环
+            // 备用绝美图：极其稳定的荷兰小孩堤防风车图
+            this.src = 'https://images.unsplash.com/photo-1464692805480-a69dfaafdb0d?auto=format&fit=crop&w=800&q=80';
+            this.style.objectPosition = 'center 30%'; 
+        };
+        
+        // 注入今日的图片和剪裁比例
+        imgObj.src = today.imgUrl; 
+        imgObj.style.objectPosition = today.crop || 'center'; 
     }
-    document.getElementById('frontExploreTag').innerText = today.tag;
-    document.getElementById('frontExploreTitle').innerText = today.title;
+    
+    // 注入其他文字数据
+    document.getElementById('frontExploreTag').innerText = today.tag || '#探索';
+    document.getElementById('frontExploreTitle').innerText = today.title || '未知档案';
     document.getElementById('exploreCopyright').innerText = today.copyright || '© Licensed Content';
-    document.getElementById('backExploreDesc').innerHTML = today.desc;
+    
+    // 记得这里要用 innerHTML，才能渲染加粗和换行！
+    const descObj = document.getElementById('backExploreDesc');
+    if (descObj) {
+        descObj.innerHTML = today.desc || '档案数据正在赶来的路上...';
+    }
 };
-
 // 页面加载完成后自动翻牌
 document.addEventListener('DOMContentLoaded', () => {
     // 确保数据文件优先加载后，再执行渲染
