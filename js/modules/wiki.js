@@ -145,11 +145,11 @@ export const WikiEngine = {
                 const safeTitle = encodeURIComponent(item.title || '情报详情').replace(/'/g, "%27");
                 const safeDetail = encodeURIComponent(item.detailContent || '').replace(/'/g, "%27");
                 html += `
-                    <div onclick="window.App.openNewsDetail(decodeURIComponent('${safeTitle}'), decodeURIComponent('${safeDetail}'))" style="background: rgba(255,255,255,0.8); border-radius: 10px; padding: 12px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: background 0.2s;">
-                        <div style="font-size: 13px; font-weight: 900; color: #1E3A8A; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; max-width: 75%;">
+                    <div onclick="window.App.openNewsDetail(decodeURIComponent('${safeTitle}'), decodeURIComponent('${safeDetail}'))" style="background: rgba(255,255,255,0.8); border-radius: 10px; padding: 12px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.02);" onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform='scale(1)'">
+                        <div style="font-size: 13px; font-weight: 900; color: #1E3A8A; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; flex: 1; padding-right: 10px;">
                             <span style="color: #93C5FD; margin-right: 4px;">#${i+1}</span> ${item.title.replace(/\[.*?\]\s*/g, '')}
                         </div>
-                        <span style="background: #3B82F6; color: white; padding: 4px 10px; border-radius: 12px; font-size: 10px; font-weight: bold; white-space: nowrap;">Get 金句 👋</span>
+                        <span style="color: #93C5FD; font-size: 16px; font-weight: bold; flex-shrink: 0;">›</span>
                     </div>
                 `;
             });
