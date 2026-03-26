@@ -114,7 +114,7 @@ window.App.renderTodayExplore = function() {
     document.getElementById('frontExploreTag').innerText = today.tag;
     document.getElementById('frontExploreTitle').innerText = today.title;
     document.getElementById('exploreCopyright').innerText = today.copyright || '© Licensed Content';
-    document.getElementById('backExploreDesc').innerText = today.desc;
+    document.getElementById('backExploreDesc').innerHTML = today.desc;
 };
 
 // 页面加载完成后自动翻牌
