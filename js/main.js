@@ -90,6 +90,48 @@ import { ModalManager } from './components/modals.js';
 import { safeDOM } from './core/dom.js';
 import { ProfileEngine } from './modules/profile.js';
 
+// ==========================================
+// 🗺️ 日历卡片交互逻辑
+// ==========================================
+window.App = window.App || {};
+
+// 获取今日卡片数据
+window.App.getTodayCard = function() {
+    const dataList = window.App.dailyCardsData || [];
+    if (dataList.length === 0) return null;
+    
+    // 根据一年中的第几天来循环读取卡片，保证每天不一样
+    const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
+    const index = dayOfYear % dataList.length;
+    return dataList[index];
+};
+
+// 打开并填充卡片弹窗
+window.App.openDailyExplore = function() {
+    const todayData = window.App.getTodayCard();
+    if (!todayData) {
+        alert("卡片数据正在赶来的路上...");
+        return;
+    }
+    
+    // 每次打开强制恢复正面
+    const flipCard = document.getElementById('dailyFlipCard');
+    if(flipCard) flipCard.classList.remove('flipped');
+    
+    // 填充正面数据 (图 + 标签 + 标题 + 版权)
+    document.getElementById('deFrontImg').src = todayData.imgUrl;
+    document.getElementById('deFrontTag').innerText = todayData.tag;
+    document.getElementById('deFrontTitle').innerText = todayData.title;
+    document.getElementById('deCopyright').innerText = todayData.copyright || '© Licensed Content';
+    
+    // 填充背面数据 (文字科普)
+    document.getElementById('deBackTitle').innerText = todayData.title;
+    document.getElementById('deBackDesc').innerText = todayData.desc;
+    
+    // 显示弹窗
+    document.getElementById('dailyExploreModal').style.display = 'flex';
+};
+
 window.App.showRewardModal = function() {
     const modal = document.getElementById('rewardGroupModal');
     if (modal) {
