@@ -2,73 +2,188 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>👑 荷包管家 - 每日档案审阅后台</title>
+    <title>👑 荷包管家 - 每日档案 CMS 管理系统</title>
     <script src="./js/data/daily-cards.js"></script>
     <style>
-        body { background: #F1F5F9; padding: 30px; font-family: sans-serif; margin: 0; }
-        .header { margin-bottom: 30px; }
-        .header h1 { margin: 0 0 10px 0; color: #111827; }
-        .header p { margin: 0; color: #64748B; font-weight: bold; }
+        body { background: #F1F5F9; padding: 30px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; }
         
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px; }
+        /* 顶部悬浮控制台 */
+        .control-panel { background: #111827; color: #FFF; padding: 20px 30px; border-radius: 16px; margin-bottom: 30px; display: flex; gap: 15px; align-items: center; box-shadow: 0 10px 30px rgba(17,24,39,0.2); position: sticky; top: 20px; z-index: 100;}
+        .control-panel input { background: #374151; border: 1px solid #4B5563; color: #FFF; padding: 10px 15px; border-radius: 8px; outline: none; font-size: 14px;}
+        .control-panel input:focus { border-color: #10B981; }
+        .btn-push { background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: #FFF; border: none; padding: 10px 24px; border-radius: 8px; font-size: 15px; font-weight: 900; cursor: pointer; box-shadow: 0 4px 15px rgba(16,185,129,0.3); transition: 0.2s;}
+        .btn-push:active { transform: scale(0.95); }
+
+        .header h1 { margin: 0 0 10px 0; color: #111827; }
+        .header p { margin: 0 0 30px 0; color: #64748B; font-weight: bold; }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 24px; }
         .card { background: #FFF; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #E2E8F0; }
         
-        /* 模拟 App 里那块 380px 高的区域 */
         .img-box { height: 280px; width: 100%; background: #E2E8F0; position: relative; }
-        .img-box img { width: 100%; height: 100%; object-fit: cover; }
+        .img-box img { width: 100%; height: 100%; object-fit: cover; transition: 0.3s; }
         
         .overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 20px 15px; background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%); color: white; }
         .overlay-title { font-size: 20px; font-weight: 900; margin-bottom: 5px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
         .overlay-tag { font-size: 11px; background: rgba(255,255,255,0.3); padding: 3px 8px; border-radius: 6px; font-weight: bold; backdrop-filter: blur(4px); display: inline-block; }
         
-        .info { padding: 15px; background: #FFF; }
-        .test-input { width: 100%; box-sizing: border-box; padding: 10px 12px; margin-top: 10px; border: 1px solid #CBD5E1; border-radius: 8px; background: #F8FAFC; font-size: 12px; outline: none; }
-        .test-input:focus { border-color: #10B981; background: #FFF; }
-        
-        .crop-input { width: 100%; box-sizing: border-box; padding: 8px 12px; margin-top: 8px; border: 1px solid #CBD5E1; border-radius: 8px; background: #FFF; font-size: 12px; }
+        .info { padding: 20px; background: #FFF; display: flex; flex-direction: column; gap: 10px; }
+        .info label { font-size: 12px; font-weight: 900; color: #475569; margin-bottom: -5px; }
+        .edit-input { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid #CBD5E1; border-radius: 8px; background: #F8FAFC; font-size: 13px; outline: none; font-family: monospace;}
+        .edit-input:focus { border-color: #3B82F6; background: #FFF; }
+        textarea.edit-input { height: 100px; resize: vertical; line-height: 1.5; font-family: sans-serif; }
     </style>
 </head>
 <body>
 
+    <div class="control-panel">
+        <div style="font-size: 24px;">⚙️</div>
+        <input type="password" id="ghToken" placeholder="GitHub Token (ghp_...)" style="flex: 1;" onchange="saveConfig()">
+        <input type="text" id="ghRepo" placeholder="仓库 (如: lch8/hebao)" style="width: 180px;" onchange="saveConfig()">
+        <input type="text" id="ghBranch" placeholder="分支 (如: main)" value="main" style="width: 100px;" onchange="saveConfig()">
+        
+        <button class="btn-push" id="pushBtn" onclick="pushToGitHub()">🚀 一键同步到云端</button>
+    </div>
+
     <div class="header">
-        <h1>👑 荷包管家 - 每日档案审阅后台</h1>
-        <p>一览无余：所有档案的图片剪裁、文案检查、换图测试</p>
+        <h1>荷包管家 - 每日档案 CMS 系统</h1>
+        <p>在此修改的内容，点击“一键同步”后将直接写入 GitHub 仓库并全网生效！</p>
     </div>
 
     <div class="grid" id="adminGrid"></div>
 
     <script>
-        const grid = document.getElementById('adminGrid');
-        const dataList = window.App.dailyCardsData || [];
+        // 1. 恢复之前保存的配置
+        document.getElementById('ghToken').value = localStorage.getItem('hebao_gh_token') || '';
+        document.getElementById('ghRepo').value = localStorage.getItem('hebao_gh_repo') || '';
+        document.getElementById('ghBranch').value = localStorage.getItem('hebao_gh_branch') || 'main';
 
-        if(dataList.length === 0) {
-            grid.innerHTML = "<h3>🚨 未读取到数据，请检查 js/data/daily-cards.js 路径是否正确。</h3>";
+        function saveConfig() {
+            localStorage.setItem('hebao_gh_token', document.getElementById('ghToken').value);
+            localStorage.setItem('hebao_gh_repo', document.getElementById('ghRepo').value);
+            localStorage.setItem('hebao_gh_branch', document.getElementById('ghBranch').value);
         }
 
-        dataList.forEach((item, index) => {
+        // 2. 渲染可编辑卡片
+        const grid = document.getElementById('adminGrid');
+        
+        // 确保深拷贝数据，避免污染全局
+        window.activeData = JSON.parse(JSON.stringify(window.App.dailyCardsData || []));
+
+        if(window.activeData.length === 0) {
+            grid.innerHTML = "<h3 style='color:#EF4444;'>🚨 未读取到数据，请确保 js/data/daily-cards.js 路径正确！</h3>";
+        }
+
+        window.activeData.forEach((item, index) => {
             const card = document.createElement('div');
             card.className = 'card';
-            // 实时渲染卡片
             card.innerHTML = `
                 <div class="img-box">
-                    <img id="img-${index}" src="${item.imgUrl}" style="object-position: ${item.crop || 'center'};" onerror="this.src='https://via.placeholder.com/800x600?text=图片已失效(404)'">
+                    <img id="img-${index}" src="${item.imgUrl}" style="object-position: ${item.crop || 'center'};" onerror="this.src='https://via.placeholder.com/800x600?text=图片失效(404)'">
                     <div class="overlay">
-                        <div class="overlay-tag">${item.tag}</div>
-                        <div class="overlay-title">${item.title}</div>
+                        <div class="overlay-tag" id="tag-${index}">${item.tag}</div>
+                        <div class="overlay-title" id="title-${index}">${item.title}</div>
                     </div>
                 </div>
                 <div class="info">
-                    <div style="font-size: 12px; color: #64748B; font-weight: bold; margin-bottom: 6px;">🆔 ID: ${item.id}</div>
+                    <label>图片链接 (imgUrl)</label>
+                    <input type="text" class="edit-input" value="${item.imgUrl}" oninput="updateData(${index}, 'imgUrl', this.value)">
                     
-                    <div style="font-size: 12px; font-weight: bold; color: #111827; margin-top: 10px;">🔄 实时换图测试 (不修改源文件)：</div>
-                    <input type="text" class="test-input" placeholder="贴入新的图片链接查看效果..." oninput="document.getElementById('img-${index}').src = this.value">
+                    <label>剪裁焦点 (crop) - 如 center, center 20%, top, bottom</label>
+                    <input type="text" class="edit-input" value="${item.crop || 'center'}" oninput="updateData(${index}, 'crop', this.value)">
                     
-                    <div style="font-size: 12px; font-weight: bold; color: #111827; margin-top: 10px;">✂️ 实时调整剪裁 (如 top, bottom, center 20%)：</div>
-                    <input type="text" class="crop-input" value="${item.crop || 'center'}" oninput="document.getElementById('img-${index}').style.objectPosition = this.value">
+                    <label>标题 (title)</label>
+                    <input type="text" class="edit-input" value="${item.title}" oninput="updateData(${index}, 'title', this.value)">
+                    
+                    <label>富文本描述 (desc) - 支持 &lt;b&gt; 和 &lt;br&gt;</label>
+                    <textarea class="edit-input" oninput="updateData(${index}, 'desc', this.value)">${item.desc}</textarea>
                 </div>
             `;
             grid.appendChild(card);
         });
+
+        // 3. 数据双向绑定：输入框改变，立即更新数据和预览
+        function updateData(index, key, value) {
+            window.activeData[index][key] = value;
+            if (key === 'imgUrl') document.getElementById('img-'+index).src = value;
+            if (key === 'crop') document.getElementById('img-'+index).style.objectPosition = value;
+            if (key === 'title') document.getElementById(`title-${index}`).innerText = value;
+            if (key === 'tag') document.getElementById(`tag-${index}`).innerText = value;
+        }
+
+        // 💡 解决中文转 Base64 乱码的核心魔法函数
+        function utf8_to_b64(str) {
+            return window.btoa(unescape(encodeURIComponent(str)));
+        }
+
+        // 4. 🚀 核心引擎：一键推送到 GitHub
+        async function pushToGitHub() {
+            const token = document.getElementById('ghToken').value.trim();
+            const repo = document.getElementById('ghRepo').value.trim();
+            const branch = document.getElementById('ghBranch').value.trim();
+            const path = 'js/data/daily-cards.js';
+            const btn = document.getElementById('pushBtn');
+
+            if (!token || !repo) {
+                alert("⚠️ 请先在顶部填好 GitHub Token 和仓库名！\n仓库格式例如：lch8/hebao");
+                return;
+            }
+
+            btn.innerText = "⏳ 正在同步中...";
+            btn.style.opacity = "0.7";
+            btn.disabled = true;
+
+            try {
+                // 步骤 1：把当前网页里改好的数据，重新组装成 JS 文件格式
+                const fileContentString = `// ==========================================
+// 📂 文件路径: js/data/daily-cards.js
+// 荷兰风情图鉴：包含绝美风景、硬核文化、生存避雷
+// 🕒 最后由 CMS 后台自动更新时间: ${new Date().toLocaleString()}
+// ==========================================
+window.App = window.App || {};
+
+window.App.dailyCardsData = ${JSON.stringify(window.activeData, null, 4)};
+`;
+                // 步骤 2：向 GitHub API 请求，获取当前旧文件的 SHA 校验码 (更新必备)
+                const getUrl = `https://api.github.com/repos/${repo}/contents/${path}?ref=${branch}`;
+                const getRes = await fetch(getUrl, { headers: { 'Authorization': `token ${token}` } });
+                
+                if (!getRes.ok) throw new Error("无法读取远程仓库，请检查 Token 权限或仓库名字！");
+                
+                const fileData = await getRes.json();
+                const fileSha = fileData.sha;
+
+                // 步骤 3：带着新内容和旧 SHA，把代码 PUT 上去
+                const putRes = await fetch(getUrl, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: '🚀 Update daily-cards.js via Hebao CMS Dashboard',
+                        content: utf8_to_b64(fileContentString),
+                        sha: fileSha,
+                        branch: branch
+                    })
+                });
+
+                if (putRes.ok) {
+                    alert("🎉 恭喜！数据已成功推送到 GitHub！\n页面将在几分钟内全网生效！");
+                } else {
+                    const errorMsg = await putRes.json();
+                    throw new Error(errorMsg.message || "推送失败");
+                }
+
+            } catch (error) {
+                console.error(error);
+                alert(`❌ 同步失败：\n${error.message}`);
+            } finally {
+                btn.innerText = "🚀 一键同步到云端";
+                btn.style.opacity = "1";
+                btn.disabled = false;
+            }
+        }
     </script>
 </body>
 </html>
