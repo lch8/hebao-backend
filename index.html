@@ -86,6 +86,44 @@
 
     <div id="rbStarterMode" style="padding-bottom: 80px;">
         <div id="survivalBannerContainer" style="padding: 0 20px; margin-bottom: 30px; margin-top: 10px;"></div>
+        <div id="dailyExploreEntry" onclick="if(window.App.openDailyExplore) window.App.openDailyExplore()" style="margin: 0 20px 20px; background: linear-gradient(135deg, #111827 0%, #374151 100%); border-radius: 16px; padding: 16px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; box-shadow: 0 8px 20px rgba(17,24,39,0.15); transition: 0.2s;" onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='scale(1)'">
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="width: 44px; height: 44px; background: rgba(255,255,255,0.1); border-radius: 12px; display: flex; justify-content: center; align-items: center; font-size: 24px;">🎁</div>
+        <div>
+            <div style="font-size: 16px; font-weight: 900; color: #FFF; margin-bottom: 4px;">今日荷村档案</div>
+            <div style="font-size: 11px; color: #9CA3AF; font-weight: bold;">每日解锁一张荷兰风情卡</div>
+        </div>
+    </div>
+    <div style="background: rgba(255,255,255,0.15); color: #FFF; font-size: 12px; font-weight: 900; padding: 6px 12px; border-radius: 10px;">去抽取 ›</div>
+</div>
+
+<div id="dailyExploreModal" class="modal-overlay" style="display: none; align-items: center; justify-content: center; padding: 20px; z-index: 999999; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);" onclick="if(event.target === this) this.style.display='none'">
+    
+    <div class="flip-card" id="dailyFlipCard" onclick="this.classList.toggle('flipped')">
+        <div class="flip-card-inner">
+            
+            <div class="flip-card-front">
+                <img id="deFrontImg" src="" alt="荷兰风情">
+                <div class="front-overlay">
+                    <div id="deFrontTag" class="front-tag">获取中...</div>
+                    <div id="deFrontTitle" class="front-title">加载中...</div>
+                    <div class="front-hint">👆 点击翻转查看详情</div>
+                </div>
+                <div id="deCopyright" class="front-copyright">© Copyright</div>
+            </div>
+            
+            <div class="flip-card-back">
+                <div style="flex: 1; overflow-y: auto; padding-bottom: 20px;">
+                    <div style="font-size: 40px; margin-bottom: 10px;">🇳🇱</div>
+                    <div id="deBackTitle" style="font-size: 20px; font-weight: 900; color: #111827; margin-bottom: 16px; line-height: 1.3;"></div>
+                    <div id="deBackDesc" style="font-size: 14px; color: #475569; line-height: 1.7; text-align: justify; font-weight: bold;"></div>
+                </div>
+                <button onclick="event.stopPropagation(); document.getElementById('dailyExploreModal').style.display='none';" style="width: 100%; background: #111827; color: #FFF; border: none; padding: 14px; border-radius: 14px; font-size: 15px; font-weight: 900; cursor: pointer; margin-top: 10px; box-shadow: 0 4px 15px rgba(17,24,39,0.2);">收下这份档案</button>
+            </div>
+
+        </div>
+    </div>
+</div>
 
         <div class="full-modal" id="survivalGameModal" style="display: none; background: #111827; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 999999; flex-direction: column;">
             <div style="padding: 15px 20px; padding-top: max(15px, env(safe-area-inset-top)); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #374151; background: #1F2937; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
@@ -126,7 +164,7 @@
             </div>
         </div>
 
-        <div style="padding: 0 20px;">
+        <!-- <div style="padding: 0 20px;">
             <div style="font-size: 16px; font-weight: 900; color: #111827; margin-bottom: 16px;">🗺️ 主线通关任务</div>
             
             <div style="background: #F1F5F9; border-radius: 12px; padding: 4px; display: flex; margin-bottom: 20px;">
@@ -148,7 +186,7 @@
             </div>
             
             <div id="starterTaskList"></div>
-        </div>
+        </div> -->
     </div>
 
     <div id="rbWikiMode" style="display: none;">
@@ -829,6 +867,7 @@
     <script src="./ui.js" defer></script>
     <script type="module" src="./js/modules/guide.js"></script>
     <script type="module" src="./js/modules/share.js"></script>
+    <script src="./js/data/daily-cards.js"></script>
 
     <script type="module" src="./js/main.js"></script>
 </body>
