@@ -2105,3 +2105,54 @@ body, .page-section, .container {
     color: #FFF !important;
     border: none !important;
 }
+
+/* ==========================================
+   ✅ 修复：新手村打卡任务卡片 (精简高级版)
+   ========================================== */
+.task-card {
+    background: #FFFFFF;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 12px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    box-shadow: 0 4px 12px rgba(17, 24, 39, 0.03);
+    border: 1px solid rgba(226, 232, 240, 0.6);
+    transition: 0.2s ease;
+}
+.task-card.done { opacity: 0.5; background: #F8FAFC; }
+
+/* 高级定制复选框 (替代丑陋的默认方块) */
+.custom-checkbox-task {
+    appearance: none; -webkit-appearance: none;
+    width: 22px; height: 22px;
+    border: 2px solid #CBD5E1;
+    border-radius: 50%;
+    cursor: pointer;
+    flex-shrink: 0;
+    position: relative;
+    margin-top: 2px;
+    transition: 0.2s;
+}
+.custom-checkbox-task:checked {
+    background: #10B981; border-color: #10B981;
+}
+.custom-checkbox-task:checked::after {
+    content: '✔'; color: white; font-size: 12px; font-weight: bold;
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+}
+
+/* 内部文字与按钮排版 */
+.task-content { flex: 1; }
+.task-title { font-size: 15px; font-weight: 800; color: #111827; margin-bottom: 4px; line-height: 1.3; }
+.task-desc { font-size: 12px; color: #64748B; line-height: 1.5; margin-bottom: 10px; }
+.task-hook-action {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #ECFDF5; color: #059669;
+    padding: 6px 12px; border-radius: 10px;
+    font-size: 12px; font-weight: 800;
+    cursor: pointer; border: 1px solid #A7F3D0;
+    transition: 0.2s;
+}
+.task-hook-action:active { transform: scale(0.95); background: #D1FAE5; }
