@@ -60,9 +60,9 @@ window.App.dailyCardsData = [
     {
         id: 'c006',
         tag: '#学制揭秘',
-        title: '永遠拿不到的 10 分',
-        // 🌟 升级：绝不再使用 general 图书馆！选用最具代表性的荷兰大学 historic academy 建筑大门或独特的 Handelingenkamert 圖書館 (一张图就知道是荷兰)
-        imgUrl: 'https://images.unsplash.com/photo-1579717148113-d096d27b952a?auto=format&fit=crop&w=800&q=80',
+        title: '永远拿不到的 10 分',
+        // 👇 换成这张稳定且极具学术压迫感的古典图书馆大图
+        imgUrl: 'https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=800&q=80',
         copyright: '© Photo by Unsplash', 
         crop: 'center', // 确保这个令人窒息的荷兰式螺旋书架完整
         desc: '<b>🎓 5.5分万岁，多一分浪费</b><br><br>荷兰的考试实行 10 分制，但在学术界有一句古老的魔咒：「10分是给上帝的，9分是给教授的，8分是天才，而我们只要拿到及格的 5.5分 (Voldoende) 就行了」。<br><br>💡 <b>管家安慰：</b>在国内习惯了科科 90 分以上的卷王们，来荷兰看到 7 分千万别哭，这已经是班里的顶级学霸了！'
