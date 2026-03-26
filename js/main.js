@@ -91,46 +91,39 @@ import { safeDOM } from './core/dom.js';
 import { ProfileEngine } from './modules/profile.js';
 
 // ==========================================
-// 🗺️ 日历卡片交互逻辑
+// 🗺️ 荷村探索档案引擎 (只负责读取和渲染)
 // ==========================================
 window.App = window.App || {};
 
-// 获取今日卡片数据
-window.App.getTodayCard = function() {
-    const dataList = window.App.dailyCardsData || [];
-    if (dataList.length === 0) return null;
+window.App.renderTodayExplore = function() {
+    // 1. 直接读取你在 daily-cards.js 里写好的数据！
+    const data = window.App.dailyCardsData || [];
+    if (data.length === 0) return;
     
-    // 根据一年中的第几天来循环读取卡片，保证每天不一样
+    // 2. 根据一年中的第几天，每天固定抽一张
     const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
-    const index = dayOfYear % dataList.length;
-    return dataList[index];
+    const index = dayOfYear % data.length;
+    const today = data[index];
+    
+    // 3. 把数据塞进首页的 3D 卡片里
+    const imgObj = document.getElementById('frontExploreImg');
+    if(imgObj){
+        imgObj.src = today.imgUrl; // 匹配数据里的 imgUrl 字段
+        imgObj.style.objectPosition = today.crop || 'center'; // 执行你配置的完美剪裁比例！
+    }
+    document.getElementById('frontExploreTag').innerText = today.tag;
+    document.getElementById('frontExploreTitle').innerText = today.title;
+    document.getElementById('exploreCopyright').innerText = today.copyright || '© Licensed Content';
+    document.getElementById('backExploreDesc').innerText = today.desc;
 };
 
-// 打开并填充卡片弹窗
-window.App.openDailyExplore = function() {
-    const todayData = window.App.getTodayCard();
-    if (!todayData) {
-        alert("卡片数据正在赶来的路上...");
-        return;
-    }
-    
-    // 每次打开强制恢复正面
-    const flipCard = document.getElementById('dailyFlipCard');
-    if(flipCard) flipCard.classList.remove('flipped');
-    
-    // 填充正面数据 (图 + 标签 + 标题 + 版权)
-    document.getElementById('deFrontImg').src = todayData.imgUrl;
-    document.getElementById('deFrontTag').innerText = todayData.tag;
-    document.getElementById('deFrontTitle').innerText = todayData.title;
-    document.getElementById('deCopyright').innerText = todayData.copyright || '© Licensed Content';
-    
-    // 填充背面数据 (文字科普)
-    document.getElementById('deBackTitle').innerText = todayData.title;
-    document.getElementById('deBackDesc').innerText = todayData.desc;
-    
-    // 显示弹窗
-    document.getElementById('dailyExploreModal').style.display = 'flex';
-};
+// 页面加载完成后自动翻牌
+document.addEventListener('DOMContentLoaded', () => {
+    // 确保数据文件优先加载后，再执行渲染
+    setTimeout(() => {
+        if(window.App.renderTodayExplore) window.App.renderTodayExplore();
+    }, 100);
+});
 
 window.App.showRewardModal = function() {
     const modal = document.getElementById('rewardGroupModal');
