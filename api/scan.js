@@ -31,12 +31,14 @@ export default async function handler(req) {
         // ==========================================
         // 🏃‍♂️ 第一棒：Gemini 提取纯净名字 (极速版)
         // ==========================================
-        const geminiPrompt = `你是一个极其严谨的荷兰超市/药妆店全品类商品录入员。请提取图片中商品的【品牌名 + 核心品名 + 核心特性】（纯文本）。
+        const geminiPrompt = `你是一个极其严谨的荷兰超市/药妆店全品类商品录入员。请从图片中提取以下信息并拼接为一段简洁的纯文本描述：
+        【品牌名】+【核心品名】+【口味/功效/场景等核心特性】+【包装上最显眼的1-2个成分或关键词，如含甘草Drop、含肉桂Cinnamon、karnemelk等】。
         ⚠️ 必须严格遵守以下提取规则：
-        1. 【必须保留 核心特性】：如口味、功效、场景。
-        2. 【坚决剔除 物理计量】：去掉重量、容量、尺寸和件数（如 500g, 1L, XXL）。
-        3. 【坚决剔除 营销废话】：去掉如 Nieuw, Bonus, Gratis, 1+1 等词。
-        只输出最终的纯文本名字，不要任何标点。看不清请回复'未识别'。`;
+        1. 【必须保留】：口味、功效、使用场景、任何可见的关键成分警示词。
+        2. 【坚决剔除】：重量、容量、尺寸、件数（如 500g, 1L, XXL）。
+        3. 【坚决剔除】：纯营销词汇（Nieuw, Bonus, Gratis, 1+1, Aanbieding）。
+        4. 如果无法识别任何有效商品信息，只回复"未识别"。
+        只输出最终的纯文本描述，不要任何额外标点或解释。`;
         
         const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${geminiKey}`, {
             method: 'POST',
