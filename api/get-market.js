@@ -15,8 +15,11 @@ export default async function handler(req) {
         
         const rateDates = Object.keys(rateData.rates);
         const rateValues = rateDates.map(date => rateData.rates[date].CNY);
+        if (rateValues.length < 1) throw new Error('汇率 API 未返回有效数据');
         const currentRate = rateValues[rateValues.length - 1].toFixed(2);
-        const rateChange = (rateValues[rateValues.length - 1] - rateValues[rateValues.length - 2]).toFixed(4);
+        const rateChange = rateValues.length >= 2
+            ? (rateValues[rateValues.length - 1] - rateValues[rateValues.length - 2]).toFixed(4)
+            : '0.0000';
 
         // ================= 2. 获取荷兰今日电价 (EnergyZero API，今日24小时) =================
         const today = new Date();
