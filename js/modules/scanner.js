@@ -22,7 +22,7 @@ export const ScannerEngine = {
     },
 
     // 🌟 前端 Canvas 极速图片压缩
-    compressImage(file, maxWidth = 800, quality = 0.6) {
+    compressImage(file, maxWidth = 600, quality = 0.65) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.readAsDataURL(file);
@@ -66,7 +66,7 @@ export const ScannerEngine = {
         safeDOM.execute('scanText', el => el.innerText = "📡 正在压缩图片...");
 
         try {
-            const compressedImage = await this.compressImage(file, 800, 0.6);
+            const compressedImage = await this.compressImage(file, 600, 0.65);
             safeDOM.execute('previewImg', el => { el.src = compressedImage; el.style.display = 'block'; });
             safeDOM.execute('scanText', el => el.innerText = "🧠 大脑飞速解析中...");
 
@@ -96,10 +96,10 @@ export const ScannerEngine = {
             if (sessionId === currentScanSession) {
                 safeDOM.execute('scanText', el => el.innerText = "❌ 解析失败: " + (error.message || "请重试"));
                 setTimeout(() => {
-                    safeDOM.execute('scanOverlay', el => el.style.display = 'none'); 
+                    safeDOM.execute('scanOverlay', el => el.style.display = 'none');
                     safeDOM.execute('previewContainer', el => el.style.display = 'none');
                     safeDOM.execute('homeActionBox', el => el.style.display = 'flex');
-                }, 2000);
+                }, 150);
             }
         } finally {
             event.target.value = '';
@@ -122,7 +122,7 @@ export const ScannerEngine = {
 
         try {
             // 用户上传也进行极速 Canvas 压缩
-            const compressedImage = await this.compressImage(file, 800, 0.6);
+            const compressedImage = await this.compressImage(file, 600, 0.65);
             
             // 1. 更新当前内存数据
             currentProductData.scanned_img = compressedImage;
