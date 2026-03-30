@@ -2,9 +2,12 @@
 // js/modules/market.js - 集市与发布引擎 (高级全面屏 UI 精调版)
 // ============================================================================
 import { showToast } from '../core/toast.js';
-import { safeDOM } from '../core/dom.js'; 
+import { safeDOM } from '../core/dom.js';
 import { ModalManager } from '../components/modals.js';
-import { ChatEngine } from './chat.js'; 
+import { ChatEngine } from './chat.js';
+
+// 🛡️ XSS 防护：转义所有注入 innerHTML 的用户数据
+const escapeHTML = (str) => String(str ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 let selectedImagesArray = [];
 let mockIdleItems = []; 
@@ -179,22 +182,22 @@ export const MarketEngine = {
             let itemsList = item.contentObj?.items; if (!itemsList || itemsList.length === 0) itemsList = [{ url: item.img }];
             const itemCount = itemsList.length;
             const multiBadge = itemCount > 1 ? `<div style="position:absolute; top:6px; right:6px; background:rgba(0,0,0,0.5); color:#FFF; font-size:9px; padding:2px 6px; border-radius:10px; font-weight:bold;">📸 ${itemCount}</div>` : '';
-            const city = item.contentObj?.city || '荷兰';
+            const city = escapeHTML(item.contentObj?.city || '荷兰');
             let imagesHtml = '';
-            itemsList.forEach(subItem => { imagesHtml += `<div style="flex-shrink:0; width:100%; aspect-ratio: 1 / 1.05; scroll-snap-align:start; position:relative;"><img src="${subItem.url}" style="width:100%; height:100%; object-fit:cover; display:block;">${subItem.is_sold ? `<div style="position:absolute; top:6px; left:6px; background:rgba(0,0,0,0.6); color:white; padding:2px 6px; border-radius:4px; font-size:9px;">已售出</div>` : ''}</div>`; });
-            const isAllSold = item.isAllSold; const priceDisplay = isAllSold ? '已售罄' : `€ ${item.price}`;
+            itemsList.forEach(subItem => { imagesHtml += `<div style="flex-shrink:0; width:100%; aspect-ratio: 1 / 1.05; scroll-snap-align:start; position:relative;"><img src="${escapeHTML(subItem.url)}" style="width:100%; height:100%; object-fit:cover; display:block;">${subItem.is_sold ? `<div style="position:absolute; top:6px; left:6px; background:rgba(0,0,0,0.6); color:white; padding:2px 6px; border-radius:4px; font-size:9px;">已售出</div>` : ''}</div>`; });
+            const isAllSold = item.isAllSold; const priceDisplay = isAllSold ? '已售罄' : `€ ${escapeHTML(item.price)}`;
             html += `
-            <div class="waterfall-item" style="background:#FFF; border-radius:10px; border: 0.5px solid rgba(0,0,0,0.04); overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.03); margin-bottom:8px; cursor:pointer; opacity: ${isAllSold ? '0.6' : '1'}; transition: opacity 0.3s;" onclick="window.App.openCommunityPost('${item.id}')">
+            <div class="waterfall-item" style="background:#FFF; border-radius:10px; border: 0.5px solid rgba(0,0,0,0.04); overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.03); margin-bottom:8px; cursor:pointer; opacity: ${isAllSold ? '0.6' : '1'}; transition: opacity 0.3s;" onclick="window.App.openCommunityPost('${escapeHTML(item.id)}')">
                 <div style="position:relative; width:100%;"><div style="display:flex; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; width:100%;">${imagesHtml}</div>${multiBadge}</div>
                 <div style="padding:8px;">
                     <div style="display:flex; align-items:center; justify-content:space-between;">
                         <div style="color:${isAllSold ? '#9CA3AF' : '#EF4444'}; font-size:15px; font-weight:900;">${priceDisplay}</div>
-                        <div style="font-size:9px; color:#D97706; font-weight:bold; background:#FFFBEB; border:0.5px solid #FDE68A; padding:1px 4px; border-radius:4px;">⭐ ${item.credit || 100}</div>
+                        <div style="font-size:9px; color:#D97706; font-weight:bold; background:#FFFBEB; border:0.5px solid #FDE68A; padding:1px 4px; border-radius:4px;">⭐ ${escapeHTML(item.credit || 100)}</div>
                     </div>
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; border-top:0.5px dashed #F3F4F6; padding-top:8px;">
                         <div style="display:flex; align-items:center; gap:4px; overflow:hidden;">
-                            <span style="font-size:12px; background:#F8FAFC; width:18px; height:18px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">${item.avatar}</span>
-                            <span style="font-size:10px; font-weight:bold; color:#64748B; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:55px;">${item.author}</span>
+                            <span style="font-size:12px; background:#F8FAFC; width:18px; height:18px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">${escapeHTML(item.avatar)}</span>
+                            <span style="font-size:10px; font-weight:bold; color:#64748B; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:55px;">${escapeHTML(item.author)}</span>
                         </div>
                         <div style="font-size:9px; color:#64748B; font-weight:bold; background:#F1F5F9; padding:2px 6px; border-radius:8px; flex-shrink:0;">📍 ${city}</div>
                     </div>
@@ -221,15 +224,15 @@ export const MarketEngine = {
         let html = '<div style="column-count: 2; column-gap: 8px;">';
         processData.forEach(post => {
             const isUrgent = post.contentObj?.urgent === '十万火急';
-            const titleStr = post.title.replace('[互助] ', '');
+            const titleStr = escapeHTML(post.title.replace('[互助] ', ''));
             let descStr = post.contentObj?.desc || post.contentObj?.text || '';
-            descStr = String(descStr).replace(/\\n/g, '\n').replace(/搬运物品清单：|起点.*：|终点.*：|需要几人帮忙：/g, ' ').trim(); 
-            const city = post.contentObj?.city || '荷兰';
+            descStr = escapeHTML(String(descStr).replace(/\\n/g, '\n').replace(/搬运物品清单：|起点.*：|终点.*：|需要几人帮忙：/g, ' ').trim());
+            const city = escapeHTML(post.contentObj?.city || '荷兰');
 
             html += `
-            <div class="waterfall-item" style="break-inside: avoid; background:#FFF; border-radius:12px; padding:10px; margin-bottom:8px; box-shadow:0 4px 12px rgba(0,0,0,0.03); border:1px solid ${isUrgent ? '#FECACA' : '#F1F5F9'}; cursor:pointer; display:flex; flex-direction:column; gap:8px;" onclick="window.App.initiateHelpChat('${post.id}')">
+            <div class="waterfall-item" style="break-inside: avoid; background:#FFF; border-radius:12px; padding:10px; margin-bottom:8px; box-shadow:0 4px 12px rgba(0,0,0,0.03); border:1px solid ${isUrgent ? '#FECACA' : '#F1F5F9'}; cursor:pointer; display:flex; flex-direction:column; gap:8px;" onclick="window.App.initiateHelpChat('${escapeHTML(post.id)}')">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                    <div style="font-size:18px; font-weight:900; color:#EF4444; line-height:1; letter-spacing:-0.5px;">€${post.likes || 0}</div>
+                    <div style="font-size:18px; font-weight:900; color:#EF4444; line-height:1; letter-spacing:-0.5px;">€${escapeHTML(post.likes || 0)}</div>
                     ${isUrgent ? `<div style="background:#FEF2F2; color:#DC2626; padding:2px 4px; border-radius:4px; font-size:9px; font-weight:900;">🚨 急单</div>` : ''}
                 </div>
                 <div style="font-size:13px; font-weight:900; color:#111827; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${titleStr}</div>
@@ -272,22 +275,22 @@ export const MarketEngine = {
         let html = '<div style="column-count: 2; column-gap: 8px;">';
         const currentUserId = localStorage.getItem('hebao_uuid');
         processData.forEach(post => {
-            const titleStr = post.title.replace('[找搭子] ', '').replace('[搭子] ', '');
-            let cleanDesc = String(post.contentObj?.desc || post.contentObj?.text || '').replace(/\\n/g, '\n').replace(/⏱️ 时间：.*?\n👥 队伍：.*?\n\n/g, '').trim();
-            const city = post.contentObj?.city || '荷兰';
-            const date = post.contentObj?.time || post.contentObj?.date || '待定'; 
-            const tagStr = post.contentObj?.tag || '组局';
-            const joined = parseInt(post.contentObj?.joinedCount) || 1; 
-            const max = parseInt(post.contentObj?.maxPeople) || 2;      
-            const isHost = currentUserId === post.user_id;              
+            const titleStr = escapeHTML(post.title.replace('[找搭子] ', '').replace('[搭子] ', ''));
+            let cleanDesc = escapeHTML(String(post.contentObj?.desc || post.contentObj?.text || '').replace(/\\n/g, '\n').replace(/⏱️ 时间：.*?\n👥 队伍：.*?\n\n/g, '').trim());
+            const city = escapeHTML(post.contentObj?.city || '荷兰');
+            const date = escapeHTML(post.contentObj?.time || post.contentObj?.date || '待定');
+            const tagStr = escapeHTML(post.contentObj?.tag || '组局');
+            const joined = parseInt(post.contentObj?.joinedCount) || 1;
+            const max = parseInt(post.contentObj?.maxPeople) || 2;
+            const isHost = currentUserId === post.user_id;
 
             // 🌟 核心提取：读取帖子的鸽子次数 (模拟后端拉取，如果后端没字段就去读本地的缓存模拟)
             // 真实生产环境：这里应该直接用 post.flakeCount 或者 post.author_flakeCount
             const flakeCount = parseInt(post.flakeCount) || 0;
-            const attendanceRate = post.attendanceRate || '100%';
+            const attendanceRate = escapeHTML(post.attendanceRate || '100%');
 
             html += `
-            <div class="waterfall-item" style="break-inside: avoid; background:#FFF; border-radius:12px; padding:10px; margin-bottom:8px; box-shadow:0 4px 12px rgba(0,0,0,0.03); border:1px solid #F3E8FF; cursor:pointer; display:flex; flex-direction:column; gap:8px;" onclick="window.App.initiatePartnerChat('${post.id}')">
+            <div class="waterfall-item" style="break-inside: avoid; background:#FFF; border-radius:12px; padding:10px; margin-bottom:8px; box-shadow:0 4px 12px rgba(0,0,0,0.03); border:1px solid #F3E8FF; cursor:pointer; display:flex; flex-direction:column; gap:8px;" onclick="window.App.initiatePartnerChat('${escapeHTML(post.id)}')">
                 <div style="font-size:13px; font-weight:900; color:#4C1D95; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${titleStr}</div>
                 <div style="display:flex; gap:4px; flex-wrap:wrap;">
                     ${tagStr !== titleStr ? `<span style="font-size:9px; font-weight:bold; color:#7E22CE; background:#F3E8FF; padding:2px 6px; border-radius:4px;">${tagStr}</span>` : ''}
@@ -387,12 +390,12 @@ export const MarketEngine = {
             selectedImagesArray.forEach((img) => { 
                 html += `
                 <div class="item-edit-card" style="width: 125px; flex-shrink: 0; position: relative; border: 1px solid #E5E7EB; border-radius: 12px; background: #FFF; box-shadow: 0 4px 12px rgba(0,0,0,0.03); display: flex; flex-direction: column; overflow: hidden;">
-                    <img src="${img.preview}" style="width: 100%; height: 110px; object-fit: cover; display: block; border-bottom: 1px solid #F3F4F6;">
+                    <img src="${escapeHTML(img.preview)}" style="width: 100%; height: 110px; object-fit: cover; display: block; border-bottom: 1px solid #F3F4F6;">
                     <div style="padding: 10px; display: flex; flex-direction: column; gap: 8px; background: #FFF;">
-                        <input type="text" placeholder="品名" value="${img.name}" onchange="window.App.updateItemData(${img.id}, 'name', this.value)" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid #E2E8F0; border-radius: 6px; font-size: 12px; font-weight: bold; outline: none; background: #F8FAFC;">
+                        <input type="text" placeholder="品名" value="${escapeHTML(img.name)}" onchange="window.App.updateItemData(${img.id}, 'name', this.value)" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid #E2E8F0; border-radius: 6px; font-size: 12px; font-weight: bold; outline: none; background: #F8FAFC;">
                         <div style="display: flex; align-items: center; border: 1px solid #E2E8F0; border-radius: 6px; padding: 0 8px; background: #F8FAFC;">
                             <span style="font-size: 11px; color: #64748B; font-weight: 900;">€</span>
-                            <input type="number" placeholder="价格" value="${img.price}" onchange="window.App.updateItemData(${img.id}, 'price', this.value)" style="width: 100%; box-sizing: border-box; padding: 6px 4px; border: none; background: transparent; font-size: 13px; font-weight: bold; color: #EF4444; outline: none;">
+                            <input type="number" placeholder="价格" value="${escapeHTML(img.price)}" onchange="window.App.updateItemData(${img.id}, 'price', this.value)" style="width: 100%; box-sizing: border-box; padding: 6px 4px; border: none; background: transparent; font-size: 13px; font-weight: bold; color: #EF4444; outline: none;">
                         </div>
                     </div>
                     <div class="item-del-btn" onclick="window.App.removeImage(${img.id})" style="position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,0.6); color: #FFF; width: 22px; height: 22px; border-radius: 11px; display: flex; justify-content: center; align-items: center; font-size: 12px; cursor: pointer;">✕</div>
@@ -468,10 +471,10 @@ export const MarketEngine = {
                 sellerInfo.innerHTML = `
                     <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
                         <div style="display:flex; align-items:center; gap:12px;">
-                            <div class="pd-seller-avatar" style="font-size:32px;">${post.avatar || '😎'}</div>
+                            <div class="pd-seller-avatar" style="font-size:32px;">${escapeHTML(post.avatar || '😎')}</div>
                             <div style="display:flex; flex-direction:column; gap:2px;">
-                                <div class="pd-seller-name" style="font-weight:900; font-size:15px;">${post.author_name || post.name || '热心校友'}</div>
-                                <div class="pd-seller-time" style="font-size:11px; color:#D97706; font-weight:bold;">⭐ 信用分: ${post.credit || 100}分</div>
+                                <div class="pd-seller-name" style="font-weight:900; font-size:15px;">${escapeHTML(post.author_name || post.name || '热心校友')}</div>
+                                <div class="pd-seller-time" style="font-size:11px; color:#D97706; font-weight:bold;">⭐ 信用分: ${escapeHTML(post.credit || 100)}分</div>
                             </div>
                         </div>
                     </div>`;
@@ -496,19 +499,19 @@ export const MarketEngine = {
                         const cardClass = isSold ? 'pd-item-card sold' : 'pd-item-card';
                         
                         itemsHtml += `
-                        <div class="${cardClass}" style="position:relative; margin-bottom:12px; border-radius:12px; overflow:hidden; box-shadow:0 4px 10px rgba(0,0,0,0.05);" onclick="${isSold ? '' : `window.App.toggleItemCard(this, '${item.id}', ${priceNum})`}">
-                            <img class="pd-item-img" src="${item.url || 'https://via.placeholder.com/400'}" style="height: 240px; width: 100%; object-fit: cover; display:block;">
-                            
-                            <div onclick="event.stopPropagation(); window.App.viewImageFull('${item.url || 'https://via.placeholder.com/400'}')" style="position:absolute; top:12px; left:12px; background:rgba(255,255,255,0.9); color:#111827; width:36px; height:36px; border-radius:18px; display:flex; justify-content:center; align-items:center; box-shadow:0 4px 12px rgba(0,0,0,0.15); cursor:pointer; font-size:18px; z-index:10;">
+                        <div class="${escapeHTML(cardClass)}" style="position:relative; margin-bottom:12px; border-radius:12px; overflow:hidden; box-shadow:0 4px 10px rgba(0,0,0,0.05);" onclick="${isSold ? '' : `window.App.toggleItemCard(this, '${escapeHTML(item.id)}', ${priceNum})`}">
+                            <img class="pd-item-img" src="${escapeHTML(item.url || 'https://via.placeholder.com/400')}" style="height: 240px; width: 100%; object-fit: cover; display:block;">
+
+                            <div onclick="event.stopPropagation(); window.App.viewImageFull('${escapeHTML(item.url || 'https://via.placeholder.com/400')}')" style="position:absolute; top:12px; left:12px; background:rgba(255,255,255,0.9); color:#111827; width:36px; height:36px; border-radius:18px; display:flex; justify-content:center; align-items:center; box-shadow:0 4px 12px rgba(0,0,0,0.15); cursor:pointer; font-size:18px; z-index:10;">
                                 🔍
                             </div>
 
                             <div class="pd-item-overlay" style="position: absolute; bottom: 0; left: 0; right: 0; padding: 15px; background: linear-gradient(transparent, rgba(0,0,0,0.8)); color: white; display: flex; justify-content: space-between; align-items: flex-end;">
                                 <div style="flex:1; overflow:hidden; padding-right:10px;">
-                                    <div class="pd-item-name" style="font-weight:bold; font-size:15px; text-shadow:0 1px 2px rgba(0,0,0,0.5);">${item.name || '闲置好物'}</div>
-                                    <div class="pd-item-price" style="font-weight:900; font-size:20px; color:#FCD34D; text-shadow:0 1px 2px rgba(0,0,0,0.5);">€${item.price}</div>
+                                    <div class="pd-item-name" style="font-weight:bold; font-size:15px; text-shadow:0 1px 2px rgba(0,0,0,0.5);">${escapeHTML(item.name || '闲置好物')}</div>
+                                    <div class="pd-item-price" style="font-weight:900; font-size:20px; color:#FCD34D; text-shadow:0 1px 2px rgba(0,0,0,0.5);">€${escapeHTML(item.price)}</div>
                                 </div>
-                                ${isSold ? '<div class="pd-sold-badge" style="background:rgba(0,0,0,0.6); padding:4px 8px; border-radius:6px; font-size:12px;">已售出</div>' : `<input type="checkbox" class="custom-checkbox" id="chk_${item.id}" onclick="event.stopPropagation(); window.App.toggleItemCheckbox(this, '${item.id}', ${priceNum})" style="transform:scale(1.5); margin:0 5px 5px 0;">`}
+                                ${isSold ? '<div class="pd-sold-badge" style="background:rgba(0,0,0,0.6); padding:4px 8px; border-radius:6px; font-size:12px;">已售出</div>' : `<input type="checkbox" class="custom-checkbox" id="chk_${escapeHTML(item.id)}" onclick="event.stopPropagation(); window.App.toggleItemCheckbox(this, '${escapeHTML(item.id)}', ${priceNum})" style="transform:scale(1.5); margin:0 5px 5px 0;">`}
                             </div>
                         </div>`;
                     });
@@ -528,7 +531,13 @@ export const MarketEngine = {
             overlay.onclick = () => { overlay.style.opacity = '0'; setTimeout(() => { overlay.style.display = 'none'; }, 200); };
             document.body.appendChild(overlay);
         }
-        overlay.innerHTML = `<img src="${url}" style="max-width:95vw; max-height:85vh; object-fit:contain; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.5);"><div style="color:rgba(255,255,255,0.7); margin-top:20px; font-size:13px; font-weight:bold; letter-spacing:1px;">点击任意处关闭</div>`;
+        const imgEl = document.createElement('img');
+        imgEl.src = url;
+        imgEl.style.cssText = 'max-width:95vw; max-height:85vh; object-fit:contain; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.5);';
+        const captionEl = document.createElement('div');
+        captionEl.style.cssText = 'color:rgba(255,255,255,0.7); margin-top:20px; font-size:13px; font-weight:bold; letter-spacing:1px;';
+        captionEl.textContent = '点击任意处关闭';
+        overlay.replaceChildren(imgEl, captionEl);
         overlay.style.display = 'flex';
         setTimeout(() => { overlay.style.opacity = '1'; }, 10);
     },
@@ -635,7 +644,8 @@ if (typeof window !== 'undefined') {
 // ============================================================================
 document.addEventListener('DOMContentLoaded', () => {
     // 1. 监听聊天弹窗的打开，动态植入【删除】按钮
-    const observer = new MutationObserver((mutations) => {
+    const chatModalTarget = document.getElementById('chatModal') || document.body;
+    const observer = new MutationObserver((mutations, obs) => {
         const chatModal = document.getElementById('chatModal');
         // 当聊天框弹出来的时候
         if (chatModal && chatModal.style.display === 'block') {
@@ -644,7 +654,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 在右上角注入一个红色垃圾桶按钮
                 const delBtn = document.createElement('div');
                 delBtn.id = 'deleteChatBtn';
-                delBtn.innerHTML = '🗑️ 删除';
+                delBtn.textContent = '🗑️ 删除';
                 delBtn.style.cssText = 'color:#EF4444; font-size:12px; font-weight:bold; cursor:pointer; background:#FEF2F2; padding:6px 10px; border-radius:8px; margin-right:10px; box-shadow:0 2px 4px rgba(239,68,68,0.1);';
                 
                 delBtn.onclick = () => {
@@ -681,6 +691,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 开始监控页面
-    observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+    // 仅监控 chatModal（存在时）或 body 作为兜底，且去掉 attributes 监听以提升性能
+    const chatModalEl = document.getElementById('chatModal');
+    observer.observe(chatModalEl || document.body, { childList: true, subtree: true });
 });
