@@ -589,3 +589,22 @@
     transform: scale(0.96) !important;
     box-shadow: 0 2px 6px rgba(16, 185, 129, 0.15) !important;
 }
+
+/* ============================================================================
+   集市顶部：紧凑顶栏适配
+   ============================================================================ */
+
+/* 集市 Tab 去掉原有的大外边距，由顶栏统一控制间距 */
+#page-market .market-tabs {
+    margin-bottom: 10px !important;
+}
+
+/* filter-bar 首个元素对齐 */
+#dynamicFilterBar {
+    margin-top: 4px !important;
+}
+
+/* SOS 条圆角适配（内嵌时用圆角，不再铺满全宽） */
+#sosBroadcast {
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.1) !important;
+}

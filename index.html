@@ -375,33 +375,48 @@
     </div>
 
     <div id="page-market" class="page-section">
-        <div class="header" style="text-align: left; margin-top: 0;">
-            <h1 class="title">管家集市 📦</h1>
-            <div class="subtitle" style="margin-bottom: 20px;">闲置交易与互助悬赏，全员实名认证</div>
+
+        <!-- 紧凑顶栏：标题 + SOS角标 合并为单行 -->
+        <div id="marketTopBar" style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 0; margin-top: calc(10px + env(safe-area-inset-top));">
+            <div style="display: flex; align-items: baseline; gap: 8px;">
+                <span style="font-size: 19px; font-weight: 900; color: #111827; letter-spacing: -0.3px;">管家集市</span>
+                <span style="font-size: 11px; color: #9CA3AF; font-weight: 600;">全员实名认证</span>
+            </div>
+            <!-- SOS 角标：点击展开紧急求助条 -->
+            <div id="sosBadge" onclick="document.getElementById('sosBroadcast').style.display='flex'; this.style.display='none';" style="display: flex; align-items: center; gap: 5px; background: #FEF2F2; border: 1px solid #FECACA; border-radius: 20px; padding: 5px 10px; cursor: pointer; transition: 0.2s;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">
+                <span style="font-size: 12px; animation: sosPulse 1.5s infinite; display: inline-block;">🆘</span>
+                <span style="font-size: 11px; font-weight: 800; color: #DC2626;">紧急求助</span>
+                <span id="sosBadgeCount" style="background: #EF4444; color: #FFF; font-size: 9px; font-weight: 900; padding: 1px 5px; border-radius: 10px; line-height: 1.5;">1</span>
+            </div>
         </div>
 
-        <div class="sos-broadcast-bar" id="sosBroadcast" style="display: flex;">
+        <!-- SOS 紧急求助条：默认收起，点角标展开 -->
+        <div class="sos-broadcast-bar" id="sosBroadcast" style="display: none; margin: 10px 16px 0; border-radius: 14px;">
             <div class="sos-pulse">🆘</div>
             <div class="sos-text-box">
                 <div class="sos-title">鹿特丹荷包蛋紧急求助！</div>
                 <div class="sos-desc">钱包落在火车上了，没卡出不了站，求好心人借20欧买票，到了秒还！🙏</div>
             </div>
-            <button class="sos-action-btn" onclick="alert('已为您优先建立安全对话通道！')">帮一把</button>
+            <div style="display: flex; flex-direction: column; gap: 5px; flex-shrink: 0; align-items: flex-end;">
+                <button class="sos-action-btn" onclick="alert('已为您优先建立安全对话通道！')">帮一把</button>
+                <button onclick="this.closest('#sosBroadcast').style.display='none'; document.getElementById('sosBadge').style.display='flex';" style="background: none; border: none; font-size: 10px; color: #9CA3AF; cursor: pointer; font-weight: 600; padding: 2px 0;">收起</button>
+            </div>
         </div>
-        
-        <div class="market-tabs">
+
+        <!-- Tab 导航：紧贴顶栏，无多余间距 -->
+        <div class="market-tabs" style="margin: 10px 16px 0;">
             <div class="m-tab active" onclick="switchMarketTab('idle', this)">🏷️ 闲置</div>
             <div class="m-tab" onclick="switchMarketTab('help', this)">🤝 悬赏</div>
             <div class="m-tab" onclick="switchMarketTab('partner', this)">🏕️ 搭子</div>
         </div>
 
-        <div id="dynamicFilterBar" style="padding: 0 20px; margin-bottom: 15px; display: flex; gap: 10px; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; scrollbar-width: none; align-items: center;">
+        <div id="dynamicFilterBar" style="padding: 0 16px; margin-bottom: 12px; display: flex; gap: 10px; overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch; scrollbar-width: none; align-items: center;">
                    </div>
-            <div id="idleWaterfall" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 20px 100px;"></div>
+            <div id="idleWaterfall" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 16px 100px;"></div>
 
-        <div id="helpListContainer" style="display: none; padding: 0 20px 100px;"></div>
+        <div id="helpListContainer" style="display: none; padding: 0 16px 100px;"></div>
 
-        <div id="partnerListContainer" style="display: none; padding: 0 20px 100px;"></div>
+        <div id="partnerListContainer" style="display: none; padding: 0 16px 100px;"></div>
 
     </div>
 
@@ -411,9 +426,19 @@
             <div class="subtitle">与荷包蛋的安全对话</div>
         </div>
         <div id="conversationList" style="margin-top: 15px;"></div>
-        <div class="empty-state" id="msgEmptyState" style="display: none;">
-            <div class="empty-state-icon">📫</div>
-            暂时没有新消息
+        <div id="msgEmptyState" style="display: none; padding: 20px 20px 40px;">
+            <div style="background: #FFF; border-radius: 20px; padding: 36px 24px 28px; border: 1px solid #F1F5F9; box-shadow: 0 4px 20px rgba(17,24,39,0.03); text-align: center;">
+                <svg width="88" height="72" viewBox="0 0 88 72" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom: 18px; display: block; margin-left: auto; margin-right: auto;">
+                    <rect x="6" y="12" width="76" height="50" rx="10" fill="#F0FDF4" stroke="#A7F3D0" stroke-width="1.5"/>
+                    <rect x="14" y="20" width="60" height="34" rx="6" fill="#ECFDF5"/>
+                    <path d="M14 26l30 18 30-18" stroke="#6EE7B7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    <circle cx="68" cy="18" r="10" fill="#FEF3C7" stroke="#FDE68A" stroke-width="1.5"/>
+                    <path d="M68 14v5M68 21v1" stroke="#D97706" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                <div style="font-size: 16px; font-weight: 900; color: #111827; margin-bottom: 8px;">收件箱空空如也</div>
+                <div style="font-size: 13px; color: #6B7280; line-height: 1.6; margin-bottom: 24px;">和感兴趣的帖子主人发起对话<br>这里会出现你们的私信记录</div>
+                <button onclick="switchTab('market', document.querySelector('.tab-item[onclick*=market]'))" style="background: #111827; color: #FFF; border: none; padding: 12px 28px; border-radius: 24px; font-size: 14px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(17,24,39,0.2); transition: 0.2s;" onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='scale(1)'">去集市逛逛 →</button>
+            </div>
         </div>
     </div>
 
@@ -477,25 +502,75 @@
                 <div id="myPostsList">
                     <div style="text-align:center; padding:40px 0; color:#9CA3AF;"><span class="pulse-dot" style="background:#10B981;"></span> 拉取数据中...</div>
                 </div>
-                <div class="empty-state" id="postsEmptyState" style="display:none; text-align: center; padding: 40px 0; color: #94A3B8;">
-                    <div style="font-size: 32px; margin-bottom: 10px;">📭</div>还没有发布过帖子哦
+                <div id="postsEmptyState" style="display:none; padding: 8px 0 20px;">
+                    <div style="background: #F8FAFC; border-radius: 16px; padding: 32px 20px 24px; text-align: center; border: 1px dashed #E2E8F0;">
+                        <svg width="72" height="64" viewBox="0 0 72 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom: 14px; display: block; margin-left: auto; margin-right: auto;">
+                            <rect x="10" y="8" width="52" height="48" rx="8" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1.5"/>
+                            <rect x="18" y="16" width="36" height="4" rx="2" fill="#CBD5E1"/>
+                            <rect x="18" y="24" width="28" height="3" rx="1.5" fill="#E2E8F0"/>
+                            <rect x="18" y="31" width="22" height="3" rx="1.5" fill="#E2E8F0"/>
+                            <circle cx="54" cy="50" r="12" fill="#10B981"/>
+                            <path d="M49 50h10M54 45v10" stroke="#FFF" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        <div style="font-size: 15px; font-weight: 900; color: #111827; margin-bottom: 6px;">还没发布过任何帖子</div>
+                        <div style="font-size: 12px; color: #9CA3AF; line-height: 1.6; margin-bottom: 20px;">发布闲置、求助悬赏或找搭子<br>记录都会出现在这里</div>
+                        <button onclick="window.App && window.App.openPublishSheet()" style="background: #10B981; color: #FFF; border: none; padding: 10px 24px; border-radius: 20px; font-size: 13px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(16,185,129,0.25); transition: 0.2s;" onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='scale(1)'">立即发布第一条 +</button>
+                    </div>
                 </div>
             </div>
             
             <div id="asset-collections" class="asset-content" style="display: none;">
                 <div id="myCollectionsList">
-                    <div style="text-align:center; padding:40px 0; color:#9CA3AF;">暂无收藏</div>
+                    <div style="padding: 8px 0 20px;">
+                        <div style="background: #F8FAFC; border-radius: 16px; padding: 32px 20px 24px; text-align: center; border: 1px dashed #E2E8F0;">
+                            <svg width="72" height="64" viewBox="0 0 72 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom: 14px; display: block; margin-left: auto; margin-right: auto;">
+                                <path d="M36 52L18 36C14 32 14 26 18 22C22 18 28 18 32 22L36 26L40 22C44 18 50 18 54 22C58 26 58 32 54 36L36 52Z" fill="#FEF2F2" stroke="#FECACA" stroke-width="1.5" stroke-linejoin="round"/>
+                                <path d="M36 46L22 32C20 30 20 27 22 25C24 23 27 23 29 25L36 32L43 25C45 23 48 23 50 25C52 27 52 30 50 32L36 46Z" fill="#FCA5A5" stroke="none"/>
+                            </svg>
+                            <div style="font-size: 15px; font-weight: 900; color: #111827; margin-bottom: 6px;">收藏夹空空的</div>
+                            <div style="font-size: 12px; color: #9CA3AF; line-height: 1.6; margin-bottom: 20px;">在红宝书左滑卡片可以收藏干货<br>喜欢的内容不再错过</div>
+                            <button onclick="switchTab('tips', document.querySelector('.tab-item[onclick*=tips]'))" style="background: #111827; color: #FFF; border: none; padding: 10px 24px; border-radius: 20px; font-size: 13px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(17,24,39,0.15); transition: 0.2s;" onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='scale(1)'">去红宝书收藏 →</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div id="asset-footprint" class="asset-content" style="display: none;">
                 <div id="footprintList">
-                    <div style="text-align:center; padding:40px 0; color:#9CA3AF;">暂无扫码记录哦</div>
+                    <div style="padding: 8px 0 20px;">
+                        <div style="background: #F8FAFC; border-radius: 16px; padding: 32px 20px 24px; text-align: center; border: 1px dashed #E2E8F0;">
+                            <svg width="72" height="64" viewBox="0 0 72 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom: 14px; display: block; margin-left: auto; margin-right: auto;">
+                                <ellipse cx="28" cy="24" rx="8" ry="11" fill="#E0F2FE" stroke="#BAE6FD" stroke-width="1.5"/>
+                                <ellipse cx="44" cy="32" rx="7" ry="10" fill="#E0F2FE" stroke="#BAE6FD" stroke-width="1.5"/>
+                                <ellipse cx="26" cy="24" rx="4" ry="6" fill="#7DD3FC"/>
+                                <ellipse cx="42" cy="32" rx="4" ry="6" fill="#7DD3FC"/>
+                                <path d="M20 48C22 44 26 42 28 44" stroke="#94A3B8" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                                <path d="M52 48C50 44 46 42 44 44" stroke="#94A3B8" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                            </svg>
+                            <div style="font-size: 15px; font-weight: 900; color: #111827; margin-bottom: 6px;">还没有扫码记录</div>
+                            <div style="font-size: 12px; color: #9CA3AF; line-height: 1.6; margin-bottom: 20px;">扫描超市商品条码<br>管家帮你识别成分与避雷信息</div>
+                            <button onclick="window.App && window.App.openScanner()" style="background: #3B82F6; color: #FFF; border: none; padding: 10px 24px; border-radius: 20px; font-size: 13px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(59,130,246,0.25); transition: 0.2s;" onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='scale(1)'">扫码识别商品 📸</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div id="asset-reviews" class="asset-content" style="display: none;">
-                <div style="text-align:center; padding:40px 0; color:#9CA3AF;">暂无评价</div>
+                <div style="padding: 8px 0 20px;">
+                    <div style="background: #F8FAFC; border-radius: 16px; padding: 32px 20px 24px; text-align: center; border: 1px dashed #E2E8F0;">
+                        <svg width="72" height="64" viewBox="0 0 72 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-bottom: 14px; display: block; margin-left: auto; margin-right: auto;">
+                            <rect x="10" y="10" width="52" height="36" rx="10" fill="#FFFBEB" stroke="#FDE68A" stroke-width="1.5"/>
+                            <rect x="10" y="34" width="24" height="18" rx="4" fill="#FFFBEB" stroke="#FDE68A" stroke-width="1.5"/>
+                            <path d="M20 22h32M20 29h20" stroke="#FDE68A" stroke-width="1.5" stroke-linecap="round"/>
+                            <path d="M22 46L14 54" stroke="#FDE68A" stroke-width="1.5" stroke-linecap="round"/>
+                            <circle cx="52" cy="42" r="10" fill="#FFFBEB" stroke="#FDE68A" stroke-width="1.5"/>
+                            <path d="M48 42l3 3 5-5" stroke="#D97706" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                        </svg>
+                        <div style="font-size: 15px; font-weight: 900; color: #111827; margin-bottom: 6px;">还没有留下评价</div>
+                        <div style="font-size: 12px; color: #9CA3AF; line-height: 1.6; margin-bottom: 20px;">扫描商品并试用后<br>在足迹中留下真实点评，帮助其他荷包蛋</div>
+                        <button onclick="switchTab('tips', document.querySelector('.tab-item[onclick*=tips]'))" style="background: #F59E0B; color: #FFF; border: none; padding: 10px 24px; border-radius: 20px; font-size: 13px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(245,158,11,0.25); transition: 0.2s;" onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='scale(1)'">去发现好物 →</button>
+                    </div>
+                </div>
             </div>
         </div>
 
