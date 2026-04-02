@@ -147,7 +147,62 @@ export const MarketEngine = {
             this.renderMarketIdle(); this.renderMarketHelp(); this.renderMarketPartner();
             const currentTab = window.App.currentMarketTab || 'idle';
             if (window.switchMarketTab) window.switchMarketTab(currentTab);
+
+            // 🚨 动态 SOS 条：从真实帖子中提取「十万火急」的悬赏单
+            this.refreshSosBroadcast(data.posts || []);
         } catch (error) { console.error("加载失败:", error); }
+    },
+
+    refreshSosBroadcast(posts) {
+        const bar    = document.getElementById('sosBroadcast');
+        const badge  = document.getElementById('sosBadge');
+        const count  = document.getElementById('sosBadgeCount');
+        if (!bar || !badge) return;
+
+        // 筛选：互助类 + 十万火急 + 最近72小时内发布
+        const cutoff = Date.now() - 72 * 60 * 60 * 1000;
+        const urgentPosts = posts.filter(p => {
+            if (!p.title || !p.title.includes('[互助]')) return false;
+            let payload = {};
+            try { payload = typeof p.content === 'string' ? JSON.parse(p.content) : p.content; } catch(e) {}
+            if (payload.urgent !== '十万火急') return false;
+            const ts = p.created_at ? new Date(p.created_at).getTime() : 0;
+            return ts > cutoff;
+        });
+
+        if (urgentPosts.length === 0) {
+            // 无真实急单：彻底隐藏角标和条
+            bar.style.display   = 'none';
+            badge.style.display = 'none';
+            return;
+        }
+
+        // 显示角标、更新数量
+        badge.style.display = 'flex';
+        if (count) count.textContent = urgentPosts.length;
+
+        // 用最新一条急单填充 SOS 条内容
+        const top = urgentPosts[0];
+        let topPayload = {};
+        try { topPayload = typeof top.content === 'string' ? JSON.parse(top.content) : top.content; } catch(e) {}
+
+        const titleEl = bar.querySelector('.sos-title');
+        const descEl  = bar.querySelector('.sos-desc');
+        const actionBtn = bar.querySelector('.sos-action-btn');
+
+        const city    = topPayload.city || topPayload.location || '荷兰';
+        const author  = top.author_name || '荷包蛋';
+        const desc    = (topPayload.desc || '').slice(0, 40) + ((topPayload.desc || '').length > 40 ? '...' : '');
+        const reward  = topPayload.reward || top.likes;
+
+        if (titleEl) titleEl.textContent = `${city} · ${author} 紧急求助${reward ? ' 💶' + reward : ''}`;
+        if (descEl)  descEl.textContent  = desc || '点击查看详情并帮助 Ta';
+        if (actionBtn) {
+            actionBtn.onclick = () => {
+                if (window.App && window.App.initiateHelpChat) window.App.initiateHelpChat(top.id);
+                else if (window.switchMarketTab) { window.switchMarketTab('help'); }
+            };
+        }
     },
 
     getContainer(id, isGrid = false) {
