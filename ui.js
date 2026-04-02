@@ -1162,3 +1162,168 @@ if (originalLoadMyPosts) {
         }, 500);
     };
 }
+
+// ============================================================================
+// 🎨 设计升级补丁 v2.0 - 自动注入色带 & 看板精修
+// ============================================================================
+
+(function() {
+    'use strict';
+
+    // 1. 分类 → 色带 / 色系映射
+    const CAT_COLOR_MAP = {
+        '羊毛': { bar: 'linear-gradient(180deg,#F59E0B,#D97706)', tag: '#B45309', tagBg: '#FEF3C7', tagBorder: '#FDE68A' },
+        '省钱': { bar: 'linear-gradient(180deg,#F59E0B,#D97706)', tag: '#B45309', tagBg: '#FEF3C7', tagBorder: '#FDE68A' },
+        '购物': { bar: 'linear-gradient(180deg,#F59E0B,#D97706)', tag: '#B45309', tagBg: '#FEF3C7', tagBorder: '#FDE68A' },
+        '出行': { bar: 'linear-gradient(180deg,#3B82F6,#2563EB)', tag: '#2563EB', tagBg: '#EFF6FF', tagBorder: '#BFDBFE' },
+        '交通': { bar: 'linear-gradient(180deg,#3B82F6,#2563EB)', tag: '#2563EB', tagBg: '#EFF6FF', tagBorder: '#BFDBFE' },
+        '旅游': { bar: 'linear-gradient(180deg,#3B82F6,#2563EB)', tag: '#2563EB', tagBg: '#EFF6FF', tagBorder: '#BFDBFE' },
+        '避坑': { bar: 'linear-gradient(180deg,#EF4444,#DC2626)', tag: '#DC2626', tagBg: '#FEF2F2', tagBorder: '#FECACA' },
+        '安全': { bar: 'linear-gradient(180deg,#EF4444,#DC2626)', tag: '#DC2626', tagBg: '#FEF2F2', tagBorder: '#FECACA' },
+        '警告': { bar: 'linear-gradient(180deg,#EF4444,#DC2626)', tag: '#DC2626', tagBg: '#FEF2F2', tagBorder: '#FECACA' },
+        '生活': { bar: 'linear-gradient(180deg,#10B981,#059669)', tag: '#059669', tagBg: '#ECFDF5', tagBorder: '#A7F3D0' },
+        '日常': { bar: 'linear-gradient(180deg,#10B981,#059669)', tag: '#059669', tagBg: '#ECFDF5', tagBorder: '#A7F3D0' },
+        '实用': { bar: 'linear-gradient(180deg,#10B981,#059669)', tag: '#059669', tagBg: '#ECFDF5', tagBorder: '#A7F3D0' },
+        '学习': { bar: 'linear-gradient(180deg,#8B5CF6,#7C3AED)', tag: '#7C3AED', tagBg: '#F5F3FF', tagBorder: '#DDD6FE' },
+        '签证': { bar: 'linear-gradient(180deg,#8B5CF6,#7C3AED)', tag: '#7C3AED', tagBg: '#F5F3FF', tagBorder: '#DDD6FE' },
+        '移民': { bar: 'linear-gradient(180deg,#8B5CF6,#7C3AED)', tag: '#7C3AED', tagBg: '#F5F3FF', tagBorder: '#DDD6FE' },
+        '干货': { bar: 'linear-gradient(180deg,#10B981,#059669)', tag: '#059669', tagBg: '#ECFDF5', tagBorder: '#A7F3D0' },
+    };
+
+    // 2. 注入色带：观察 DOM 变化，自动给 wiki-card 加左色带
+    function applyWikiColorBands() {
+        const cards = document.querySelectorAll('.wiki-card, .pro-wiki-card');
+        cards.forEach(card => {
+            if (card.dataset.colorApplied) return;
+            card.dataset.colorApplied = '1';
+
+            // 读 tag 文字
+            const tagEl = card.querySelector('[style*="border-radius:"][style*="font-weight"]') 
+                        || card.querySelector('.wk-tag');
+            const tagText = tagEl ? tagEl.innerText.trim() : '';
+            const cfg = CAT_COLOR_MAP[tagText];
+
+            if (cfg) {
+                // 注入色带伪元素替代方案（直接 box-shadow 左侧）
+                card.style.borderLeft = `4px solid transparent`;
+                card.style.backgroundImage = `linear-gradient(#fff, #fff), ${cfg.bar}`;
+                card.style.backgroundOrigin = 'border-box';
+                card.style.backgroundClip = 'padding-box, border-box';
+                // 更简单：直接加左侧 box-shadow
+                card.style.boxShadow = `inset 4px 0 0 0 ${cfg.tag}, 0 4px 15px rgba(0,0,0,0.04)`;
+                card.style.paddingLeft = '14px';
+
+                // 顺带更新 tag 颜色
+                if (tagEl) {
+                    tagEl.style.color = cfg.tag;
+                    tagEl.style.background = cfg.tagBg;
+                    tagEl.style.border = `1px solid ${cfg.tagBorder}`;
+                }
+            }
+        });
+    }
+
+    // 3. 强化 Icon 容器化（给裸 Emoji 包一层圆角背景）
+    function wrapIcons() {
+        const icons = document.querySelectorAll('.wiki-card .wk-icon, .pro-wiki-card .wk-icon');
+        icons.forEach(icon => {
+            if (icon.dataset.wrapped) return;
+            icon.dataset.wrapped = '1';
+            icon.style.cssText += `
+                background: #F1F5F9 !important;
+                width: 44px !important; height: 44px !important;
+                min-width: 44px !important; min-height: 44px !important;
+                border-radius: 13px !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                font-size: 22px !important;
+                border: 1px solid #E2E8F0 !important;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.04) !important;
+                flex-shrink: 0 !important;
+            `;
+        });
+
+        // 也处理 pro-wiki-card 内的裸 emoji icon（span 形式）
+        document.querySelectorAll('.pro-wiki-card .pro-wk-header > div > div > span:first-child').forEach(span => {
+            if (span.dataset.wrapped || span.innerText.length > 4) return;
+            span.dataset.wrapped = '1';
+            const wrapper = document.createElement('div');
+            wrapper.style.cssText = `
+                background: #F1F5F9;
+                width: 42px; height: 42px; min-width: 42px; min-height: 42px;
+                border-radius: 12px;
+                display: inline-flex; align-items: center; justify-content: center;
+                font-size: 20px;
+                border: 1px solid #E2E8F0;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+                flex-shrink: 0;
+            `;
+            span.parentNode.insertBefore(wrapper, span);
+            wrapper.appendChild(span);
+        });
+    }
+
+    // 4. 优化搭子卡片的进度/缺人文字显示
+    function upgradePartnerCards() {
+        document.querySelectorAll('.partner-card').forEach(card => {
+            if (card.dataset.upgraded) return;
+            card.dataset.upgraded = '1';
+
+            const footer = card.querySelector('.pc-footer');
+            if (!footer) return;
+
+            // 寻找进度文字（通常含"缺"或"/"）
+            const progressText = footer.innerText;
+            const missingMatch = progressText.match(/缺\s*(\d+)\s*人/);
+            const ratioMatch = progressText.match(/(\d+)\s*\/\s*(\d+)/);
+
+            if (missingMatch) {
+                // 把"缺 N 人"的容器变成徽章
+                footer.querySelectorAll('div, span').forEach(el => {
+                    if (el.innerText && el.innerText.includes('缺')) {
+                        el.style.background = '#FEF2F2';
+                        el.style.color = '#DC2626';
+                        el.style.border = '1px solid #FECACA';
+                        el.style.borderRadius = '20px';
+                        el.style.padding = '2px 9px';
+                        el.style.fontWeight = '800';
+                        el.style.fontSize = '10.5px';
+                        el.style.display = 'inline-block';
+                    }
+                });
+            }
+
+            // 让进度条变细
+            const progressBars = footer.querySelectorAll('[style*="height"]');
+            progressBars.forEach(bar => {
+                if (bar.style.height && parseInt(bar.style.height) > 4) {
+                    bar.style.height = '3px';
+                    bar.style.borderRadius = '2px';
+                }
+            });
+        });
+    }
+
+    // 5. 定期执行（等待动态渲染完成）
+    function runPatches() {
+        applyWikiColorBands();
+        wrapIcons();
+        upgradePartnerCards();
+    }
+
+    // 初始执行
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(runPatches, 500);
+        setTimeout(runPatches, 1200);
+        setTimeout(runPatches, 2500);
+    });
+
+    // MutationObserver 监听 DOM 变化（捕获动态渲染的卡片）
+    const observer = new MutationObserver(() => {
+        clearTimeout(window._patchDebounce);
+        window._patchDebounce = setTimeout(runPatches, 200);
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+})();
