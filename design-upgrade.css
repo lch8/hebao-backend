@@ -1,0 +1,591 @@
+/* ============================================================================
+   荷包管家 · 设计升级补丁 v2.0
+   四大改进：密度、卡片结构、视觉层级、红宝书辨识度
+   ============================================================================ */
+
+/* ============================================================================
+   1. 提升信息密度：收紧间距，压缩留白
+   ============================================================================ */
+
+/* 悬赏/互助卡片内边距压缩 25% */
+.help-card {
+    padding: 11px 11px 10px !important;
+}
+.hc-details {
+    padding: 6px 8px !important;
+    margin-bottom: 8px !important;
+    gap: 3px !important;
+}
+.hc-footer {
+    gap: 7px !important;
+    padding-top: 9px !important;
+}
+.hc-top-row {
+    margin-bottom: 6px !important;
+}
+.hc-title {
+    margin-bottom: 6px !important;
+    font-size: 13.5px !important;
+}
+
+/* 搭子卡片内边距压缩 */
+.partner-card {
+    padding: 11px 11px 10px !important;
+}
+.pc-header {
+    margin-bottom: 7px !important;
+}
+.pc-desc {
+    margin-bottom: 7px !important;
+    font-size: 11.5px !important;
+    -webkit-line-clamp: 2 !important;
+}
+.pc-tags {
+    margin-bottom: 7px !important;
+    gap: 4px !important;
+}
+.pc-footer {
+    gap: 6px !important;
+    padding-top: 8px !important;
+}
+
+/* 集市瀑布流卡片信息区 */
+.wf-info {
+    padding: 8px 10px !important;
+}
+.wf-title {
+    margin-bottom: 5px !important;
+    font-size: 12.5px !important;
+}
+.wf-price-row {
+    margin-bottom: 7px !important;
+}
+
+/* 「我的」页面 - 数据看板紧凑化 */
+#userStatsPanel {
+    background: #FFFFFF !important;
+    border-radius: 14px !important;
+    padding: 12px 8px !important;
+    margin: 0 0 16px 0 !important;
+    box-shadow: 0 4px 16px rgba(17, 24, 39, 0.05), 0 1px 4px rgba(17, 24, 39, 0.03) !important;
+    border: 1px solid rgba(229, 231, 235, 0.7) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0 !important;
+}
+
+/* 数据看板单项 */
+#userStatsPanel > div {
+    position: relative !important;
+    padding: 4px 6px !important;
+}
+
+/* 竖线分割 */
+#userStatsPanel > div:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 20%;
+    height: 60%;
+    width: 1px;
+    background: rgba(203, 213, 225, 0.6);
+}
+
+/* 数值加大加粗 */
+#userStatsPanel .stat-number,
+#userStatsPanel > div > div:first-child {
+    font-size: 22px !important;
+    font-weight: 900 !important;
+    line-height: 1.1 !important;
+    letter-spacing: -0.5px !important;
+}
+
+/* 标签文字缩小 */
+#userStatsPanel .stat-label,
+#userStatsPanel > div > div:last-child {
+    font-size: 10px !important;
+    color: #9CA3AF !important;
+    margin-top: 3px !important;
+    letter-spacing: 0.2px !important;
+}
+
+/* ============================================================================
+   2. 卡片结构升级：建立 Header / Body / Footer 区域感
+   ============================================================================ */
+
+/* 悬赏卡片 - Header 强化：价格锚定左上，时间右侧 */
+.hc-top-row {
+    align-items: center !important;
+}
+
+/* 悬赏卡片的奖励金额升级成更醒目的角标式 */
+.hc-reward-compact {
+    font-size: 13px !important;
+    padding: 4px 10px !important;
+    border-radius: 8px !important;
+    font-weight: 900 !important;
+    letter-spacing: -0.3px !important;
+    background: linear-gradient(135deg, #FFFBEB, #FEF3C7) !important;
+    border: 1px solid #FDE68A !important;
+    color: #B45309 !important;
+}
+
+/* 主标题强化 - 更深色，更重字重 */
+.hc-title {
+    color: #111827 !important;
+    font-weight: 700 !important;
+    line-height: 1.45 !important;
+}
+
+/* Body 区域：details 信息块强化 icon+文字排列 */
+.hc-detail-item {
+    font-size: 11px !important;
+    color: #4B5563 !important;
+    font-weight: 600 !important;
+}
+
+/* Footer CTA 按钮：实心主色调，强制引导点击 */
+.hc-action-btn {
+    background: #10B981 !important;
+    color: #FFF !important;
+    font-size: 12.5px !important;
+    font-weight: 800 !important;
+    padding: 9px 0 !important;
+    border-radius: 10px !important;
+    letter-spacing: 0.3px !important;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25) !important;
+    transition: all 0.2s ease !important;
+}
+.hc-action-btn:active {
+    transform: scale(0.97) !important;
+    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2) !important;
+}
+
+/* Footer 分割线强化：实线而非虚线 */
+.hc-footer {
+    border-top: 1px solid #F3F4F6 !important;
+    background: transparent !important;
+}
+
+/* 搭子卡片 Footer 重构 */
+.pc-footer {
+    border-top: 1px solid #F3F4F6 !important;
+}
+.pc-action {
+    background: #10B981 !important;
+    color: #FFF !important;
+    font-size: 12.5px !important;
+    font-weight: 800 !important;
+    border-radius: 10px !important;
+    letter-spacing: 0.3px !important;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25) !important;
+    transition: all 0.2s ease !important;
+}
+
+/* 搭子卡片 footer 内底部分享按钮也升级 */
+.pc-action-btn-main {
+    background: #10B981 !important;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25) !important;
+    border-radius: 12px !important;
+}
+.pc-action-btn-share {
+    border-radius: 12px !important;
+}
+
+/* 瀑布流集市卡片 - footer 区域化 */
+.wf-user-row {
+    border-top: 1px solid #F3F4F6 !important;
+    padding-top: 7px !important;
+    background: transparent !important;
+}
+
+/* ============================================================================
+   3. 强化视觉层级：对比度，主副内容分明
+   ============================================================================ */
+
+/* 搭子卡片主标题：深色大字重 */
+.pc-title {
+    color: #111827 !important;
+    font-weight: 700 !important;
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+    -webkit-line-clamp: 2 !important;
+}
+
+/* 搭子描述文字：淡化 */
+.pc-desc {
+    color: #6B7280 !important;
+    font-size: 11.5px !important;
+    -webkit-line-clamp: 2 !important;
+}
+
+/* 集市商品标题强化 */
+.wf-title {
+    color: #111827 !important;
+    font-weight: 700 !important;
+}
+
+/* 价格高亮强化 */
+.wf-price {
+    font-size: 19px !important;
+    font-weight: 900 !important;
+    letter-spacing: -0.5px !important;
+}
+
+/* 搭子进度条做细：从 Badge 变成纤细进度条 */
+.pc-footer {
+    font-size: 11px !important;
+}
+
+/* 搭子"缺 N 人"变成醒目徽章 */
+.pc-missing-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    background: #FEF2F2 !important;
+    color: #DC2626 !important;
+    border: 1px solid #FECACA !important;
+    font-size: 10px !important;
+    font-weight: 800 !important;
+    padding: 2px 8px !important;
+    border-radius: 20px !important;
+    letter-spacing: 0.3px !important;
+}
+
+/* 进度条做细 */
+.pc-progress-bar {
+    height: 3px !important;
+    border-radius: 2px !important;
+    background: #E5E7EB !important;
+}
+.pc-progress-fill {
+    height: 3px !important;
+    border-radius: 2px !important;
+    background: linear-gradient(90deg, #10B981, #34D399) !important;
+}
+
+/* 通用：所有"申请"/"去赚"按钮统一升级为实心绿 */
+.hc-action-btn,
+.pc-action,
+.pc-action-btn-main {
+    background: #10B981 !important;
+    color: #FFF !important;
+    font-weight: 800 !important;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.22) !important;
+}
+
+/* 标签类字体统一：深黑标题 + 灰色辅助 */
+.hc-type-tag {
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    border-radius: 6px !important;
+    padding: 3px 7px !important;
+}
+.hc-type-tag.urgent {
+    background: #FEF2F2 !important;
+    color: #DC2626 !important;
+    border: 1px solid #FECACA !important;
+    animation: urgentPulse 2s ease-in-out infinite !important;
+}
+
+@keyframes urgentPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    50% { box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12); }
+}
+
+/* ============================================================================
+   4. 红宝书辨识度：分类色带 + Icon 容器化
+   ============================================================================ */
+
+/* Wiki 卡片：左侧色彩标识线 */
+.wiki-card {
+    position: relative !important;
+    overflow: hidden !important;
+    padding-left: 20px !important;
+}
+
+/* 左侧彩色边带：根据分类 tag 自动着色 */
+.wiki-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    border-radius: 0 2px 2px 0;
+    background: #E5E7EB; /* 默认灰色 */
+}
+
+/* 羊毛/省钱 → 金橙色 */
+.wiki-card.cat-deal::before,
+.wiki-card[data-cat="羊毛"]::before,
+.wiki-card[data-cat="省钱"]::before {
+    background: linear-gradient(180deg, #F59E0B, #D97706) !important;
+}
+
+/* 出行/探索 → 蓝色 */
+.wiki-card.cat-travel::before,
+.wiki-card[data-cat="出行"]::before,
+.wiki-card[data-cat="交通"]::before {
+    background: linear-gradient(180deg, #3B82F6, #2563EB) !important;
+}
+
+/* 避坑/安全 → 红色 */
+.wiki-card.cat-warn::before,
+.wiki-card[data-cat="避坑"]::before,
+.wiki-card[data-cat="安全"]::before {
+    background: linear-gradient(180deg, #EF4444, #DC2626) !important;
+}
+
+/* 生活/日常 → 绿色 */
+.wiki-card.cat-life::before,
+.wiki-card[data-cat="生活"]::before,
+.wiki-card[data-cat="日常"]::before {
+    background: linear-gradient(180deg, #10B981, #059669) !important;
+}
+
+/* 学习/规划 → 紫色 */
+.wiki-card.cat-study::before,
+.wiki-card[data-cat="学习"]::before,
+.wiki-card[data-cat="签证"]::before {
+    background: linear-gradient(180deg, #8B5CF6, #7C3AED) !important;
+}
+
+/* Icon 容器化：包裹在圆角矩形里，形成左侧视觉对齐线 */
+.wk-icon {
+    font-size: 22px !important;
+    background: #F1F5F9 !important;
+    width: 46px !important;
+    height: 46px !important;
+    border-radius: 13px !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    flex-shrink: 0 !important;
+    border: 1px solid #E2E8F0 !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04) !important;
+    transition: transform 0.2s ease !important;
+}
+.wiki-card:active .wk-icon {
+    transform: scale(0.95) !important;
+}
+
+/* 标题层级强化 */
+.wk-title {
+    font-size: 15.5px !important;
+    font-weight: 800 !important;
+    color: #111827 !important;
+    line-height: 1.35 !important;
+}
+
+/* 摘要文字淡化 */
+.wk-summary {
+    color: #6B7280 !important;
+    font-size: 12.5px !important;
+    line-height: 1.55 !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+}
+
+/* 分类标签颜色按类别区分 */
+.wk-tag {
+    font-size: 10px !important;
+    font-weight: 800 !important;
+    padding: 2px 8px !important;
+    border-radius: 6px !important;
+}
+
+/* ============================================================================
+   5. 通用层级强化：按钮激活态、描述截断、主副对比
+   ============================================================================ */
+
+/* 所有卡片内主标题统一为深色大字重 */
+.wf-title, .hc-title, .pc-title, .qc-title, .wk-title {
+    color: #111827 !important;
+    font-weight: 700 !important;
+}
+
+/* 所有次要文字统一为中灰 */
+.wf-name, .hc-name, .pc-name, .wk-summary, .pc-desc {
+    color: #6B7280 !important;
+}
+
+/* 时间戳 / 辅助信息统一极弱灰 */
+.hc-detail-item span:not(.emoji),
+.pc-dist span,
+.wf-user .wf-name {
+    color: #9CA3AF !important;
+}
+
+/* 悬赏卡片 Footer 中的用户名字淡化 */
+.hc-name {
+    font-size: 11px !important;
+    color: #9CA3AF !important;
+    font-weight: 600 !important;
+}
+
+/* 集市 CTA 按钮 (瀑布流内可能存在的) */
+.wf-btn {
+    background: #10B981 !important;
+    color: #FFF !important;
+    border: none !important;
+    font-weight: 800 !important;
+    font-size: 11.5px !important;
+    padding: 5px 12px !important;
+    border-radius: 8px !important;
+    box-shadow: 0 3px 8px rgba(16, 185, 129, 0.2) !important;
+}
+
+/* ============================================================================
+   6. 精修「我的」页面数据看板
+   ============================================================================ */
+
+/* 覆写 JS 内联样式的数据面板 —— 用 CSS 变量配合选择器 */
+[id="userStatsPanel"] {
+    background: #FFFFFF !important;
+    border-radius: 16px !important;
+    padding: 14px 10px !important;
+    margin: 0 0 20px 0 !important;
+    box-shadow: 0 6px 20px rgba(17, 24, 39, 0.05), 0 1px 4px rgba(17, 24, 39, 0.02) !important;
+    border: 1px solid rgba(229, 231, 235, 0.8) !important;
+    gap: 0 !important;
+}
+
+/* 强制让内嵌 div 的字号更大 */
+[id="userStatsPanel"] > div > div:first-child {
+    font-size: 20px !important;
+    font-weight: 900 !important;
+    color: #111827 !important;
+    line-height: 1.1 !important;
+    letter-spacing: -0.3px !important;
+}
+[id="userStatsPanel"] > div > div:last-child {
+    font-size: 10px !important;
+    color: #9CA3AF !important;
+    font-weight: 600 !important;
+    margin-top: 4px !important;
+    letter-spacing: 0.2px !important;
+    white-space: nowrap !important;
+}
+
+/* ============================================================================
+   7. 搭子卡片进度条和缺人徽章 JS 动态渲染后的补强
+   ============================================================================ */
+
+/* 搭子卡片里的进度文字 */
+.pc-footer > div {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    font-size: 11px !important;
+    color: #9CA3AF !important;
+    font-weight: 600 !important;
+}
+
+/* 所有"缺 N 人"/"N/M" 这类进度文字变成醒目徽章 */
+.pc-footer span[style*="background"],
+.pc-missing {
+    background: #FEF2F2 !important;
+    color: #DC2626 !important;
+    border: 1px solid #FECACA !important;
+    border-radius: 20px !important;
+    padding: 2px 8px !important;
+    font-weight: 800 !important;
+    font-size: 10px !important;
+}
+
+/* ============================================================================
+   8. 卡片整体间距微调：Section 标题行
+   ============================================================================ */
+
+.section-title-row {
+    padding: 0 16px !important;
+    margin-bottom: 10px !important;
+}
+
+.st-text {
+    font-size: 15px !important;
+    font-weight: 800 !important;
+    color: #111827 !important;
+}
+
+/* 悬赏、搭子容器间距压缩 */
+.help-list-container,
+.partner-list-container {
+    padding: 0 4px !important;
+}
+
+/* 卡片底部 margin 统一 */
+.help-card,
+.partner-card {
+    margin-bottom: 10px !important;
+}
+
+/* ============================================================================
+   9. 红宝书分类色彩 Tag 强化（JS 会根据 category 写 data 属性）
+   ============================================================================ */
+
+/* 不同分类的 Tag 背景色 */
+.wk-tag[data-cat="羊毛"],
+.wk-tag.deal {
+    background: #FEF3C7 !important;
+    color: #B45309 !important;
+    border: 1px solid #FDE68A !important;
+}
+.wk-tag[data-cat="出行"],
+.wk-tag.travel {
+    background: #EFF6FF !important;
+    color: #2563EB !important;
+    border: 1px solid #BFDBFE !important;
+}
+.wk-tag[data-cat="避坑"],
+.wk-tag.warn {
+    background: #FEF2F2 !important;
+    color: #DC2626 !important;
+    border: 1px solid #FECACA !important;
+}
+.wk-tag[data-cat="生活"],
+.wk-tag.life {
+    background: #ECFDF5 !important;
+    color: #059669 !important;
+    border: 1px solid #A7F3D0 !important;
+}
+
+/* ============================================================================
+   10. 动画与微交互精修
+   ============================================================================ */
+
+/* 卡片进入动画 */
+.help-card,
+.partner-card,
+.waterfall-item,
+.wiki-card {
+    animation: cardSlideIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1) both !important;
+}
+
+@keyframes cardSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 交错延迟效果 */
+.help-card:nth-child(1), .partner-card:nth-child(1) { animation-delay: 0ms !important; }
+.help-card:nth-child(2), .partner-card:nth-child(2) { animation-delay: 40ms !important; }
+.help-card:nth-child(3), .partner-card:nth-child(3) { animation-delay: 80ms !important; }
+.help-card:nth-child(4), .partner-card:nth-child(4) { animation-delay: 120ms !important; }
+.help-card:nth-child(n+5), .partner-card:nth-child(n+5) { animation-delay: 160ms !important; }
+
+/* 按钮统一点击反馈 */
+.hc-action-btn:active,
+.pc-action:active,
+.pc-action-btn-main:active {
+    transform: scale(0.96) !important;
+    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.15) !important;
+}
