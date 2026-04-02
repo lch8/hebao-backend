@@ -28,8 +28,9 @@ export default async function handler(req) {
             headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 requests: [
-                    // 建表
+                    // 建表 & 自动迁移列
                     { type: "execute", stmt: { sql: "CREATE TABLE IF NOT EXISTS deals (seller_id TEXT NOT NULL, buyer_id TEXT NOT NULL, PRIMARY KEY (seller_id, buyer_id))" } },
+                    { type: "execute", stmt: { sql: "ALTER TABLE users ADD COLUMN deal_count INTEGER DEFAULT 0" } },
                     // 去重插入
                     { type: "execute", stmt: { sql: "INSERT OR IGNORE INTO deals (seller_id, buyer_id) VALUES (?, ?)", args: [{ type:"text", value: String(sellerId) }, { type:"text", value: String(buyerId) }] } },
                     // 更新卖家的成交人数（统计不重复买家数）

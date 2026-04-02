@@ -23,7 +23,14 @@ export default async function handler(req) {
         let dbUrl = process.env.TURSO_DATABASE_URL.replace('libsql://', 'https://');
         const authToken = process.env.TURSO_AUTH_TOKEN;
 
-        // 核心修改：使用 CTE 连表查询对方的邮箱和成交数
+        // 自动迁移：给 users 表补上 deal_count 列（列已存在时报错可忽略）
+        await fetch(`${dbUrl}/v2/pipeline`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ requests: [{ type: "execute", stmt: { sql: "ALTER TABLE users ADD COLUMN deal_count INTEGER DEFAULT 0" } }, { type: "close" }] })
+        }).catch(() => {});
+
+        // 使用 CTE 连表查询对方的邮箱和成交数
         const sql = `
             WITH LatestMsgs AS (
                 SELECT 

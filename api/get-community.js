@@ -18,8 +18,15 @@ export default async function handler(req) {
         dbUrl = dbUrl.replace('libsql://', 'https://');
         const authToken = process.env.TURSO_AUTH_TOKEN;
 
-        // 🌟 防爆修复：使用 p.* 兼容所有字段；强制转换 id 类型防止匹配失败
-const sql = "SELECT p.*, u.deal_count FROM community_posts p LEFT JOIN users u ON p.user_id = CAST(u.id AS TEXT) ORDER BY p.created_at DESC LIMIT 50";
+        // 自动迁移：给 users 表补上 deal_count 列（列已存在时报错可忽略）
+        await fetch(`${dbUrl}/v2/pipeline`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ requests: [{ type: "execute", stmt: { sql: "ALTER TABLE users ADD COLUMN deal_count INTEGER DEFAULT 0" } }, { type: "close" }] })
+        }).catch(() => {});
+
+        // COALESCE 兜底：列刚加上时值为 NULL 也能安全返回 0
+        const sql = "SELECT p.*, COALESCE(u.deal_count, 0) as deal_count FROM community_posts p LEFT JOIN users u ON p.user_id = CAST(u.id AS TEXT) ORDER BY p.created_at DESC LIMIT 50";
         const response = await fetch(`${dbUrl}/v2/pipeline`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },

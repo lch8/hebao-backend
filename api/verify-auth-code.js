@@ -51,7 +51,13 @@ export default async function handler(req) {
         if (dbCode !== code) throw new Error('验证码错误');
         if (new Date() > new Date(dbExpiresAt)) throw new Error('验证码已过期');
 
-        // 2. 查询用户是否已存在，顺带取成交数
+        // 2. 自动迁移 + 查询用户是否已存在，顺带取成交数
+        await fetch(`${dbUrl}/v2/pipeline`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ requests: [{ type: "execute", stmt: { sql: "ALTER TABLE users ADD COLUMN deal_count INTEGER DEFAULT 0" } }, { type: "close" }] })
+        }).catch(() => {});
+
         const userCheckRes = await fetch(`${dbUrl}/v2/pipeline`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
