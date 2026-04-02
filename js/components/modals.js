@@ -75,21 +75,21 @@ const ModalTemplates = {
                 </div>
                 <div class="edit-form-row"><div class="edit-label">微信号 (安全) <span class="edit-score-tag">必填</span></div><input type="text" id="epWechat" class="modal-input" placeholder="仅在交易/搭子确认后对Ta可见"></div>
                 <div class="edit-form-row"><div class="edit-label">一句话签名 / 自我介绍</div><textarea id="epBio" class="modal-textarea" style="height: 80px;" placeholder="你是什么样的人？找什么样的搭子？"></textarea></div>
-                <button style="width: 100%; padding: 14px; background: #111827; color: #FFF; border: none; border-radius: 12px; font-weight: bold; margin-top: 10px; cursor:pointer;" onclick="saveProfileData()">💾 保存并计算信用分</button>
+                <button style="width: 100%; padding: 14px; background: #111827; color: #FFF; border: none; border-radius: 12px; font-weight: bold; margin-top: 10px; cursor:pointer;" onclick="saveProfileData()">💾 保存资料</button>
             </div>
         </div>
     `,
 
-    // --- 4. 信用分说明弹窗 ---
+    // --- 4. 成交记录说明弹窗 ---
     creditInfoModal: `
         <div class="modal-overlay" id="creditInfoModal" onclick="this.style.display='none'">
             <div class="modal-content" onclick="event.stopPropagation()">
                 <div class="modal-close" onclick="document.getElementById('creditInfoModal').style.display='none'">✕</div>
-                <h3 style="margin-top:0; color: #111827; display:flex; align-items:center; gap:8px;">🛡️ 什么是管家信用分？</h3>
+                <h3 style="margin-top:0; color: #111827; display:flex; align-items:center; gap:8px;">🤝 什么是成交数？</h3>
                 <div style="font-size: 14px; color: #4B5563; line-height: 1.7;">
-                    <p>为了打造<b>荷兰最安全的留学生互助社区</b>，我们引入了严格的信用体系。</p>
-                    <p><b>✨ 信用分有什么用？</b><br>• 分数越高，曝光率越高！<br>• 信用极佳的用户将拥有专属徽章，买家更敢先款购买。</p>
-                    <p><b>📈 如何获取分数？</b><br>初始 500 分。通过设置头像 (+20)、完善 MBTI (+30)、验证大学邮箱 (+50) 自动上涨。</p>
+                    <p>成交数代表你与<b>不同买家完成交易的次数</b>。和同一个人无论交易多少次，都只计为 1 次。</p>
+                    <p><b>✨ 成交数有什么用？</b><br>• 买家可以直观看到你的卖货经验。<br>• 成交数越高，买家越放心，成交速度更快！</p>
+                    <p><b>📈 如何增加成交数？</b><br>买家在聊天页点击「✅ 确认成交」，系统自动记录一次。每对用户只计一次，不刷水。</p>
                 </div>
                 <button style="width: 100%; padding: 14px; background: #111827; color: #FFF; border: none; border-radius: 14px; font-weight: bold; margin-top: 15px; cursor:pointer;" onclick="document.getElementById('creditInfoModal').style.display='none'">我明白了</button>
             </div>
@@ -442,6 +442,7 @@ const ModalTemplates = {
                     <div onclick="window.App.sendQuickMessage('谢谢宝 🌺')" style="background: #FFF; border: 1px solid #E2E8F0; color: #111827; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 900; white-space: nowrap; cursor: pointer; scroll-snap-align: start; box-shadow: 0 2px 6px rgba(0,0,0,0.02); transition: 0.1s;" onmousedown="this.style.background='#F8FAFC'" onmouseup="this.style.background='#FFF'">🌺 谢谢宝</div>
                     <div onclick="window.App.sendQuickMessage('在干嘛 🔍')" style="background: #FFF; border: 1px solid #E2E8F0; color: #111827; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 900; white-space: nowrap; cursor: pointer; scroll-snap-align: start; box-shadow: 0 2px 6px rgba(0,0,0,0.02); transition: 0.1s;" onmousedown="this.style.background='#F8FAFC'" onmouseup="this.style.background='#FFF'">🔍 在干嘛</div>
                     <div onclick="window.App.sendQuickMessage('东西还在吗？')" style="background: #FEF2F2; border: 1px solid #FECACA; color: #DC2626; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 900; white-space: nowrap; cursor: pointer; scroll-snap-align: start; box-shadow: 0 2px 6px rgba(220,38,38,0.1); transition: 0.1s;" onmousedown="this.style.background='#FEE2E2'" onmouseup="this.style.background='#FEF2F2'">📦 东西还在吗？</div>
+                    <div onclick="window.App.confirmDeal()" style="background: #ECFDF5; border: 1px solid #6EE7B7; color: #047857; padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 900; white-space: nowrap; cursor: pointer; scroll-snap-align: start; box-shadow: 0 2px 6px rgba(16,185,129,0.1); transition: 0.1s;" onmousedown="this.style.background='#D1FAE5'" onmouseup="this.style.background='#ECFDF5'">✅ 确认成交</div>
                 </div>
 
                 <div style="display: flex; align-items: flex-end; gap: 12px; padding: 5px 20px 10px;">

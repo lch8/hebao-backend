@@ -48,7 +48,7 @@ if (typeof window !== 'undefined') {
         toast("⏳ 正在为您生成高颜值专属海报...", "info");
 
         const email = localStorage.getItem('hebao_email') || '';
-        const creditScore = parseInt(localStorage.getItem('hebao_credit')) || 100;
+        const dealCount = parseInt(localStorage.getItem('hebao_deal_count')) || 0;
         const userName = localStorage.getItem('hp_name') || '新晋荷包蛋';
 
         try {
@@ -145,10 +145,9 @@ if (typeof window !== 'undefined') {
             ctx.fillStyle = '#111827'; ctx.font = 'bold 26px sans-serif';
             ctx.fillText(userName, 40, 930);
 
-            let crBg = '#F0FDF4', crColor = '#047857', crText = `🟢 信用 ${creditScore}`;
-            if (creditScore < 60) { crBg = '#FEF2F2'; crColor = '#DC2626'; crText = `🚫 极低 ${creditScore}`; }
-            else if (creditScore < 100) { crBg = '#FFFBEB'; crColor = '#D97706'; crText = `⚠️ 预警 ${creditScore}`; }
-            else if (creditScore >= 150) { crBg = '#FEFCE8'; crColor = '#B45309'; crText = `👑 极佳 ${creditScore}`; }
+            let crBg = '#ECFDF5', crColor = '#047857', crText = `🤝 ${dealCount} 单成交`;
+            if (dealCount === 0)  { crBg = '#F3F4F6'; crColor = '#6B7280'; crText = `🤝 新手卖家`; }
+            else if (dealCount >= 10) { crBg = '#FEFCE8'; crColor = '#B45309'; crText = `👑 ${dealCount} 单老司机`; }
             
             ctx.fillStyle = crBg; drawRoundRect(ctx, 40, 950, 130, 30, 6, true);
             ctx.fillStyle = crColor; ctx.font = 'bold 16px sans-serif';
@@ -182,7 +181,7 @@ if (typeof window !== 'undefined') {
                     try {
                         await navigator.share({
                             title: '荷包管家请求支援',
-                            text: `${postTitle}！我是高信用认证校友，快来加入！`,
+                            text: `${postTitle}！快来加入荷包管家！`,
                             files: [file]
                         });
                         toast("🎉 海报生成成功！", "success");

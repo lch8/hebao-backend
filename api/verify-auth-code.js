@@ -51,13 +51,13 @@ export default async function handler(req) {
         if (dbCode !== code) throw new Error('验证码错误');
         if (new Date() > new Date(dbExpiresAt)) throw new Error('验证码已过期');
 
-        // 🌟 2. 核心修改：连带查询用户的信用分 (credit)
+        // 2. 查询用户是否已存在，顺带取成交数
         const userCheckRes = await fetch(`${dbUrl}/v2/pipeline`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 requests: [
-                    { type: "execute", stmt: { sql: "SELECT id, credit FROM users WHERE verified_email = ?", args: [{type:"text", value:email}] } },
+                    { type: "execute", stmt: { sql: "SELECT id, deal_count FROM users WHERE verified_email = ?", args: [{type:"text", value:email}] } },
                     { type: "close" }
                 ]
             })
@@ -67,21 +67,19 @@ export default async function handler(req) {
 
         let finalUserId = userId; 
         let isNewUser = true;
-        let userCredit = 100; // 默认信用分
+        let userDealCount = 0; // 默认成交数
 
         if (userRows && userRows.length > 0) {
             // 老用户回归！
             finalUserId = userRows[0][0].value; 
-            // 如果数据库查出来有分数就用，没有就给默认100
-            userCredit = userRows[0][1].value !== null ? parseInt(userRows[0][1].value) : 100; 
+            userDealCount = userRows[0][1].value !== null ? parseInt(userRows[0][1].value) : 0; 
             isNewUser = false;
         }
 
         // 3. 注册新用户，并销毁验证码
         const sqlRequests = [];
         if (isNewUser) {
-            // 新用户默认给100分
-            sqlRequests.push({ type: "execute", stmt: { sql: "INSERT INTO users (id, verified_email, email_verified, credit) VALUES (?, ?, 1, 100)", args: [{type:"text", value:finalUserId}, {type:"text", value:email}] } });
+            sqlRequests.push({ type: "execute", stmt: { sql: "INSERT INTO users (id, verified_email, email_verified, deal_count) VALUES (?, ?, 1, 0)", args: [{type:"text", value:finalUserId}, {type:"text", value:email}] } });
         }
         sqlRequests.push({ type: "execute", stmt: { sql: "DELETE FROM verification_codes WHERE email = ?", args: [{type:"text", value:email}] } });
         sqlRequests.push({ type: "close" });
@@ -100,7 +98,7 @@ export default async function handler(req) {
             success: true, 
             token: token, 
             isNewUser: isNewUser, 
-            credit: userCredit,
+            deal_count: userDealCount,
             userId: finalUserId // 👈 新增这一行！
         }), {
             status: 200,

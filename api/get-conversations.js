@@ -23,7 +23,7 @@ export default async function handler(req) {
         let dbUrl = process.env.TURSO_DATABASE_URL.replace('libsql://', 'https://');
         const authToken = process.env.TURSO_AUTH_TOKEN;
 
-        // 🌟 核心修改：使用 CTE 连表查询对方的邮箱和信用分
+        // 核心修改：使用 CTE 连表查询对方的邮箱和成交数
         const sql = `
             WITH LatestMsgs AS (
                 SELECT 
@@ -34,7 +34,7 @@ export default async function handler(req) {
                 WHERE sender_id = ? OR receiver_id = ?
                 GROUP BY partner_id
             )
-            SELECT l.*, u.verified_email as partner_email, u.credit as partner_credit 
+            SELECT l.*, u.verified_email as partner_email, u.deal_count as partner_deal_count 
             FROM LatestMsgs l
             LEFT JOIN users u ON l.partner_id = u.id
             ORDER BY l.last_time DESC
@@ -79,9 +79,9 @@ export default async function handler(req) {
             let obj = {};
             row.forEach((val, i) => obj[cols[i]] = val.value);
             
-            // 将查询到的真实邮箱打码，同时给信用分赋默认值
+            // 将查询到的真实邮箱打码，同时给成交数赋默认值
             obj.partner_email = maskEmail(obj.partner_email);
-            obj.partner_credit = obj.partner_credit !== null ? obj.partner_credit : 100;
+            obj.partner_deal_count = obj.partner_deal_count !== null ? parseInt(obj.partner_deal_count) : 0;
             
             return obj;
         });

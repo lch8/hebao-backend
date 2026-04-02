@@ -57,7 +57,7 @@ function saveWechatBind() {
     if(!wx) return showToast("微信号不能为空哦！", "warning");
     localStorage.setItem('hp_wechat', wx); 
     document.getElementById('wechatBindModal').style.display = 'none';
-    showToast("💬 绑定成功 信用分+30", "success");
+    showToast("💬 绑定成功！", "success");
     if(typeof renderProfileState === 'function') renderProfileState();
 }
 function openEditProfileModal() { 
@@ -633,7 +633,7 @@ function submitWikiComment() {
     const input = document.getElementById('wikiCommentInput'); const text = input.value.trim(); if (!text) return showToast("写点什么再发送吧！", "warning");
     const allComments = JSON.parse(localStorage.getItem('hp_wiki_comments') || '{}'); if (!allComments[currentWikiIdForComment]) allComments[currentWikiIdForComment] = [];
     allComments[currentWikiIdForComment].push({ name: localStorage.getItem('hp_name') || '管家热心用户', avatar: '😎', text: text });
-    localStorage.setItem('hp_wiki_comments', JSON.stringify(allComments)); input.value = ''; renderWikiComments(); showToast("💡 分享干货，信用分 +2", "success");
+    localStorage.setItem('hp_wiki_comments', JSON.stringify(allComments)); input.value = ''; renderWikiComments(); showToast("💡 感谢分享干货！", "success");
 }
 
 function checkSafetyCode() {

@@ -194,7 +194,7 @@ export const ChatEngine = {
                     const timeStr = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
                     
                     const partnerEmail = conv.partner_email || '';
-                    const partnerCredit = conv.partner_credit !== undefined ? conv.partner_credit : 100;
+                    const partnerDealCount = conv.partner_deal_count !== undefined ? parseInt(conv.partner_deal_count) : 0;
                     const partnerName = conv.partner_name || `校友_${conv.partner_id.substring(0, 4)}`;
                     const partnerAvatar = conv.partner_avatar || '😎';
 
@@ -213,7 +213,7 @@ export const ChatEngine = {
 
                     html += `
                     <div style="display:flex; align-items:center; background:#FFF; padding:15px; border-radius: 16px; margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.02); border: 1px solid ${isUnread ? '#BFDBFE' : '#E5E7EB'}; cursor:pointer;" 
-                         onclick="window.App.openChat('${conv.partner_id}', '${partnerName}', '${partnerAvatar}', null, null, null, null, null, '${partnerEmail}', ${partnerCredit})">
+                         onclick="window.App.openChat('${conv.partner_id}', '${partnerName}', '${partnerAvatar}', null, null, null, null, null, '${partnerEmail}', ${partnerDealCount})">
                         ${avatarHtml}
                         <div style="flex:1; overflow:hidden;">
                             <div style="display:flex; justify-content:space-between; margin-bottom:6px; align-items: center;">
@@ -238,15 +238,15 @@ export const ChatEngine = {
         } catch(e) { console.error("🚨 拉取会话失败:", e); }
     },
 
-    openChat(targetId, targetName, targetAvatar, postId, postTitle, postPrice, postImg, isSold, targetEmail, targetCredit) {
+    openChat(targetId, targetName, targetAvatar, postId, postTitle, postPrice, postImg, isSold, targetEmail, targetDealCount) {
         if(window.App && typeof window.App.requireAuth === 'function') {
-            window.App.requireAuth(() => this._initChatWindow(targetId, targetName, targetAvatar, postId, postTitle, postPrice, postImg, isSold, targetEmail, targetCredit));
+            window.App.requireAuth(() => this._initChatWindow(targetId, targetName, targetAvatar, postId, postTitle, postPrice, postImg, isSold, targetEmail, targetDealCount));
         } else {
-            this._initChatWindow(targetId, targetName, targetAvatar, postId, postTitle, postPrice, postImg, isSold, targetEmail, targetCredit);
+            this._initChatWindow(targetId, targetName, targetAvatar, postId, postTitle, postPrice, postImg, isSold, targetEmail, targetDealCount);
         }
     },
 
-    _initChatWindow(targetId, targetName, targetAvatar, postId, postTitle, postPrice, postImg, isSold, targetEmail, targetCredit) {
+    _initChatWindow(targetId, targetName, targetAvatar, postId, postTitle, postPrice, postImg, isSold, targetEmail, targetDealCount) {
         const uid = window.userUUID || localStorage.getItem('hebao_uuid');
         if (targetId === String(uid)) return showToast("不能跟自己聊天哦~", "warning");
 
@@ -291,6 +291,52 @@ export const ChatEngine = {
         currentChatPartnerId = null;
         safeDOM.execute('chatModal', el => el.style.display = 'none');
         this.loadConversations(true); 
+    },
+
+    // ------------------------------------------------------------------------
+    // 买家点击「✅ 确认成交」— 记录一次去重成交，刷新本地成交数
+    // ------------------------------------------------------------------------
+    async confirmDeal() {
+        const sellerId = currentChatPartnerId;
+        if (!sellerId) return showToast('请先打开一个聊天窗口', 'warning');
+
+        const token = localStorage.getItem('hebao_token');
+        if (!token) return showToast('请先登录', 'warning');
+
+        if (!confirm('确认和对方完成了一笔交易吗？\n（每对用户只计一次，不用担心重复）')) return;
+
+        try {
+            const res = await fetch('/api/record-deal', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ sellerId })
+            });
+            const data = await res.json();
+            if (!res.ok || !data.success) throw new Error(data.error || '记录失败');
+
+            // 乐观更新本地成交数，让「我的」页面即时刷新
+            const cur = parseInt(localStorage.getItem('hebao_deal_count')) || 0;
+            // 我们自己是买家，成交数涨在卖家身上；但如果当前用户就是卖家侧可跳过
+            // 不论如何，向对方发一条系统提示消息
+            await this.sendSystemMessage('✅ 买家已确认成交，感谢本次交易！🎉');
+            showToast('成交记录已保存！感谢交易 🎉', 'success');
+        } catch (e) {
+            showToast('记录失败：' + e.message, 'error');
+        }
+    },
+
+    async sendSystemMessage(text) {
+        const uid = window.userUUID || localStorage.getItem('hebao_uuid');
+        const token = localStorage.getItem('hebao_token');
+        if (!currentChatPartnerId || !uid || !token) return;
+        try {
+            await fetch('/api/send-message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ senderId: uid, receiverId: currentChatPartnerId, content: text })
+            });
+            this.loadChatHistory();
+        } catch (e) { console.warn('系统消息发送失败', e); }
     },
 
     // ------------------------------------------------------------------------

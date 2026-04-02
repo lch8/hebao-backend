@@ -1,5 +1,5 @@
 // ============================================================================
-// js/modules/auth.js - 用户鉴权与登录引擎 (支持多设备同步 + 信用分闭环)
+// js/modules/auth.js - 用户鉴权与登录引擎 (支持多设备同步 + 成交数闭环)
 // ============================================================================
 import { showToast } from '../core/toast.js';
 import { safeDOM } from '../core/dom.js';
@@ -71,7 +71,7 @@ export const AuthEngine = {
         }
     },
 
-    // 🌟 验证验证码 (获取后端真实 UUID + 信用分 + 多设备同步)
+    // 🌟 验证验证码 (获取后端真实 UUID + 成交数 + 多设备同步)
     async verifyCode() {
         const email = safeDOM.getValue('hebaoAuthEmail').trim();
         const code = safeDOM.getValue('hebaoAuthCode').trim();
@@ -101,11 +101,11 @@ export const AuthEngine = {
                     window.userUUID = data.userId; // 确保全局变量也更新
                 }
                 
-                // 🌟 3. 同步后端的真实信用分 (与 refreshProfileUI 里的键名 'hebao_credit' 保持一致)
-                if (data.credit !== undefined) {
-                    localStorage.setItem('hebao_credit', data.credit);
+                // 3. 同步后端的成交数
+                if (data.deal_count !== undefined) {
+                    localStorage.setItem('hebao_deal_count', data.deal_count);
                 } else {
-                    localStorage.setItem('hebao_credit', 100);
+                    localStorage.setItem('hebao_deal_count', 0);
                 }
 
                 // 给新用户随机发个名字

@@ -426,19 +426,29 @@ window.App.togglePublishCapsule = function(clickedEl) {
 // ============================================================================
 
 window.App.TransactionEngine = {
-    // 防刷单去重确认引擎
+    // 防刷单去重确认引擎 (使用排序后的复合键，确保 A-B 和 B-A 视为同一对)
     confirmTradeSuccess: function() {
         const partnerNameEl = document.getElementById('chatPartnerName');
         const partnerId = partnerNameEl ? partnerNameEl.innerText.replace(' (群聊)', '') : 'unknown_user';
         if (!partnerId || partnerId === 'unknown_user') return;
 
-        let tradedUsers = JSON.parse(localStorage.getItem('hp_traded_users') || '[]');
-        if (tradedUsers.includes(partnerId)) {
-            if (window.App.showToast) window.App.showToast("✅ 交易已确认！(注：与同一用户的多次交易仅计为 1 次信誉背书)", "info");
+        const myId = localStorage.getItem('hebao_uuid') || localStorage.getItem('hebao_email') || 'me';
+        // 生成排序后的唯一交易对键：min_max，确保双向交易仅计 1 次
+        const pairKey = [myId, partnerId].sort().join('_');
+
+        let tradedPairs = JSON.parse(localStorage.getItem('hp_traded_pairs') || '[]');
+        if (tradedPairs.includes(pairKey)) {
+            if (window.App.showToast) window.App.showToast("✅ 交易已确认！(注：与同一用户的多次交易仅计为 1 次成交)", "info");
         } else {
-            tradedUsers.push(partnerId);
-            localStorage.setItem('hp_traded_users', JSON.stringify(tradedUsers));
-            if (window.App.showToast) window.App.showToast("🎉 交易确认成功！真实成交人数 +1", "success");
+            tradedPairs.push(pairKey);
+            localStorage.setItem('hp_traded_pairs', JSON.stringify(tradedPairs));
+            // 兼容旧版 hp_traded_users（用于向后兼容 .length 读取）
+            let tradedUsers = JSON.parse(localStorage.getItem('hp_traded_users') || '[]');
+            if (!tradedUsers.includes(partnerId)) {
+                tradedUsers.push(partnerId);
+                localStorage.setItem('hp_traded_users', JSON.stringify(tradedUsers));
+            }
+            if (window.App.showToast) window.App.showToast("🎉 交易确认成功！成交数 +1", "success");
         }
         
         if (window.App.refreshProfileUI) window.App.refreshProfileUI();

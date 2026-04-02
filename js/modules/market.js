@@ -125,7 +125,7 @@ export const MarketEngine = {
                 let payload = {}; 
                 try { payload = typeof post.content === 'string' ? JSON.parse(post.content) : post.content; } catch(e) { payload = { desc: post.content }; }
 
-                const commonData = { ...post, author: post.author_name || '匿名荷包蛋', avatar: post.avatar || '😎', credit: post.credit || 100, contentObj: payload };
+                const commonData = { ...post, author: post.author_name || '匿名荷包蛋', avatar: post.avatar || '😎', deal_count: post.deal_count || 0, contentObj: payload };
 
                 if (title.includes('[闲置]')) {
                     commonData.title = title.replace('[闲置] ', '');
@@ -192,7 +192,7 @@ export const MarketEngine = {
                 <div style="padding:8px;">
                     <div style="display:flex; align-items:center; justify-content:space-between;">
                         <div style="color:${isAllSold ? '#9CA3AF' : '#EF4444'}; font-size:15px; font-weight:900;">${priceDisplay}</div>
-                        <div style="font-size:9px; color:#D97706; font-weight:bold; background:#FFFBEB; border:0.5px solid #FDE68A; padding:1px 4px; border-radius:4px;">⭐ ${escapeHTML(item.credit || 100)}</div>
+                        <div style="font-size:9px; color:#10B981; font-weight:bold; background:#ECFDF5; border:0.5px solid #6EE7B7; padding:1px 4px; border-radius:4px;">🤝 ${escapeHTML(item.deal_count || 0)}单</div>
                     </div>
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; border-top:0.5px dashed #F3F4F6; padding-top:8px;">
                         <div style="display:flex; align-items:center; gap:4px; overflow:hidden;">
@@ -474,7 +474,7 @@ export const MarketEngine = {
                             <div class="pd-seller-avatar" style="font-size:32px;">${escapeHTML(post.avatar || '😎')}</div>
                             <div style="display:flex; flex-direction:column; gap:2px;">
                                 <div class="pd-seller-name" style="font-weight:900; font-size:15px;">${escapeHTML(post.author_name || post.name || '热心校友')}</div>
-                                <div class="pd-seller-time" style="font-size:11px; color:#D97706; font-weight:bold;">⭐ 信用分: ${escapeHTML(post.credit || 100)}分</div>
+                                <div class="pd-seller-time" style="font-size:11px; color:#10B981; font-weight:bold;">🤝 成交: ${escapeHTML(post.deal_count || 0)} 人</div>
                             </div>
                         </div>
                     </div>`;

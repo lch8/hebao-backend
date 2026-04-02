@@ -1119,8 +1119,21 @@ window.App.renderProfileState = function() {
         if (vipBanner) vipBanner.style.display = isVerified ? 'none' : 'flex'; 
 
         const savedIds = JSON.parse(localStorage.getItem('hp_wiki_saved') || '[]');
-        const statSavedEl = document.getElementById('statSaved');
-        if (statSavedEl) statSavedEl.innerText = savedIds.length;
+        const dealCount = parseInt(localStorage.getItem('hebao_deal_count')) || 0;
+
+        if (statsPanel) {
+            statsPanel.innerHTML = `
+                <div style="display:flex; flex-direction:column; align-items:center; gap:2px;">
+                    <span style="font-size:22px; font-weight:900; color:#111827;">${dealCount}</span>
+                    <span style="font-size:11px; color:#9CA3AF; font-weight:bold;">🤝 成交</span>
+                </div>
+                <div style="width:1px; background:#F1F5F9; height:36px;"></div>
+                <div style="display:flex; flex-direction:column; align-items:center; gap:2px;">
+                    <span id="statSaved" style="font-size:22px; font-weight:900; color:#111827;">${savedIds.length}</span>
+                    <span style="font-size:11px; color:#9CA3AF; font-weight:bold;">&#x1F496; 收藏</span>
+                </div>
+            `;
+        }
 
         // 🌟 百变身份引擎：根据邮箱后缀自动匹配专属 UI
         const domain = (userEmail.split('@')[1] || '').toLowerCase();
@@ -1321,7 +1334,7 @@ if (!document.getElementById('vipStyles')) {
 }
 
 // ==========================================
-// 🛡️ 全局身份标识引擎 (纯净版，去除信用分)
+// 🛡️ 全局身份标识引擎 (纯净版)
 // ==========================================
 window.App.getUserBadgeHtml = function(email) {
     if (!email || email === '未绑定邮箱') {
