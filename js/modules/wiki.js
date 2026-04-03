@@ -4,6 +4,7 @@
 import { ModalManager } from '../components/modals.js';
 import { showToast } from '../core/toast.js';
 import { safeDOM } from '../core/dom.js'; 
+import { Skeleton } from '../core/skeleton.js';
 // 引入分离的卡片数据
 import { wikiData } from '../data/wikiData.js';
 
@@ -90,8 +91,8 @@ export const WikiEngine = {
                         <div class="w-tab" onclick="window.App.switchWikiTab('交通出行', this)">交通出行</div>
                         <div class="w-tab" onclick="window.App.switchWikiTab('生活避坑', this)">生活避坑</div>`;
                     });
-                    this.renderWikiList(); 
-                } else if (mode === 'pro') {
+                    safeDOM.execute('wikiListContainer', el => el.innerHTML = Skeleton.wikiCards(5));
+                    requestAnimationFrame(() => this.renderWikiList());
                     safeDOM.execute('rbWidgetsArea', el => el.style.display = 'none'); 
                     safeDOM.execute('proWidgetsArea', el => el.style.display = 'flex');
                     safeDOM.execute('safetyCheckWidget', el => el.style.display = 'none'); 
@@ -428,7 +429,13 @@ export const WikiEngine = {
         this.renderWikiList();
     },
 
-    switchWikiTab(category, el) { document.querySelectorAll('.w-tab').forEach(tab => tab.classList.remove('active')); el.classList.add('active'); currentRbCategory = category; this.renderWikiList(); },
+    switchWikiTab(category, el) {
+        document.querySelectorAll('.w-tab').forEach(tab => tab.classList.remove('active'));
+        el.classList.add('active');
+        currentRbCategory = category;
+        safeDOM.execute('wikiListContainer', el => el.innerHTML = Skeleton.wikiCards(5));
+        requestAnimationFrame(() => this.renderWikiList());
+    },
     filterWiki() { this.renderWikiList(safeDOM.getValue('wikiSearchInput').toLowerCase()); },
 
 // ==========================================

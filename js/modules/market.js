@@ -3,6 +3,7 @@
 // ============================================================================
 import { showToast } from '../core/toast.js';
 import { safeDOM } from '../core/dom.js';
+import { Skeleton } from '../core/skeleton.js';
 import { ModalManager } from '../components/modals.js';
 import { ChatEngine } from './chat.js';
 
@@ -115,6 +116,14 @@ export const MarketEngine = {
     // ... [中间的 loadCommunityPosts 和 getContainer 保持不变，请勿删除] ...
     async loadCommunityPosts() {
         try {
+            // 先渲染骨架屏，立即填满视觉空间
+            const idleEl   = document.getElementById('idleWaterfall');
+            const helpEl   = document.getElementById('helpListContainer');
+            const partnerEl= document.getElementById('partnerListContainer');
+            if (idleEl)    idleEl.innerHTML    = Skeleton.waterfall(6);
+            if (helpEl)    helpEl.innerHTML    = Skeleton.helpCards(6);
+            if (partnerEl) partnerEl.innerHTML = Skeleton.helpCards(6);
+
             const res = await fetch('/api/get-community?t=' + Date.now()); 
             const data = await res.json();
             if (!data.success) return;

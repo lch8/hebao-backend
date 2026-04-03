@@ -3,6 +3,7 @@
 // ============================================================================
 import { showToast } from '../core/toast.js';
 import { safeDOM } from '../core/dom.js';
+import { Skeleton } from '../core/skeleton.js';
 import { ModalManager } from '../components/modals.js';
 
 let currentChatPartnerId = null; 
@@ -106,7 +107,7 @@ export const ChatEngine = {
             return;
         }
 
-        if (!isSilent) safeDOM.execute('conversationList', el => el.innerHTML = '<div style="text-align:center; padding: 40px; color:#9CA3AF; font-size: 13px;">📡 正在同步消息队列...</div>');
+        if (!isSilent) safeDOM.execute('conversationList', el => el.innerHTML = Skeleton.messages(5));
 
         try {
             const res = await fetch(`/api/get-conversations?userId=${uid}`);

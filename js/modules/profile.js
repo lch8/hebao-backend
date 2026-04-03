@@ -3,6 +3,7 @@
 // ============================================================================
 import { safeDOM } from '../core/dom.js';
 import { showToast } from '../core/toast.js';
+import { Skeleton } from '../core/skeleton.js';
 
 window.myPostsCache = []; // 本地缓存我的发布
 
@@ -13,7 +14,7 @@ export const ProfileEngine = {
         if (!uuid) return;
 
         try {
-            safeDOM.execute('myPostsList', el => el.innerHTML = '<div style="text-align:center; padding:40px 0; color:#9CA3AF;"><span class="pulse-dot" style="background:#10B981;"></span> 拉取数据中...</div>');
+            safeDOM.execute('myPostsList', el => el.innerHTML = Skeleton.myPosts(3));
             
             const res = await fetch(`/api/get-my-posts?userId=${uuid}`);
             const data = await res.json();
