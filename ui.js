@@ -17,13 +17,23 @@ function toggleScanMenu() {
 }
 
 function switchTab(tabId, element) {
+    // 记录上一个真实页面 tab，供 goBack() 使用
+    // 只记录真实页面（排除 details/trending 这类全屏覆盖层）
+    const realTabs = ['tips', 'market', 'messages', 'profile'];
+    if (realTabs.includes(tabId)) lastTab = tabId;
+
     document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
     const target = document.getElementById('page-' + tabId); 
     if(target) target.classList.add('active');
 
-    if (element) { 
-        document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active')); 
-        element.classList.add('active'); 
+    // 更新底部导航高亮：清除所有 .tab-item active，发布按钮永远不高亮
+    document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+    if (element && element.classList.contains('tab-item')) {
+        element.classList.add('active');
+    } else if (!element) {
+        // 没传 element 时，按 tabId 自动找对应的 tab-item 高亮
+        const autoEl = document.querySelector(`.tab-item[onclick*="${tabId}"]`);
+        if (autoEl) autoEl.classList.add('active');
     }
 
     const tabBar = document.querySelector('.tab-bar');
@@ -39,8 +49,9 @@ function switchTab(tabId, element) {
 }
 
 function goBack() { 
-    if (lastTab === 'scan' || !document.getElementById('page-' + lastTab)) lastTab = 'tips';
-    switchTab(lastTab, document.querySelector(`.tab-item[onclick*="${lastTab}"]`)); 
+    const dest = (lastTab && lastTab !== 'scan' && document.getElementById('page-' + lastTab))
+        ? lastTab : 'tips';
+    switchTab(dest);
 }
 
 function switchMarketTab(type) {
@@ -403,8 +414,12 @@ window.App.submitPost = async function() {
         if (window.App.closePublishSheet) window.App.closePublishSheet();
         
         window.idleImages = []; 
-        if (typeof window.switchTab === 'function') window.switchTab('market', document.querySelector('.tab-item[onclick*="market"]'));
-        if (typeof window.switchMarketTab === 'function') window.switchMarketTab(type); 
+        // 发布后自动跳转到集市，并切换到对应 tab
+        if (typeof window.switchTab === 'function') window.switchTab('market');
+        if (typeof window.switchMarketTab === 'function') {
+            const tabMap = { idle: 'idle', help: 'help', partner: 'partner' };
+            window.switchMarketTab(tabMap[type] || 'idle');
+        }
         
         setTimeout(() => { if (window.App.loadCommunityPosts) window.App.loadCommunityPosts(); }, 1500);
 
