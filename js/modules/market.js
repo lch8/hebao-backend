@@ -165,8 +165,8 @@ function showSearchHint(tab, total, keyword) {
     hint.style.color = total > 0 ? '#059669' : '#9CA3AF';
 }
 
-
-    if (keyword === 'all') return true;
+function fuzzyMatch(post, keyword) {
+    if (!keyword || keyword === 'all') return true;
     const haystack = (post.title + ' ' + JSON.stringify(post.contentObj)).toLowerCase();
     return haystack.includes(keyword.toLowerCase());
 };
