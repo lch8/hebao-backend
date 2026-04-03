@@ -403,6 +403,38 @@
             </div>
         </div>
 
+        <!-- 搜索栏 -->
+        <div id="marketSearchBar" style="padding: 10px 16px 0;">
+            <div style="position: relative; display: flex; align-items: center;">
+                <svg style="position:absolute; left:12px; width:15px; height:15px; color:#9CA3AF; pointer-events:none; flex-shrink:0;" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="9" cy="9" r="6"/><path d="M15 15l-3.5-3.5"/>
+                </svg>
+                <input
+                    id="marketSearchInput"
+                    type="search"
+                    placeholder="搜索闲置、悬赏、搭子..."
+                    autocomplete="off"
+                    style="width:100%; box-sizing:border-box; padding:10px 36px 10px 34px; border-radius:12px; border:1.5px solid #E5E7EB; background:#F8FAFC; font-size:14px; font-weight:500; color:#111827; outline:none; transition:border-color 0.2s, background 0.2s; -webkit-appearance:none;"
+                    oninput="window.App.onMarketSearch(this.value)"
+                    onfocus="this.style.borderColor='#10B981'; this.style.background='#FFF';"
+                    onblur="this.style.borderColor='#E5E7EB'; this.style.background='#F8FAFC';"
+                >
+                <!-- 清空按钮 -->
+                <button
+                    id="marketSearchClear"
+                    onclick="window.App.clearMarketSearch()"
+                    style="display:none; position:absolute; right:10px; width:20px; height:20px; border-radius:50%; background:#CBD5E1; border:none; cursor:pointer; align-items:center; justify-content:center; transition:0.15s; padding:0; flex-shrink:0;"
+                    aria-label="清空搜索"
+                >
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="#FFF" stroke-width="2" stroke-linecap="round">
+                        <path d="M2 2l6 6M8 2l-6 6"/>
+                    </svg>
+                </button>
+            </div>
+            <!-- 搜索结果计数 -->
+            <div id="marketSearchHint" style="display:none; font-size:11px; color:#9CA3AF; font-weight:600; padding: 6px 2px 0;"></div>
+        </div>
+
         <!-- Tab 导航：紧贴顶栏，无多余间距 -->
         <div class="market-tabs" style="margin: 10px 16px 0;">
             <div class="m-tab active" onclick="switchMarketTab('idle', this)">🏷️ 闲置</div>
