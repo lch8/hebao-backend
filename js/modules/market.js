@@ -95,8 +95,77 @@ window.App.onFilterChange = function(tab, key, value) {
     if (typeof window.switchMarketTab === 'function') window.switchMarketTab(tab);
 };
 
-// 模糊搜索
-const fuzzyMatch = (post, keyword) => {
+// 搜索防抖计时器
+let _searchDebounce = null;
+
+window.App.onMarketSearch = function(value) {
+    const clearBtn = document.getElementById('marketSearchClear');
+    const hint     = document.getElementById('marketSearchHint');
+    if (clearBtn) clearBtn.style.display = value ? 'flex' : 'none';
+    if (hint)     hint.style.display     = 'none';
+
+    clearTimeout(_searchDebounce);
+    _searchDebounce = setTimeout(() => {
+        const tab = window.App.currentMarketTab || 'idle';
+        // 把关键词写入当前 tab 的 filter 状态
+        if (!window.App.currentMarketFilter[tab]) window.App.currentMarketFilter[tab] = {};
+        window.App.currentMarketFilter[tab].keyword = value.trim().toLowerCase();
+        // 触发当前 tab 重渲染
+        if (tab === 'idle')    window.App.renderMarketIdle();
+        if (tab === 'help')    window.App.renderMarketHelp();
+        if (tab === 'partner') window.App.renderMarketPartner();
+    }, 280);
+};
+
+window.App.clearMarketSearch = function() {
+    const input   = document.getElementById('marketSearchInput');
+    const clearBtn = document.getElementById('marketSearchClear');
+    const hint     = document.getElementById('marketSearchHint');
+    if (input)    { input.value = ''; input.focus(); }
+    if (clearBtn) clearBtn.style.display = 'none';
+    if (hint)     hint.style.display = 'none';
+    const tab = window.App.currentMarketTab || 'idle';
+    if (window.App.currentMarketFilter[tab]) window.App.currentMarketFilter[tab].keyword = '';
+    if (tab === 'idle')    window.App.renderMarketIdle();
+    if (tab === 'help')    window.App.renderMarketHelp();
+    if (tab === 'partner') window.App.renderMarketPartner();
+};
+
+// 切换 tab 时同步清空搜索框（不同 tab 独立搜索）
+const _origSwitchMarketTab = window.switchMarketTab;
+window.switchMarketTab = function(type, el) {
+    const input = document.getElementById('marketSearchInput');
+    if (input && input.value) {
+        input.value = '';
+        const clearBtn = document.getElementById('marketSearchClear');
+        const hint     = document.getElementById('marketSearchHint');
+        if (clearBtn) clearBtn.style.display = 'none';
+        if (hint)     hint.style.display = 'none';
+    }
+    if (_origSwitchMarketTab) _origSwitchMarketTab(type, el);
+};
+
+// 关键词高亮工具：把匹配词包上 <mark>
+function highlightKeyword(text, keyword) {
+    if (!keyword || !text) return text;
+    const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return String(text).replace(new RegExp(`(${escaped})`, 'gi'),
+        '<mark style="background:#FEF08A; color:#92400E; border-radius:2px; padding:0 1px;">$1</mark>');
+}
+
+// 搜索结果计数提示
+function showSearchHint(tab, total, keyword) {
+    const hint = document.getElementById('marketSearchHint');
+    if (!hint) return;
+    if (!keyword) { hint.style.display = 'none'; return; }
+    hint.style.display = 'block';
+    hint.textContent = total > 0
+        ? `找到 ${total} 条包含「${keyword}」的结果`
+        : `没找到包含「${keyword}」的内容，换个词试试？`;
+    hint.style.color = total > 0 ? '#059669' : '#9CA3AF';
+}
+
+
     if (keyword === 'all') return true;
     const haystack = (post.title + ' ' + JSON.stringify(post.contentObj)).toLowerCase();
     return haystack.includes(keyword.toLowerCase());
@@ -233,11 +302,15 @@ export const MarketEngine = {
         if (!container) return;
         let processData = [...(window.App.marketDataCache?.idle || [])];
         const state = window.App.currentMarketFilter?.idle || { loc: 'all', cat: 'all', sort: 'newest' };
+        const keyword = (state.keyword || '').trim().toLowerCase();
 
-        processData = applyLocFilter(processData, state.loc); // 应用距离筛选
+        processData = applyLocFilter(processData, state.loc);
         if (state.cat !== 'all') processData = processData.filter(post => fuzzyMatch(post, state.cat));
+        if (keyword) processData = processData.filter(post => fuzzyMatch(post, keyword));
         if (state.sort === 'price_asc') processData.sort((a, b) => (parseFloat(a.price) || 0) - (parseFloat(b.price) || 0));
         else if (state.sort === 'price_desc') processData.sort((a, b) => (parseFloat(b.price) || 0) - (parseFloat(a.price) || 0));
+
+        showSearchHint('idle', processData.length, keyword);
 
         if (processData.length === 0) { container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:60px 0; grid-column:span 2;">暂无符合条件的闲置~</div>'; return; }
 
@@ -247,6 +320,8 @@ export const MarketEngine = {
             const itemCount = itemsList.length;
             const multiBadge = itemCount > 1 ? `<div style="position:absolute; top:6px; right:6px; background:rgba(0,0,0,0.5); color:#FFF; font-size:9px; padding:2px 6px; border-radius:10px; font-weight:bold;">📸 ${itemCount}</div>` : '';
             const city = escapeHTML(item.contentObj?.city || '荷兰');
+            const rawTitle = item.contentObj?.desc || item.title || '';
+            const displayTitle = keyword ? highlightKeyword(escapeHTML(rawTitle), keyword) : escapeHTML(rawTitle);
             let imagesHtml = '';
             itemsList.forEach(subItem => { imagesHtml += `<div style="flex-shrink:0; width:100%; aspect-ratio: 1 / 1.05; scroll-snap-align:start; position:relative;"><img src="${escapeHTML(subItem.url)}" style="width:100%; height:100%; object-fit:cover; display:block;">${subItem.is_sold ? `<div style="position:absolute; top:6px; left:6px; background:rgba(0,0,0,0.6); color:white; padding:2px 6px; border-radius:4px; font-size:9px;">已售出</div>` : ''}</div>`; });
             const isAllSold = item.isAllSold; const priceDisplay = isAllSold ? '已售罄' : `€ ${escapeHTML(item.price)}`;
@@ -254,6 +329,7 @@ export const MarketEngine = {
             <div class="waterfall-item" style="background:#FFF; border-radius:10px; border: 0.5px solid rgba(0,0,0,0.04); overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.03); margin-bottom:8px; cursor:pointer; opacity: ${isAllSold ? '0.6' : '1'}; transition: opacity 0.3s;" onclick="window.App.openCommunityPost('${escapeHTML(item.id)}')">
                 <div style="position:relative; width:100%;"><div style="display:flex; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; width:100%;">${imagesHtml}</div>${multiBadge}</div>
                 <div style="padding:8px;">
+                    ${displayTitle ? `<div style="font-size:11px; color:#374151; font-weight:600; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-bottom:4px;">${displayTitle}</div>` : ''}
                     <div style="display:flex; align-items:center; justify-content:space-between;">
                         <div style="color:${isAllSold ? '#9CA3AF' : '#EF4444'}; font-size:15px; font-weight:900;">${priceDisplay}</div>
                         <div style="font-size:9px; color:#10B981; font-weight:bold; background:#ECFDF5; border:0.5px solid #6EE7B7; padding:1px 4px; border-radius:4px;">🤝 ${escapeHTML(item.deal_count || 0)}单</div>
@@ -277,20 +353,27 @@ export const MarketEngine = {
         if (!container) return;
         let processData = [...(window.App.marketDataCache?.help || [])];
         const state = window.App.currentMarketFilter?.help || { loc: 'all', cat: 'all', sort: 'newest' };
+        const keyword = (state.keyword || '').trim().toLowerCase();
 
-        processData = applyLocFilter(processData, state.loc); // 距离筛选
+        processData = applyLocFilter(processData, state.loc);
         if (state.cat !== 'all') processData = processData.filter(post => fuzzyMatch(post, state.cat));
+        if (keyword) processData = processData.filter(post => fuzzyMatch(post, keyword));
         if (state.sort === 'urgent') processData = processData.filter(post => post.contentObj?.urgent === '十万火急');
         else if (state.sort === 'reward') processData.sort((a, b) => (parseFloat(b.likes) || 0) - (parseFloat(a.likes) || 0));
+
+        showSearchHint('help', processData.length, keyword);
 
         if (processData.length === 0) { container.innerHTML = '<div style="text-align:center; color:#9CA3AF; padding:60px 0; grid-column:span 2;">暂无符合条件的悬赏哦~</div>'; return; }
 
         let html = '<div style="column-count: 2; column-gap: 8px;">';
         processData.forEach(post => {
             const isUrgent = post.contentObj?.urgent === '十万火急';
-            const titleStr = escapeHTML(post.title.replace('[互助] ', ''));
+            const titleStr = keyword
+                ? highlightKeyword(escapeHTML(post.title.replace('[互助] ', '')), keyword)
+                : escapeHTML(post.title.replace('[互助] ', ''));
             let descStr = post.contentObj?.desc || post.contentObj?.text || '';
             descStr = escapeHTML(String(descStr).replace(/\\n/g, '\n').replace(/搬运物品清单：|起点.*：|终点.*：|需要几人帮忙：/g, ' ').trim());
+            if (keyword) descStr = highlightKeyword(descStr, keyword);
             const city = escapeHTML(post.contentObj?.city || '荷兰');
 
             html += `
@@ -323,10 +406,12 @@ export const MarketEngine = {
         if (!container) return;
         let processData = [...(window.App.marketDataCache?.partner || [])];
         const state = window.App.currentMarketFilter?.partner || { loc: 'all', cat: 'all', size: 'all' };
+        const keyword = (state.keyword || '').trim().toLowerCase();
 
         processData = processData.filter(post => (parseInt(post.contentObj?.joinedCount) || 1) < (parseInt(post.contentObj?.maxPeople) || 2));
-        processData = applyLocFilter(processData, state.loc); // 距离筛选
+        processData = applyLocFilter(processData, state.loc);
         if (state.cat !== 'all') processData = processData.filter(post => fuzzyMatch(post, state.cat));
+        if (keyword) processData = processData.filter(post => fuzzyMatch(post, keyword));
         if (state.size !== 'all') {
             processData = processData.filter(post => {
                 const max = parseInt(post.contentObj?.maxPeople) || 2;
@@ -336,11 +421,16 @@ export const MarketEngine = {
 
         if (processData.length === 0) { container.innerHTML = '<div style="text-align:center; padding:60px 0; color:#9CA3AF;"><div style="font-size:40px; margin-bottom:10px;">🏕️</div><div style="font-size:14px; font-weight:bold; color:#64748B;">没有找到符合要求的组局哦</div></div>'; return; }
 
+        showSearchHint('partner', processData.length, keyword);
+
         let html = '<div style="column-count: 2; column-gap: 8px;">';
         const currentUserId = localStorage.getItem('hebao_uuid');
         processData.forEach(post => {
-            const titleStr = escapeHTML(post.title.replace('[找搭子] ', '').replace('[搭子] ', ''));
+            const titleStr = keyword
+                ? highlightKeyword(escapeHTML(post.title.replace('[找搭子] ', '').replace('[搭子] ', '')), keyword)
+                : escapeHTML(post.title.replace('[找搭子] ', '').replace('[搭子] ', ''));
             let cleanDesc = escapeHTML(String(post.contentObj?.desc || post.contentObj?.text || '').replace(/\\n/g, '\n').replace(/⏱️ 时间：.*?\n👥 队伍：.*?\n\n/g, '').trim());
+            if (keyword) cleanDesc = highlightKeyword(cleanDesc, keyword);
             const city = escapeHTML(post.contentObj?.city || '荷兰');
             const date = escapeHTML(post.contentObj?.time || post.contentObj?.date || '待定');
             const tagStr = escapeHTML(post.contentObj?.tag || '组局');
