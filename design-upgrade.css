@@ -608,3 +608,15 @@
 #sosBroadcast {
     box-shadow: 0 4px 15px rgba(239, 68, 68, 0.1) !important;
 }
+
+/* ============================================================================
+   发布按钮：永远不显示 active 态，点击时只有按压反馈
+   ============================================================================ */
+.tab-item-publish .btn-publish:active {
+    transform: scale(0.92) !important;
+}
+/* 防止 switchTab 意外给发布区域加高亮 */
+.tab-item-publish.active .tab-text,
+.tab-item-publish .tab-text {
+    color: #9CA3AF !important;
+}
