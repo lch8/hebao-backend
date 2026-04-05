@@ -132,9 +132,34 @@ export const WikiEngine = {
 
             const newsData = data.data;
             
-            // 🌟 修复崩溃：这里只声明一次 let html，彻底消灭报错！
-            // ================= ☕️ 新增：今日 Small Talk 话题榜 =================
-            const top3 = newsData.slice(0, 3);
+            // ── Top3 去重选取：标题关键词不重叠，优先选带☕️的破冰话题 ──────────
+            const tokenize = (t) => (t || '').toLowerCase().replace(/[^\u4e00-\u9fa5a-z0-9]/g, '').split('').filter(Boolean);
+            const tooSimilar = (a, b) => {
+                const ta = new Set(tokenize(a)), tb = new Set(tokenize(b));
+                let overlap = 0;
+                ta.forEach(c => { if (tb.has(c)) overlap++; });
+                return overlap / Math.max(ta.size, 1) > 0.5; // 超过 50% 字符重叠则视为同话题
+            };
+
+            // 优先把带 ☕️ 的破冰话题排到前面
+            const sorted = [...newsData].sort((a, b) => {
+                const aSmall = (a.tag || '').includes('☕') ? -1 : 0;
+                const bSmall = (b.tag || '').includes('☕') ? -1 : 0;
+                return aSmall - bSmall;
+            });
+
+            const top3 = [];
+            for (const item of sorted) {
+                if (top3.length >= 3) break;
+                const isDup = top3.some(picked => tooSimilar(picked.title, item.title));
+                if (!isDup) top3.push(item);
+            }
+            // 不足3条时用剩余补齐
+            for (const item of newsData) {
+                if (top3.length >= 3) break;
+                if (!top3.includes(item)) top3.push(item);
+            }
+
             let html = `
             <div style="background: linear-gradient(135deg, #E0E7FF 0%, #DBEAFE 100%); border-radius: 16px; padding: 16px; margin-bottom: 24px; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.1);">
                 <div style="display:flex; align-items:center; margin-bottom: 8px;">
@@ -151,7 +176,7 @@ export const WikiEngine = {
                 html += `
                     <div onclick="window.App.openNewsDetail(decodeURIComponent('${safeTitle}'), decodeURIComponent('${safeDetail}'))" style="background: rgba(255,255,255,0.8); border-radius: 10px; padding: 12px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.02);" onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform='scale(1)'">
                         <div style="font-size: 13px; font-weight: 900; color: #1E3A8A; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; flex: 1; padding-right: 10px;">
-                            <span style="color: #93C5FD; margin-right: 4px;">#${i+1}</span> ${item.title.replace(/\[.*?\]\s*/g, '')}
+                            <span style="color: #93C5FD; margin-right: 4px;">#${i+1}</span> ${(item.title || '').replace(/\[.*?\]\s*/g, '')}
                         </div>
                         <span style="color: #93C5FD; font-size: 16px; font-weight: bold; flex-shrink: 0;">›</span>
                     </div>
