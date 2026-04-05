@@ -83,6 +83,7 @@ export const WikiEngine = {
                     safeDOM.execute('safetyCheckWidget', el => el.style.display = 'block'); 
                     safeDOM.execute('wikiSectionArea', el => el.style.display = 'block'); 
                     safeDOM.execute('fabGridBtn', el => el.style.display = 'flex');
+                    safeDOM.execute('redbookContainer', el => el.classList.remove('rb-pro-theme'));
                     
                     currentRbCategory = 'all'; 
                     safeDOM.execute('wikiTabs', el => {
@@ -93,6 +94,8 @@ export const WikiEngine = {
                     });
                     safeDOM.execute('wikiListContainer', el => el.innerHTML = Skeleton.wikiCards(5));
                     requestAnimationFrame(() => this.renderWikiList());
+
+                } else if (mode === 'pro') {
                     safeDOM.execute('rbWidgetsArea', el => el.style.display = 'none'); 
                     safeDOM.execute('proWidgetsArea', el => el.style.display = 'flex');
                     safeDOM.execute('safetyCheckWidget', el => el.style.display = 'none'); 
