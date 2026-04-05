@@ -139,12 +139,25 @@ window.App.renderTodayExplore = function() {
     document.getElementById('frontExploreTitle').innerText = todayData.title || '未知档案';
     document.getElementById('exploreCopyright').innerText = todayData.copyright || '© Licensed Content';
     
-    const descObj = document.getElementById('backExploreDesc');
-    if (descObj) {
-        descObj.innerHTML = todayData.desc || '档案数据正在赶来的路上...';
+    // 背面结构化内容
+    const backTag = document.getElementById('backExploreTag');
+    const backHook = document.getElementById('backExploreHook');
+    const backBody = document.getElementById('backExploreBody');
+    const backTipWrap = document.getElementById('backExploreTipWrap');
+    const backTip = document.getElementById('backExploreTip');
+
+    if (backTag) backTag.innerText = todayData.tag || '#探索';
+    if (backHook) backHook.innerText = todayData.hook || todayData.title || '';
+    if (backBody) backBody.innerText = todayData.body || '';
+    if (backTipWrap && backTip) {
+        if (todayData.tip) {
+            backTip.innerText = todayData.tip;
+            backTipWrap.style.display = 'block';
+        } else {
+            backTipWrap.style.display = 'none';
+        }
     }
 };
-
 // 页面加载完成后自动触发
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
