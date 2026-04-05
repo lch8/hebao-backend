@@ -614,63 +614,7 @@ window.App.SocialEngine = {
 // ----------------------------------------------------------------------------
 // 🚀 满血修复：真实关注引擎与列表渲染 (自带 DOM 动态注入)
 // ----------------------------------------------------------------------------
-window.App.openFollowList = function(type) {
-    let modal = document.getElementById('followListModal');
-    
-    // 🚨 修复核心：如果网页里没有这个弹窗，就自动用 JS 创建一个高级弹窗！
-    if (!modal) {
-        document.body.insertAdjacentHTML('beforeend', `
-        <div id="followListModal" class="modal-overlay" style="display: none; align-items: flex-end; padding: 0; z-index: 2147483647;">
-            <div class="modal-content" style="width: 100%; border-radius: 20px 20px 0 0; border: none; padding: 24px; background: #F8FAFC; height: 75vh; display: flex; flex-direction: column; animation: slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <div style="font-size: 18px; font-weight: 900; color: #111827;" id="followModalTitle">我的列表</div>
-                    <div onclick="document.getElementById('followListModal').style.display='none'" style="background: #E2E8F0; width: 32px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; color: #475569; font-weight: bold; cursor: pointer; transition: 0.2s;" onmousedown="this.style.transform='scale(0.9)'" onmouseup="this.style.transform='scale(1)'">✕</div>
-                </div>
-                <div id="followListContainer" style="flex: 1; overflow-y: auto; background: #FFF; border-radius: 16px; border: 1px solid #E2E8F0; padding: 10px;"></div>
-            </div>
-        </div>`);
-        modal = document.getElementById('followListModal');
-    }
-    
-    document.getElementById('followModalTitle').innerText = type === 'following' ? '我的关注' : '我的粉丝';
-    const container = document.getElementById('followListContainer');
-    
-    // 🌟 读取真实缓存数组
-    const data = type === 'following' 
-        ? JSON.parse(localStorage.getItem('hp_following') || '[]')
-        : JSON.parse(localStorage.getItem('hp_followers') || '[]');
-
-    if (data.length === 0) {
-        container.innerHTML = `<div style="text-align:center; padding: 40px; color: #9CA3AF; font-size: 13px;">列表空空如也，快去大厅多活跃一下吧！</div>`;
-        modal.style.display = 'flex';
-        return;
-    }
-
-    let listHtml = '';
-    const myFollowing = JSON.parse(localStorage.getItem('hp_following') || '[]');
-
-    data.forEach(user => {
-        // 判断状态：已关注 / 互相关注 / 回关
-        const isFollowing = myFollowing.find(u => u.id === user.id);
-        const btnStyle = isFollowing ? 'background: #F1F5F9; color: #64748B;' : 'background: #111827; color: #FFF;';
-        const btnText = isFollowing ? (type === 'followers' ? '互相关注' : '已关注') : '回关';
-        
-        listHtml += `
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #F1F5F9;">
-            <div style="display: flex; align-items: center; gap: 12px; cursor: pointer;" onclick="document.getElementById('followListModal').style.display='none'; window.App.SocialEngine.openUserProfile('${user.id}', '${user.name}', '${user.avatar}')">
-                <div style="font-size: 24px; background: #F8FAFC; width: 44px; height: 44px; border-radius: 22px; display: flex; align-items: center; justify-content: center;">${user.avatar}</div>
-                <div>
-                    <div style="font-size: 15px; font-weight: 900; color: #111827;">${user.name}</div>
-                    <div style="font-size: 11px; color: #059669; font-weight: bold; background: #D1FAE5; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 4px;">荷包蛋</div>
-                </div>
-            </div>
-            <button onclick="window.App.SocialEngine.toggleFollowUser('${user.id}', '${user.name}', '${user.avatar}'); setTimeout(() => window.App.openFollowList('${type}'), 100);" style="border: none; padding: 6px 14px; border-radius: 12px; font-weight: 900; font-size: 12px; cursor: pointer; transition: 0.2s; ${btnStyle}">${btnText}</button>
-        </div>`;
-    });
-    
-    container.innerHTML = listHtml;
-    modal.style.display = 'flex';
-};
+// openFollowList 统一实现见下方 ↓
 
 window.App.openInviteModal = function(postId) {
     window.App.currentInvitePostId = postId;
@@ -876,39 +820,7 @@ window.App.SocialEngine = {
 // ============================================================================
 // 🚀 关注 / 粉丝列表引擎 (UI 动态注入)
 // ============================================================================
-window.App.openFollowList = function(type) {
-    let modal = document.getElementById('followListModal');
-    if (!modal) {
-        document.body.insertAdjacentHTML('beforeend', `
-        <div id="followListModal" class="modal-overlay" style="display: none; align-items: flex-end; padding: 0; z-index: 2147483647;">
-            <div class="modal-content" style="width: 100%; border-radius: 20px 20px 0 0; border: none; padding: 24px; background: #F8FAFC; height: 75vh; display: flex; flex-direction: column;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <div style="font-size: 18px; font-weight: 900; color: #111827;" id="followModalTitle">我的列表</div>
-                    <div onclick="document.getElementById('followListModal').style.display='none'" style="background: #E2E8F0; width: 32px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; color: #475569; font-weight: bold; cursor: pointer;">✕</div>
-                </div>
-                <div id="followListContainer" style="flex: 1; overflow-y: auto; background: #FFF; border-radius: 16px; border: 1px solid #E2E8F0; padding: 10px;"></div>
-            </div>
-        </div>`);
-        modal = document.getElementById('followListModal');
-    }
-    document.getElementById('followModalTitle').innerText = type === 'following' ? '我的关注' : '我的粉丝';
-    
-    const data = type === 'following' ? [{ name: '荷包蛋局长', avatar: '😎', tag: '互相关注' }] : [{ name: '熬夜冠军', avatar: '🐼', tag: '回关' }];
-    let listHtml = '';
-    data.forEach(user => {
-        const btnStyle = user.tag === '回关' ? 'background: #111827; color: #FFF;' : 'background: #F1F5F9; color: #64748B;';
-        listHtml += `
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #F1F5F9;">
-            <div style="display: flex; align-items: center; gap: 12px; cursor: pointer;" onclick="window.App.SocialEngine.openUserProfile(null, '${user.name}', '${user.avatar}')">
-                <div style="font-size: 24px; background: #F8FAFC; width: 44px; height: 44px; border-radius: 22px; display: flex; align-items: center; justify-content: center;">${user.avatar}</div>
-                <div><div style="font-size: 15px; font-weight: 900; color: #111827;">${user.name}</div><div style="font-size: 11px; color: #059669; font-weight: bold; background: #D1FAE5; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 4px;">靠谱居民</div></div>
-            </div>
-            <button style="border: none; padding: 6px 14px; border-radius: 12px; font-weight: 900; font-size: 12px; cursor: pointer; ${btnStyle}">${user.tag}</button>
-        </div>`;
-    });
-    document.getElementById('followListContainer').innerHTML = listHtml;
-    modal.style.display = 'flex';
-};
+// openFollowList 统一实现见下方 ↓
 
 window.App.openInviteModal = function(postId) {
     window.App.currentInvitePostId = postId;
@@ -1028,12 +940,12 @@ window.App.refreshProfileUI = function() {
                     <div style="font-size: 11px; color: #64748B; font-weight: bold; margin-top: 4px;">赴约率</div>
                 </div>
                 <div style="text-align: center; flex: 1; cursor: pointer; position: relative;" onclick="if(window.App.openFollowList) window.App.openFollowList('following')">
-                    <div style="font-size: 18px; font-weight: 900; color: #111827; font-family: monospace;">${following.length}</div>
-                    <div style="font-size: 11px; color: #64748B; font-weight: bold; margin-top: 4px;">关注</div>
+                    <div style="font-size: 18px; font-weight: 900; color: #111827; font-family: monospace;">${window.App.getFollowPrivacy && window.App.getFollowPrivacy().hideFollowing ? '<span style="color:#CBD5E1">--</span>' : following.length}</div>
+                    <div style="font-size: 11px; color: #64748B; font-weight: bold; margin-top: 4px;">关注${window.App.getFollowPrivacy && window.App.getFollowPrivacy().hideFollowing ? ' 🔒' : ''}</div>
                 </div>
                 <div style="text-align: center; flex: 1; cursor: pointer;" onclick="if(window.App.openFollowList) window.App.openFollowList('followers')">
-                    <div style="font-size: 18px; font-weight: 900; color: #111827; font-family: monospace;">${followers.length}</div>
-                    <div style="font-size: 11px; color: #64748B; font-weight: bold; margin-top: 4px;">粉丝</div>
+                    <div style="font-size: 18px; font-weight: 900; color: #111827; font-family: monospace;">${window.App.getFollowPrivacy && window.App.getFollowPrivacy().hideFollowers ? '<span style="color:#CBD5E1">--</span>' : followers.length}</div>
+                    <div style="font-size: 11px; color: #64748B; font-weight: bold; margin-top: 4px;">粉丝${window.App.getFollowPrivacy && window.App.getFollowPrivacy().hideFollowers ? ' 🔒' : ''}</div>
                 </div>
             `;
         }
@@ -1062,50 +974,329 @@ if (window.App.SocialEngine) {
     };
 }
 
-window.App.openFollowList = function(type) {
-    const modal = document.getElementById('followListModal');
-    if (!modal) return;
-    
-    document.getElementById('followModalTitle').innerText = type === 'following' ? '我的关注' : '我的粉丝';
+// ============================================================================
+// 关注 / 粉丝列表引擎 — 完整版（单一权威实现）
+// ============================================================================
+
+// 隐私配置读写
+window.App.getFollowPrivacy = function() {
+    return JSON.parse(localStorage.getItem('hp_follow_privacy') || '{"hideFollowing":false,"hideFollowers":false}');
+};
+window.App.setFollowPrivacy = function(key, val) {
+    const p = window.App.getFollowPrivacy();
+    p[key] = val;
+    localStorage.setItem('hp_follow_privacy', JSON.stringify(p));
+    if (window.App.refreshProfileUI) window.App.refreshProfileUI();
+};
+
+// 确保 modal DOM 存在（只注入一次）
+window.App._ensureFollowModal = function() {
+    if (document.getElementById('followListModal')) return;
+    document.body.insertAdjacentHTML('beforeend', `
+    <div id="followListModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0;
+         background:rgba(17,24,39,0.55); z-index:2147483647; align-items:flex-end;
+         backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px);">
+      <div style="width:100%; max-width:600px; margin:0 auto; background:#F8FAFC;
+                  border-radius:24px 24px 0 0; display:flex; flex-direction:column;
+                  height:82vh; animation:slideUp 0.3s cubic-bezier(0.175,0.885,0.32,1);
+                  padding-bottom:env(safe-area-inset-bottom);">
+
+        <!-- 顶部把手 -->
+        <div style="width:36px; height:4px; background:#CBD5E1; border-radius:2px; margin:12px auto 0;"></div>
+
+        <!-- Header：标题 + 设置齿轮 + 关闭 -->
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 20px 12px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div style="font-size:17px; font-weight:900; color:#111827;" id="followModalTitle">我的关注</div>
+            <div id="followModalCount" style="font-size:12px; color:#9CA3AF; font-weight:600;"></div>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div id="followPrivacyBtn" onclick="window.App.openFollowPrivacyPanel()"
+                 style="background:#F1F5F9; width:32px; height:32px; border-radius:16px;
+                        display:flex; align-items:center; justify-content:center;
+                        cursor:pointer; font-size:15px; transition:0.2s;"
+                 title="隐私设置">⚙️</div>
+            <div onclick="document.getElementById('followListModal').style.display='none'"
+                 style="background:#E2E8F0; width:32px; height:32px; border-radius:16px;
+                        display:flex; align-items:center; justify-content:center;
+                        color:#475569; font-weight:bold; cursor:pointer; font-size:14px;">✕</div>
+          </div>
+        </div>
+
+        <!-- Tab 切换：关注 / 粉丝 -->
+        <div style="display:flex; margin:0 20px 12px; background:#F1F5F9; border-radius:12px; padding:3px;">
+          <div id="followTab_following" onclick="window.App.openFollowList('following')"
+               style="flex:1; text-align:center; padding:7px 0; border-radius:9px; font-size:13px;
+                      font-weight:800; cursor:pointer; transition:0.2s;
+                      background:#FFF; color:#111827; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+            关注
+          </div>
+          <div id="followTab_followers" onclick="window.App.openFollowList('followers')"
+               style="flex:1; text-align:center; padding:7px 0; border-radius:9px; font-size:13px;
+                      font-weight:800; cursor:pointer; transition:0.2s; color:#64748B;">
+            粉丝
+          </div>
+        </div>
+
+        <!-- 搜索框 -->
+        <div style="margin:0 20px 10px; position:relative;">
+          <input id="followSearchInput" type="search" placeholder="搜索昵称..."
+                 oninput="window.App._renderFollowList(window.App._currentFollowType, this.value)"
+                 style="width:100%; box-sizing:border-box; padding:9px 14px 9px 34px;
+                        border-radius:10px; border:1.5px solid #E5E7EB; background:#FFF;
+                        font-size:13px; font-weight:500; color:#111827; outline:none;
+                        -webkit-appearance:none; transition:border-color 0.2s;"
+                 onfocus="this.style.borderColor='#10B981'" onblur="this.style.borderColor='#E5E7EB'">
+          <svg style="position:absolute; left:10px; top:50%; transform:translateY(-50%);
+                      width:14px; height:14px; color:#9CA3AF; pointer-events:none;"
+               viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="9" cy="9" r="6"/><path d="M15 15l-3.5-3.5"/>
+          </svg>
+        </div>
+
+        <!-- 隐私提示横幅（按需显示） -->
+        <div id="followPrivacyBanner" style="display:none; margin:0 20px 8px; background:#FEF9C3;
+             border:1px solid #FDE047; border-radius:10px; padding:8px 12px;
+             font-size:11px; color:#854D0E; font-weight:600; line-height:1.5;">
+        </div>
+
+        <!-- 列表容器 -->
+        <div id="followListContainer" style="flex:1; overflow-y:auto; padding:0 12px 16px;"></div>
+      </div>
+    </div>`);
+};
+
+// 渲染列表内容（支持搜索过滤）
+window.App._currentFollowType = 'following';
+window.App._renderFollowList = function(type, searchQ) {
     const container = document.getElementById('followListContainer');
-    
-    // 🌟 读取真实缓存数组
-    const data = type === 'following' 
+    const countEl   = document.getElementById('followModalCount');
+    const banner    = document.getElementById('followPrivacyBanner');
+    if (!container) return;
+
+    const privacy = window.App.getFollowPrivacy();
+    const isHidden = type === 'following' ? privacy.hideFollowing : privacy.hideFollowers;
+
+    // 隐私遮罩
+    if (isHidden) {
+        banner.style.display = 'block';
+        banner.textContent = `🔒 你已将「${type === 'following' ? '关注' : '粉丝'}」列表设为仅自己可见`;
+        container.innerHTML = `
+          <div style="text-align:center; padding:50px 20px 30px;">
+            <div style="font-size:40px; margin-bottom:12px;">🔒</div>
+            <div style="font-size:15px; font-weight:900; color:#111827; margin-bottom:6px;">列表已隐藏</div>
+            <div style="font-size:12px; color:#9CA3AF; line-height:1.6;">
+              你已开启隐私保护，其他人看不到这个列表。<br>点右上角 ⚙️ 可以调整设置。
+            </div>
+          </div>`;
+        if (countEl) countEl.textContent = '';
+        return;
+    }
+    banner.style.display = 'none';
+
+    let data = type === 'following'
         ? JSON.parse(localStorage.getItem('hp_following') || '[]')
         : JSON.parse(localStorage.getItem('hp_followers') || '[]');
 
+    // 搜索过滤
+    const q = (searchQ || '').trim().toLowerCase();
+    if (q) data = data.filter(u => (u.name || '').toLowerCase().includes(q));
+
+    if (countEl) countEl.textContent = data.length ? `${data.length} 人` : '';
+
     if (data.length === 0) {
-        container.innerHTML = `<div style="text-align:center; padding: 40px; color: #9CA3AF; font-size: 13px;">列表空空如也，快去大厅多活跃一下吧！</div>`;
-        modal.style.display = 'flex';
+        container.innerHTML = q
+            ? `<div style="text-align:center; padding:50px 20px; color:#9CA3AF; font-size:13px;">没有找到「${q}」相关的用户</div>`
+            : `<div style="text-align:center; padding:50px 20px;">
+                 <div style="font-size:36px; margin-bottom:12px;">${type === 'following' ? '🔭' : '👋'}</div>
+                 <div style="font-size:14px; font-weight:900; color:#111827; margin-bottom:6px;">
+                   ${type === 'following' ? '还没有关注任何人' : '还没有粉丝'}
+                 </div>
+                 <div style="font-size:12px; color:#9CA3AF; line-height:1.6;">
+                   ${type === 'following' ? '去集市大厅多跟大家互动吧！' : '多发帖、多互动，会有人关注你的！'}
+                 </div>
+               </div>`;
         return;
     }
 
-    let listHtml = '';
     const myFollowing = JSON.parse(localStorage.getItem('hp_following') || '[]');
+    let html = '';
 
     data.forEach(user => {
-        // 判断状态：已关注 / 互相关注 / 回关
-        const isFollowing = myFollowing.find(u => u.id === user.id);
-        const btnStyle = isFollowing ? 'background: #F1F5F9; color: #64748B;' : 'background: #111827; color: #FFF;';
-        const btnText = isFollowing ? (type === 'followers' ? '互相关注' : '已关注') : '回关';
-        
-        listHtml += `
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #F1F5F9;">
-            <div style="display: flex; align-items: center; gap: 12px; cursor: pointer;" onclick="document.getElementById('followListModal').style.display='none'; window.App.SocialEngine.openUserProfile('${user.id}', '${user.name}', '${user.avatar}')">
-                <div style="font-size: 24px; background: #F8FAFC; width: 44px; height: 44px; border-radius: 22px; display: flex; align-items: center; justify-content: center;">${user.avatar}</div>
-                <div>
-                    <div style="font-size: 15px; font-weight: 900; color: #111827;">${user.name}</div>
-                    <div style="font-size: 11px; color: #059669; font-weight: bold; background: #D1FAE5; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 4px;">荷包蛋</div>
-                </div>
+        const isMutual   = type === 'followers' && myFollowing.find(u => u.id === user.id);
+        const isFollowed = type === 'following'  && myFollowing.find(u => u.id === user.id);
+
+        // 关系标签
+        let relBadge = '';
+        if (isMutual)   relBadge = `<span style="font-size:10px; background:#ECFDF5; color:#059669; border:1px solid #A7F3D0; padding:2px 7px; border-radius:10px; font-weight:800;">互相关注</span>`;
+        else if (type === 'followers') relBadge = `<span style="font-size:10px; background:#F1F5F9; color:#64748B; border:1px solid #E2E8F0; padding:2px 7px; border-radius:10px; font-weight:700;">关注了你</span>`;
+
+        // 操作按钮
+        let btnHtml = '';
+        if (type === 'following') {
+            btnHtml = `<button onclick="window.App._confirmUnfollow('${user.id}','${(user.name||'').replace(/'/g,"\\'")}','${user.avatar||'😎'}')"
+                         style="border:1px solid #E2E8F0; padding:6px 14px; border-radius:12px; font-weight:800;
+                                font-size:12px; cursor:pointer; background:#FFF; color:#64748B; transition:0.2s;">已关注</button>`;
+        } else if (!isMutual) {
+            btnHtml = `<button onclick="window.App.SocialEngine.toggleFollowUser('${user.id}','${(user.name||'').replace(/'/g,"\\'")}','${user.avatar||'😎'}'); setTimeout(()=>window.App._renderFollowList('${type}'),100);"
+                         style="border:none; padding:6px 14px; border-radius:12px; font-weight:800;
+                                font-size:12px; cursor:pointer; background:#111827; color:#FFF; transition:0.2s;">回关</button>`;
+        } else {
+            btnHtml = `<button onclick="window.App._confirmUnfollow('${user.id}','${(user.name||'').replace(/'/g,"\\'")}','${user.avatar||'😎'}')"
+                         style="border:1px solid #E2E8F0; padding:6px 14px; border-radius:12px; font-weight:800;
+                                font-size:12px; cursor:pointer; background:#FFF; color:#64748B; transition:0.2s;">已关注</button>`;
+        }
+
+        html += `
+        <div style="display:flex; justify-content:space-between; align-items:center;
+                    padding:12px 8px; border-bottom:1px solid #F3F4F6;">
+          <div style="display:flex; align-items:center; gap:12px; cursor:pointer; flex:1; min-width:0;"
+               onclick="document.getElementById('followListModal').style.display='none';
+                        window.App.SocialEngine.openUserProfile('${user.id}','${(user.name||'').replace(/'/g,"\\'")}','${user.avatar||'😎'}')">
+            <div style="font-size:22px; background:#F1F5F9; width:44px; height:44px; min-width:44px;
+                        border-radius:22px; display:flex; align-items:center; justify-content:center;
+                        border:2px solid #FFF; box-shadow:0 2px 8px rgba(0,0,0,0.06);">${user.avatar || '😎'}</div>
+            <div style="min-width:0;">
+              <div style="font-size:14px; font-weight:900; color:#111827; white-space:nowrap;
+                          overflow:hidden; text-overflow:ellipsis;">${user.name || '匿名荷包蛋'}</div>
+              <div style="margin-top:4px;">${relBadge}</div>
             </div>
-            <button onclick="window.App.SocialEngine.toggleFollowUser('${user.id}', '${user.name}', '${user.avatar}'); setTimeout(() => window.App.openFollowList('${type}'), 100);" style="border: none; padding: 6px 14px; border-radius: 12px; font-weight: 900; font-size: 12px; cursor: pointer; transition: 0.2s; ${btnStyle}">${btnText}</button>
+          </div>
+          <div style="flex-shrink:0; margin-left:10px;">${btnHtml}</div>
         </div>`;
     });
-    container.innerHTML = listHtml;
+
+    container.innerHTML = html;
+};
+
+// 取关确认
+window.App._confirmUnfollow = function(id, name, avatar) {
+    if (!confirm(`确定要取消关注「${name}」吗？`)) return;
+    if (window.App.SocialEngine && window.App.SocialEngine.toggleFollowUser) {
+        window.App.SocialEngine.toggleFollowUser(id, name, avatar);
+    }
+    setTimeout(() => window.App._renderFollowList(window.App._currentFollowType), 100);
+};
+
+// 隐私设置面板
+window.App.openFollowPrivacyPanel = function() {
+    const privacy = window.App.getFollowPrivacy();
+    const existing = document.getElementById('followPrivacyPanel');
+    if (existing) existing.remove();
+
+    document.body.insertAdjacentHTML('beforeend', `
+    <div id="followPrivacyPanel" style="position:fixed; top:0; left:0; right:0; bottom:0;
+         z-index:2147483648; display:flex; align-items:flex-end;
+         background:rgba(17,24,39,0.5); backdrop-filter:blur(4px);">
+      <div style="width:100%; max-width:600px; margin:0 auto; background:#FFF;
+                  border-radius:24px 24px 0 0; padding:24px 20px calc(24px + env(safe-area-inset-bottom));
+                  animation:slideUp 0.3s cubic-bezier(0.175,0.885,0.32,1);">
+        <div style="width:36px; height:4px; background:#CBD5E1; border-radius:2px; margin:0 auto 20px;"></div>
+        <div style="font-size:17px; font-weight:900; color:#111827; margin-bottom:6px;">🔒 列表隐私设置</div>
+        <div style="font-size:12px; color:#9CA3AF; margin-bottom:20px; line-height:1.6;">
+          隐藏后，其他用户点开你的主页时看不到对应的数字和列表。<br>你自己仍然可以查看。
+        </div>
+
+        <!-- 隐藏关注列表 -->
+        <div style="display:flex; justify-content:space-between; align-items:center;
+                    padding:16px 0; border-bottom:1px solid #F3F4F6;">
+          <div>
+            <div style="font-size:14px; font-weight:800; color:#111827;">隐藏我的关注列表</div>
+            <div style="font-size:11px; color:#9CA3AF; margin-top:3px;">其他人看不到你关注了谁</div>
+          </div>
+          <label style="position:relative; display:inline-block; width:44px; height:24px; cursor:pointer;">
+            <input type="checkbox" id="privToggleFollowing" ${privacy.hideFollowing ? 'checked' : ''}
+                   onchange="window.App.setFollowPrivacy('hideFollowing', this.checked); window.App._renderFollowList(window.App._currentFollowType)"
+                   style="opacity:0; width:0; height:0;">
+            <span id="privTrackFollowing" style="position:absolute; top:0; left:0; right:0; bottom:0;
+                  border-radius:24px; transition:0.3s;
+                  background:${privacy.hideFollowing ? '#10B981' : '#E2E8F0'};"></span>
+            <span id="privThumbFollowing" style="position:absolute; top:2px; left:${privacy.hideFollowing ? '22' : '2'}px;
+                  width:20px; height:20px; background:#FFF; border-radius:50%;
+                  box-shadow:0 2px 4px rgba(0,0,0,0.15); transition:0.3s;"></span>
+          </label>
+        </div>
+
+        <!-- 隐藏粉丝列表 -->
+        <div style="display:flex; justify-content:space-between; align-items:center;
+                    padding:16px 0; border-bottom:1px solid #F3F4F6;">
+          <div>
+            <div style="font-size:14px; font-weight:800; color:#111827;">隐藏我的粉丝列表</div>
+            <div style="font-size:11px; color:#9CA3AF; margin-top:3px;">其他人看不到谁关注了你</div>
+          </div>
+          <label style="position:relative; display:inline-block; width:44px; height:24px; cursor:pointer;">
+            <input type="checkbox" id="privToggleFollowers" ${privacy.hideFollowers ? 'checked' : ''}
+                   onchange="window.App.setFollowPrivacy('hideFollowers', this.checked); window.App._renderFollowList(window.App._currentFollowType)"
+                   style="opacity:0; width:0; height:0;">
+            <span id="privTrackFollowers" style="position:absolute; top:0; left:0; right:0; bottom:0;
+                  border-radius:24px; transition:0.3s;
+                  background:${privacy.hideFollowers ? '#10B981' : '#E2E8F0'};"></span>
+            <span id="privThumbFollowers" style="position:absolute; top:2px; left:${privacy.hideFollowers ? '22' : '2'}px;
+                  width:20px; height:20px; background:#FFF; border-radius:50%;
+                  box-shadow:0 2px 4px rgba(0,0,0,0.15); transition:0.3s;"></span>
+          </label>
+        </div>
+
+        <!-- 动态更新 toggle 动画 -->
+        <script>
+          ['Following','Followers'].forEach(key => {
+            const input = document.getElementById('privToggle'+key);
+            if (!input) return;
+            input.addEventListener('change', function() {
+              const track = document.getElementById('privTrack'+key);
+              const thumb = document.getElementById('privThumb'+key);
+              if (track) track.style.background = this.checked ? '#10B981' : '#E2E8F0';
+              if (thumb) thumb.style.left = this.checked ? '22px' : '2px';
+            });
+          });
+        </script>
+
+        <button onclick="document.getElementById('followPrivacyPanel').remove()"
+                style="width:100%; margin-top:20px; background:#111827; color:#FFF; border:none;
+                       padding:14px; border-radius:16px; font-size:15px; font-weight:900; cursor:pointer;">
+          完成
+        </button>
+      </div>
+    </div>`);
+};
+
+// 主入口：打开关注/粉丝弹窗
+window.App.openFollowList = function(type) {
+    window.App._currentFollowType = type;
+    window.App._ensureFollowModal();
+
+    const modal = document.getElementById('followListModal');
     modal.style.display = 'flex';
+
+    // 更新 tab 高亮
+    ['following','followers'].forEach(t => {
+        const tab = document.getElementById('followTab_' + t);
+        if (!tab) return;
+        if (t === type) {
+            tab.style.background = '#FFF';
+            tab.style.color = '#111827';
+            tab.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06)';
+        } else {
+            tab.style.background = 'transparent';
+            tab.style.color = '#64748B';
+            tab.style.boxShadow = 'none';
+        }
+    });
+
+    // 更新标题
+    const title = document.getElementById('followModalTitle');
+    if (title) title.textContent = type === 'following' ? '我的关注' : '我的粉丝';
+
+    // 清空搜索框
+    const searchInput = document.getElementById('followSearchInput');
+    if (searchInput) searchInput.value = '';
+
+    window.App._renderFollowList(type, '');
 };
 
 // ----------------------------------------------------------------------------
+
 // 3. 闲置物品改价引擎 (DOM 劫持强行注入按钮)
 // ----------------------------------------------------------------------------
 window.App.editPostPrice = async function(postId) {
