@@ -38,100 +38,195 @@ export const ProfileEngine = {
                 container.innerHTML = '';
                 return;
             }
-            
             if (emptyState) emptyState.style.display = 'none';
+
+            // 日期格式化：3月24日 · 20:06
+            const fmtDate = (str) => {
+                if (!str) return '';
+                const d = new Date(str);
+                if (isNaN(d)) return str;
+                const mo = d.getMonth() + 1, dy = d.getDate();
+                const hh = String(d.getHours()).padStart(2,'0');
+                const mm = String(d.getMinutes()).padStart(2,'0');
+                return `${mo}月${dy}日 · ${hh}:${mm}`;
+            };
+
+            // 圆环 SVG（joined/max）
+            const ringProgress = (joined, max) => {
+                const r = 18, C = 2 * Math.PI * r;
+                const pct = Math.min(joined / max, 1);
+                const dash = (C * pct).toFixed(1);
+                const gap  = (C - dash).toFixed(1);
+                const isFull = joined >= max;
+                const ringColor = isFull ? '#10B981' : '#7C3AED';
+                return `
+                <svg width="48" height="48" viewBox="0 0 48 48" style="flex-shrink:0;">
+                  <circle cx="24" cy="24" r="${r}" fill="none" stroke="#F1F5F9" stroke-width="4"/>
+                  <circle cx="24" cy="24" r="${r}" fill="none" stroke="${ringColor}" stroke-width="4"
+                    stroke-dasharray="${dash} ${gap}"
+                    stroke-linecap="round"
+                    transform="rotate(-90 24 24)"
+                    style="transition:stroke-dasharray 0.6s cubic-bezier(0.4,0,0.2,1);"/>
+                  <text x="24" y="28" text-anchor="middle"
+                    style="font-size:11px; font-weight:900; fill:${ringColor}; font-family:monospace;">
+                    ${joined}/${max}
+                  </text>
+                </svg>`;
+            };
+
             let html = '';
-            
+
             window.myPostsCache.forEach(post => {
-                let contentObj = { items: [] };
+                let contentObj = {};
                 try { contentObj = typeof post.content === 'string' ? JSON.parse(post.content) : post.content; } catch(e) {}
-                
-                // 1. 处理闲置的物品列表 (原有逻辑完美保留)
-                let itemsHtml = '';
-                let firstItemPrice = '面议';
-                let firstItemImg = post.image_url || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800';
 
-                if (contentObj && contentObj.items && contentObj.items.length > 0) {
-                    firstItemPrice = contentObj.items[0].price || '面议';
-                    firstItemImg = contentObj.items[0].url || post.image_url;
-
-                    contentObj.items.forEach(item => {
-                        const isSold = item.is_sold;
-                        itemsHtml += `
-                            <div style="display:flex; justify-content:space-between; align-items:center; padding: 10px 0; border-top: 1px dashed #E5E7EB; margin-top: 8px;">
-                                <div style="display:flex; align-items:center; gap: 10px; flex: 1;">
-                                    <img src="${item.url || post.image_url}" style="width:40px; height:40px; border-radius:8px; object-fit:cover; ${isSold ? 'opacity:0.3; filter: grayscale(100%);' : ''}">
-                                    <div style="display:flex; flex-direction:column;">
-                                        <span style="font-size:14px; font-weight:700; color:${isSold ? '#9CA3AF' : '#111827'}; ${isSold ? 'text-decoration:line-through;' : ''}">${item.name || '物品'}</span>
-                                        <span style="font-size:12px; font-weight:900; color:${isSold ? '#9CA3AF' : '#D97706'};">€${item.price || 0}</span>
-                                    </div>
-                                </div>
-                                ${isSold 
-                                    ? `<div style="font-size:11px; color:#9CA3AF; font-weight:900; background:#F3F4F6; padding:4px 10px; border-radius:12px;">已出</div>` 
-                                    : `<button onclick="window.App.markItemSold(${post.id}, '${item.id}')" style="background:#10B981; border:none; padding:6px 14px; border-radius:14px; font-size:12px; font-weight:bold; color:#FFF; cursor:pointer; box-shadow: 0 2px 6px rgba(16,185,129,0.2);">卖掉了</button>`
-                                }
-                            </div>`;
-                    });
-                }
-
-                // 提取卡片类型前缀
-                const typeTag = post.title.includes('[闲置]') ? '📦 闲置' : (post.title.includes('[互助]') ? '🤝 悬赏' : '🏕️ 搭子');
+                const typeMap = {
+                    '[闲置]': { icon: '📦', label: '闲置', color: '#D97706', bg: '#FFFBEB', border: '#FDE68A' },
+                    '[互助]': { icon: '🤝', label: '悬赏', color: '#2563EB', bg: '#EFF6FF', border: '#BFDBFE' },
+                    '[搭子]': { icon: '🏕️', label: '搭子', color: '#7C3AED', bg: '#F5F3FF', border: '#DDD6FE' },
+                };
+                const typeEntry = Object.entries(typeMap).find(([k]) => post.title.includes(k));
+                const { icon, label, color, bg, border } = typeEntry
+                    ? typeEntry[1]
+                    : { icon:'📝', label:'帖子', color:'#475569', bg:'#F8FAFC', border:'#E2E8F0' };
                 const cleanTitle = post.title.replace(/\[.*?\]\s*/, '');
                 const safeTitleForJS = cleanTitle.replace(/'/g, "\\'");
 
-                // ==========================================
-                // 🌟 2. 核心替换：搭子局长专属管理面板 (改为邀请入队)
-                // ==========================================
-                let partnerManageHtml = '';
-                if (typeTag === '🏕️ 搭子' && contentObj.maxPeople) {
-                    const joined = parseInt(contentObj.joinedCount) || 1;
-                    const max = parseInt(contentObj.maxPeople) || 2;
-                    
-                    if (joined < max) {
-                        partnerManageHtml = `
-                            <div style="margin-top: 12px; padding: 12px; background: #F8FAFC; border-radius: 12px; border: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center;">
-                                <div style="display:flex; flex-direction:column; gap:2px;">
-                                    <span style="font-size: 11px; color: #64748B; font-weight: bold;">队伍进度</span>
-                                    <span style="font-size: 14px; color: #111827; font-weight: 900;">${joined} / ${max} 人</span>
-                                </div>
-                                <button onclick="if(window.App.openInviteModal) window.App.openInviteModal('${post.id}')" style="background: #FFF; color: #7C3AED; border: 1px solid #E9D5FF; padding: 8px 16px; border-radius: 10px; font-weight: 900; font-size: 13px; cursor: pointer; box-shadow: 0 2px 6px rgba(124,58,237,0.05); transition: 0.2s;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">
-                                    🙋 邀请入队
-                                </button>
+                // ── 闲置物品列表 ─────────────────────────────────────────────
+                let itemsHtml = '';
+                let firstItemPrice = '面议';
+                let firstItemImg = post.image_url || '';
+
+                if (contentObj.items && contentObj.items.length > 0) {
+                    firstItemPrice = contentObj.items[0].price || '面议';
+                    firstItemImg = contentObj.items[0].url || post.image_url || '';
+                    contentObj.items.forEach(item => {
+                        const sold = item.is_sold;
+                        itemsHtml += `
+                        <div style="display:flex; justify-content:space-between; align-items:center;
+                                    padding:10px 0; border-top:1px dashed #F3F4F6; margin-top:6px;">
+                          <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:0;">
+                            <img src="${item.url || post.image_url}" loading="lazy"
+                                 style="width:40px; height:40px; border-radius:8px; object-fit:cover; flex-shrink:0;
+                                        ${sold ? 'opacity:0.3; filter:grayscale(1);' : ''}">
+                            <div>
+                              <div style="font-size:13px; font-weight:700; color:${sold ? '#9CA3AF' : '#111827'};
+                                          ${sold ? 'text-decoration:line-through;' : ''};
+                                          white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:120px;">
+                                ${item.name || '物品'}
+                              </div>
+                              <div style="font-size:12px; font-weight:900; color:${sold ? '#9CA3AF' : '#D97706'};">
+                                €${item.price || 0}
+                              </div>
                             </div>
-                        `;
-                    } else {
-                        partnerManageHtml = `
-                            <div style="margin-top: 12px; padding: 12px; background: #F8FAFC; border-radius: 12px; border: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center;">
-                                <div style="display:flex; flex-direction:column; gap:2px;">
-                                    <span style="font-size: 11px; color: #64748B; font-weight: bold;">队伍进度</span>
-                                    <span style="font-size: 14px; color: #111827; font-weight: 900;">${joined} / ${max} 人</span>
-                                </div>
-                                <span style="font-size: 12px; color: #EF4444; font-weight: bold; background: #FEE2E2; padding: 6px 12px; border-radius: 8px;">车门已焊死 (满员)</span>
-                            </div>
-                        `;
-                    }
+                          </div>
+                          ${sold
+                            ? `<div style="font-size:11px;color:#9CA3AF;font-weight:900;background:#F3F4F6;padding:4px 10px;border-radius:12px;">已出</div>`
+                            : `<button onclick="window.App.markItemSold(${post.id},'${item.id}')"
+                                 style="background:#10B981;border:none;padding:6px 14px;border-radius:12px;
+                                        font-size:12px;font-weight:bold;color:#FFF;cursor:pointer;
+                                        box-shadow:0 2px 6px rgba(16,185,129,0.2);">卖掉了</button>`
+                          }
+                        </div>`;
+                    });
                 }
 
-                // 3. 组装整张卡片 (原有外框和删除、海报功能完美保留)
-                html += `
-                    <div class="my-post-card" id="myPost_${post.id}" style="background:#FFF; border-radius:16px; padding:16px; margin-bottom:15px; box-shadow:0 4px 15px rgba(0,0,0,0.03); border:1px solid #F3F4F6;">
-                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">
-                            <div style="font-size:15px; font-weight:900; color:#111827; flex:1; padding-right:10px; line-height: 1.4;">${typeTag} | ${cleanTitle}</div>
-                            <button onclick="window.App.deleteMyPost(${post.id})" style="background:#FEF2F2; color:#DC2626; border:1px solid #FECACA; padding:4px 12px; border-radius:14px; font-size:12px; font-weight:bold; cursor:pointer;">删除</button>
-                        </div>
-                        <div style="font-size:11px; color:#9CA3AF; margin-bottom:10px; font-weight:bold;">发布于: ${new Date(post.created_at).toLocaleString()}</div>
-                        
-                        <div>${itemsHtml}</div>
-                        
-                        ${partnerManageHtml}
+                // ── 搭子专属管理面板 ─────────────────────────────────────────
+                let partnerPanel = '';
+                if (label === '搭子' && contentObj.maxPeople) {
+                    const joined = parseInt(contentObj.joinedCount) || 1;
+                    const max    = parseInt(contentObj.maxPeople)   || 2;
+                    const isFull = joined >= max;
 
-                        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed #E5E7EB; display: flex; justify-content: flex-end;">
-                            <button onclick="window.App.generateAndSharePoster('${safeTitleForJS}', '${firstItemPrice}', '${firstItemImg}', '${typeTag}')" style="background:#E0F2FE; color:#0284C7; border:1px solid #BAE6FD; padding:8px 16px; border-radius:12px; font-size:13px; font-weight:900; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow: 0 2px 4px rgba(2,132,199,0.1); transition: 0.1s;" onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='scale(1)'">
-                                <span style="font-size:16px;">📤</span> 生成专属海报，去引流！
-                            </button>
+                    partnerPanel = `
+                    <div style="margin-top:14px; background:#FAFBFF; border:1px solid #E8E4FF;
+                                border-radius:14px; overflow:hidden;">
+                      <div style="display:flex; align-items:center; gap:14px; padding:14px 16px;
+                                  border-bottom:1px solid #F0EDFF;">
+                        ${ringProgress(joined, max)}
+                        <div style="flex:1; min-width:0;">
+                          <div style="font-size:13px; font-weight:900; color:#111827; margin-bottom:3px;">
+                            ${isFull ? '🎉 队伍已满员！' : `还差 <span style="color:#7C3AED;">${max - joined}</span> 人加入`}
+                          </div>
+                          <div style="font-size:11px; color:#9CA3AF; font-weight:600;">
+                            ${contentObj.tag || '组局'} · ${contentObj.city || '荷兰'}
+                            ${contentObj.time ? ' · ' + contentObj.time : ''}
+                          </div>
                         </div>
+                        ${isFull
+                          ? `<span style="font-size:11px;color:#059669;background:#ECFDF5;border:1px solid #A7F3D0;padding:4px 10px;border-radius:20px;font-weight:800;">车门焊死</span>`
+                          : `<span style="font-size:11px;color:#DC2626;background:#FEF2F2;border:1px solid #FECACA;padding:4px 10px;border-radius:20px;font-weight:800;">招募中</span>`
+                        }
+                      </div>
+                      <div style="display:flex; align-items:center; gap:8px; padding:10px 12px;">
+                        <button onclick="window.App.showToast && window.App.showToast('编辑功能即将上线','info')"
+                                style="background:#FFF;color:#374151;border:1px solid #E5E7EB;padding:8px 14px;
+                                       border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;
+                                       display:flex;align-items:center;gap:5px;flex-shrink:0;"
+                                onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">
+                          ✏️ 编辑信息
+                        </button>
+                        <button onclick="window.App.openInviteModal && window.App.openInviteModal('${post.id}')"
+                                style="background:#F5F3FF;color:#7C3AED;border:1px solid #DDD6FE;padding:8px 12px;
+                                       border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;
+                                       display:flex;align-items:center;gap:4px;flex-shrink:0;"
+                                onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">
+                          🙋 邀请
+                        </button>
+                        <button onclick="window.App.generateAndSharePoster && window.App.generateAndSharePoster('${safeTitleForJS}','${firstItemPrice}','${firstItemImg}','${label}')"
+                                style="flex:1;background:linear-gradient(135deg,#7C3AED,#6D28D9);color:#FFF;border:none;
+                                       padding:8px 10px;border-radius:10px;font-size:12px;font-weight:900;cursor:pointer;
+                                       display:flex;align-items:center;justify-content:center;gap:5px;
+                                       box-shadow:0 4px 12px rgba(124,58,237,0.3);"
+                                onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='scale(1)'">
+                          🚀 生成海报 · 去引流！
+                        </button>
+                      </div>
                     </div>`;
+                }
+
+                // ── 卡片外壳 ─────────────────────────────────────────────────
+                html += `
+                <div class="my-post-card" id="myPost_${post.id}"
+                     style="background:#FFF;border-radius:16px;padding:15px 16px 14px;
+                            margin-bottom:12px;box-shadow:0 4px 16px rgba(17,24,39,0.04);
+                            border:1px solid rgba(229,231,235,0.7);">
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                    <span style="flex-shrink:0;font-size:10px;font-weight:800;color:${color};
+                                 background:${bg};border:1px solid ${border};
+                                 padding:3px 8px;border-radius:20px;white-space:nowrap;">
+                      ${icon} ${label}
+                    </span>
+                    <span style="flex:1;font-size:14px;font-weight:800;color:#111827;line-height:1.4;
+                                 overflow:hidden;text-overflow:ellipsis;display:-webkit-box;
+                                 -webkit-line-clamp:1;-webkit-box-orient:vertical;">
+                      ${cleanTitle}
+                    </span>
+                    <span style="flex-shrink:0;font-size:10px;color:#9CA3AF;font-weight:600;white-space:nowrap;">
+                      ${fmtDate(post.created_at)}
+                    </span>
+                    <button onclick="window.App.deleteMyPost(${post.id})"
+                            style="flex-shrink:0;background:#FEF2F2;color:#DC2626;border:1px solid #FECACA;
+                                   padding:4px 10px;border-radius:12px;font-size:11px;font-weight:800;
+                                   cursor:pointer;white-space:nowrap;">删除</button>
+                  </div>
+                  ${itemsHtml}
+                  ${partnerPanel}
+                  ${label !== '搭子' ? `
+                  <div style="margin-top:12px;padding-top:11px;border-top:1px solid #F3F4F6;
+                              display:flex;justify-content:flex-end;">
+                    <button onclick="window.App.generateAndSharePoster && window.App.generateAndSharePoster('${safeTitleForJS}','${firstItemPrice}','${firstItemImg}','${label}')"
+                            style="background:linear-gradient(135deg,#0EA5E9,#0284C7);color:#FFF;border:none;
+                                   padding:8px 16px;border-radius:12px;font-size:12px;font-weight:900;
+                                   cursor:pointer;display:flex;align-items:center;gap:6px;
+                                   box-shadow:0 4px 10px rgba(2,132,199,0.25);"
+                            onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='scale(1)'">
+                      <span style="font-size:14px;">🚀</span> 生成海报 · 去引流！
+                    </button>
+                  </div>` : ''}
+                </div>`;
             });
+
             container.innerHTML = html;
         });
     },
