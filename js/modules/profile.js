@@ -1,5 +1,5 @@
 // ============================================================================
-// js/modules/profile.js - 用户个人中心与发布管理引擎 (带引流海报)
+// js/modules/profile.js - 用户个人中心与发布管理引擎 (终极融合版)
 // ============================================================================
 import { safeDOM } from '../core/dom.js';
 import { showToast } from '../core/toast.js';
@@ -51,7 +51,7 @@ export const ProfileEngine = {
                 return `${mo}月${dy}日 · ${hh}:${mm}`;
             };
 
-            // 圆环 SVG（joined/max）
+            // 圆环 SVG（搭子进度）
             const ringProgress = (joined, max) => {
                 const r = 18, C = 2 * Math.PI * r;
                 const pct = Math.min(joined / max, 1);
@@ -81,93 +81,58 @@ export const ProfileEngine = {
                 try { contentObj = typeof post.content === 'string' ? JSON.parse(post.content) : post.content; } catch(e) {}
 
                 const typeMap = {
-                    '[闲置]': { icon: '📦', label: '闲置', color: '#92400E', bg: '#FFFBEB', border: '#FDE68A', accentColor: '#D97706' },
-                    '[互助]': { icon: '🤝', label: '悬赏', color: '#1E40AF', bg: '#EFF6FF', border: '#BFDBFE', accentColor: '#2563EB' },
-                    '[搭子]': { icon: '🏕️', label: '搭子', color: '#5B21B6', bg: '#F5F3FF', border: '#DDD6FE', accentColor: '#7C3AED' },
+                    '[闲置]': { icon: '📦', label: '闲置', color: '#D97706', bg: '#FFFBEB', border: '#FDE68A' },
+                    '[互助]': { icon: '🤝', label: '悬赏', color: '#2563EB', bg: '#EFF6FF', border: '#BFDBFE' },
+                    '[搭子]': { icon: '🏕️', label: '搭子', color: '#7C3AED', bg: '#F5F3FF', border: '#DDD6FE' },
                 };
                 const typeEntry = Object.entries(typeMap).find(([k]) => post.title.includes(k));
-                const { icon, label, color, bg, border, accentColor } = typeEntry
+                const { icon, label, color, bg, border } = typeEntry
                     ? typeEntry[1]
-                    : { icon:'📝', label:'帖子', color:'#374151', bg:'#F8FAFC', border:'#E2E8F0', accentColor:'#6B7280' };
+                    : { icon:'📝', label:'帖子', color:'#475569', bg:'#F8FAFC', border:'#E2E8F0' };
                 const cleanTitle = post.title.replace(/\[.*?\]\s*/, '');
                 const safeTitleForJS = cleanTitle.replace(/'/g, "\\'");
 
-                // ── 闲置：封面图横向滚动 + 物品行 ───────────────────────────
-                let coverHtml = '';
-                let itemRowsHtml = '';
+                // ── 闲置物品列表 (融合了版本2的高级缩略图列表) ─────────────────────────────
+                let itemsHtml = '';
                 let firstItemPrice = '面议';
                 let firstItemImg = post.image_url || '';
-                let totalPrice = 0;
-                let soldCount = 0;
 
                 if (contentObj.items && contentObj.items.length > 0) {
                     firstItemPrice = contentObj.items[0].price || '面议';
-                    firstItemImg   = contentObj.items[0].url || post.image_url || '';
-
-                    // 封面横滚图区
-                    const imgs = contentObj.items.map(item => {
-                        const sold = item.is_sold;
-                        if (!sold) totalPrice += parseFloat(item.price) || 0;
-                        else soldCount++;
-                        return `
-                        <div style="flex-shrink:0; width:90px; height:90px; border-radius:10px; overflow:hidden;
-                                    position:relative; scroll-snap-align:start;">
-                          <img src="${item.url || post.image_url}" loading="lazy"
-                               style="width:100%;height:100%;object-fit:cover;display:block;
-                                      ${sold ? 'filter:grayscale(1);opacity:0.45;' : ''}">
-                          ${sold ? `<div style="position:absolute;inset:0;display:flex;align-items:center;
-                                                justify-content:center;">
-                              <span style="background:rgba(0,0,0,0.55);color:#FFF;font-size:9px;font-weight:800;
-                                           padding:2px 7px;border-radius:8px;letter-spacing:0.5px;">已出</span>
-                            </div>` : ''}
-                        </div>`;
-                    }).join('');
-
-                    const allSold = soldCount === contentObj.items.length;
-                    const priceLabel = allSold
-                        ? `<span style="color:#9CA3AF;font-size:14px;font-weight:700;">全部已售出</span>`
-                        : `<span style="color:#EF4444;font-size:18px;font-weight:900;font-family:monospace;">€${totalPrice.toFixed(2)}</span>
-                           ${soldCount > 0 ? `<span style="font-size:11px;color:#9CA3AF;font-weight:600;">· ${soldCount}件已出</span>` : ''}`;
-
-                    coverHtml = `
-                    <div style="margin-bottom:12px;">
-                      <div style="display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;
-                                  scrollbar-width:none;padding-bottom:2px;margin-bottom:10px;">
-                        ${imgs}
-                      </div>
-                      <div style="display:flex;align-items:baseline;gap:6px;">
-                        ${priceLabel}
-                      </div>
-                    </div>`;
-
-                    // 物品操作行（改为紧凑列表）
+                    firstItemImg = contentObj.items[0].url || post.image_url || '';
+                    
                     contentObj.items.forEach(item => {
                         const sold = item.is_sold;
-                        itemRowsHtml += `
-                        <div style="display:flex;align-items:center;gap:10px;
-                                    padding:9px 0;border-top:1px solid #F3F4F6;">
-                          <div style="font-size:13px;font-weight:700;color:${sold ? '#9CA3AF' : '#111827'};
-                                      flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;
-                                      white-space:nowrap;${sold ? 'text-decoration:line-through;' : ''}">
-                            ${item.name || '物品'}
-                          </div>
-                          <div style="font-size:13px;font-weight:900;color:${sold ? '#9CA3AF' : '#D97706'};
-                                      flex-shrink:0;">
-                            €${item.price || 0}
+                        itemsHtml += `
+                        <div style="display:flex; justify-content:space-between; align-items:center;
+                                    padding:10px 0; border-top:1px dashed #F3F4F6; margin-top:6px;">
+                          <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:0;">
+                            <img src="${item.url || post.image_url}" loading="lazy"
+                                 style="width:40px; height:40px; border-radius:8px; object-fit:cover; flex-shrink:0;
+                                        ${sold ? 'opacity:0.3; filter:grayscale(1);' : ''}">
+                            <div>
+                              <div style="font-size:13px; font-weight:700; color:${sold ? '#9CA3AF' : '#111827'};
+                                          ${sold ? 'text-decoration:line-through;' : ''};
+                                          white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:120px;">
+                                ${item.name || '物品'}
+                              </div>
+                              <div style="font-size:12px; font-weight:900; color:${sold ? '#9CA3AF' : '#D97706'};">
+                                €${item.price || 0}
+                              </div>
+                            </div>
                           </div>
                           ${sold
-                            ? `<div style="font-size:11px;color:#9CA3AF;font-weight:700;background:#F3F4F6;
-                                           padding:3px 9px;border-radius:20px;flex-shrink:0;">已出</div>`
+                            ? `<div style="font-size:11px;color:#9CA3AF;font-weight:900;background:#F3F4F6;padding:4px 10px;border-radius:12px;">已出</div>`
                             : `<button onclick="window.App.markItemSold(${post.id},'${item.id}')"
-                                 style="flex-shrink:0;background:#ECFDF5;color:#059669;border:1px solid #6EE7B7;
-                                        padding:4px 10px;border-radius:20px;font-size:11px;font-weight:800;
-                                        cursor:pointer;white-space:nowrap;">卖掉了</button>`
+                                 style="background:#10B981;border:none;padding:6px 14px;border-radius:12px;
+                                        font-size:12px;font-weight:bold;color:#FFF;cursor:pointer;
+                                        box-shadow:0 2px 6px rgba(16,185,129,0.2);">卖掉了</button>`
                           }
                         </div>`;
                     });
                 }
 
-                // ── 搭子专属管理面板 ─────────────────────────────────────────
+                // ── 搭子专属管理面板 (融合了版本2的编辑按钮) ───────────────────────────
                 let partnerPanel = '';
                 if (label === '搭子' && contentObj.maxPeople) {
                     const joined = parseInt(contentObj.joinedCount) || 1;
@@ -175,93 +140,93 @@ export const ProfileEngine = {
                     const isFull = joined >= max;
 
                     partnerPanel = `
-                    <div style="margin-top:12px;background:#FAFBFF;border:1px solid #EDE9FF;
-                                border-radius:14px;overflow:hidden;">
-                      <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;
+                    <div style="margin-top:14px; background:#FAFBFF; border:1px solid #E8E4FF;
+                                border-radius:14px; overflow:hidden;">
+                      <div style="display:flex; align-items:center; gap:14px; padding:14px 16px;
                                   border-bottom:1px solid #F0EDFF;">
                         ${ringProgress(joined, max)}
-                        <div style="flex:1;min-width:0;">
-                          <div style="font-size:14px;font-weight:900;color:#111827;margin-bottom:5px;">
+                        <div style="flex:1; min-width:0;">
+                          <div style="font-size:13px; font-weight:900; color:#111827; margin-bottom:3px;">
                             ${isFull ? '🎉 队伍已满员！' : `还差 <span style="color:#7C3AED;">${max - joined}</span> 人加入`}
                           </div>
-                          <div style="display:flex;flex-wrap:wrap;gap:5px;">
-                            ${contentObj.tag ? `<span style="font-size:10px;font-weight:700;color:#5B21B6;background:#EDE9FF;padding:2px 7px;border-radius:10px;">${contentObj.tag}</span>` : ''}
-                            ${contentObj.city ? `<span style="font-size:10px;font-weight:700;color:#374151;background:#F3F4F6;padding:2px 7px;border-radius:10px;">📍${contentObj.city}</span>` : ''}
-                            ${contentObj.time ? `<span style="font-size:10px;font-weight:700;color:#374151;background:#F3F4F6;padding:2px 7px;border-radius:10px;">🗓️${contentObj.time}</span>` : ''}
+                          <div style="font-size:11px; color:#9CA3AF; font-weight:600;">
+                            ${contentObj.tag || '组局'} · ${contentObj.city || '荷兰'}
+                            ${contentObj.time ? ' · ' + contentObj.time : ''}
                           </div>
                         </div>
                         ${isFull
-                          ? `<span style="font-size:11px;color:#059669;background:#ECFDF5;border:1px solid #A7F3D0;padding:4px 10px;border-radius:20px;font-weight:800;flex-shrink:0;">已满</span>`
-                          : `<span style="font-size:11px;color:#DC2626;background:#FEF2F2;border:1px solid #FECACA;padding:4px 10px;border-radius:20px;font-weight:800;flex-shrink:0;">招募中</span>`
+                          ? `<span style="font-size:11px;color:#059669;background:#ECFDF5;border:1px solid #A7F3D0;padding:4px 10px;border-radius:20px;font-weight:800;">车门焊死</span>`
+                          : `<span style="font-size:11px;color:#DC2626;background:#FEF2F2;border:1px solid #FECACA;padding:4px 10px;border-radius:20px;font-weight:800;">招募中</span>`
                         }
                       </div>
-                      <div style="display:flex;gap:8px;padding:10px 12px;">
+                      <div style="display:flex; align-items:center; gap:8px; padding:10px 12px;">
+                        <button onclick="window.App.showToast && window.App.showToast('编辑功能即将上线','info')"
+                                style="background:#FFF;color:#374151;border:1px solid #E5E7EB;padding:8px 14px;
+                                       border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;
+                                       display:flex;align-items:center;gap:5px;flex-shrink:0;"
+                                onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">
+                          ✏️ 编辑
+                        </button>
                         <button onclick="window.App.openInviteModal && window.App.openInviteModal('${post.id}')"
-                                style="flex:1;background:#FFF;color:#7C3AED;border:1px solid #DDD6FE;
-                                       padding:9px 0;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;"
-                                onmousedown="this.style.background='#F5F3FF'" onmouseup="this.style.background='#FFF'">
-                          🙋 邀请入队
+                                style="background:#F5F3FF;color:#7C3AED;border:1px solid #DDD6FE;padding:8px 12px;
+                                       border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;
+                                       display:flex;align-items:center;gap:4px;flex-shrink:0;"
+                                onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">
+                          🙋 邀请
                         </button>
                         <button onclick="window.App.generateAndSharePoster && window.App.generateAndSharePoster('${safeTitleForJS}','${firstItemPrice}','${firstItemImg}','${label}')"
-                                style="flex:2;background:#7C3AED;color:#FFF;border:none;
-                                       padding:9px 0;border-radius:10px;font-size:12px;font-weight:900;cursor:pointer;"
-                                onmousedown="this.style.opacity='0.85'" onmouseup="this.style.opacity='1'">
-                          🚀 生成引流海报
+                                style="flex:1;background:linear-gradient(135deg,#7C3AED,#6D28D9);color:#FFF;border:none;
+                                       padding:8px 10px;border-radius:10px;font-size:12px;font-weight:900;cursor:pointer;
+                                       display:flex;align-items:center;justify-content:center;gap:5px;
+                                       box-shadow:0 4px 12px rgba(124,58,237,0.3);"
+                                onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='scale(1)'">
+                          🚀 去引流
                         </button>
                       </div>
                     </div>`;
                 }
 
-                // ── 底部操作栏（闲置 & 悬赏）────────────────────────────────
-                const footerBar = label !== '搭子' ? `
-                <div style="margin-top:12px;padding-top:11px;border-top:1px solid #F3F4F6;
-                            display:flex;align-items:center;justify-content:flex-end;gap:8px;">
-                  <button onclick="window.App.generateAndSharePoster && window.App.generateAndSharePoster('${safeTitleForJS}','${firstItemPrice}','${firstItemImg}','${label}')"
-                          style="background:#F1F5F9;color:#374151;border:none;padding:8px 16px;
-                                 border-radius:20px;font-size:12px;font-weight:800;cursor:pointer;
-                                 display:flex;align-items:center;gap:5px;"
-                          onmousedown="this.style.background='#E2E8F0'" onmouseup="this.style.background='#F1F5F9'">
-                    📤 生成引流海报
-                  </button>
-                </div>` : '';
-
                 // ── 卡片外壳 ─────────────────────────────────────────────────
                 html += `
                 <div class="my-post-card" id="myPost_${post.id}"
-                     style="background:#FFF;border-radius:16px;padding:16px;
-                            margin-bottom:10px;box-shadow:0 2px 12px rgba(17,24,39,0.05);
-                            border:1px solid #F0F0F0;">
-
-                  <!-- 头部：类型标签 + 标题 + 时间 + 删除 -->
-                  <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:12px;">
+                     style="background:#FFF;border-radius:16px;padding:15px 16px 14px;
+                            margin-bottom:12px;box-shadow:0 4px 16px rgba(17,24,39,0.04);
+                            border:1px solid rgba(229,231,235,0.7);">
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
                     <span style="flex-shrink:0;font-size:10px;font-weight:800;color:${color};
                                  background:${bg};border:1px solid ${border};
-                                 padding:3px 8px;border-radius:20px;margin-top:2px;">
+                                 padding:3px 8px;border-radius:20px;white-space:nowrap;">
                       ${icon} ${label}
                     </span>
-                    <div style="flex:1;min-width:0;">
-                      <div style="font-size:15px;font-weight:800;color:#111827;line-height:1.4;
-                                  overflow:hidden;text-overflow:ellipsis;display:-webkit-box;
-                                  -webkit-line-clamp:2;-webkit-box-orient:vertical;">
-                        ${cleanTitle}
-                      </div>
-                      <div style="font-size:11px;color:#9CA3AF;font-weight:500;margin-top:3px;">
-                        ${fmtDate(post.created_at)}
-                      </div>
-                    </div>
+                    <span style="flex:1;font-size:14px;font-weight:800;color:#111827;line-height:1.4;
+                                 overflow:hidden;text-overflow:ellipsis;display:-webkit-box;
+                                 -webkit-line-clamp:1;-webkit-box-orient:vertical;">
+                      ${cleanTitle}
+                    </span>
+                    <span style="flex-shrink:0;font-size:10px;color:#9CA3AF;font-weight:600;white-space:nowrap;">
+                      ${fmtDate(post.created_at)}
+                    </span>
                     <button onclick="window.App.deleteMyPost(${post.id})"
-                            style="flex-shrink:0;background:none;color:#CBD5E1;border:none;
-                                   font-size:18px;cursor:pointer;padding:0 2px;line-height:1;
-                                   transition:color 0.15s;"
-                            onmouseenter="this.style.color='#EF4444'" onmouseleave="this.style.color='#CBD5E1'">
-                      ×
-                    </button>
+                            style="flex-shrink:0;background:#FEF2F2;color:#DC2626;border:1px solid #FECACA;
+                                   padding:4px 10px;border-radius:12px;font-size:11px;font-weight:800;
+                                   cursor:pointer;white-space:nowrap;">删除</button>
                   </div>
-
-                  ${coverHtml}
-                  ${itemRowsHtml}
+                  
+                  ${itemsHtml}
                   ${partnerPanel}
-                  ${footerBar}
+                  
+                  ${label !== '搭子' ? `
+                  <div style="margin-top:12px;padding-top:11px;border-top:1px solid #F3F4F6;
+                              display:flex;justify-content:flex-end;">
+                    <button onclick="window.App.generateAndSharePoster && window.App.generateAndSharePoster('${safeTitleForJS}','${firstItemPrice}','${firstItemImg}','${label}')"
+                            style="background:linear-gradient(135deg,#0EA5E9,#0284C7);color:#FFF;border:none;
+                                   padding:8px 16px;border-radius:12px;font-size:12px;font-weight:900;
+                                   cursor:pointer;display:flex;align-items:center;gap:6px;
+                                   box-shadow:0 4px 10px rgba(2,132,199,0.25);"
+                            onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='scale(1)'">
+                      <span style="font-size:14px;">🚀</span> 生成海报 · 去引流！
+                    </button>
+                  </div>` : ''}
                 </div>`;
             });
 
@@ -269,7 +234,7 @@ export const ProfileEngine = {
         });
     },
 
-        // 3. 彻底删除帖子 (联动云端)
+    // 3. 彻底删除帖子 (联动云端)
     async deleteMyPost(postId) {
         if(!confirm("⚠️ 确定要彻底删除这条发布吗？删除后无法恢复！")) return;
         try {
@@ -296,7 +261,7 @@ export const ProfileEngine = {
         }
     },
 
-   // ============================================================================
+    // ============================================================================
     // 🌟 核心引擎：将修改瞬间同步到集市大厅内存 (绝杀数据库延迟！)
     // ============================================================================
     syncToMarket(postId, newContentObj, newContentStr, type) {
