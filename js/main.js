@@ -96,6 +96,13 @@ import { ProfileEngine } from './modules/profile.js';
 window.App = window.App || {};
 
 window.App.renderTodayExplore = function() {
+    const cards = window.App.townCardsData || [];
+    const fallbacks = cards.filter(c => c.imgUrl !== img.src);
+    if (fallbacks.length > 0) {
+        const pick = fallbacks[Math.floor(Math.random() * fallbacks.length)];
+        img.onerror = null;
+        img.src = pick.imgUrl;
+    }
     // 1. 获取今天的月和日 (格式: MM-DD)
     const today = new Date();
     const month = String(today.getMonth() + 1).padStart(2, '0');
