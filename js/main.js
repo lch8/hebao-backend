@@ -94,8 +94,7 @@ import { ProfileEngine } from './modules/profile.js';
 // 🗺️ 荷村智能探索引擎 (节日拦截 + 小镇轮播)
 // ==========================================
 window.App = window.App || {};
-
-window.App.renderTodayExplore = function() {
+window.App._cardImgFallback = function(img) {
     const cards = window.App.townCardsData || [];
     const fallbacks = cards.filter(c => c.imgUrl !== img.src);
     if (fallbacks.length > 0) {
@@ -103,6 +102,8 @@ window.App.renderTodayExplore = function() {
         img.onerror = null;
         img.src = pick.imgUrl;
     }
+};
+window.App.renderTodayExplore = function() {
     // 1. 获取今天的月和日 (格式: MM-DD)
     const today = new Date();
     const month = String(today.getMonth() + 1).padStart(2, '0');
