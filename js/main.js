@@ -103,60 +103,86 @@ window.App._cardImgFallback = function(img) {
         img.src = pick.imgUrl;
     }
 };
+window.App._exploreIsFlipped = false;
+
+window.App.toggleExploreCard = function() {
+    const front = document.getElementById('exploreFront');
+    const back  = document.getElementById('exploreBack');
+    const arrow = document.getElementById('exploreArrow');
+    if (!front || !back) return;
+    window.App._exploreIsFlipped = !window.App._exploreIsFlipped;
+    if (window.App._exploreIsFlipped) {
+        front.classList.add('hidden');
+        back.classList.add('visible');
+        if (arrow) arrow.style.transform = 'rotate(90deg)';
+    } else {
+        front.classList.remove('hidden');
+        back.classList.remove('visible');
+        if (arrow) arrow.style.transform = 'rotate(0deg)';
+    }
+};
+
 window.App.renderTodayExplore = function() {
-    // 1. 获取今天的月和日 (格式: MM-DD)
     const today = new Date();
     const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
+    const day   = String(today.getDate()).padStart(2, '0');
     const currentDate = `${month}-${day}`;
-    
+
     let todayData = null;
 
-    // 2. 🚦 优先拦截：今天是不是特殊节日？
+    // 节日优先拦截
     const holidayCards = window.App.holidayCardsData || [];
     const holidayMatch = holidayCards.find(c => c.date === currentDate);
-
     if (holidayMatch) {
-        // 命中节日！直接展示节日彩蛋
         todayData = holidayMatch;
     } else {
-        // 3. 正常日子：在小镇库里按一年中的第几天循环抽一张
         const townCards = window.App.townCardsData || [];
         if (townCards.length === 0) return;
-        
         const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
         todayData = townCards[dayOfYear % townCards.length];
     }
 
-    // 4. 开始渲染数据到 3D 卡片
-    const imgObj = document.getElementById('frontExploreImg');
-    if (imgObj) {
-        // 终极防碎图保镖
-        imgObj.onerror = function() {
-            console.warn("发现碎图！已自动切换至备用绝美风景图 🛡️");
-            this.onerror = null; 
+    // 正面图片（前后两张缩略图共用同一 URL）
+    const imgUrl = todayData.imgUrl || '';
+    const cropPos = todayData.crop || 'center';
+
+    const frontImg = document.getElementById('frontExploreImg');
+    if (frontImg) {
+        frontImg.onerror = function() {
+            this.onerror = null;
             this.src = 'https://images.unsplash.com/photo-1464692805480-a69dfaafdb0d?auto=format&fit=crop&w=800&q=80';
-            this.style.objectPosition = 'center 30%'; 
+            this.style.objectPosition = 'center 30%';
         };
-        imgObj.src = todayData.imgUrl; 
-        imgObj.style.objectPosition = todayData.crop || 'center'; 
+        frontImg.src = imgUrl;
+        frontImg.style.objectPosition = cropPos;
     }
-    
-    // 注入文字
-    document.getElementById('frontExploreTag').innerText = todayData.tag || '#探索';
-    document.getElementById('frontExploreTitle').innerText = todayData.title || '未知档案';
-    document.getElementById('exploreCopyright').innerText = todayData.copyright || '© Licensed Content';
-    
-    // 背面结构化内容
-    const backTag = document.getElementById('backExploreTag');
+
+    // 背面顶部缩略图（同一张图，模糊背景）
+    const backThumb = document.getElementById('backExploreThumb');
+    if (backThumb) {
+        backThumb.src = imgUrl;
+        backThumb.style.objectPosition = cropPos;
+    }
+
+    // 正面文字
+    const frontTag   = document.getElementById('frontExploreTag');
+    const frontTitle = document.getElementById('frontExploreTitle');
+    const copyright  = document.getElementById('exploreCopyright');
+    if (frontTag)   frontTag.innerText   = todayData.tag   || '#探索';
+    if (frontTitle) frontTitle.innerText = todayData.title || '未知档案';
+    if (copyright)  copyright.innerText  = todayData.copyright || '© Licensed Content';
+
+    // 背面文字（结构化）
+    const backTag  = document.getElementById('backExploreTag');
     const backHook = document.getElementById('backExploreHook');
     const backBody = document.getElementById('backExploreBody');
     const backTipWrap = document.getElementById('backExploreTipWrap');
-    const backTip = document.getElementById('backExploreTip');
+    const backTip     = document.getElementById('backExploreTip');
 
-    if (backTag) backTag.innerText = todayData.tag || '#探索';
-    if (backHook) backHook.innerText = todayData.hook || todayData.title || '';
-    if (backBody) backBody.innerText = todayData.body || '';
+    if (backTag)  backTag.innerText  = todayData.tag   || '#探索';
+    if (backHook) backHook.innerText = todayData.hook  || todayData.title || '';
+    if (backBody) backBody.innerText = todayData.body  || '';
+
     if (backTipWrap && backTip) {
         if (todayData.tip) {
             backTip.innerText = todayData.tip;
@@ -165,6 +191,15 @@ window.App.renderTodayExplore = function() {
             backTipWrap.style.display = 'none';
         }
     }
+
+    // 每次重新渲染时重置到正面
+    window.App._exploreIsFlipped = false;
+    const front = document.getElementById('exploreFront');
+    const back  = document.getElementById('exploreBack');
+    const arrow = document.getElementById('exploreArrow');
+    if (front) front.classList.remove('hidden');
+    if (back)  back.classList.remove('visible');
+    if (arrow) arrow.style.transform = 'rotate(0deg)';
 };
 // 页面加载完成后自动触发
 document.addEventListener('DOMContentLoaded', () => {
