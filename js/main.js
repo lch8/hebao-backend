@@ -94,15 +94,19 @@ import { ProfileEngine } from './modules/profile.js';
 // 🗺️ 荷村智能探索引擎 (节日拦截 + 小镇轮播)
 // ==========================================
 window.App = window.App || {};
-window.App._cardImgFallback = function(img) {
+
+// 🛡️ 严格隔离的防碎图函数 (将参数名改为 fallbackImg 防止命名冲突)
+window.App._cardImgFallback = function(fallbackImg) {
+    if (!fallbackImg) return;
     const cards = window.App.townCardsData || [];
-    const fallbacks = cards.filter(c => c.imgUrl !== img.src);
+    const fallbacks = cards.filter(c => c.imgUrl !== fallbackImg.src);
     if (fallbacks.length > 0) {
         const pick = fallbacks[Math.floor(Math.random() * fallbacks.length)];
-        img.onerror = null;
-        img.src = pick.imgUrl;
+        fallbackImg.onerror = null;
+        fallbackImg.src = pick.imgUrl;
     }
 };
+
 window.App._exploreIsFlipped = false;
 
 window.App.toggleExploreCard = function() {
