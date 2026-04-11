@@ -1077,19 +1077,11 @@
 </div>
     
 <script>
-        // 🛡️ 全局兜底：必须在所有其他脚本之前运行，防止模块加载失败导致崩溃
+        // 🛡️ 只初始化数据容器，绝不预占函数位置（否则 main.js 的真实函数无法覆盖）
         window.App = window.App || {};
-
-        // 为 daily-cards.js 提供默认空数组，防止数据文件未加载时报错
         window.App.holidayCardsData = window.App.holidayCardsData || [];
         window.App.townCardsData    = window.App.townCardsData    || [];
 
-        // 为 main.js 中被其他代码提前调用的函数提供安全占位
-        window.App._cardImgFallback = window.App._cardImgFallback || function() {};
-        window.App.renderTodayExplore = window.App.renderTodayExplore || function() {};
-        window.App.toggleExploreCard  = window.App.toggleExploreCard  || function() {};
-
-        // 开发调试用错误监听（生产环境可删除下面这段 alert）
         window.addEventListener('error', function(e) {
             console.error("🚨 脚本错误 | 文件:", e.filename, "| 行:", e.lineno, "| 报错:", e.message);
         });
@@ -1098,14 +1090,25 @@
         });
     </script>
 
-    <!-- 数据文件必须在 main.js 之前同步加载，确保 window.App.*CardsData 已就绪 -->
+    <!-- 数据文件同步加载，确保卡片数据在 main.js 执行前已就绪 -->
     <script src="./js/data/daily-cards.js"></script>
 
     <script src="./api.js" defer></script>
     <script src="./ui.js" defer></script>
     <script type="module" src="./js/modules/guide.js"></script>
     <script type="module" src="./js/modules/share.js"></script>
-
     <script type="module" src="./js/main.js"></script>
+
+    <script>
+        // main.js 是 type="module"，天然异步执行。
+        // window.load 触发时 main.js 已执行完毕，在此补一次渲染保障。
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                if (window.App && window.App.renderTodayExplore) {
+                    window.App.renderTodayExplore();
+                }
+            }, 200);
+        });
+    </script>
 </body>
 </html>
