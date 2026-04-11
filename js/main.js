@@ -95,15 +95,26 @@ import { ProfileEngine } from './modules/profile.js';
 // ==========================================
 window.App = window.App || {};
 
-// 🛡️ 严格隔离的防碎图函数 (将参数名改为 fallbackImg 防止命名冲突)
+// 🛡️ 智能图库轮换兜底 (当某张图挂了，自动从你的题库里抽一张正常的顶上)
 window.App._cardImgFallback = function(fallbackImg) {
     if (!fallbackImg) return;
+    console.warn("⚠️ 原图加载失败，启动智能图库轮换兜底！");
+    
+    // 极其重要：拔掉雷管，防止抽到的新图也是坏的，导致无限死循环崩溃
+    fallbackImg.onerror = null; 
+
     const cards = window.App.townCardsData || [];
-    const fallbacks = cards.filter(c => c.imgUrl !== fallbackImg.src);
+    // 过滤掉当前坏掉的链接，找其他有图的卡片
+    const fallbacks = cards.filter(c => c.imgUrl && c.imgUrl !== fallbackImg.src);
+    
     if (fallbacks.length > 0) {
+        // 随机抽一张正常的图来救场
         const pick = fallbacks[Math.floor(Math.random() * fallbacks.length)];
-        fallbackImg.onerror = null;
         fallbackImg.src = pick.imgUrl;
+        fallbackImg.style.objectPosition = pick.crop || 'center';
+    } else {
+        // 如果你的题库里一张图都没有了，才显示默认的备用风景图
+        fallbackImg.src = 'https://images.unsplash.com/photo-1464692805480-a69dfaafdb0d?auto=format&fit=crop&w=800&q=80';
     }
 };
 
@@ -146,29 +157,24 @@ window.App.renderTodayExplore = function() {
         todayData = townCards[dayOfYear % townCards.length];
     }
 
-    // 正面图片（前后两张缩略图共用同一 URL）
-    const imgUrl = todayData.imgUrl || '';
-    const cropPos = todayData.crop || 'center';
-
-    const frontImg = document.getElementById('frontExploreImg');
-    if (frontImg) {
-        frontImg.onerror = function() {
-            this.onerror = null;
-            this.src = 'https://images.unsplash.com/photo-1464692805480-a69dfaafdb0d?auto=format&fit=crop&w=800&q=80';
-            this.style.objectPosition = 'center 30%';
-        };
-        frontImg.src = imgUrl;
-        frontImg.style.objectPosition = cropPos;
+    // 正面图片
+    const frontImgObj = document.getElementById('frontExploreImg');
+    if (frontImgObj && todayData) {
+        // 绑定智能兜底
+        frontImgObj.onerror = function() { window.App._cardImgFallback(this); };
+        frontImgObj.src = todayData.imgUrl || ''; 
+        frontImgObj.style.objectPosition = todayData.crop || 'center'; 
     }
 
-    // 背面顶部缩略图（同一张图，模糊背景）
+    // 背面顶部缩略图 (如果有的话)
     const backThumb = document.getElementById('backExploreThumb');
-    if (backThumb) {
-        backThumb.src = imgUrl;
-        backThumb.style.objectPosition = cropPos;
+    if (backThumb && todayData) {
+        backThumb.onerror = function() { window.App._cardImgFallback(this); };
+        backThumb.src = todayData.imgUrl || '';
+        backThumb.style.objectPosition = todayData.crop || 'center';
     }
 
-    // 正面文字
+    // 注入文字
     const frontTag   = document.getElementById('frontExploreTag');
     const frontTitle = document.getElementById('frontExploreTitle');
     const copyright  = document.getElementById('exploreCopyright');
