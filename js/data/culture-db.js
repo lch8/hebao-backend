@@ -20,7 +20,7 @@ window.App.cultureData = [
         title: '代尔夫特 (Delft)',
         hook: '黄金时代的古镇，现代工程学的发源地。',
         // 👉 这里的路径，请替换为你自己在 Freepik 找好的精美代尔夫特风景图
-        imgUrl: './images/freepik/delft.jpg', 
+        imgUrl: './images/culture/delft.jpg', 
         lore: `
             <p>代尔夫特建城于11世纪。作为荷兰东印度公司（VOC）在国内的六大分部之一，它在17世纪的黄金时代积累了巨额财富。</p>
             <h3>一、 皇室与独立的血脉</h3>
