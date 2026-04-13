@@ -91,20 +91,81 @@ import { safeDOM } from './core/dom.js';
 import { ProfileEngine } from './modules/profile.js';
 
 window.App = window.App || {};
-let currentViewedItem = null; // 记录当前正在查看的档案
+let currentRandomItem = null;
 
-// 1. 渲染首页分类网格
-window.App.initGrid = function() {
-    const grid = document.getElementById('categoryGrid');
-    if (!grid) return;
+// 1. 初始化：加载随机漫游卡片 & 预渲染网格
+window.App.init = function() {
+    window.App.loadRandomItem();
+    window.App.renderGrid();
+};
+
+// 2. 🎲 核心功能：抽取并渲染随机卡片
+window.App.loadRandomItem = function() {
+    const data = window.App.cultureData;
+    if (!data || data.length === 0) return;
+
+    // 随机抽取一个条目 (确保不与当前展示的重复，如果可能的话)
+    let randomIdx;
+    do {
+        randomIdx = Math.floor(Math.random() * data.length);
+    } while (data.length > 1 && currentRandomItem && data[randomIdx].id === currentRandomItem.id);
     
-    window.App.categories.forEach(cat => {
-        // 计算该分类下有多少张档案
-        const count = window.App.cultureData.filter(item => item.categoryId === cat.id).length;
+    currentRandomItem = data[randomIdx];
+
+    // 添加简单的淡入淡出动画效果
+    const cardEl = document.getElementById('homeRandomCard');
+    cardEl.style.opacity = '0';
+    
+    setTimeout(() => {
+        document.getElementById('randomCover').style.backgroundImage = `url('${currentRandomItem.imgUrl}')`;
+        // 查找分类名称
+        const catName = window.App.categories.find(c => c.id === currentRandomItem.categoryId)?.title || '探索';
+        document.getElementById('randomCategory').innerText = catName;
+        document.getElementById('randomTitle').innerText = currentRandomItem.title;
+        document.getElementById('randomHook').innerText = currentRandomItem.hook;
+        document.getElementById('randomLore').innerHTML = currentRandomItem.lore;
+        document.getElementById('randomTip').innerHTML = currentRandomItem.tip;
         
+        // 重置按钮状态
+        const btn = document.getElementById('btnRandomPlan');
+        btn.innerHTML = '➕ 收藏进计划';
+        btn.style.background = '#0A192F';
+
+        cardEl.style.opacity = '1';
+    }, 200);
+};
+
+// 3. 首页随机卡片的收藏功能
+window.App.addRandomToPlan = function() {
+    if (!currentRandomItem) return;
+    const btn = document.getElementById('btnRandomPlan');
+    btn.innerHTML = '✅ 已加入行程计划';
+    btn.style.background = '#1E4D2B';
+    // 实际业务中可以写入 localStorage
+    alert(`成功！[${currentRandomItem.title}] 已加入探索清单！`);
+};
+
+// ==========================================
+// 导航与模态框控制
+// ==========================================
+
+// 打开分类网格 (点击顶部横条)
+window.App.openCategoryGrid = function() {
+    document.getElementById('categoryGridModal').style.transform = 'translateY(0)';
+};
+window.App.closeCategoryGrid = function() {
+    document.getElementById('categoryGridModal').style.transform = 'translateY(100%)';
+};
+
+// 渲染网格 (和之前类似，只是渲染到了模态框里)
+window.App.renderGrid = function() {
+    const grid = document.getElementById('categoryGrid');
+    grid.innerHTML = '';
+    window.App.categories.forEach(cat => {
+        const count = window.App.cultureData.filter(item => item.categoryId === cat.id).length;
         const cardHTML = `
-            <div onclick="window.App.openCategoryList('${cat.id}', '${cat.title}')" style="background: ${cat.bg}; border-radius: 16px; padding: 20px 16px; color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.1); cursor: pointer; display: flex; flex-direction: column; justify-content: flex-end; height: 120px;">
-                <div style="font-size: 24px; margin-bottom: auto;">${cat.emoji}</div>
+            <div onclick="window.App.openCategoryList('${cat.id}', '${cat.title}')" style="background: ${cat.bg}; border-radius: 16px; padding: 20px 16px; color: #fff; box-shadow: 0 6px 16px rgba(0,0,0,0.15); cursor: pointer; display: flex; flex-direction: column; justify-content: flex-end; height: 120px;">
+                <div style="font-size: 26px; margin-bottom: auto;">${cat.emoji}</div>
                 <h3 style="font-size: 16px; font-weight: bold; margin: 0 0 4px 0;">${cat.title}</h3>
                 <p style="font-size: 11px; margin: 0; opacity: 0.8;">${count} 张档案</p>
             </div>
@@ -112,6 +173,9 @@ window.App.initGrid = function() {
         grid.insertAdjacentHTML('beforeend', cardHTML);
     });
 };
+
+// (剩下的 openCategoryList, closeCategoryList, openDetail, closeDetail 保持之前的逻辑即可)
+
 
 // 2. 打开分类列表页
 window.App.openCategoryList = function(categoryId, title) {
@@ -189,9 +253,9 @@ window.App.addToPlan = function() {
     alert(`成功！[${currentViewedItem.title}] 已加入你的专属探索清单！`);
 };
 
-// 页面初始化
+// 页面加载触发
 document.addEventListener('DOMContentLoaded', () => {
-    window.App.initGrid();
+    window.App.init();
 });
 
 window.App.showRewardModal = function() {
