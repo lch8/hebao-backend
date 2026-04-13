@@ -92,58 +92,41 @@ import { ProfileEngine } from './modules/profile.js';
 
 window.App = window.App || {};
 let currentRandomItem = null;
+let currentViewedItem = null; // 用于详情页的当前项目
 
-// 1. 初始化：加载随机漫游卡片 & 预渲染网格
 window.App.init = function() {
     window.App.loadRandomItem();
     window.App.renderGrid();
 };
 
-// 2. 🎲 核心功能：抽取并渲染随机卡片
+// 1. 左侧点击：加载随机图片
 window.App.loadRandomItem = function() {
     const data = window.App.cultureData;
     if (!data || data.length === 0) return;
 
-    // 随机抽取一个条目 (确保不与当前展示的重复，如果可能的话)
     let randomIdx;
-    do {
-        randomIdx = Math.floor(Math.random() * data.length);
-    } while (data.length > 1 && currentRandomItem && data[randomIdx].id === currentRandomItem.id);
+    do { randomIdx = Math.floor(Math.random() * data.length); } 
+    while (data.length > 1 && currentRandomItem && data[randomIdx].id === currentRandomItem.id);
     
     currentRandomItem = data[randomIdx];
 
-    // 添加简单的淡入淡出动画效果
     const cardEl = document.getElementById('homeRandomCard');
-    cardEl.style.opacity = '0';
+    cardEl.style.opacity = '0'; // 隐去
     
     setTimeout(() => {
         document.getElementById('randomCover').style.backgroundImage = `url('${currentRandomItem.imgUrl}')`;
-        // 查找分类名称
-        const catName = window.App.categories.find(c => c.id === currentRandomItem.categoryId)?.title || '探索';
-        document.getElementById('randomCategory').innerText = catName;
         document.getElementById('randomTitle').innerText = currentRandomItem.title;
         document.getElementById('randomHook').innerText = currentRandomItem.hook;
-        document.getElementById('randomLore').innerHTML = currentRandomItem.lore;
-        document.getElementById('randomTip').innerHTML = currentRandomItem.tip;
-        
-        // 重置按钮状态
-        const btn = document.getElementById('btnRandomPlan');
-        btn.innerHTML = '➕ 收藏进计划';
-        btn.style.background = '#0A192F';
-
-        cardEl.style.opacity = '1';
+        cardEl.style.opacity = '1'; // 展现
     }, 200);
 };
 
-// 3. 首页随机卡片的收藏功能
-window.App.addRandomToPlan = function() {
-    if (!currentRandomItem) return;
-    const btn = document.getElementById('btnRandomPlan');
-    btn.innerHTML = '✅ 已加入行程计划';
-    btn.style.background = '#1E4D2B';
-    // 实际业务中可以写入 localStorage
-    alert(`成功！[${currentRandomItem.title}] 已加入探索清单！`);
+// 2. 右侧点击：直接把当前随机项的数据灌入详情页，并弹起详情页
+window.App.expandRandomItem = function() {
+    if(!currentRandomItem) return;
+    window.App.openDetail(currentRandomItem.id);
 };
+
 
 // ==========================================
 // 导航与模态框控制
@@ -210,13 +193,13 @@ window.App.closeCategoryList = function() {
     document.getElementById('categoryListView').style.transform = 'translateX(100%)';
 };
 
-// 4. 打开深层详情 (空间膨胀)
 window.App.openDetail = function(itemId) {
     const item = window.App.cultureData.find(i => i.id === itemId);
     if (!item) return;
     
-    currentViewedItem = item; // 记录
+    currentViewedItem = item;
     
+    // 渲染图文
     document.getElementById('detailCover').style.backgroundImage = `url('${item.imgUrl}')`;
     document.getElementById('detailTitle').innerText = item.title;
     document.getElementById('detailHook').innerText = item.hook;
@@ -228,32 +211,24 @@ window.App.openDetail = function(itemId) {
     btn.innerHTML = '➕ 收藏进未来访问计划';
     btn.style.background = '#0A192F';
     
+    // 弹起模态框
     document.getElementById('detailModal').style.transform = 'translateY(0)';
 };
 
-// 5. 关闭深层详情
 window.App.closeDetail = function() {
     document.getElementById('detailModal').style.transform = 'translateY(100%)';
     currentViewedItem = null;
 };
 
-// 6. 核心动作：加入计划
+// 收藏按钮
 window.App.addToPlan = function() {
     if (!currentViewedItem) return;
-    
     const btn = document.getElementById('btnAddToPlan');
-    btn.innerHTML = '✅ 已加入行程计划 (查看)';
-    btn.style.background = '#1E4D2B'; // 变成成功绿色
-    
-    // 💡 这里可以加上写 localStorage 的逻辑：
-    // let plans = JSON.parse(localStorage.getItem('futurePlans') || '[]');
-    // if(!plans.includes(currentViewedItem.id)) plans.push(currentViewedItem.id);
-    // localStorage.setItem('futurePlans', JSON.stringify(plans));
-    
+    btn.innerHTML = '✅ 已加入行程计划';
+    btn.style.background = '#1E4D2B';
     alert(`成功！[${currentViewedItem.title}] 已加入你的专属探索清单！`);
 };
 
-// 页面加载触发
 document.addEventListener('DOMContentLoaded', () => {
     window.App.init();
 });
