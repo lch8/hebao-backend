@@ -198,86 +198,30 @@
             </div>
         </div>
 
-        <div style="padding: 0 20px 20px 20px;">
-            <div class="explore-card-wrap" id="todayExploreCard" onclick="window.App.toggleExploreCard()">
-
-                <!-- 正面：固定宽高比图片封面 -->
-                <div class="explore-front" id="exploreFront">
-                    <img id="frontExploreImg" crossorigin="anonymous" src="" loading="lazy"
-                         style="width:100%; height:100%; object-fit:cover; object-position:center; display:block;">
-                    <div style="position:absolute; bottom:0; left:0; right:0;
-                                padding:40px 20px 18px;
-                                background:linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.25) 65%, transparent 100%);">
-                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-                            <div id="frontExploreTag"
-                                 style="font-size:11px; background:rgba(255,255,255,0.18); color:#FFF;
-                                        padding:4px 10px; border-radius:8px; font-weight:900;
-                                        border:1px solid rgba(255,255,255,0.3); backdrop-filter:blur(4px);">#加载中...</div>
-                            <span id="exploreCopyright"
-                                  style="font-size:10px; color:rgba(255,255,255,0.5); font-weight:bold;">© Licensed Content</span>
-                        </div>
-                        <h2 id="frontExploreTitle"
-                            style="font-size:22px; font-weight:900; color:#FFF; margin:0 0 12px;
-                                   line-height:1.3; text-shadow:0 2px 8px rgba(0,0,0,0.5);">加载中...</h2>
-                        <!-- 翻转提示：带右箭头动效 -->
-                        <div style="display:inline-flex; align-items:center; gap:6px;
-                                    background:rgba(255,255,255,0.15); backdrop-filter:blur(6px);
-                                    border:1px solid rgba(255,255,255,0.25); border-radius:20px;
-                                    padding:6px 14px;">
-                            <span style="font-size:11px; color:rgba(255,255,255,0.9); font-weight:700;">查看档案详情</span>
-                            <span id="exploreArrow" style="font-size:13px; color:#FFF;
-                                  display:inline-block; transition:transform 0.3s;">›</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 背面：高度完全自适应，内容不截断 -->
-                <div class="explore-back" id="exploreBack">
-                    <!-- 顶部缩略图条 + 返回提示 -->
-                    <div style="position:relative; height:90px; overflow:hidden; border-radius:20px 20px 0 0; flex-shrink:0;">
-                        <img id="backExploreThumb" src="" loading="lazy"
-                             style="width:100%; height:100%; object-fit:cover; object-position:center; display:block; filter:blur(2px) brightness(0.55);">
-                        <div style="position:absolute; inset:0; display:flex; align-items:center; padding:0 18px; gap:12px;">
-                            <div style="flex:1; min-width:0;">
-                                <div id="backExploreTag"
-                                     style="font-size:10px; color:#FFF; font-weight:900;
-                                            background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.3);
-                                            padding:2px 8px; border-radius:20px; display:inline-block; margin-bottom:5px;">#加载中</div>
-                                <div id="backExploreHook"
-                                     style="font-size:15px; font-weight:900; color:#FFF; line-height:1.3;
-                                            text-shadow:0 1px 6px rgba(0,0,0,0.5); white-space:nowrap;
-                                            overflow:hidden; text-overflow:ellipsis;">加载中...</div>
-                            </div>
-                            <div onclick="event.stopPropagation(); window.App.toggleExploreCard()"
-                                 style="flex-shrink:0; background:rgba(255,255,255,0.2); backdrop-filter:blur(4px);
-                                        border:1px solid rgba(255,255,255,0.3); border-radius:20px;
-                                        padding:6px 12px; font-size:11px; color:#FFF; font-weight:800; cursor:pointer;">
-                                ‹ 返回
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 正文内容区：不限高度 -->
-                    <div style="padding:20px 20px 22px; text-align:left;">
-                        <!-- 绿色短横线装饰 -->
-                        <div style="width:24px; height:3px; background:#10B981; border-radius:2px; margin-bottom:14px;"></div>
-
-                        <p id="backExploreBody"
-                           style="font-size:14px; color:#374151; line-height:1.8; margin:0 0 16px;
-                                  text-align:justify; word-break:break-all;">数据正在赶来的路上...</p>
-
-                        <!-- 管家贴士（有 tip 时显示） -->
-                        <div id="backExploreTipWrap"
-                             style="display:none; background:#F0FDF4; border-radius:12px;
-                                    padding:13px 15px; border-left:3px solid #10B981; margin-bottom:4px;">
-                            <div style="font-size:11px; color:#059669; font-weight:900; margin-bottom:5px;">💡 管家贴士</div>
-                            <div id="backExploreTip" style="font-size:13px; color:#065F46; line-height:1.65;"></div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
+        <div class="culture-gallery-wrapper" style="margin-bottom: 30px;">
+    <h2 style="font-size: 20px; font-weight: bold; margin-bottom: 16px; padding: 0 20px;">探索荷兰印记</h2>
+    <div id="cultureGalleryTrack" style="display: flex; gap: 16px; overflow-x: auto; padding: 0 20px 20px 20px; scroll-snap-type: x mandatory; scrollbar-width: none;">
         </div>
+</div>
+
+<div id="cultureExpansionModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 99999; background-color: #FAFAFA; display: none; opacity: 0; transform: translateY(20px) scale(0.98); transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1); overflow-y: auto;">
+    
+    <div onclick="window.App.closeCultureDetail()" style="position: fixed; top: 20px; right: 20px; width: 36px; height: 36px; background: rgba(0,0,0,0.5); backdrop-filter: blur(10px); border-radius: 50%; color: #FFF; display: flex; justify-content: center; align-items: center; font-size: 18px; z-index: 100; cursor: pointer;">
+        ✖
+    </div>
+
+    <div id="cultureModalCover" style="width: 100%; height: 45vh; background-size: cover; background-position: center; position: relative;">
+        <div style="position: absolute; bottom: 0; left: 0; width: 100%; height: 50%; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);"></div>
+        <div style="position: absolute; bottom: 20px; left: 20px; right: 20px; color: #FFF;">
+            <span id="cultureModalCategory" style="font-size: 12px; font-weight: bold; letter-spacing: 1px; opacity: 0.8;">分类</span>
+            <h1 id="cultureModalTitle" style="font-size: 28px; font-weight: 900; margin: 8px 0; line-height: 1.2;">标题</h1>
+            <p id="cultureModalHook" style="font-size: 14px; opacity: 0.9; font-style: italic; margin: 0;">副标题Hook</p>
+        </div>
+    </div>
+
+    <div id="cultureModalContent" class="editorial-content" style="padding: 30px 24px; color: #333; line-height: 1.8; font-size: 16px; padding-bottom: 80px;">
+        </div>
+</div>
 
         <!-- <div style="padding: 0 20px;">
             <div style="font-size: 16px; font-weight: 900; color: #111827; margin-bottom: 16px;">🗺️ 主线通关任务</div>
