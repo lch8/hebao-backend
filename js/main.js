@@ -91,83 +91,107 @@ import { safeDOM } from './core/dom.js';
 import { ProfileEngine } from './modules/profile.js';
 
 window.App = window.App || {};
+let currentViewedItem = null; // 记录当前正在查看的档案
 
-// 1. 渲染横向画廊
-window.App.renderCultureGallery = function() {
-    const track = document.getElementById('cultureGalleryTrack');
-    if (!track || !window.App.cultureDatabase) return;
+// 1. 渲染首页分类网格
+window.App.initGrid = function() {
+    const grid = document.getElementById('categoryGrid');
+    if (!grid) return;
     
-    track.innerHTML = ''; // 清空
-
-    window.App.cultureDatabase.forEach(item => {
-        // 智能图片回退：如果没有特定图，就用分类默认图
-        const bgImg = item.imgUrl || window.App.categoryImages[item.category];
-
+    window.App.categories.forEach(cat => {
+        // 计算该分类下有多少张档案
+        const count = window.App.cultureData.filter(item => item.categoryId === cat.id).length;
+        
         const cardHTML = `
-            <div class="gallery-card" style="background-image: url('${bgImg}');" onclick="window.App.openCultureDetail('${item.id}')">
-                <div class="gallery-card-overlay">
-                    <span style="font-size: 11px; font-weight: bold; margin-bottom: 6px; color: #D4AF37;">${item.category}</span>
-                    <h3 style="font-size: 22px; font-weight: 800; margin: 0 0 8px 0; line-height: 1.2;">${item.title}</h3>
-                    <p style="font-size: 13px; opacity: 0.8; margin: 0; line-height: 1.4;">${item.hook}</p>
-                </div>
+            <div onclick="window.App.openCategoryList('${cat.id}', '${cat.title}')" style="background: ${cat.bg}; border-radius: 16px; padding: 20px 16px; color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.1); cursor: pointer; display: flex; flex-direction: column; justify-content: flex-end; height: 120px;">
+                <div style="font-size: 24px; margin-bottom: auto;">${cat.emoji}</div>
+                <h3 style="font-size: 16px; font-weight: bold; margin: 0 0 4px 0;">${cat.title}</h3>
+                <p style="font-size: 11px; margin: 0; opacity: 0.8;">${count} 张档案</p>
             </div>
         `;
-        track.insertAdjacentHTML('beforeend', cardHTML);
+        grid.insertAdjacentHTML('beforeend', cardHTML);
     });
 };
 
-// 2. 触发空间膨胀，打开详情
-window.App.openCultureDetail = function(id) {
-    const item = window.App.cultureDatabase.find(i => i.id === id);
+// 2. 打开分类列表页
+window.App.openCategoryList = function(categoryId, title) {
+    document.getElementById('listTitle').innerText = title;
+    const container = document.getElementById('itemListContainer');
+    container.innerHTML = '';
+    
+    const items = window.App.cultureData.filter(item => item.categoryId === categoryId);
+    
+    if (items.length === 0) {
+        container.innerHTML = '<p style="color:#888; text-align:center;">更多绝美内容，正在紧急制图中...</p>';
+    } else {
+        items.forEach(item => {
+            const card = `
+                <div onclick="window.App.openDetail('${item.id}')" style="background: #1E1E1E; border-radius: 12px; overflow: hidden; display: flex; align-items: center; cursor: pointer;">
+                    <div style="width: 100px; height: 100px; background-image: url('${item.imgUrl}'); background-size: cover; background-position: center;"></div>
+                    <div style="padding: 16px; flex: 1;">
+                        <h4 style="color: #fff; font-size: 16px; margin: 0 0 6px 0;">${item.title}</h4>
+                        <p style="color: #aaa; font-size: 12px; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${item.hook}</p>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', card);
+        });
+    }
+    
+    document.getElementById('categoryListView').style.transform = 'translateX(0)';
+};
+
+// 3. 关闭分类列表页
+window.App.closeCategoryList = function() {
+    document.getElementById('categoryListView').style.transform = 'translateX(100%)';
+};
+
+// 4. 打开深层详情 (空间膨胀)
+window.App.openDetail = function(itemId) {
+    const item = window.App.cultureData.find(i => i.id === itemId);
     if (!item) return;
-
-    const modal = document.getElementById('cultureExpansionModal');
-    const cover = document.getElementById('cultureModalCover');
-    const category = document.getElementById('cultureModalCategory');
-    const title = document.getElementById('cultureModalTitle');
-    const hook = document.getElementById('cultureModalHook');
-    const contentBox = document.getElementById('cultureModalContent');
-
-    // 绑定数据
-    const bgImg = item.imgUrl || window.App.categoryImages[item.category];
-    cover.style.backgroundImage = `url('${bgImg}')`;
-    category.innerText = item.category;
-    title.innerText = item.title;
-    hook.innerText = item.hook;
-    contentBox.innerHTML = item.content; // 直接注入 HTML，渲染杂志排版
-
-    // 触发膨胀动画 (Apple 风格)
-    modal.style.display = 'block';
-    // 强制重绘，确保 transition 生效
-    modal.offsetHeight; 
-    modal.style.opacity = '1';
-    modal.style.transform = 'translateY(0) scale(1)';
     
-    // 锁定底层页面滚动
-    document.body.style.overflow = 'hidden';
+    currentViewedItem = item; // 记录
+    
+    document.getElementById('detailCover').style.backgroundImage = `url('${item.imgUrl}')`;
+    document.getElementById('detailTitle').innerText = item.title;
+    document.getElementById('detailHook').innerText = item.hook;
+    document.getElementById('detailLore').innerHTML = item.lore;
+    document.getElementById('detailTip').innerHTML = item.tip;
+    
+    // 重置按钮状态
+    const btn = document.getElementById('btnAddToPlan');
+    btn.innerHTML = '➕ 收藏进未来访问计划';
+    btn.style.background = '#0A192F';
+    
+    document.getElementById('detailModal').style.transform = 'translateY(0)';
 };
 
-// 3. 关闭详情，缩回画廊
-window.App.closeCultureDetail = function() {
-    const modal = document.getElementById('cultureExpansionModal');
-    if (!modal) return;
-
-    // 反向动画
-    modal.style.opacity = '0';
-    modal.style.transform = 'translateY(20px) scale(0.98)';
-    
-    // 恢复底层滚动
-    document.body.style.overflow = 'auto';
-
-    // 动画结束后隐藏
-    setTimeout(() => {
-        modal.style.display = 'none';
-    }, 400); // 与 CSS 的 transition 时间一致
+// 5. 关闭深层详情
+window.App.closeDetail = function() {
+    document.getElementById('detailModal').style.transform = 'translateY(100%)';
+    currentViewedItem = null;
 };
 
-// 页面加载完成后初始化画廊
+// 6. 核心动作：加入计划
+window.App.addToPlan = function() {
+    if (!currentViewedItem) return;
+    
+    const btn = document.getElementById('btnAddToPlan');
+    btn.innerHTML = '✅ 已加入行程计划 (查看)';
+    btn.style.background = '#1E4D2B'; // 变成成功绿色
+    
+    // 💡 这里可以加上写 localStorage 的逻辑：
+    // let plans = JSON.parse(localStorage.getItem('futurePlans') || '[]');
+    // if(!plans.includes(currentViewedItem.id)) plans.push(currentViewedItem.id);
+    // localStorage.setItem('futurePlans', JSON.stringify(plans));
+    
+    alert(`成功！[${currentViewedItem.title}] 已加入你的专属探索清单！`);
+};
+
+// 页面初始化
 document.addEventListener('DOMContentLoaded', () => {
-    window.App.renderCultureGallery();
+    window.App.initGrid();
 });
 
 window.App.showRewardModal = function() {
