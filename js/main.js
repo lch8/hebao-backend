@@ -90,132 +90,84 @@ import { ModalManager } from './components/modals.js';
 import { safeDOM } from './core/dom.js';
 import { ProfileEngine } from './modules/profile.js';
 
-// ==========================================
-// 🗺️ 荷村智能探索引擎 (节日拦截 + 小镇轮播)
-// ==========================================
 window.App = window.App || {};
 
-// 🛡️ 智能图库轮换兜底 (当某张图挂了，自动从你的题库里抽一张正常的顶上)
-window.App._cardImgFallback = function(fallbackImg) {
-    if (!fallbackImg) return;
-    console.warn("⚠️ 原图加载失败，启动智能图库轮换兜底！");
+// 1. 渲染横向画廊
+window.App.renderCultureGallery = function() {
+    const track = document.getElementById('cultureGalleryTrack');
+    if (!track || !window.App.cultureDatabase) return;
     
-    // 极其重要：拔掉雷管，防止抽到的新图也是坏的，导致无限死循环崩溃
-    fallbackImg.onerror = null; 
+    track.innerHTML = ''; // 清空
 
-    const cards = window.App.townCardsData || [];
-    // 过滤掉当前坏掉的链接，找其他有图的卡片
-    const fallbacks = cards.filter(c => c.imgUrl && c.imgUrl !== fallbackImg.src);
+    window.App.cultureDatabase.forEach(item => {
+        // 智能图片回退：如果没有特定图，就用分类默认图
+        const bgImg = item.imgUrl || window.App.categoryImages[item.category];
+
+        const cardHTML = `
+            <div class="gallery-card" style="background-image: url('${bgImg}');" onclick="window.App.openCultureDetail('${item.id}')">
+                <div class="gallery-card-overlay">
+                    <span style="font-size: 11px; font-weight: bold; margin-bottom: 6px; color: #D4AF37;">${item.category}</span>
+                    <h3 style="font-size: 22px; font-weight: 800; margin: 0 0 8px 0; line-height: 1.2;">${item.title}</h3>
+                    <p style="font-size: 13px; opacity: 0.8; margin: 0; line-height: 1.4;">${item.hook}</p>
+                </div>
+            </div>
+        `;
+        track.insertAdjacentHTML('beforeend', cardHTML);
+    });
+};
+
+// 2. 触发空间膨胀，打开详情
+window.App.openCultureDetail = function(id) {
+    const item = window.App.cultureDatabase.find(i => i.id === id);
+    if (!item) return;
+
+    const modal = document.getElementById('cultureExpansionModal');
+    const cover = document.getElementById('cultureModalCover');
+    const category = document.getElementById('cultureModalCategory');
+    const title = document.getElementById('cultureModalTitle');
+    const hook = document.getElementById('cultureModalHook');
+    const contentBox = document.getElementById('cultureModalContent');
+
+    // 绑定数据
+    const bgImg = item.imgUrl || window.App.categoryImages[item.category];
+    cover.style.backgroundImage = `url('${bgImg}')`;
+    category.innerText = item.category;
+    title.innerText = item.title;
+    hook.innerText = item.hook;
+    contentBox.innerHTML = item.content; // 直接注入 HTML，渲染杂志排版
+
+    // 触发膨胀动画 (Apple 风格)
+    modal.style.display = 'block';
+    // 强制重绘，确保 transition 生效
+    modal.offsetHeight; 
+    modal.style.opacity = '1';
+    modal.style.transform = 'translateY(0) scale(1)';
     
-    if (fallbacks.length > 0) {
-        // 随机抽一张正常的图来救场
-        const pick = fallbacks[Math.floor(Math.random() * fallbacks.length)];
-        fallbackImg.src = pick.imgUrl;
-        fallbackImg.style.objectPosition = pick.crop || 'center';
-    } else {
-        // 如果你的题库里一张图都没有了，才显示默认的备用风景图
-        fallbackImg.src = 'https://images.unsplash.com/photo-1464692805480-a69dfaafdb0d?auto=format&fit=crop&w=800&q=80';
-    }
+    // 锁定底层页面滚动
+    document.body.style.overflow = 'hidden';
 };
 
-window.App._exploreIsFlipped = false;
+// 3. 关闭详情，缩回画廊
+window.App.closeCultureDetail = function() {
+    const modal = document.getElementById('cultureExpansionModal');
+    if (!modal) return;
 
-window.App.toggleExploreCard = function() {
-    const front = document.getElementById('exploreFront');
-    const back  = document.getElementById('exploreBack');
-    const arrow = document.getElementById('exploreArrow');
-    if (!front || !back) return;
-    window.App._exploreIsFlipped = !window.App._exploreIsFlipped;
-    if (window.App._exploreIsFlipped) {
-        front.classList.add('hidden');
-        back.classList.add('visible');
-        if (arrow) arrow.style.transform = 'rotate(90deg)';
-    } else {
-        front.classList.remove('hidden');
-        back.classList.remove('visible');
-        if (arrow) arrow.style.transform = 'rotate(0deg)';
-    }
-};
+    // 反向动画
+    modal.style.opacity = '0';
+    modal.style.transform = 'translateY(20px) scale(0.98)';
+    
+    // 恢复底层滚动
+    document.body.style.overflow = 'auto';
 
-window.App.renderTodayExplore = function() {
-    const today = new Date();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day   = String(today.getDate()).padStart(2, '0');
-    const currentDate = `${month}-${day}`;
-
-    let todayData = null;
-
-    // 节日优先拦截
-    const holidayCards = window.App.holidayCardsData || [];
-    const holidayMatch = holidayCards.find(c => c.date === currentDate);
-    if (holidayMatch) {
-        todayData = holidayMatch;
-    } else {
-        const townCards = window.App.townCardsData || [];
-        if (townCards.length === 0) return;
-        const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24);
-        todayData = townCards[dayOfYear % townCards.length];
-    }
-
-    // 正面图片
-    const frontImgObj = document.getElementById('frontExploreImg');
-    if (frontImgObj && todayData) {
-        // 绑定智能兜底
-        frontImgObj.onerror = function() { window.App._cardImgFallback(this); };
-        frontImgObj.src = todayData.imgUrl || ''; 
-        frontImgObj.style.objectPosition = todayData.crop || 'center'; 
-    }
-
-    // 背面顶部缩略图 (如果有的话)
-    const backThumb = document.getElementById('backExploreThumb');
-    if (backThumb && todayData) {
-        backThumb.onerror = function() { window.App._cardImgFallback(this); };
-        backThumb.src = todayData.imgUrl || '';
-        backThumb.style.objectPosition = todayData.crop || 'center';
-    }
-
-    // 注入文字
-    const frontTag   = document.getElementById('frontExploreTag');
-    const frontTitle = document.getElementById('frontExploreTitle');
-    const copyright  = document.getElementById('exploreCopyright');
-    if (frontTag)   frontTag.innerText   = todayData.tag   || '#探索';
-    if (frontTitle) frontTitle.innerText = todayData.title || '未知档案';
-    if (copyright)  copyright.innerText  = todayData.copyright || '© Licensed Content';
-
-    // 背面文字（结构化）
-    const backTag  = document.getElementById('backExploreTag');
-    const backHook = document.getElementById('backExploreHook');
-    const backBody = document.getElementById('backExploreBody');
-    const backTipWrap = document.getElementById('backExploreTipWrap');
-    const backTip     = document.getElementById('backExploreTip');
-
-    if (backTag)  backTag.innerText  = todayData.tag   || '#探索';
-    if (backHook) backHook.innerText = todayData.hook  || todayData.title || '';
-    if (backBody) backBody.innerText = todayData.body  || '';
-
-    if (backTipWrap && backTip) {
-        if (todayData.tip) {
-            backTip.innerText = todayData.tip;
-            backTipWrap.style.display = 'block';
-        } else {
-            backTipWrap.style.display = 'none';
-        }
-    }
-
-    // 每次重新渲染时重置到正面
-    window.App._exploreIsFlipped = false;
-    const front = document.getElementById('exploreFront');
-    const back  = document.getElementById('exploreBack');
-    const arrow = document.getElementById('exploreArrow');
-    if (front) front.classList.remove('hidden');
-    if (back)  back.classList.remove('visible');
-    if (arrow) arrow.style.transform = 'rotate(0deg)';
-};
-// 页面加载完成后自动触发
-document.addEventListener('DOMContentLoaded', () => {
+    // 动画结束后隐藏
     setTimeout(() => {
-        if(window.App.renderTodayExplore) window.App.renderTodayExplore();
-    }, 100);
+        modal.style.display = 'none';
+    }, 400); // 与 CSS 的 transition 时间一致
+};
+
+// 页面加载完成后初始化画廊
+document.addEventListener('DOMContentLoaded', () => {
+    window.App.renderCultureGallery();
 });
 
 window.App.showRewardModal = function() {
