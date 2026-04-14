@@ -220,6 +220,24 @@ window.App.closeDetail = function() {
     currentViewedItem = null;
 };
 
+// ====== 新增：一键退回主界面 (清空所有图层) ======
+window.App.returnToHome = function() {
+    // 1. 降下详情页
+    const detailModal = document.getElementById('detailModal');
+    if(detailModal) detailModal.style.transform = 'translateY(100%)';
+    
+    // 2. 右滑收起列表页
+    const listView = document.getElementById('categoryListView');
+    if(listView) listView.style.transform = 'translateX(100%)';
+    
+    // 3. 降下分类网格
+    const gridModal = document.getElementById('categoryGridModal');
+    if(gridModal) gridModal.style.transform = 'translateY(100%)';
+    
+    // 清除当前查看记录
+    currentViewedItem = null;
+};
+
 // 收藏按钮
 window.App.addToPlan = function() {
     if (!currentViewedItem) return;
