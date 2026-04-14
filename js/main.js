@@ -91,48 +91,62 @@ import { safeDOM } from './core/dom.js';
 import { ProfileEngine } from './modules/profile.js';
 
 window.App = window.App || {};
-let currentRandomItem = null;
-let currentViewedItem = null; // 用于详情页的当前项目
 
-window.App.init = function() {
+// ==========================================
+// 🇳🇱 荷包管家：文化探索引擎 (Culture Engine)
+// ==========================================
+
+let currentRandomItem = null; // 首页当前展示的随机卡片
+let currentViewedItem = null; // 详情页当前查看的档案
+
+// 1. 引擎初始化
+window.App.initCultureEngine = function() {
     window.App.loadRandomItem();
     window.App.renderGrid();
 };
 
-// 1. 左侧点击：加载随机图片
+// 2. 🎲 首页左侧点击：加载随机图片 (带淡入淡出动画)
 window.App.loadRandomItem = function() {
     const data = window.App.cultureData;
     if (!data || data.length === 0) return;
 
     let randomIdx;
-    do { randomIdx = Math.floor(Math.random() * data.length); } 
-    while (data.length > 1 && currentRandomItem && data[randomIdx].id === currentRandomItem.id);
+    // 确保随机出的下一张和当前这张不一样
+    do { 
+        randomIdx = Math.floor(Math.random() * data.length); 
+    } while (data.length > 1 && currentRandomItem && data[randomIdx].id === currentRandomItem.id);
     
     currentRandomItem = data[randomIdx];
 
     const cardEl = document.getElementById('homeRandomCard');
-    cardEl.style.opacity = '0'; // 隐去
+    if (cardEl) cardEl.style.opacity = '0'; // 隐去当前卡片
     
     setTimeout(() => {
+        // 更新封面与文字
         document.getElementById('randomCover').style.backgroundImage = `url('${currentRandomItem.imgUrl}')`;
         document.getElementById('randomTitle').innerText = currentRandomItem.title;
         document.getElementById('randomHook').innerText = currentRandomItem.hook;
-        cardEl.style.opacity = '1'; // 展现
+        
+        // 自动匹配并更新左上角的分类名称 (如：🏛️ 建筑艺术)
+        const catName = window.App.categories.find(c => c.id === currentRandomItem.categoryId)?.title || '探索';
+        const tagEl = document.getElementById('randomCategory');
+        if (tagEl) tagEl.innerText = catName;
+
+        if (cardEl) cardEl.style.opacity = '1'; // 展现新卡片
     }, 200);
 };
 
-// 2. 右侧点击：直接把当前随机项的数据灌入详情页，并弹起详情页
+// 3. 📖 首页右侧点击：展开当前随机卡片的详情
 window.App.expandRandomItem = function() {
-    if(!currentRandomItem) return;
+    if (!currentRandomItem) return;
     window.App.openDetail(currentRandomItem.id);
 };
 
-
 // ==========================================
-// 导航与模态框控制
+// 🗂️ 导航与模态框控制系统
 // ==========================================
 
-// 打开分类网格 (点击顶部横条)
+// 4. 打开/关闭全局分类网格
 window.App.openCategoryGrid = function() {
     document.getElementById('categoryGridModal').style.transform = 'translateY(0)';
 };
@@ -140,11 +154,14 @@ window.App.closeCategoryGrid = function() {
     document.getElementById('categoryGridModal').style.transform = 'translateY(100%)';
 };
 
-// 渲染网格 (和之前类似，只是渲染到了模态框里)
+// 5. 渲染全局分类网格 (7大类)
 window.App.renderGrid = function() {
     const grid = document.getElementById('categoryGrid');
+    if (!grid) return;
     grid.innerHTML = '';
+    
     window.App.categories.forEach(cat => {
+        // 动态计算该分类下有几篇文章
         const count = window.App.cultureData.filter(item => item.categoryId === cat.id).length;
         const cardHTML = `
             <div onclick="window.App.openCategoryList('${cat.id}', '${cat.title}')" style="background: ${cat.bg}; border-radius: 16px; padding: 20px 16px; color: #fff; box-shadow: 0 6px 16px rgba(0,0,0,0.15); cursor: pointer; display: flex; flex-direction: column; justify-content: flex-end; height: 120px;">
@@ -157,10 +174,7 @@ window.App.renderGrid = function() {
     });
 };
 
-// (剩下的 openCategoryList, closeCategoryList, openDetail, closeDetail 保持之前的逻辑即可)
-
-
-// 2. 打开分类列表页
+// 6. 打开/关闭某个分类下的具体列表 (如：建筑艺术 -> 列表)
 window.App.openCategoryList = function(categoryId, title) {
     document.getElementById('listTitle').innerText = title;
     const container = document.getElementById('itemListContainer');
@@ -169,11 +183,11 @@ window.App.openCategoryList = function(categoryId, title) {
     const items = window.App.cultureData.filter(item => item.categoryId === categoryId);
     
     if (items.length === 0) {
-        container.innerHTML = '<p style="color:#888; text-align:center;">更多绝美内容，正在紧急制图中...</p>';
+        container.innerHTML = '<p style="color:#888; text-align:center; margin-top:40px;">更多绝美内容，正在紧急制图中...</p>';
     } else {
         items.forEach(item => {
             const card = `
-                <div onclick="window.App.openDetail('${item.id}')" style="background: #1E1E1E; border-radius: 12px; overflow: hidden; display: flex; align-items: center; cursor: pointer;">
+                <div onclick="window.App.openDetail('${item.id}')" style="background: #1E1E1E; border-radius: 12px; overflow: hidden; display: flex; align-items: center; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
                     <div style="width: 100px; height: 100px; background-image: url('${item.imgUrl}'); background-size: cover; background-position: center;"></div>
                     <div style="padding: 16px; flex: 1;">
                         <h4 style="color: #fff; font-size: 16px; margin: 0 0 6px 0;">${item.title}</h4>
@@ -188,28 +202,30 @@ window.App.openCategoryList = function(categoryId, title) {
     document.getElementById('categoryListView').style.transform = 'translateX(0)';
 };
 
-// 3. 关闭分类列表页
 window.App.closeCategoryList = function() {
     document.getElementById('categoryListView').style.transform = 'translateX(100%)';
 };
 
+// 7. 打开/关闭深度阅读详情页
 window.App.openDetail = function(itemId) {
     const item = window.App.cultureData.find(i => i.id === itemId);
     if (!item) return;
     
     currentViewedItem = item;
     
-    // 渲染图文
+    // 渲染长文与锦囊数据
     document.getElementById('detailCover').style.backgroundImage = `url('${item.imgUrl}')`;
     document.getElementById('detailTitle').innerText = item.title;
     document.getElementById('detailHook').innerText = item.hook;
     document.getElementById('detailLore').innerHTML = item.lore;
     document.getElementById('detailTip').innerHTML = item.tip;
     
-    // 重置按钮状态
+    // 重置收藏按钮的默认状态
     const btn = document.getElementById('btnAddToPlan');
-    btn.innerHTML = '➕ 收藏进未来访问计划';
-    btn.style.background = '#0A192F';
+    if (btn) {
+        btn.innerHTML = '➕ 收藏进未来访问计划';
+        btn.style.background = '#0A192F';
+    }
     
     // 弹起模态框
     document.getElementById('detailModal').style.transform = 'translateY(0)';
@@ -220,37 +236,40 @@ window.App.closeDetail = function() {
     currentViewedItem = null;
 };
 
-// ====== 新增：一键退回主界面 (清空所有图层) ======
+// 8. 🚀 一键退回主界面 (清除所有弹出的图层)
 window.App.returnToHome = function() {
-    // 1. 降下详情页
     const detailModal = document.getElementById('detailModal');
-    if(detailModal) detailModal.style.transform = 'translateY(100%)';
+    if (detailModal) detailModal.style.transform = 'translateY(100%)';
     
-    // 2. 右滑收起列表页
     const listView = document.getElementById('categoryListView');
-    if(listView) listView.style.transform = 'translateX(100%)';
+    if (listView) listView.style.transform = 'translateX(100%)';
     
-    // 3. 降下分类网格
     const gridModal = document.getElementById('categoryGridModal');
-    if(gridModal) gridModal.style.transform = 'translateY(100%)';
+    if (gridModal) gridModal.style.transform = 'translateY(100%)';
     
-    // 清除当前查看记录
     currentViewedItem = null;
 };
 
-// 收藏按钮
+// 9. 💖 收藏进计划功能
 window.App.addToPlan = function() {
     if (!currentViewedItem) return;
     const btn = document.getElementById('btnAddToPlan');
-    btn.innerHTML = '✅ 已加入行程计划';
-    btn.style.background = '#1E4D2B';
+    if (btn) {
+        btn.innerHTML = '✅ 已加入行程计划';
+        btn.style.background = '#1E4D2B';
+    }
+    // 这里的 alert 可以换成你 App 内部的 Toast 提示组件
     alert(`成功！[${currentViewedItem.title}] 已加入你的专属探索清单！`);
 };
 
+// ==========================================
+// 自动触发点
+// ==========================================
 document.addEventListener('DOMContentLoaded', () => {
-    window.App.init();
+    if(window.App.initCultureEngine) {
+        window.App.initCultureEngine();
+    }
 });
-
 window.App.showRewardModal = function() {
     const modal = document.getElementById('rewardGroupModal');
     if (modal) {
