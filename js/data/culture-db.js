@@ -21,7 +21,7 @@ window.App.cultureData = [
         categoryId: 'city',
         title: '阿姆斯特丹：木桩上的帝国',
         hook: '建立在 1100 万根木桩上的世界之都，资本主义的终极试验场。',
-        imgUrl: './images/culture/amsterdam-rings.webp', 
+        imgUrl: './images/culture/amsterdam-rings.jpg', 
         lore: `
             <p>阿姆斯特丹本质上是一座建造在致命沼泽上的巨型反自然建筑群。这座城市的地表之下，隐藏着极其庞大的木质地基工程。</p>
             <h3>一、 1100 万根木桩支撑的奇迹</h3>
@@ -38,7 +38,7 @@ window.App.cultureData = [
         categoryId: 'city',
         title: '埃因霍温：欧洲硅谷',
         hook: '掌握全球半导体命脉的心脏，一座由企业建起的城市。',
-        imgUrl: './images/culture/eindhoven.webp', 
+        imgUrl: './images/culture/eindhoven.jpg', 
         lore: `
             <p>如果你想看风车和郁金香，不要来埃因霍温（Eindhoven）。这里是荷兰最硬核的科技堡垒（Brainport）。</p>
             <h3>一、 飞利浦的私家城池</h3>
@@ -57,7 +57,7 @@ window.App.cultureData = [
         categoryId: 'food',
         title: '生吞鲱鱼 (Hollandse Nieuwe)',
         hook: '开启荷兰大航海时代的银色金矿。',
-        imgUrl: './images/culture/dutch-herring.webp',
+        imgUrl: './images/culture/dutch-herring.jpg',
         lore: `
             <p>如果说香料是葡萄牙崛起的密码，那么一种手指长短的银色小鱼，就是荷兰制霸全球海域的基石。</p>
             <h3>一、 改变国运的“一刀切”</h3>
@@ -72,7 +72,7 @@ window.App.cultureData = [
         categoryId: 'food',
         title: 'Kapsalon：卡路里炸弹',
         hook: '诞生于理发店的荷兰非遗，留学生的深夜救赎。',
-        imgUrl: './images/culture/kapsalon.webp',
+        imgUrl: './images/culture/kapsalon.jpg',
         lore: `
             <p>不要以为荷兰只有冷冰冰的三明治。Kapsalon 完美展现了荷兰现代社会的移民融合文化。</p>
             <h3>一、 理发师的奇思妙想</h3>
@@ -91,7 +91,7 @@ window.App.cultureData = [
         categoryId: 'habits',
         title: '日程表神教 (Agenda Culture)',
         hook: '连喝杯咖啡都要提前三周写进日程表的国家。',
-        imgUrl: './images/culture/dutch-agenda.webp',
+        imgUrl: './images/culture/dutch-agenda.jpg',
         lore: `
             <p>在荷兰，“不速之客”被视为一种极大的冒犯。这个国家的社会运转，完全依赖于精确到分钟的“日程表（Agenda）”。</p>
             <h3>一、 加尔文主义的效率崇拜</h3>
@@ -106,7 +106,7 @@ window.App.cultureData = [
         categoryId: 'habits',
         title: '荷兰式直率 (Directness)',
         hook: '不是粗鲁，而是对最高效率与透明度的追求。',
-        imgUrl: './images/culture/dutch-directness.webp',
+        imgUrl: './images/culture/dutch-directness.jpg',
         lore: `
             <p>在跨文化交流中，荷兰人常被冠以“粗鲁”、“毒舌”的标签。但在他们自己的字典里，这叫“Honesty（诚实）”。</p>
             <h3>一、 没有阶级观念的平视</h3>
@@ -125,7 +125,7 @@ window.App.cultureData = [
         categoryId: 'transport',
         title: '鲜血换来的路权',
         hook: '世界第一两轮帝国的诞生，并非源于环保。',
-        imgUrl: './images/culture/dutch-cycling.webp',
+        imgUrl: './images/culture/dutch-cycling.jpg',
         lore: `
             <p>荷兰拥有3.5万公里的专用自行车道，全国自行车数量比人口还要多出数百万。但这并非天然形成，而是一场残酷的抗争结果。</p>
             <h3>一、 “停止谋杀儿童”运动</h3>
@@ -140,7 +140,7 @@ window.App.cultureData = [
         categoryId: 'transport',
         title: 'OV-fiets 共享单车',
         hook: '统一黄蓝涂装，解决“最后一公里”的公共交通神作。',
-        imgUrl: './images/culture/ov-fiets.webp',
+        imgUrl: './images/culture/ov-fiets.jpg',
         lore: `
             <p>当你走出任何一个荷兰火车站，一定会看到密密麻麻、整齐划一的黄蓝相间自行车。这就是 OV-fiets。</p>
             <h3>一、 国家级统筹的胜利</h3>
@@ -159,7 +159,7 @@ window.App.cultureData = [
         categoryId: 'fest',
         title: '圣尼古拉斯的审判 (Sinterklaas)',
         hook: '比圣诞节更硬核、更腹黑的荷兰本土狂欢。',
-        imgUrl: './images/culture/sinterklaas.webp',
+        imgUrl: './images/culture/sinterklaas.jpg',
         lore: `
             <p>对于荷兰人来说，12月5日的圣尼古拉斯节（Sinterklaas）才是真正的“国民大节”，12月25日的圣诞节反而显得平淡无奇。</p>
             <h3>一、 从西班牙乘船而来的圣人</h3>
@@ -174,7 +174,7 @@ window.App.cultureData = [
         categoryId: 'fest',
         title: '国王节：橙色海啸',
         hook: '一年仅此一天，极度克制的荷兰人会彻底丧失理智。',
-        imgUrl: './images/culture/kings-day.webp',
+        imgUrl: './images/culture/kings-day.jpg',
         lore: `
             <p>每年的 4 月 27 日国王节（Koningsdag），这个国家的理智会瞬间清零。</p>
             <h3>一、 为什么是橙色？</h3>
@@ -193,7 +193,7 @@ window.App.cultureData = [
         categoryId: 'nature',
         title: '阿夫鲁戴克大堤',
         hook: '人类工程史上的终极防御，硬生生截断了一片海。',
-        imgUrl: './images/culture/afsluitdijk.webp',
+        imgUrl: './images/culture/afsluitdijk.jpg',
         lore: `
             <p>“上帝创造了世界，而荷兰人创造了荷兰。”</p>
             <h3>一、 将咸水海变成淡水湖</h3>
@@ -208,7 +208,7 @@ window.App.cultureData = [
         categoryId: 'nature',
         title: '三角洲工程：北海锁链',
         hook: '被誉为世界现代七大奇迹之一，抵挡怒海的钢铁巨兽。',
-        imgUrl: './images/culture/delta-works.webp',
+        imgUrl: './images/culture/delta-works.jpg',
         lore: `
             <p>如果说阿夫鲁戴克大堤是盾牌，那么三角洲工程（Deltawerken）就是一条极其复杂且精密的机械锁链。</p>
             <h3>一、 1953 年的世纪惨剧</h3>
@@ -227,7 +227,7 @@ window.App.cultureData = [
         categoryId: 'arch',
         title: '砖块表现主义',
         hook: '为工人阶级建造的砖块宫殿：阿姆斯特丹学派。',
-        imgUrl: './images/culture/het-schip.webp',
+        imgUrl: './images/culture/het-schip.jpg',
         lore: `
             <p>当20世纪初的世界正在追捧冷冰冰的钢筋混凝土时，荷兰的建筑师们却将传统的红砖玩出了花。</p>
             <h3>一、 将公共住房视为艺术品</h3>
@@ -242,7 +242,7 @@ window.App.cultureData = [
         categoryId: 'arch',
         title: '风格派与施罗德住宅',
         hook: '用红黄蓝三原色和直线，对抗世界的混沌。',
-        imgUrl: './images/culture/rietveld.webp',
+        imgUrl: './images/culture/rietveld.jpg',
         lore: `
             <p>1917年诞生的荷兰“风格派（De Stijl）”运动，深刻影响了现代设计、建筑甚至宜家的审美。蒙德里安的格子画就是其平面代表。</p>
             <h3>一、 居住在画作里</h3>
