@@ -1670,3 +1670,94 @@ window.App.initiatePartnerChat = window.initiatePartnerChat = async function(pos
 if (window.ChatEngine) {
     window.ChatEngine.initiatePartnerChat = window.App.initiatePartnerChat;
 }
+
+// ============================================================================
+// 🚑 核心页面切换与导航引擎 (修复底部菜单不显示的问题)
+// ============================================================================
+
+// 1. 全局主页面切换 (底导栏)
+window.switchTab = function(pageId, tabElement) {
+    // 隐藏所有主页面
+    document.querySelectorAll('.page-section').forEach(page => {
+        page.classList.remove('active');
+        page.style.display = 'none';
+    });
+    
+    // 显示目标页面
+    const targetPage = document.getElementById('page-' + pageId);
+    if (targetPage) {
+        targetPage.classList.add('active');
+        targetPage.style.display = 'block';
+    }
+    
+    // 底部高亮状态切换 (排除中间的发布按钮)
+    if (tabElement) {
+        document.querySelectorAll('.tab-item').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        tabElement.classList.add('active');
+    }
+};
+
+// 2. 管家集市 Tab 切换 (闲置 / 悬赏 / 搭子)
+window.switchMarketTab = function(tabId, element) {
+    // 隐藏所有集市列表
+    const idle = document.getElementById('idleWaterfall');
+    const help = document.getElementById('helpListContainer');
+    const partner = document.getElementById('partnerListContainer');
+    
+    if (idle) idle.style.display = 'none';
+    if (help) help.style.display = 'none';
+    if (partner) partner.style.display = 'none';
+    
+    // 显示选中的列表
+    if (tabId === 'idle' && idle) idle.style.display = 'grid';
+    if (tabId === 'help' && help) help.style.display = 'block';
+    if (tabId === 'partner' && partner) partner.style.display = 'block';
+    
+    // 高亮选中状态
+    document.querySelectorAll('.m-tab').forEach(el => el.classList.remove('active'));
+    if (element) element.classList.add('active');
+    
+    // 触发数据加载
+    if (window.App && window.App.loadCommunityPosts) {
+        window.App.loadCommunityPosts(tabId);
+    }
+};
+
+// 3. 个人中心资产 Tab 切换 (发布 / 收藏 / 足迹 / 评价)
+window.switchAssetTab = function(tabId, element) {
+    // 隐藏所有资产内容
+    document.querySelectorAll('.asset-content').forEach(el => {
+        el.style.display = 'none';
+        el.classList.remove('active');
+    });
+    
+    // 显示目标资产内容
+    const targetContent = document.getElementById('asset-' + tabId);
+    if (targetContent) {
+        targetContent.style.display = 'block';
+        targetContent.classList.add('active');
+    }
+    
+    // 高亮文字与下划线
+    document.querySelectorAll('.a-tab').forEach(el => {
+        el.classList.remove('active');
+        el.style.color = '#64748B';
+        el.style.fontWeight = 'bold';
+        const underline = el.querySelector('.tab-underline');
+        if (underline) underline.remove();
+    });
+    
+    if (element) {
+        element.classList.add('active');
+        element.style.color = '#111827';
+        element.style.fontWeight = '900';
+        element.innerHTML += '<div class="tab-underline" style="position: absolute; bottom: -13px; left: 50%; transform: translateX(-50%); width: 20px; height: 3px; background: #111827; border-radius: 2px;"></div>';
+    }
+};
+
+// 4. 返回上一页全局函数
+window.goBack = function() {
+    window.switchTab('tips', document.querySelector('.tab-item[onclick*="tips"]'));
+};
