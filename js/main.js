@@ -1,3 +1,20 @@
+
+// ============================================================================
+// js/main.js - 荷包管家核心调度引擎 (霸道修正版)
+// ============================================================================
+import { ScannerEngine } from './modules/scanner.js';
+import { MarketEngine } from './modules/market.js';
+import { WikiEngine } from './modules/wiki.js';
+import { ChatEngine } from './modules/chat.js';
+import { AuthEngine } from './modules/auth.js';
+import { TrendingEngine } from './modules/trending.js'; // 🌟 引入刚建好的榜单引擎
+import { showToast } from './core/toast.js';
+import { ModalManager } from './components/modals.js';
+import { safeDOM } from './core/dom.js';
+import { ProfileEngine } from './modules/profile.js';
+import { sgQuestions } from './data/sgQuestions.js';
+window.App = window.App || {};
+
 // ============================================================================
 // 💅 荷包管家 Pro 级 UI 提效补丁 (小红书同款双列 Grid 版)
 // ============================================================================
@@ -76,21 +93,6 @@ if (!document.getElementById('proUiPatchSafe')) {
     document.head.appendChild(style);
 }
 
-// ============================================================================
-// js/main.js - 荷包管家核心调度引擎 (霸道修正版)
-// ============================================================================
-import { ScannerEngine } from './modules/scanner.js';
-import { MarketEngine } from './modules/market.js';
-import { WikiEngine } from './modules/wiki.js';
-import { ChatEngine } from './modules/chat.js';
-import { AuthEngine } from './modules/auth.js';
-import { TrendingEngine } from './modules/trending.js'; // 🌟 引入刚建好的榜单引擎
-import { showToast } from './core/toast.js';
-import { ModalManager } from './components/modals.js';
-import { safeDOM } from './core/dom.js';
-import { ProfileEngine } from './modules/profile.js';
-import { sgQuestions } from './data/sgQuestions.js';
-window.App = window.App || {};
 
 // ==========================================
 // 🇳🇱 荷包管家：文化探索引擎 (Culture Engine)
