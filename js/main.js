@@ -89,7 +89,7 @@ import { showToast } from './core/toast.js';
 import { ModalManager } from './components/modals.js';
 import { safeDOM } from './core/dom.js';
 import { ProfileEngine } from './modules/profile.js';
-
+import { sgQuestions } from './data/sgQuestions.js';
 window.App = window.App || {};
 
 // ==========================================
@@ -936,7 +936,7 @@ setTimeout(() => { if(window.App.renderStarterTasks) window.App.renderStarterTas
 // ==========================================
 // 🎮 荷村生存模拟器 (亮色质感 + 动态战绩卡片)
 // ==========================================
-import { sgQuestions } from './data/sgQuestions.js';
+
 
 window.App.sgEngine = {
     balance: 500,
