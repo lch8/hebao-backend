@@ -1595,7 +1595,7 @@ window.App.loadCommunityPosts = async function() {
         // 2. 呼叫你的 Vercel Serverless API
         // 注意：本地调试时这里可能会跨域，部署到 Vercel 后就好了
         const token = localStorage.getItem('hebao_token') || '';
-        const response = await fetch('/api/get-community-posts', {
+        const response = await fetch('/api/get-community', {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
