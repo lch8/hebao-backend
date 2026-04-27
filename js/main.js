@@ -1584,8 +1584,7 @@ const diagnosticInitiateChat = function(postId) {
 };
 
 // 在 main.js 中，确保 window.App 已初始化
-window.App = window.App || {};
-
+window.App.loadCommunityPosts = MarketEngine.loadPosts || MarketEngine.init;
 // 🌟 关键改造：强制暴露给全局，让 ui.js 能呼叫到它！
 window.App.loadCommunityPosts = async function() {
     try {
