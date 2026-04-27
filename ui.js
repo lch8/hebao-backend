@@ -1537,32 +1537,3 @@ if (originalLoadMyPosts) {
 
 })();
 
-
-// ==========================================
-// 🚨 终极 Debug 强心针：强制注入测试数据
-// ==========================================
-window.App.loadCommunityPosts = function() {
-    console.log("🚀 呼叫 loadCommunityPosts 成功！准备注入测试数据...");
-    
-    const idleContainer = document.getElementById('idleWaterfall');
-    if (idleContainer) {
-        // 强制清空加载状态，塞入一条假数据
-        idleContainer.innerHTML = `
-            <div style="background:#FFF; padding:12px; border-radius:16px; box-shadow:0 4px 15px rgba(0,0,0,0.05); border: 2px solid #10B981;">
-                <div style="height:140px; background:#E2E8F0; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:40px;">📱</div>
-                <div style="font-weight:900; color:#111827; margin-top:10px; font-size: 15px;">终极 Debug 测试机</div>
-                <div style="color:#64748B; font-size: 12px; margin-top: 4px;">如果你看到这个，说明 UI 完全正常！</div>
-                <div style="color:#EF4444; font-weight:900; margin-top:8px; font-size: 16px;">€ 9.99</div>
-            </div>
-        `;
-    }
-};
-
-// 确保一进集市就能触发
-const originalSwitchTab = window.switchTab;
-window.switchTab = function(tabId, element) {
-    originalSwitchTab(tabId, element);
-    if (tabId === 'market' && window.App.loadCommunityPosts) {
-        window.App.loadCommunityPosts();
-    }
-};
