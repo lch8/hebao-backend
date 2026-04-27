@@ -18,7 +18,6 @@ function toggleScanMenu() {
 
 function switchTab(tabId, element) {
     // 记录上一个真实页面 tab，供 goBack() 使用
-    // 只记录真实页面（排除 details/trending 这类全屏覆盖层）
     const realTabs = ['tips', 'market', 'messages', 'profile'];
     if (realTabs.includes(tabId)) lastTab = tabId;
 
@@ -26,12 +25,11 @@ function switchTab(tabId, element) {
     const target = document.getElementById('page-' + tabId); 
     if(target) target.classList.add('active');
 
-    // 更新底部导航高亮：清除所有 .tab-item active，发布按钮永远不高亮
+    // 更新底部导航高亮
     document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
     if (element && element.classList.contains('tab-item')) {
         element.classList.add('active');
     } else if (!element) {
-        // 没传 element 时，按 tabId 自动找对应的 tab-item 高亮
         const autoEl = document.querySelector(`.tab-item[onclick*="${tabId}"]`);
         if (autoEl) autoEl.classList.add('active');
     }
@@ -43,13 +41,15 @@ function switchTab(tabId, element) {
         if(tabBar) tabBar.style.display = 'flex'; 
     }
 
+    // 智能联动：切到消息页自动拉取，切到我的页自动刷新 UI
     if (tabId === 'messages' && window.App.loadConversations) window.App.loadConversations();
     if (tabId === 'profile' && window.App.refreshProfileUI) window.App.refreshProfileUI();
     
-    // 🌟 修复 1：新增这行！切到集市时，自动呼叫主引擎拉取最新的帖子数据
-    if (tabId === 'market' && window.App.loadCommunityPosts) window.App.loadCommunityPosts();
+    // 🌟 修复就在这里：直接把这行加进去！
+    if (tabId === 'market' && window.App.loadCommunityPosts) {
+        window.App.loadCommunityPosts();
+    }
 }
-
 function goBack() { 
     const dest = (lastTab && lastTab !== 'scan' && document.getElementById('page-' + lastTab))
         ? lastTab : 'tips';
