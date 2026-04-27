@@ -43,9 +43,11 @@ function switchTab(tabId, element) {
         if(tabBar) tabBar.style.display = 'flex'; 
     }
 
-    // 智能联动：切到消息页自动拉取，切到我的页自动刷新 UI
     if (tabId === 'messages' && window.App.loadConversations) window.App.loadConversations();
     if (tabId === 'profile' && window.App.refreshProfileUI) window.App.refreshProfileUI();
+    
+    // 🌟 修复 1：新增这行！切到集市时，自动呼叫主引擎拉取最新的帖子数据
+    if (tabId === 'market' && window.App.loadCommunityPosts) window.App.loadCommunityPosts();
 }
 
 function goBack() { 
@@ -76,6 +78,7 @@ function switchMarketTab(type) {
     });
 
     if (window.App.renderFilterBar) window.App.renderFilterBar(type);
+    if (window.App.loadCommunityPosts) window.App.loadCommunityPosts();
 }
 
 window.switchMarketTab = switchMarketTab;
