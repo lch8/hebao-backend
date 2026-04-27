@@ -1623,37 +1623,96 @@ window.App.loadCommunityPosts = async function() {
     }
 };
 
-// 渲染 HTML 的辅助函数
+// 🌟 核心：智能分类渲染引擎 (恢复 UI 风格与点击事件)
 function renderPostsToUI(posts) {
     const idleContainer = document.getElementById('idleWaterfall');
-    if (!idleContainer) return;
-    
-    let html = '';
+    const helpContainer = document.getElementById('helpListContainer');
+    const partnerContainer = document.getElementById('partnerListContainer');
+
+    if (!idleContainer || !helpContainer || !partnerContainer) return;
+
+    let idleHtml = '', helpHtml = '', partnerHtml = '';
+    let idleCount = 0, helpCount = 0, partnerCount = 0;
+
     posts.forEach(post => {
-        // 这里根据你的 Turso 数据库结构来解析
+        // 安全解析数据库里存的 JSON 内容
         let contentObj = {};
-        try { contentObj = JSON.parse(post.content); } catch(e) {}
+        try { contentObj = typeof post.content === 'string' ? JSON.parse(post.content) : post.content; } catch(e) {}
         
-        // 提取图片和价格
-        const imgUrl = (contentObj.items && contentObj.items[0]) ? contentObj.items[0].url : '默认图片路径';
-        const price = post.likes || 0; // 你代码里似乎用 likes 字段存了价格
-        
-        html += `
-            <div style="background:#FFF; border-radius:16px; overflow:hidden; box-shadow:0 4px 15px rgba(0,0,0,0.04); border:1px solid #F1F5F9;">
-                <img src="${imgUrl}" style="width:100%; height:140px; object-fit:cover; background:#F8FAFC;">
+        const price = post.likes || 0; 
+        const author = post.authorName || '荷包蛋';
+        const avatar = post.avatar || '😎';
+        const safeId = post.id;
+
+        // ==========================================
+        // 1. 闲置分类 (瀑布流双列卡片)
+        // ==========================================
+        if (post.title.includes('[闲置]')) {
+            idleCount++;
+            const imgUrl = (contentObj.items && contentObj.items[0] && contentObj.items[0].url) ? contentObj.items[0].url : 'https://via.placeholder.com/300?text=暂无图片';
+            
+            idleHtml += `
+            <div onclick="if(window.App.openDetails) window.App.openDetails('${safeId}')" style="background:#FFF; border-radius:16px; overflow:hidden; box-shadow:0 4px 15px rgba(0,0,0,0.04); border:1px solid #F1F5F9; cursor:pointer; transition: transform 0.2s;" onmousedown="this.style.transform='scale(0.96)'" onmouseup="this.style.transform='scale(1)'">
+                <img src="${imgUrl}" style="width:100%; height:160px; object-fit:cover; background:#F8FAFC;">
                 <div style="padding:12px;">
-                    <div style="font-weight:900; font-size:14px; color:#111827; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${post.title}</div>
+                    <div style="font-weight:900; font-size:14px; color:#111827; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${post.title.replace('[闲置]', '').trim()}</div>
                     <div style="font-size:18px; font-weight:900; color:#EF4444;">€ ${price}</div>
                     <div style="display:flex; align-items:center; gap:6px; margin-top:8px;">
-                        <span style="font-size:16px;">${post.avatar || '😎'}</span>
-                        <span style="font-size:11px; color:#64748B;">${post.authorName || '荷包蛋'}</span>
+                        <span style="font-size:16px;">${avatar}</span>
+                        <span style="font-size:11px; color:#64748B; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${author}</span>
                     </div>
                 </div>
-            </div>
-        `;
+            </div>`;
+        }
+        // ==========================================
+        // 2. 悬赏/互助分类 (横向宽卡片)
+        // ==========================================
+        else if (post.title.includes('[互助]') || post.title.includes('[悬赏]')) {
+            helpCount++;
+            helpHtml += `
+            <div onclick="if(window.App.openDetails) window.App.openDetails('${safeId}')" style="background:#FFF; border-radius:16px; padding:16px; margin-bottom:12px; box-shadow:0 4px 15px rgba(0,0,0,0.04); border:1px solid #F1F5F9; cursor:pointer; display:flex; gap:12px; transition: transform 0.2s;" onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform='scale(1)'">
+                <div style="font-size:32px; background:#F8FAFC; width:48px; height:48px; border-radius:24px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">🤝</div>
+                <div style="flex:1; overflow:hidden;">
+                    <div style="font-weight:900; font-size:15px; color:#111827; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${post.title.replace(/\[.*?\]/, '').trim()}</div>
+                    <div style="font-size:13px; color:#64748B; margin-bottom:10px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${contentObj.desc || '点开查看悬赏详情...'}</div>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div style="font-size:16px; font-weight:900; color:#F59E0B;">${price > 0 ? '€ ' + price : '面议'}</div>
+                        <div style="font-size:11px; color:#9CA3AF; font-weight:bold; background:#F1F5F9; padding:2px 6px; border-radius:6px;">📍 ${contentObj.location || contentObj.city || '线上/未知'}</div>
+                    </div>
+                </div>
+            </div>`;
+        }
+        // ==========================================
+        // 3. 搭子分类 (带缺人标识的组局卡片)
+        // ==========================================
+        else if (post.title.includes('[搭子]')) {
+            partnerCount++;
+            const maxP = contentObj.maxPeople || 2;
+            const joined = contentObj.joinedCount || 1;
+            const lacking = Math.max(0, maxP - joined);
+            
+            partnerHtml += `
+            <div onclick="if(window.App.openDetails) window.App.openDetails('${safeId}')" style="background:#FFF; border-radius:16px; padding:16px; margin-bottom:12px; box-shadow:0 4px 15px rgba(0,0,0,0.04); border:1px solid #F1F5F9; cursor:pointer; transition: transform 0.2s;" onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform='scale(1)'">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <div style="font-weight:900; font-size:15px; color:#111827; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${post.title.replace('[搭子]', '').trim()}</div>
+                    <div style="background:#FEF2F2; color:#DC2626; padding:4px 8px; border-radius:8px; font-size:11px; font-weight:900; border:1px solid #FECACA; flex-shrink:0;">缺 ${lacking} 人</div>
+                </div>
+                <div style="font-size:13px; color:#64748B; margin-bottom:12px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${contentObj.desc || '一起来组局吧！'}</div>
+                <div style="display:flex; align-items:center; justify-content:space-between;">
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <span style="font-size:16px;">${avatar}</span>
+                        <span style="font-size:11px; color:#9CA3AF; font-weight:bold;">${author} 发起</span>
+                    </div>
+                    <span style="font-size:11px; color:#6366F1; font-weight:900; background:#EEF2FF; padding:2px 6px; border-radius:6px;">⏱️ ${contentObj.time || '时间随意'}</span>
+                </div>
+            </div>`;
+        }
     });
-    
-    idleContainer.innerHTML = html;
+
+    // 将生成的专属 HTML 注入到各自的容器中 (带空状态保护)
+    idleContainer.innerHTML = idleCount > 0 ? idleHtml : '<div style="grid-column:1/-1; text-align:center; padding:40px; color:#9CA3AF; font-size:13px; font-weight:bold;">📦 暂无闲置信息</div>';
+    helpContainer.innerHTML = helpCount > 0 ? helpHtml : '<div style="text-align:center; padding:40px; color:#9CA3AF; font-size:13px; font-weight:bold;">🤝 暂无悬赏信息</div>';
+    partnerContainer.innerHTML = partnerCount > 0 ? partnerHtml : '<div style="text-align:center; padding:40px; color:#9CA3AF; font-size:13px; font-weight:bold;">🏕️ 暂无搭子信息</div>';
 }
 
 // ============================================================================
