@@ -1583,6 +1583,80 @@ const diagnosticInitiateChat = function(postId) {
     }
 };
 
+// 在 main.js 中，确保 window.App 已初始化
+window.App = window.App || {};
+
+// 🌟 关键改造：强制暴露给全局，让 ui.js 能呼叫到它！
+window.App.loadCommunityPosts = async function() {
+    try {
+        // 1. 显示加载中动画
+        const idleContainer = document.getElementById('idleWaterfall');
+        if (idleContainer) idleContainer.innerHTML = '<div style="text-align:center; grid-column: 1 / -1; padding:20px; color:#9CA3AF;">⏳ 正在从云端拉取帖子...</div>';
+
+        // 2. 呼叫你的 Vercel Serverless API
+        // 注意：本地调试时这里可能会跨域，部署到 Vercel 后就好了
+        const token = localStorage.getItem('hebao_token') || '';
+        const response = await fetch('/api/get-community-posts', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        const data = await response.json();
+
+        // 3. 如果请求成功，开始渲染真实的 HTML
+        if (data.success && data.posts && data.posts.length > 0) {
+            // 把数据缓存起来，供资料卡等其他地方快速读取
+            window.allCommunityPostsCache = data.posts; 
+            
+            // 🌟 核心：写一个专门渲染的函数（或者直接在这里拼装 HTML）
+            renderPostsToUI(data.posts); 
+        } else {
+            if (idleContainer) idleContainer.innerHTML = '<div style="text-align:center; grid-column: 1 / -1; padding:20px; color:#9CA3AF;">这里还空空如也哦 📦</div>';
+        }
+
+    } catch (error) {
+        console.error("拉取帖子失败:", error);
+        const idleContainer = document.getElementById('idleWaterfall');
+        if (idleContainer) idleContainer.innerHTML = '<div style="text-align:center; grid-column: 1 / -1; padding:20px; color:#EF4444;">🚨 网络拥堵，拉取失败</div>';
+    }
+};
+
+// 渲染 HTML 的辅助函数
+function renderPostsToUI(posts) {
+    const idleContainer = document.getElementById('idleWaterfall');
+    if (!idleContainer) return;
+    
+    let html = '';
+    posts.forEach(post => {
+        // 这里根据你的 Turso 数据库结构来解析
+        let contentObj = {};
+        try { contentObj = JSON.parse(post.content); } catch(e) {}
+        
+        // 提取图片和价格
+        const imgUrl = (contentObj.items && contentObj.items[0]) ? contentObj.items[0].url : '默认图片路径';
+        const price = post.likes || 0; // 你代码里似乎用 likes 字段存了价格
+        
+        html += `
+            <div style="background:#FFF; border-radius:16px; overflow:hidden; box-shadow:0 4px 15px rgba(0,0,0,0.04); border:1px solid #F1F5F9;">
+                <img src="${imgUrl}" style="width:100%; height:140px; object-fit:cover; background:#F8FAFC;">
+                <div style="padding:12px;">
+                    <div style="font-weight:900; font-size:14px; color:#111827; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${post.title}</div>
+                    <div style="font-size:18px; font-weight:900; color:#EF4444;">€ ${price}</div>
+                    <div style="display:flex; align-items:center; gap:6px; margin-top:8px;">
+                        <span style="font-size:16px;">${post.avatar || '😎'}</span>
+                        <span style="font-size:11px; color:#64748B;">${post.authorName || '荷包蛋'}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    idleContainer.innerHTML = html;
+}
+
 // ============================================================================
 // 🛡️ 荷包管家：最高权限社交引擎 (真·全网联通版)
 // ============================================================================
