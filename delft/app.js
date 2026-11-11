@@ -1,5 +1,7 @@
 // Delft pilot: no frontend framework, no third-party analytics, no automatic WeChat group posting.
 import {readDraft,writeDraft,deleteDraft} from './draft-store.js';
+import {createPoster} from './poster.js';
+import {cityEvents, CITY_EVENTS_CHECKED, CITY_AGENDA_URL, upcomingCityEvents, amsterdamInput, amsterdamInstant, cityEventDraft} from './city-events.js';
 const $ = id => document.getElementById(id);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const state = {photos:[],listings:[],myListings:[],events:[],currentListing:null,currentEvent:null,publishedId:null,editingId:null,editVersion:null,dirty:false,activeTab:'sell',category:'',saving:false};
@@ -26,16 +28,23 @@ const modalFocus=new Map();
 let modalLayer=1000;
 function showModal(id){modalFocus.set(id,document.activeElement);$(id).hidden=false;$(id).style.zIndex=++modalLayer;document.body.style.overflow='hidden';$(id).querySelector('input,textarea,button')?.focus();}
 function hideModal(id){$(id).hidden=true;document.body.style.overflow=document.querySelector('.overlay:not([hidden])')?'hidden':'';modalFocus.get(id)?.focus();}
-function tab(name){
+async function tab(name,{updateUrl=true}={}){
+  if(!['sell','market','events','mine'].includes(name))return;
   state.activeTab=name;
   document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
+  document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tab===name)));
   document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id===`panel-${name}`));
-  if(name==='market')loadListings();if(name==='events')loadEvents();if(name==='mine')loadMine();
+  $('welcomeHero').hidden=name!=='sell';
+  if(updateUrl){const url=new URL(location.href);url.searchParams.delete('item');url.searchParams.delete('event');url.searchParams.set('tab',name);history.replaceState(null,'',url);}
   window.scrollTo({top:0,behavior:'smooth'});
+  if(name==='market')await loadListings();if(name==='events'){renderCityEvents();await loadEvents();}if(name==='mine')await loadMine();
 }
 document.addEventListener('click',e=>{
   const nav=e.target.closest('[data-tab]');if(nav)tab(nav.dataset.tab);
   const close=e.target.closest('[data-close]');if(close)hideModal(close.dataset.close);
+  if(e.target.closest('[data-create-event]'))openEventForm();
+  if(e.target.closest('[data-retry-events]'))loadEvents();
+  if(e.target.closest('[data-clear-market]')){$('marketSearch').value='';$('marketCategories').querySelector('[data-category=""]').click();}
   if(e.target.classList.contains('overlay'))hideModal(e.target.id);
 });
 document.addEventListener('keydown',e=>{
@@ -102,6 +111,7 @@ function persistDraft(){
 }
 function markDraftChanged(){
   state.dirty=true;draftRevision++;$('shareResult').hidden=true;
+  renderListPreview();
   $('draftStatus').textContent=state.editingId?'有未保存的修改 · 正在保存浏览器草稿…':'正在保存浏览器草稿…';
   clearTimeout(draftTimer);draftTimer=setTimeout(persistDraft,350);
 }
@@ -142,7 +152,12 @@ function renderItems(){
   $('itemEditor').innerHTML=state.photos.length?state.photos.map((item,i)=>`<div class="item-card" data-id="${item.id}">
     ${item.dataUrl||item.photo?`<img class="item-thumb" src="${esc(item.dataUrl||item.photo)}" alt="商品 ${i+1}" />`:'<div class="item-thumb image-fallback">📦</div>'}
     <div class="item-fields"><div class="item-name-row"><input aria-label="商品名称" data-field="name" maxlength="70" placeholder="商品名称" value="${esc(item.name)}" /><button type="button" class="remove-btn" data-remove="${item.id}">删除</button></div>
-    <div class="pair"><label>价格（€）<input type="number" min="0" max="10000" step="0.01" data-field="price" value="${esc(item.price)}" placeholder="待定" /></label><label>分类<select data-field="category" aria-label="商品分类">${itemCategories.map(c=>`<option ${c===item.category?'selected':''}>${c}</option>`).join('')}</select></label></div><label>成色或说明<input data-field="condition" maxlength="140" value="${esc(item.condition)}" placeholder="例如：八成新 / 自取" /></label><span class="hint">${statusNames[item.status]||'在售'} · 状态可在「我的」中更新</span></div></div>`).join(''):'还没有商品，先上传照片或手动添加一件。';
+    <div class="pair"><label>价格（€）<input type="number" min="0" max="10000" step="0.01" data-field="price" value="${esc(item.price)}" placeholder="待定" /></label><label>分类<select data-field="category" aria-label="商品分类">${itemCategories.map(c=>`<option ${c===item.category?'selected':''}>${c}</option>`).join('')}</select></label></div><label>成色或说明<input data-field="condition" maxlength="140" value="${esc(item.condition)}" placeholder="例如：八成新 / 自取" /></label><span class="hint">${statusNames[item.status]||'在售'} · 状态可在「我的」中更新</span></div></div>`).join(''):'先上传照片，或手动添加第一件商品。';
+  renderListPreview();
+}
+function renderListPreview(){
+  const items=state.photos;
+  $('listPreview').innerHTML=`<div class="preview-cover"><span>${esc($('sellerName').value.trim()||'你的')}闲置清单</span><h3>${esc($('listingTitle').value.trim()||'Delft 闲置出清')}</h3><p>${esc($('pickup').value.trim()||'填写大致自取区域')}</p></div><div class="preview-items">${items.length?items.slice(0,4).map(item=>`<div class="preview-item">${item.dataUrl||item.photo?`<img src="${esc(item.dataUrl||item.photo)}" alt="" />`:'<span class="preview-placeholder" aria-hidden="true">＋</span>'}<span>${esc(item.name||'待填写商品名')}<small>${item.status==='available'?'在售':statusNames[item.status]||'在售'}</small></span><strong>${item.price===''||item.price==null?'待定':'€'+esc(Number(item.price))}</strong></div>`).join(''):'<div class="preview-empty">每一件闲置，<br>都值得一个新去处。</div>'}${items.length>4?`<p class="hint">还有 ${items.length-4} 件 · 海报会包含全部商品</p>`:''}</div><div class="preview-signature"><strong>荷包 · Delft</strong><span>闲置与周末，都在这里。</span></div>`;
 }
 $('itemEditor').addEventListener('input',e=>{const card=e.target.closest('[data-id]'),field=e.target.dataset.field;if(!card||!field)return;const item=state.photos.find(i=>i.id===card.dataset.id);if(item){item[field]=e.target.value;markDraftChanged();}});
 $('itemEditor').addEventListener('click',e=>{const id=e.target.closest('[data-remove]')?.dataset.remove;if(!id)return;state.photos=state.photos.filter(i=>i.id!==id);markDraftChanged();renderItems();});
@@ -175,32 +190,27 @@ $('btnCopy').addEventListener('click',async()=>{
   try{const text=listingCopy();await navigator.clipboard.writeText(text);toast('已复制微信群文案，打开微信粘贴即可');}
   catch(error){toast(error.message||'复制失败，请通过安全 HTTPS 页面访问');}
 });
-const drawCover = (ctx,img,x,y,w,h) => {
-  const scale=Math.max(w/img.width,h/img.height), dw=img.width*scale,dh=img.height*scale;
-  ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();ctx.drawImage(img,x+(w-dw)/2,y+(h-dh)/2,dw,dh);ctx.restore();
-};
-const loadImg = src => new Promise(resolve=>{const img=new Image();if(!src.startsWith('data:'))img.crossOrigin='anonymous';img.onload=()=>resolve(img);img.onerror=()=>resolve(null);img.src=src;});
+let posterUrl = '', posterFile;
 $('btnPoster').addEventListener('click',async()=>{
+  const button=$('btnPoster');
   try{
-    validateDraft();const button=$('btnPoster');setBusy(button,true,'海报生成中…');
-    const canvas=document.createElement('canvas');canvas.width=1000;canvas.height=1390;
-    const ctx=canvas.getContext('2d');ctx.fillStyle='#f8f7f3';ctx.fillRect(0,0,1000,1390);
-    ctx.fillStyle='#204f3d';ctx.fillRect(0,0,1000,225);ctx.fillStyle='#fff';ctx.font='bold 52px sans-serif';ctx.fillText(($('listingTitle').value.trim()||'Delft 闲置出清').slice(0,17),55,110);
-    ctx.font='26px sans-serif';ctx.fillText(`📍 ${$('pickup').value.trim()||'Delft 自取'}`.slice(0,28),55,170);
-    const items=state.photos.slice(0,9);const cols=3,w=282,h=320,g=22,left=55,top=260;
-    for(let k=0;k<items.length;k++){
-      const it=items[k],x=left+(k%cols)*(w+g),y=top+Math.floor(k/cols)*(h+g);
-      ctx.fillStyle='#fff';ctx.fillRect(x,y,w,h);
-      if(it.dataUrl||it.photo){const img=await loadImg(it.dataUrl||it.photo);if(img)drawCover(ctx,img,x,y,w,230);else{ctx.fillStyle='#e4ede7';ctx.fillRect(x,y,w,230);}}
-      else{ctx.fillStyle='#e4ede7';ctx.fillRect(x,y,w,230);ctx.font='64px sans-serif';ctx.fillStyle='#446e5a';ctx.fillText('📦',x+105,y+145);}
-      ctx.fillStyle='#203c2d';ctx.font='bold 23px sans-serif';ctx.fillText(it.name.slice(0,11),x+12,y+265);
-      ctx.fillStyle='#217256';ctx.font='bold 27px sans-serif';ctx.fillText(it.price===''?'价格私聊':`€${Number(it.price)}`,x+12,y+300);
-      if(it.status!=='available'){ctx.fillStyle='#204f3ddd';ctx.fillRect(x,y,w,42);ctx.fillStyle='#fff';ctx.font='bold 23px sans-serif';ctx.fillText(statusNames[it.status],x+12,y+29);}
-    }
-    ctx.fillStyle='#517562';ctx.font='22px sans-serif';ctx.fillText('荷包 · Delft   |   最新状态请查看分享链接',55,1350);
-    const a=document.createElement('a');a.download='Delft-毕业清仓海报.jpg';a.href=canvas.toDataURL('image/jpeg',0.88);a.click();toast('海报已生成，可保存后发送到微信群');
-    setBusy(button,false);
-  }catch(error){toast(error.message);setBusy($('btnPoster'),false);}
+    validateDraft();setBusy(button,true,'海报生成中…');
+    // Snapshot before awaiting images so edits cannot mix different revisions.
+    const draft={title:$('listingTitle').value.trim(),pickup:$('pickup').value.trim(),seller:$('sellerName').value.trim(),items:state.photos.map(item=>({...item})),publishedId:state.publishedId,dirty:state.dirty};
+    const {canvas,missingPhotos,destination}=await createPoster(draft);
+    const blob=await new Promise((resolve,reject)=>canvas.toBlob(value=>value?resolve(value):reject(new Error('图片生成失败，请重试')),'image/jpeg',0.92));
+    if(posterUrl)URL.revokeObjectURL(posterUrl);posterUrl=URL.createObjectURL(blob);
+    posterFile=new File([blob],'Delft-闲置分享海报.jpg',{type:'image/jpeg'});
+    $('posterImage').src=posterUrl;$('downloadPoster').href=posterUrl;
+    $('sharePoster').hidden=!navigator.canShare?.({files:[posterFile]});
+    $('posterHint').textContent=(missingPhotos?`${missingPhotos} 张照片暂未载入，可关闭后重试。`:'下载后发到微信群；手机也可以长按图片保存。')+(destination.published?' 二维码通向这份清单的最新状态。':' 二维码通向荷包 Delft 首页。');
+    showModal('posterModal');
+  }catch(error){toast(error.message);}finally{setBusy(button,false);}
+});
+$('sharePoster').addEventListener('click',async()=>{
+  if(!posterFile)return;
+  try{await navigator.share({files:[posterFile],title:'荷包 · Delft 闲置清单'});}
+  catch(error){if(error.name!=='AbortError')toast('暂时无法直接分享，请下载海报后发送');}
 });
 $('btnPublish').addEventListener('click',async()=>{
   if(state.saving)return;
@@ -258,8 +268,8 @@ function renderMarket(){
     const selling=l.items.filter(i=>i.status==='available'&&(!state.category||(i.category||'其他')===state.category));const cover=selling.find(i=>i.photo)?.photo;
     const min=Math.min(...selling.map(i=>i.price===null?Infinity:Number(i.price)));const price=Number.isFinite(min)?`€${min} 起`:'价格私聊';
     return `<article class="listing-card" role="button" tabindex="0" data-listing="${esc(l.id)}">${cover?`<img loading="lazy" class="listing-photo" src="${esc(cover)}" alt="商品照片" />`:'<div class="listing-photo image-fallback">📦</div>'}
-    <div class="listing-details"><span class="pill">${selling.length} 件在售</span><h3>${esc(l.title)}</h3><div class="price">${esc(price)}</div><p>${esc(l.pickup)} · ${esc(l.seller)}</p></div></article>`;
-  }).join(''):'<div class="empty-state">暂无匹配的有效商品。你可以先用「闲置发布助手」生成广告，并邀请卖家公开上架。</div>';
+    <div class="listing-details"><div class="listing-topline"><span class="pill">${selling.length} 件在售</span><span class="price">${esc(price)}</span></div><h3>${esc(l.title)}</h3><p class="listing-item-names">${esc(selling.slice(0,3).map(item=>item.name).join(' · '))}${selling.length>3?'…':''}</p><div class="listing-bottom"><span>${esc(l.pickup)}</span><span>${esc(l.seller)}</span></div></div></article>`;
+  }).join(''):`<div class="empty-state action-empty"><span class="empty-symbol" aria-hidden="true">↗</span><h3>${state.category||$('marketSearch').value?'暂时没找到匹配的好物':'集市正在等第一份清单'}</h3><p>${state.category||$('marketSearch').value?'换个关键词，或看看其他分类。':'把闲置整理出来，让附近需要的人看见。'}</p>${state.category||$('marketSearch').value?'<button type="button" class="outline-btn" data-clear-market>查看全部商品</button>':'<button type="button" class="primary-btn" data-tab="sell">发布我的闲置</button>'}</div>`;
 }
 $('marketGrid').addEventListener('click',e=>{const card=e.target.closest('[data-listing]');if(card)openListing(card.dataset.listing);});
 $('marketGrid').addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('[data-listing]')){e.preventDefault();openListing(e.target.dataset.listing);}});
@@ -291,14 +301,49 @@ $('sendInquiry').addEventListener('click',async()=>{
 
 // ---- Events ----
 const dateText = iso => new Intl.DateTimeFormat('zh-CN',{timeZone:'Europe/Amsterdam',month:'long',day:'numeric',weekday:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(iso));
+let cityPeriod='all',eventsRequest=0,eventDraftTouched=false;
+function renderCityEvents(){
+  const picks=upcomingCityEvents(cityEvents,cityPeriod);
+  $('cityCheckedNote').textContent=`${CITY_EVENTS_CHECKED.replaceAll('-',' / ')} 核对 · 按时间排序`;
+  $('cityEvents').innerHTML=picks.length?picks.map((ev,i)=>{
+    const local=amsterdamInput(ev.startsAt),month=Number(local.slice(5,7)),day=local.slice(8,10);
+    const motif={音乐:'LIVE MUSIC',舞台:'ON STAGE',户外:'INTO THE WOODS',节日:'CITY LIGHTS'}[ev.category];
+    return `<article class="city-card ${i===0&&picks.length>2?'featured':''}"><div class="city-cover ${ev.tone}" aria-hidden="true"><div class="date-stamp"><span>${month} 月</span><strong>${day}</strong></div><span class="cover-word">${motif}</span><span class="cover-category">${ev.category}</span></div><div class="city-content"><div class="city-date">${esc(dateText(ev.startsAt))}${ev.endsAt?' – '+amsterdamInput(ev.endsAt).slice(11):''}</div><h4>${esc(ev.title)}</h4><p class="city-original">${esc(ev.originalTitle)}</p><p class="city-description">${esc(ev.description)}</p><div class="city-facts"><span>${esc(ev.place)}</span><strong>${esc(ev.price)}</strong></div><div class="city-actions"><a href="${esc(ev.sourceUrl)}" target="_blank" rel="noopener noreferrer" class="outline-btn">详情与票务 ↗</a><button class="text-btn" type="button" data-city-meetup="${ev.id}">约人一起去 ＋</button></div><p class="city-source">来源：<a href="${esc(ev.sourceUrl)}" target="_blank" rel="noopener noreferrer">${esc(ev.sourceName)}</a> · ${ev.checkedOn.slice(5).replace('-','/')} 核对</p></div></article>`;
+  }).join(''):`<div class="empty-state action-empty"><h3>${cityPeriod==='all'?'新一轮活动正在整理中':'这个时间段还没有新的精选活动'}</h3><p>也可以浏览 Delft 官方日历，或发起自己的小聚。</p><a class="outline-btn" href="${CITY_AGENDA_URL}" target="_blank" rel="noopener noreferrer">浏览官方活动日历 ↗</a></div>`;
+}
+$('cityEventFilters').addEventListener('click',e=>{
+  const button=e.target.closest('[data-period]');if(!button)return;cityPeriod=button.dataset.period;
+  $('cityEventFilters').querySelectorAll('button').forEach(el=>{const selected=el===button;el.classList.toggle('active',selected);el.setAttribute('aria-pressed',String(selected));});
+  renderCityEvents();
+});
+$('cityEvents').addEventListener('click',e=>{
+  const id=e.target.closest('[data-city-meetup]')?.dataset.cityMeetup;
+  const event=cityEvents.find(event=>event.id===id);
+  if(event){if(Date.parse(event.startsAt)<=Date.now()){renderCityEvents();toast('这场活动已经开始，看看其他活动吧');return;}openEventForm(event);}
+});
+function openEventForm(event){
+  if(event&&eventDraftTouched&&!confirm('用这场活动替换正在填写的组局草稿？'))return;
+  const form=$('createEventForm');
+  if(event){
+    const draft=cityEventDraft(event);form.reset();
+    Object.entries(draft).forEach(([key,value])=>form.elements[key].value=value);
+    $('sourceEventNote').hidden=false;
+    $('sourceEventNote').innerHTML=`已带入「${esc(event.title)}」。可以调整集合时间与地点；报名只用于约同行，门票需各自办理。 <a href="${esc(event.sourceUrl)}" target="_blank" rel="noopener noreferrer">查看主办方安排 ↗</a>`;
+    eventDraftTouched=true;
+  }
+  $('hostName').value=$('hostName').value||nickname();$('createEventBox').hidden=false;
+  $('createEventBox').scrollIntoView({behavior:'smooth',block:'start'});form.elements.title.focus({preventScroll:true});
+}
 async function loadEvents(){
-  try{const result=await api('events');state.events=result.events||[];renderEvents();}
-  catch(error){$('eventsList').innerHTML=`<div class="empty-state">${esc(error.message)}</div>`;}
+  const request=++eventsRequest;$('eventsList').setAttribute('aria-busy','true');
+  try{const result=await api('events');if(request!==eventsRequest)return;state.events=result.events||[];renderEvents();}
+  catch(error){if(request===eventsRequest)$('eventsList').innerHTML=`<div class="empty-state"><p>社区组局暂时未能加载，Delft 活动精选仍可浏览。</p><button type="button" class="outline-btn" data-retry-events>重新加载组局</button></div>`;}
+  finally{if(request===eventsRequest)$('eventsList').setAttribute('aria-busy','false');}
 }
 function renderEvents(){
   $('eventsList').innerHTML=state.events.length?state.events.map(ev=>`<article class="event-card"><div class="event-top"><span class="pill">${esc(ev.category)}</span><span class="pill ${ev.count>=ev.capacity?'gray':''}">${ev.count}/${ev.capacity} 人</span></div>
-    <h3>${esc(ev.title)}</h3><p>${esc(ev.description)||'轻松认识新朋友，一起度过周末。'}</p><div class="event-meta"><span>🗓️ ${esc(dateText(ev.startsAt))}</span><span>📍 ${esc(ev.place)}</span><span>🙋 ${esc(ev.host)} 发起</span></div>
-    <div class="event-footer"><button type="button" class="text-btn" data-share-event="${esc(ev.id)}">复制分享链接</button><button type="button" class="${ev.joined?'outline-btn':'primary-btn'}" data-event="${esc(ev.id)}" ${ev.hostIsMe||(!ev.joined&&ev.count>=ev.capacity)?'disabled':''}>${ev.hostIsMe?'我发起的':ev.joined?'取消报名':ev.count>=ev.capacity?'已满员':'报名参加'}</button></div>${ev.hostIsMe?`<div class="event-footer"><button class="text-btn" type="button" data-attendees="${esc(ev.id)}">查看报名昵称</button><button class="text-btn" type="button" data-cancel-event="${esc(ev.id)}">取消活动</button></div>`:''}</article>`).join(''):'<div class="empty-state">还没有公开活动。你可以成为第一个发起周末小聚的人。</div>';
+    <h3>${esc(ev.title)}</h3><p class="preserve-lines">${esc(ev.description)||'轻松认识新朋友，一起度过周末。'}</p><div class="event-meta"><span>🗓️ ${esc(dateText(ev.startsAt))}</span><span>📍 ${esc(ev.place)}</span><span>🙋 ${esc(ev.host)} 发起</span></div>
+    <div class="event-footer"><button type="button" class="text-btn" data-share-event="${esc(ev.id)}">复制分享链接</button><button type="button" class="${ev.joined?'outline-btn':'primary-btn'}" data-event="${esc(ev.id)}" ${ev.hostIsMe||(!ev.joined&&ev.count>=ev.capacity)?'disabled':''}>${ev.hostIsMe?'我发起的':ev.joined?'取消报名':ev.count>=ev.capacity?'已满员':'报名参加'}</button></div>${ev.hostIsMe?`<div class="event-footer"><button class="text-btn" type="button" data-attendees="${esc(ev.id)}">查看报名昵称</button><button class="text-btn" type="button" data-cancel-event="${esc(ev.id)}">取消活动</button></div>`:''}</article>`).join(''):'<div class="empty-state action-empty"><span class="empty-symbol" aria-hidden="true">＋</span><h3>下一场小聚，由你发起。</h3><p>找两三个人喝杯咖啡，或者一起去看场演出。</p><button type="button" class="outline-btn" data-create-event>发起第一场组局</button></div>';
 }
 $('eventsList').addEventListener('click',async e=>{
   const share=e.target.closest('[data-share-event]');
@@ -321,15 +366,17 @@ $('confirmRsvp').addEventListener('click',async()=>{
   try{await api('rsvp','POST',{eventId:state.currentEvent.id,nickname:name});localStorage.setItem('delft_nickname',name);hideModal('rsvpModal');toast('报名成功！请留意活动详情并自行安排到场');loadEvents();}
   catch(error){toast(error.message);}finally{setBusy(button,false);}
 });
-$('openCreateEvent').addEventListener('click',()=>{if(!requireAuth())return;$('createEventBox').hidden=false;$('hostName').value=nickname();$('createEventBox').scrollIntoView({behavior:'smooth'});});
+$('openCreateEvent').addEventListener('click',()=>openEventForm());
+$('refreshEvents').addEventListener('click',loadEvents);
+$('createEventForm').addEventListener('input',()=>eventDraftTouched=true);
 $('closeCreateEvent').addEventListener('click',()=>$('createEventBox').hidden=true);
 $('createEventForm').addEventListener('submit',async e=>{
   e.preventDefault();if(!requireAuth())return;
   const form=e.target,values=Object.fromEntries(new FormData(form));
-  const startsAt=new Date(values.startsAt);if(Number.isNaN(startsAt.getTime())){toast('日期无效');return;}
+  let startsAt;try{startsAt=amsterdamInstant(values.startsAt);}catch(error){toast(error.message);return;}
   const button=form.querySelector('[type=submit]');setBusy(button,true,'发布中…');
   try{await api('createEvent','POST',{title:values.title,host:values.host,category:values.category,startsAt:startsAt.toISOString(),capacity:Number(values.capacity),place:values.place,description:values.description});
-    localStorage.setItem('delft_nickname',values.host);$('createEventBox').hidden=true;form.reset();toast('活动发布成功！可邀请朋友来报名');loadEvents();}
+    localStorage.setItem('delft_nickname',values.host);$('createEventBox').hidden=true;form.reset();eventDraftTouched=false;$('sourceEventNote').hidden=true;toast('活动发布成功！可邀请朋友来报名');loadEvents();}
   catch(error){toast(error.message);}finally{setBusy(button,false);}
 });
 
@@ -398,15 +445,19 @@ async function restoreDraft(){
   const revision=draftRevision;
   try{
     const saved=await readDraft();if(revision!==draftRevision)return;
-    if(!saved||saved.version!==1||!Array.isArray(saved.photos)){$('sellerName').value=nickname();return;}
+    if(!saved||saved.version!==1||!Array.isArray(saved.photos)){$('sellerName').value=nickname();renderListPreview();return;}
     if(saved.owner&&saved.owner!==localStorage.getItem('hebao_uuid')){resetDraft();return;}
     state.photos=saved.photos.slice(0,12);state.editingId=saved.editingId||null;state.editVersion=saved.editVersion||null;state.publishedId=saved.publishedId||null;state.dirty=Boolean(saved.dirty);
     draftFields.forEach(id=>{if(typeof saved.fields?.[id]==='string')$(id).value=saved.fields[id];});renderItems();renderDraftMode();
     $('draftStatus').textContent=state.dirty?'已恢复上次草稿 · 修改尚未发布':'已恢复上次清仓页';
   }catch{$('draftStatus').textContent='浏览器草稿暂不可用，仍可正常发布';}
 }
-refreshLoginUI();restoreDraft();
-const itemQuery=new URLSearchParams(location.search).get('item');
-if(itemQuery){tab('market');openListing(itemQuery);}
-const eventQuery=new URLSearchParams(location.search).get('event');
-if(eventQuery&&!itemQuery){tab('events');loadEvents().then(()=>{const card=$('eventsList').querySelector(`[data-event="${CSS.escape(eventQuery)}"]`);card?.closest('.event-card')?.scrollIntoView({behavior:'smooth',block:'center'});});}
+refreshLoginUI();renderListPreview();restoreDraft();
+const query=new URLSearchParams(location.search),itemQuery=query.get('item'),eventQuery=query.get('event');
+const initialTab=itemQuery?'market':eventQuery?'events':query.get('tab')||'sell';
+tab(initialTab,{updateUrl:false}).then(()=>{
+  if(itemQuery)openListing(itemQuery);
+  if(eventQuery&&!itemQuery){const card=$('eventsList').querySelector(`[data-event="${CSS.escape(eventQuery)}"]`);card?.closest('.event-card')?.scrollIntoView({behavior:'smooth',block:'center'});}
+});
+// Re-evaluate dates when a visitor returns to an open tab, including after midnight.
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&state.activeTab==='events')renderCityEvents();});

@@ -6,7 +6,7 @@
     "@libsql/client": "latest"
   },
   "scripts": {
-    "test:delft": "node --no-warnings tests/api-test.mjs",
-    "check:delft": "node --check delft/app.js && node --check delft/draft-store.js && node --check api/delft.js"
+    "test:delft": "node --no-warnings tests/api-test.mjs && node --no-warnings --test tests/frontend-test.mjs",
+    "check:delft": "node --check delft/app.js && node --check delft/draft-store.js && node --check delft/city-events.js && node --check delft/poster.js && node --check delft/site-config.js && node --check api/delft.js"
   }
 }
