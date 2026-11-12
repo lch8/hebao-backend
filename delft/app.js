@@ -1,8 +1,8 @@
 // Delft pilot: no frontend framework, no third-party analytics, no automatic WeChat group posting.
 import {readDraft,writeDraft,deleteDraft} from './draft-store.js';
-import {createPoster} from './poster.js';
+import {createPoster,createEventPoster} from './poster.js';
 import {marketProducts, itemPrice} from './market-view.js';
-import {cityEvents, CITY_EVENTS_CHECKED, CITY_AGENDA_URL, upcomingCityEvents, amsterdamInput, amsterdamInstant, cityEventDraft} from './city-events.js';
+import {cities,cityEvents, CITY_EVENTS_CHECKED, CITY_AGENDA_URL, upcomingCityEvents, amsterdamInput, amsterdamInstant, cityEventDraft} from './city-events.js';
 const $ = id => document.getElementById(id);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const state = {photos:[],listings:[],myListings:[],events:[],currentListing:null,currentEvent:null,publishedId:null,editingId:null,editVersion:null,dirty:false,activeTab:null,category:'',saving:false};
@@ -45,7 +45,7 @@ async function tab(name,{updateUrl=true}={}){
   document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id===`panel-${name}`));
   if(updateUrl){const url=new URL(location.href);url.searchParams.delete('item');url.searchParams.delete('event');url.searchParams.delete('product');url.searchParams.set('tab',name);if(url.href!==location.href)history.pushState(null,'',url);}
   window.scrollTo({top:0,behavior:'smooth'});
-  if(name==='market')await loadListings();if(name==='events'){renderCityEvents();await loadEvents();}if(name==='mine')await loadMine();
+  if(name==='market')await loadListings();if(name==='events'){renderCityEvents();await Promise.all([loadEvents(),loadCityFeed()]);}if(name==='mine')await loadMine();
 }
 document.addEventListener('click',e=>{
   const nav=e.target.closest('[data-tab]');if(nav)tab(nav.dataset.tab);
@@ -234,7 +234,7 @@ $('btnCopy').addEventListener('click',async()=>{
 });
 let posterUrl = '', posterFile;
 $('btnPoster').addEventListener('click',async()=>{
-  const button=$('btnPoster');
+  const button=$('btnPoster');$('eventShareText').hidden=true;$('copyEventShare').hidden=true;$('downloadPoster').download='Delft-闲置分享海报.jpg';$('posterImage').alt='闲置分享海报';
   try{
     validateDraft();setBusy(button,true,'海报生成中…');
     // Snapshot before awaiting images so edits cannot mix different revisions.
@@ -251,7 +251,7 @@ $('btnPoster').addEventListener('click',async()=>{
 });
 $('sharePoster').addEventListener('click',async()=>{
   if(!posterFile)return;
-  try{await navigator.share({files:[posterFile],title:'荷包 · Delft 闲置清单'});}
+  try{await navigator.share({files:[posterFile],title:'荷包 · 分享邀请'});}
   catch(error){if(error.name!=='AbortError')toast('暂时无法直接分享，请下载海报后发送');}
 });
 $('btnPublish').addEventListener('click',async()=>{
@@ -340,16 +340,18 @@ $('sendInquiry').addEventListener('click',async()=>{
 
 // ---- Events ----
 const dateText = iso => new Intl.DateTimeFormat('zh-CN',{timeZone:'Europe/Amsterdam',month:'long',day:'numeric',weekday:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(iso));
+let selectedCity='delft',feedEvents=cityEvents,feedUpdated=CITY_EVENTS_CHECKED,feedFailed=false;
+async function loadCityFeed(){try{const r=await fetch('./events-feed.json',{cache:'no-cache'});if(!r.ok)throw new Error();const data=await r.json();if(!Array.isArray(data.events)||!/^\d{4}-\d{2}-\d{2}$/.test(data.updatedAt))throw new Error();const ids=new Set();for(const ev of data.events){if(!cities[ev.city]||!ev.id||ids.has(ev.id)||!ev.title||!Number.isFinite(Date.parse(ev.startsAt))||!/^https:\/\//.test(ev.sourceUrl))throw new Error();ids.add(ev.id);}feedEvents=data.events;feedUpdated=data.updatedAt;feedFailed=false;}catch{feedFailed=true;}renderCityEvents();}
 let cityPeriod='all',eventSource='city',eventsRequest=0,eventDraftTouched=false,eventsFailed=false;
 const eventClock=iso=>new Intl.DateTimeFormat('zh-CN',{timeZone:'Europe/Amsterdam',weekday:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(iso));
 function renderCityEvents(){
-  const picks=upcomingCityEvents(cityEvents,cityPeriod);
-  $('cityCount').textContent=upcomingCityEvents(cityEvents).length;
-  $('cityCheckedNote').textContent=eventSource==='city'?`荷兰时间 · ${CITY_EVENTS_CHECKED.slice(5).replace('-','/')} 核对`:'荷兰当地时间';
+  const picks=upcomingCityEvents(feedEvents,cityPeriod,new Date(),selectedCity);
+  $('cityCount').textContent=upcomingCityEvents(feedEvents,'all',new Date(),selectedCity).length;
+  $('cityCheckedNote').textContent=eventSource==='city'?`荷兰时间 · ${feedUpdated.slice(5).replace('-','/')} 更新${feedFailed?' · 更新暂不可用':''}`:'荷兰当地时间';
   $('cityEvents').innerHTML=picks.length?picks.map(ev=>{
     const local=amsterdamInput(ev.startsAt),month=Number(local.slice(5,7)),day=local.slice(8,10);
-    return `<article class="city-card ${esc(ev.tone)}"><div class="city-card-main"><div class="city-date-block" aria-label="${month} 月 ${Number(day)} 日"><span>${month} 月</span><strong>${day}</strong></div><div class="city-content"><div class="city-topline"><span>${esc(eventClock(ev.startsAt))}${ev.endsAt?' – '+amsterdamInput(ev.endsAt).slice(11):''}</span><span class="city-kind">${esc(ev.category)}</span></div><h2>${esc(ev.title)}</h2><p class="city-teaser">${esc(ev.summary)}</p><p class="city-place" title="${esc(ev.place)}">${esc(ev.place)}</p></div></div><div class="city-card-footer"><strong class="city-fee">${esc(ev.fee)}</strong><div class="city-actions"><button class="text-btn" type="button" data-city-meetup="${esc(ev.id)}">约人同行 ＋</button><a href="${esc(ev.sourceUrl)}" target="_blank" rel="noopener noreferrer" class="outline-btn">${ev.category==='节日'?'官方安排':'查看票务'} ↗</a></div></div><details class="city-disclosure"><summary>详情与来源</summary><div><p><strong>${esc(ev.originalTitle)}</strong><br>${esc(ev.description)}</p><p>${esc(ev.price)}</p><a href="${esc(ev.sourceUrl)}" target="_blank" rel="noopener noreferrer">${esc(ev.sourceName)} ↗</a><span> · ${esc(ev.checkedOn)} 核对</span></div></details></article>`;
-  }).join(''):`<div class="empty-state"><h2>${cityPeriod==='all'?'这批精选活动已结束':'这个时间段暂无精选活动'}</h2><p>可以查看官方日历，或换一个时间范围。</p><a class="outline-btn" href="${CITY_AGENDA_URL}" target="_blank" rel="noopener noreferrer">浏览官方活动日历 ↗</a></div>`;
+    return `<article class="city-card ${esc(ev.tone)}"><div class="city-card-main"><div class="city-date-block" aria-label="${month} 月 ${Number(day)} 日"><span>${month} 月</span><strong>${day}</strong></div><div class="city-content"><div class="city-topline"><span>${esc(eventClock(ev.startsAt))}${ev.endsAt?' – '+amsterdamInput(ev.endsAt).slice(11):''}</span><span class="city-kind">${esc(ev.category)}</span></div><h2>${esc(ev.title)}</h2><p class="city-teaser">${esc(ev.summary)}</p><p class="city-place" title="${esc(ev.place)}">${esc(cities[ev.city||'delft'])} · ${esc(ev.place)}</p></div></div><div class="city-card-footer"><strong class="city-fee">${esc(ev.fee)}</strong><div class="city-actions"><button class="text-btn" type="button" data-city-meetup="${esc(ev.id)}">约人同行 ＋</button><a href="${esc(ev.sourceUrl)}" target="_blank" rel="noopener noreferrer" class="outline-btn">${ev.category==='节日'?'官方安排':'查看票务'} ↗</a></div></div><details class="city-disclosure"><summary>详情与来源</summary><div><p><strong>${esc(ev.originalTitle)}</strong><br>${esc(ev.description)}</p><p>${esc(ev.price)}</p><a href="${esc(ev.sourceUrl)}" target="_blank" rel="noopener noreferrer">${esc(ev.sourceName)} ↗</a><span> · ${esc(ev.checkedOn)} 核对</span></div></details></article>`;
+  }).join(''):`<div class="empty-state"><h2>${cityPeriod==='all'?'这个城市暂无近期精选活动':'这个时间段暂无精选活动'}</h2><p>可以查看官方日历，或换一个时间范围。</p><a class="outline-btn" href="${CITY_AGENDA_URL}" target="_blank" rel="noopener noreferrer">浏览官方活动日历 ↗</a></div>`;
 }
 $('eventSourceSwitch').addEventListener('click',e=>{
   const button=e.target.closest('[data-source]');if(!button)return;eventSource=button.dataset.source;
@@ -363,12 +365,13 @@ $('cityEventFilters').addEventListener('click',e=>{
 });
 $('cityEvents').addEventListener('click',e=>{
   const id=e.target.closest('[data-city-meetup]')?.dataset.cityMeetup;
-  const event=cityEvents.find(event=>event.id===id);
+  const event=feedEvents.find(event=>event.id===id);
   if(event){if(Date.parse(event.startsAt)<=Date.now()){renderCityEvents();toast('这场活动已经开始，看看其他活动吧');return;}openEventForm(event);}
 });
 function openEventForm(event){
   if(event&&eventDraftTouched&&!confirm('用这场活动替换正在填写的组局草稿？'))return;
   const form=$('createEventForm');
+  if(!event&&!eventDraftTouched)form.elements.city.value=selectedCity==='all'?'delft':selectedCity;
   if(event){
     const draft=cityEventDraft(event);form.reset();
     Object.entries(draft).forEach(([key,value])=>form.elements[key].value=value);
@@ -386,11 +389,11 @@ async function loadEvents(){
 }
 function renderEvents(){
   if(eventsFailed){$('communityCount').textContent='';$('eventsList').innerHTML='<div class="empty-state error-state"><h2>组局暂时没能加载</h2><p>可以先看看城市活动，或稍后重试。</p><button type="button" class="outline-btn" data-retry-events>重新加载</button></div>';return;}
-  const events=upcomingCityEvents(state.events,cityPeriod);
-  $('communityCount').textContent=upcomingCityEvents(state.events).length;
+  const events=upcomingCityEvents(state.events,cityPeriod,new Date(),selectedCity);
+  $('communityCount').textContent=upcomingCityEvents(state.events,'all',new Date(),selectedCity).length;
   $('eventsList').innerHTML=events.length?events.map(ev=>`<article class="event-card"><div class="event-top"><span class="pill">${esc(ev.category)}</span><span class="pill ${ev.count>=ev.capacity?'gray':''}">${ev.count>=ev.capacity?'已满员':`还差 ${ev.capacity-ev.count} 人`}</span></div>
-    <h2>${esc(ev.title)}</h2><div class="event-meta"><span>${esc(dateText(ev.startsAt))}</span><span>${esc(ev.place)}</span><span>${esc(ev.host)} 发起 · ${ev.count}/${ev.capacity} 人</span></div>${ev.description?`<details class="event-description"><summary>活动说明</summary><p class="preserve-lines">${esc(ev.description)}</p></details>`:''}
-    <div class="event-footer"><button type="button" class="text-btn" data-share-event="${esc(ev.id)}">复制链接</button><button type="button" class="${ev.joined?'outline-btn':'primary-btn'}" data-event="${esc(ev.id)}" ${ev.hostIsMe||(!ev.joined&&ev.count>=ev.capacity)?'disabled':''}>${ev.hostIsMe?'我发起的':ev.joined?'取消报名':ev.count>=ev.capacity?'已满员':'报名参加'}</button></div>${ev.hostIsMe?`<div class="event-footer"><button class="text-btn" type="button" data-attendees="${esc(ev.id)}">查看报名昵称</button><button class="text-btn danger" type="button" data-cancel-event="${esc(ev.id)}">取消活动</button></div>`:''}</article>`).join(''):`<div class="empty-state"><h2>${state.events.length?'这个时间段暂无组局':'还没有人发起组局'}</h2><p>约两三个人喝咖啡，或一起去看场演出。</p><button type="button" class="outline-btn" data-create-event>发起组局</button></div>`;
+    <h2>${esc(ev.title)}</h2><div class="event-meta"><span>${esc(dateText(ev.startsAt))}</span><span>${esc(cities[ev.city||'delft'])} · ${esc(ev.place)}</span><span>${esc(ev.host)} 发起 · ${ev.count}/${ev.capacity} 人</span></div>${ev.description?`<details class="event-description"><summary>活动说明</summary><p class="preserve-lines">${esc(ev.description)}</p></details>`:''}
+    <div class="event-footer"><button type="button" class="text-btn" data-share-event="${esc(ev.id)}">分享到微信</button><button type="button" class="${ev.joined?'outline-btn':'primary-btn'}" data-event="${esc(ev.id)}" ${ev.hostIsMe||(!ev.joined&&ev.count>=ev.capacity)?'disabled':''}>${ev.hostIsMe?'我发起的':ev.joined?'取消报名':ev.count>=ev.capacity?'已满员':'报名参加'}</button></div>${ev.hostIsMe?`<div class="event-footer"><button class="text-btn" type="button" data-attendees="${esc(ev.id)}">查看报名昵称</button><button class="text-btn danger" type="button" data-cancel-event="${esc(ev.id)}">取消活动</button></div>`:''}</article>`).join(''):`<div class="empty-state"><h2>${state.events.length?'这个时间段暂无组局':'还没有人发起组局'}</h2><p>约两三个人喝咖啡，或一起去看场演出。</p><button type="button" class="outline-btn" data-create-event>发起组局</button></div>`;
 }
 function beginRsvp(id){
   if(!requireAuth(()=>beginRsvp(id)))return;
@@ -399,7 +402,20 @@ function beginRsvp(id){
 }
 $('eventsList').addEventListener('click',async e=>{
   const share=e.target.closest('[data-share-event]');
-  if(share){const link=new URL(`/delft/?event=${encodeURIComponent(share.dataset.shareEvent)}`,location.origin).href;try{await navigator.clipboard.writeText(link);toast('活动链接已复制，可分享到微信群');}catch{toast('复制失败：请使用 HTTPS 页面');}return;}
+  if(share){
+    const ev=state.events.find(x=>x.id===share.dataset.shareEvent);if(!ev)return;
+    try{
+      const {canvas,url}=await createEventPoster(ev);
+      const blob=await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error('海报生成失败')),'image/jpeg',0.92));
+      if(posterUrl)URL.revokeObjectURL(posterUrl);posterUrl=URL.createObjectURL(blob);
+      posterFile=new File([blob],'荷包-同行邀请.jpg',{type:'image/jpeg'});
+      $('posterImage').src=posterUrl;$('posterImage').alt='同行邀请海报与报名二维码';$('downloadPoster').href=posterUrl;$('downloadPoster').download=posterFile.name;
+      $('sharePoster').hidden=!navigator.canShare?.({files:[posterFile]});
+      $('eventShareText').value=`${ev.title}\n${dateText(ev.startsAt)}\n${cities[ev.city||'delft']} · ${ev.place}\n查看详情与报名：${url}`;
+      $('eventShareText').hidden=false;$('copyEventShare').hidden=false;
+      $('posterHint').textContent='保存海报发到微信群或朋友圈；朋友长按识别二维码即可查看报名。人数与安排以网页为准。';showModal('posterModal');
+    }catch(error){toast(error.message);}return;
+  }
   const cancel=e.target.closest('[data-cancel-event]');
   if(cancel){if(!requireAuth()||!confirm('取消后报名者将无法再看到此活动，确定吗？'))return;try{await api('cancelEvent','POST',{eventId:cancel.dataset.cancelEvent});toast('活动已取消');loadEvents();}catch(error){toast(error.message);}return;}
   const attendees=e.target.closest('[data-attendees]');
@@ -427,7 +443,7 @@ $('createEventForm').addEventListener('submit',async e=>{
   const form=e.target,values=Object.fromEntries(new FormData(form));
   let startsAt;try{startsAt=amsterdamInstant(values.startsAt);}catch(error){toast(error.message);return;}
   const button=form.querySelector('[type=submit]');setBusy(button,true,'发布中…');
-  try{await api('createEvent','POST',{title:values.title,host:values.host,category:values.category,startsAt:startsAt.toISOString(),capacity:Number(values.capacity),place:values.place,description:values.description});
+  try{await api('createEvent','POST',{city:values.city,title:values.title,host:values.host,category:values.category,startsAt:startsAt.toISOString(),capacity:Number(values.capacity),place:values.place,description:values.description});
     localStorage.setItem('delft_nickname',values.host);hideModal('createEventBox');form.reset();eventDraftTouched=false;$('sourceEventNote').hidden=true;toast('活动发布成功！可邀请朋友来报名');loadEvents();}
   catch(error){toast(error.message);}finally{setBusy(button,false);}
 });
@@ -518,13 +534,14 @@ async function restoreDraft(){
 refreshLoginUI();renderItems();restoreDraft();
 async function applyRoute(){
   const query=new URLSearchParams(location.search),item=query.get('item'),event=query.get('event');
-  const requested=item?'market':event?'events':query.get('tab')||'market';
-  const name=['sell','market','events','mine'].includes(requested)?requested:'market';
+  selectedCity=cities[query.get('city')]?query.get('city'):query.get('city')==='all'?'all':'delft';$('citySelect').value=selectedCity;
+  const requested=item?'market':event?'events':query.get('tab')||'events';
+  const name=['sell','market','events','mine'].includes(requested)?requested:'events';
   if(!item&&!$('detailModal').hidden)hideModal('detailModal',{updateUrl:false});
   await tab(name,{updateUrl:false});
   if(item)await openListing(item,{itemId:query.get('product'),updateUrl:false});
   if(event&&!item){
-    eventSource='community';$('eventSourceSwitch').querySelector('[data-source="community"]').click();
+    selectedCity='all';$('citySelect').value='all';eventSource='community';$('eventSourceSwitch').querySelector('[data-source="community"]').click();
     // A shared event must remain reachable even if a prior filter excluded it.
     cityPeriod='all';$('cityEventFilters').querySelector('[data-period="all"]').click();
     const card=$('eventsList').querySelector(`[data-event="${CSS.escape(event)}"]`);card?.closest('.event-card')?.scrollIntoView({behavior:'smooth',block:'center'});
@@ -534,4 +551,7 @@ async function applyRoute(){
 window.addEventListener('popstate',applyRoute);
 applyRoute();
 // Re-evaluate dates when a visitor returns to an open tab, including after midnight.
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&state.activeTab==='events'){renderCityEvents();renderEvents();}});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&state.activeTab==='events'){loadCityFeed();renderEvents();}});
+
+$('citySelect').addEventListener('change',()=>{selectedCity=$('citySelect').value;const url=new URL(location.href);url.searchParams.set('city',selectedCity);history.pushState(null,'',url);renderCityEvents();renderEvents();});
+$('copyEventShare').addEventListener('click',async()=>{try{await navigator.clipboard.writeText($('eventShareText').value);toast('邀请已复制，粘贴到微信即可');}catch{$('eventShareText').focus();$('eventShareText').select();toast('请长按或按 Ctrl+C 复制邀请');}});

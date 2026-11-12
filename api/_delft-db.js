@@ -41,6 +41,11 @@ export async function ensureSchema() {
         place TEXT NOT NULL, description TEXT NOT NULL, capacity INTEGER NOT NULL,
         cancelled INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL
       )`);
+      const columns = await sql('PRAGMA table_info(delft_events)');
+      if (!columns.rows.some(c => c.name === 'city')) {
+        try { await sql("ALTER TABLE delft_events ADD COLUMN city TEXT NOT NULL DEFAULT 'delft'"); }
+        catch (error) { if (!String(error.message).includes('duplicate column')) throw error; }
+      }
       await sql(`CREATE TABLE IF NOT EXISTS delft_rsvps (
         event_id TEXT NOT NULL, user_id TEXT NOT NULL, nickname TEXT NOT NULL,
         created_at TEXT NOT NULL, PRIMARY KEY(event_id,user_id)

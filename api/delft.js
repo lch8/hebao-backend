@@ -32,7 +32,7 @@ const listingView = row => ({
   updatedAt: row.updated_at, stale: Date.now() - new Date(row.updated_at).getTime() > 14 * 86400000
 });
 const eventView = row => ({
-  id: row.id, host: row.host_name, title: row.title, category: row.category,
+  city: row.city || 'delft', id: row.id, host: row.host_name, title: row.title, category: row.category,
   startsAt: row.starts_at, place: row.place, description: row.description,
   capacity: Number(row.capacity), count: Number(row.rsvp_count || 0) + 1,
   joined: Boolean(Number(row.mine || 0)), hostIsMe: Boolean(Number(row.host_is_me || 0))
@@ -164,6 +164,8 @@ export default async function handler(request) {
       const title = clipped(body.title, 75), host = clipped(body.host, 35), place = clipped(body.place, 100);
       const description = clipped(body.description, 450), date = new Date(body.startsAt);
       const capacity = Number(body.capacity);
+      const city = body.city || 'delft';
+      if (!['delft','den-haag','rotterdam','amsterdam','utrecht','eindhoven'].includes(city)) return json({error:'请选择活动城市'},400);
       if (!title || !host || !place || !Number.isFinite(date.getTime()) ||
         date.getTime() < Date.now()+3600000 || date.getTime()>Date.now()+60*86400000 ||
         !Number.isInteger(capacity) || capacity<2 || capacity>12 || !categories.has(body.category)) {
@@ -173,8 +175,8 @@ export default async function handler(request) {
       if (Number(count.rows[0]?.n)>=8) return json({error:'30天内创建活动已达上限'},429);
       const id = crypto.randomUUID();
       await sql(`INSERT INTO delft_events
-       (id,host_id,host_name,title,category,starts_at,place,description,capacity,created_at)
-       VALUES(?,?,?,?,?,?,?,?,?,?)`,[id,user,host,title,body.category,date.toISOString(),place,description,capacity,now]);
+       (id,host_id,host_name,title,category,starts_at,place,description,capacity,created_at,city)
+       VALUES(?,?,?,?,?,?,?,?,?,?,?)`,[id,user,host,title,body.category,date.toISOString(),place,description,capacity,now,city]);
       return json({ok:true,id});
     }
     if (action === 'rsvp') {

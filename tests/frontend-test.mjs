@@ -96,3 +96,10 @@ test('recent sorting uses listing confirmation times and preserves keyword match
   assert.deepEqual(marketProducts(listings,{query:'tu'}).map(x=>x.item.id),['b','a']);
   assert.deepEqual(marketProducts(listings,{query:'九成新'}).map(x=>x.item.id),['a']);
 });
+
+test('city selection separates official and legacy community events',()=>{
+ const now=new Date('2026-11-12T00:00:00Z');
+ const events=[{id:'a',city:'utrecht',startsAt:'2026-11-14T12:00:00+01:00'},{id:'b',startsAt:'2026-11-14T13:00:00+01:00'}];
+ assert.deepEqual(upcomingCityEvents(events,'all',now,'utrecht').map(e=>e.id),['a']);
+ assert.deepEqual(upcomingCityEvents(events,'all',now,'delft').map(e=>e.id),['b']);
+});

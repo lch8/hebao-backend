@@ -3,9 +3,10 @@
 // together; the UI hides past starts rather than recycling old events.
 export const CITY_EVENTS_CHECKED = '2026-11-11';
 export const CITY_AGENDA_URL = 'https://www.indelft.nl/nl/uitagenda/uitagenda-delft';
+export const cities = {delft:'Delft', 'den-haag':'Den Haag', rotterdam:'Rotterdam', amsterdam:'Amsterdam', utrecht:'Utrecht', eindhoven:'Eindhoven'};
 export const cityEvents = [
   {
-    id: 'mirror-2026-11-12', summary: '杂技、舞蹈与现场音乐', fee: '€34.50 · 学生 €32.50', category: '舞台', tone: 'clay',
+    city: 'delft', id: 'mirror-2026-11-12', summary: '杂技、舞蹈与现场音乐', fee: '€34.50 · 学生 €32.50', category: '舞台', tone: 'clay',
     title: 'The Mirror · 当代杂技与舞蹈', originalTitle: 'Gravity & Other Myths',
     startsAt: '2026-11-12T20:15:00+01:00',
     place: 'Theater de Veste · Vesteplein 1', price: '普通票 €34.50 · 学生票 €32.50',
@@ -15,7 +16,7 @@ export const cityEvents = [
     checkedOn: CITY_EVENTS_CHECKED,
   },
   {
-    id: 'bonavox-2026-11-14', summary: 'U2 经典曲目的现场演出', fee: '€15', category: '音乐', tone: 'blue',
+    city: 'delft', id: 'bonavox-2026-11-14', summary: 'U2 经典曲目的现场演出', fee: '€15', category: '音乐', tone: 'blue',
     title: 'Bonavox · U2 致敬现场', originalTitle: 'U2 Tribute by Bonavox',
     startsAt: '2026-11-14T21:00:00+01:00',
     place: 'Cultuurlab · Brabantse Turfmarkt 9', price: '€15',
@@ -25,7 +26,7 @@ export const cityEvents = [
     checkedOn: CITY_EVENTS_CHECKED,
   },
   {
-    id: 'cello-2026-11-15', summary: 'Jurre Koopmans 独奏，含咖啡或茶', fee: '€23.50 · 学生 €15', category: '音乐', tone: 'sage',
+    city: 'delft', id: 'cello-2026-11-15', summary: 'Jurre Koopmans 独奏，含咖啡或茶', fee: '€23.50 · 学生 €15', category: '音乐', tone: 'sage',
     title: '周日早场 · 大提琴音乐会', originalTitle: 'Jurre Koopmans · Zondagochtendconcert',
     startsAt: '2026-11-15T11:30:00+01:00',
     place: 'Theater de Veste · Vesteplein 1', price: '普通票 €23.50 · 学生票 €15',
@@ -35,7 +36,7 @@ export const cityEvents = [
     checkedOn: CITY_EVENTS_CHECKED,
   },
   {
-    id: 'forest-2026-11-20', summary: '两小时森林导览，需预约', fee: '€15.50', category: '户外', tone: 'sage',
+    city: 'delft', id: 'forest-2026-11-20', summary: '两小时森林导览，需预约', fee: '€15.50', category: '户外', tone: 'sage',
     title: '跟着护林员走进 Abtswoudse Bos', originalTitle: 'Met de boswachter door het Abtswoudse bos',
     startsAt: '2026-11-20T13:30:00+01:00', endsAt: '2026-11-20T15:30:00+01:00',
     place: 'Tanthofdreef 停车场 · Delft', price: '€15.50 · 需预约',
@@ -46,7 +47,7 @@ export const cityEvents = [
     checkedOn: CITY_EVENTS_CHECKED,
   },
   {
-    id: 'lichtjesavond-2026-12-08', summary: '老城灯光、音乐与冬日集市', fee: '费用见官方安排', category: '节日', tone: 'gold',
+    city: 'delft', id: 'lichtjesavond-2026-12-08', summary: '老城灯光、音乐与冬日集市', fee: '费用见官方安排', category: '节日', tone: 'gold',
     title: 'Lichtjesavond · Delft 灯光之夜', originalTitle: '29e Lichtjesavond Delft',
     startsAt: '2026-12-08T16:00:00+01:00', endsAt: '2026-12-08T22:00:00+01:00',
     place: 'Delft 老城 · Markt 及周边', price: '各项活动安排见官方页面',
@@ -80,12 +81,13 @@ export function amsterdamInstant(value) {
   throw new Error('这个荷兰当地时间不存在，请重新选择（夏令时切换）');
 }
 
-export function upcomingCityEvents(events = cityEvents, period = 'all', now = new Date()) {
+export function upcomingCityEvents(events = cityEvents, period = 'all', now = new Date(), city = 'all') {
   const today = amsterdamInput(now).slice(0, 10);
   const dayNumber = iso => Date.parse(iso.slice(0, 10) + 'T00:00:00Z') / 86400000;
   const day = dayNumber(today), weekday = new Date(day * 86400000).getUTCDay();
   const saturday = day + (weekday === 0 ? -1 : (6 - weekday));
   return events.filter(event => {
+    if (city !== 'all' && (event.city || 'delft') !== city) return false;
     if (Date.parse(event.startsAt) <= now.getTime()) return false;
     const eventDay = dayNumber(amsterdamInput(event.startsAt));
     if (period === 'weekend') return eventDay >= saturday && eventDay <= saturday + 1;
@@ -96,6 +98,7 @@ export function upcomingCityEvents(events = cityEvents, period = 'all', now = ne
 
 export function cityEventDraft(event) {
   return {
+    city: event.city || 'delft',
     title: `一起去：${event.title}`.slice(0, 75),
     category: event.category === '户外' ? '散步' : '其他',
     startsAt: amsterdamInput(event.startsAt), place: event.place,

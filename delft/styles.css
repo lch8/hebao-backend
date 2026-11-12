@@ -303,3 +303,5 @@ footer details>p{position:absolute;bottom:34px;left:0;width:280px;background:#ff
 @media(max-width:600px){.topbar{backdrop-filter:none}.city-teaser,.city-place,.city-fee{font-size:12px}.city-disclosure summary{font-size:11px}.city-topline{font-size:12px}.panel{scroll-margin-top:80px}}
 @media(max-width:360px){.brand-city svg{display:none}.section-heading h1{font-size:21px}.event-checked{width:100%;margin-left:0}.city-actions{gap:8px}.city-fee{max-width:90px}.city-actions .outline-btn{padding:7px 9px}.item-card{grid-template-columns:1fr}.item-thumb{display:none}.result-line>span{max-width:110px;text-align:right}.weekend-shortcut>span:first-child{display:none}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+.city-selector{display:flex;align-items:center;gap:8px;font-size:14px}.city-selector select{padding:9px 12px;border:1px solid #d8e1d7;border-radius:10px;background:white;color:#204f3d}#eventShareText{width:100%;margin:12px 0}#copyEventShare{margin-bottom:12px}
