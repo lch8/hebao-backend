@@ -33,7 +33,11 @@
       "description": "在市中心听一晚熟悉的摇滚旋律。Bonavox 用 U2 的经典曲目，庆祝这支乐队成立 50 周年。",
       "sourceName": "Delft 官方活动日历",
       "sourceUrl": "https://www.indelft.nl/nl/uitagenda/uitagenda-delft/3553766753/u2-tribute-by-bonavox",
-      "checkedOn": "2026-11-11"
+      "checkedOn": "2026-11-11",
+      "imageUrl": "https://assets.plaece.nl/thumb/JsDG7ZSN8iwvcJlGHtmk0NkqSaPUXO2nUFviYfp3LUk/resizing_type%3Afit/width%3A960/height%3A0/gravity%3Asm/enlarge%3A0/aHR0cHM6Ly9hc3NldHMucGxhZWNlLm5sL29kcC1kZWxmdC9pbWFnZS8yOGMzNzI2ZmUwNTFkMTdhMTk1MTlkZDA1OTE2NWU3YTMyZjU0M2E3XzAxYTEzNGYyLTQzOTUtN2JkYi1hY2NiLWQ0OWJjNTJmNTRjMy5qcGc.jpg",
+      "imageAlt": "Bonavox 官方宣传图",
+      "imageCredit": "In Delft / Cultuurlab",
+      "imageSourceUrl": "https://www.indelft.nl/nl/uitagenda/uitagenda-delft/3553766753/u2-tribute-by-bonavox"
     },
     {
       "city": "delft",
@@ -50,7 +54,11 @@
       "description": "听 Cello Biënnale 比赛获奖者 Jurre Koopmans 演奏。适合给周日留一段安静的时间，票价含一杯咖啡或茶。",
       "sourceName": "Theater de Veste",
       "sourceUrl": "https://www.theaterdeveste.nl/programma/zondagochtendconcert-5ywd",
-      "checkedOn": "2026-11-11"
+      "checkedOn": "2026-11-11",
+      "imageUrl": "https://img.theaterdeveste.nl/BJwDT8w9qPExcsvSsmCuxJiXOfe4ZgGdSSRP8Lp-q3k/c%3A4418%3A4418/s%3A900%3A900%3A1/aHR0cHM6Ly93d3cudGhlYXRlcmRldmVzdGUubmwvL2Ntc19maWxlcy9zeXN0ZW0vaW1hZ2VzL2ltZzQ2MjY0X29yaWcuanBn",
+      "imageAlt": "Jurre Koopmans 演出宣传照",
+      "imageCredit": "Theater de Veste",
+      "imageSourceUrl": "https://www.theaterdeveste.nl/programma/zondagochtendconcert-5ywd"
     },
     {
       "city": "delft",
@@ -69,7 +77,11 @@
       "sourceName": "Staatsbosbeheer",
       "sourceUrl": "https://www.staatsbosbeheer.nl/uit-in-de-natuur/met-de-boswachter-door-het-abtswoudse-bos",
       "locationSourceUrl": "https://www.indelft.nl/nl/uitagenda/uitagenda-delft/4069505649/met-de-boswachter-door-het-abtswoudse-bos",
-      "checkedOn": "2026-11-11"
+      "checkedOn": "2026-11-11",
+      "imageUrl": "https://www.staatsbosbeheer.nl/-/media/01-headers/flora-en-fauna/bos-beuken-header.jpg",
+      "imageAlt": "护林员导览页面的森林配图",
+      "imageCredit": "Staatsbosbeheer",
+      "imageSourceUrl": "https://www.staatsbosbeheer.nl/uit-in-de-natuur/met-de-boswachter-door-het-abtswoudse-bos"
     },
     {
       "city": "delft",
@@ -87,7 +99,11 @@
       "description": "沿着运河看灯光，逛冬日摊位，听街头演出。老城的圣诞树、音乐与灯光活动，会把这个周二变得特别。",
       "sourceName": "Delft 官方活动日历",
       "sourceUrl": "https://www.indelft.nl/nl/uitagenda/delft-verlicht/lichtjesavond",
-      "checkedOn": "2026-11-11"
+      "checkedOn": "2026-11-11",
+      "imageUrl": "https://assets.plaece.nl/thumb/D3Lv-bAVSqvQi3Zw5dCRdHTmQTz2YJk2rWCkX-GaXN0/resizing_type%3Afit/width%3A960/height%3A0/gravity%3Asm/enlarge%3A0/aHR0cHM6Ly9hc3NldHMucGxhZWNlLm5sL2t1bWEtaW5kZWxmdC91cGxvYWRzL21lZGlhLzY5Mzk2MTIyNjU4NzgvbGljaHRqZXNhdm9uZC1saWNodHNob3ctdmFuYWYtZGUtbWFya3QtaW4tZGVsZnQuanBn.jpg",
+      "imageAlt": "Delft Markt 灯光之夜官方配图",
+      "imageCredit": "In Delft",
+      "imageSourceUrl": "https://www.indelft.nl/nl/uitagenda/delft-verlicht/lichtjesavond"
     },
     {
       "city": "eindhoven",
@@ -105,7 +121,11 @@
       "description": "沿灯光艺术路线散步，适合约人一起看夜景。",
       "checkedOn": "2026-11-12",
       "category": "节日",
-      "tone": "sage"
+      "tone": "sage",
+      "imageUrl": "https://gloweindhoven.nl/assets/uploads/Glow-16-1123-CG-0009-2560x1596.jpg",
+      "imageAlt": "GLOW 官网灯光艺术配图",
+      "imageCredit": "GLOW · CG",
+      "imageSourceUrl": "https://gloweindhoven.nl/praktisch/"
     },
     {
       "city": "amsterdam",

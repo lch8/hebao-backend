@@ -305,3 +305,35 @@ footer details>p{position:absolute;bottom:34px;left:0;width:280px;background:#ff
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 
 .city-selector{display:flex;align-items:center;gap:8px;font-size:14px}.city-selector select{padding:9px 12px;border:1px solid #d8e1d7;border-radius:10px;background:white;color:#204f3d}#eventShareText{width:100%;margin:12px 0}#copyEventShare{margin-bottom:12px}
+
+/* Photo-led activity cards. Dates stay legible without covering the subject. */
+#panel-events .section-heading{margin-bottom:28px}
+#eventsHeading{font-size:40px;letter-spacing:-.055em;font-weight:600}
+#panel-events .view-switch{margin-bottom:18px}
+.city-grid{gap:28px}
+.city-card.photo-card{padding:0;overflow:hidden;border:1px solid #e2e7df;border-radius:20px;box-shadow:0 5px 22px #16342606;transition:box-shadow .2s,transform .2s}
+.photo-card:hover{box-shadow:0 12px 32px #16342613;transform:translateY(-2px)}
+.event-cover{position:relative;aspect-ratio:2/1;overflow:hidden;background:#38594b;isolation:isolate}
+.event-cover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 40%;z-index:1;transition:transform .5s}
+.photo-card:hover .event-cover img{transform:scale(1.025)}
+.cover-art{position:absolute;inset:0;overflow:hidden;background:linear-gradient(135deg,#38594b,#879777);color:#ecf0e2}
+.cover-art:before,.cover-art:after{content:"";position:absolute;width:64%;aspect-ratio:1;border:1px solid #ffffff38;border-radius:50%;right:-8%;top:-38%;box-shadow:0 0 0 28px #ffffff0c,0 0 0 56px #ffffff09}
+.cover-art:after{right:38%;top:42%;width:52%}
+.cover-art span{position:absolute;right:28px;bottom:22px;font-size:44px;letter-spacing:.15em;font-weight:300;opacity:.65}
+.clay .cover-art{background:linear-gradient(130deg,#8c5646,#c5a58e)}
+.blue .cover-art{background:linear-gradient(130deg,#27495e,#97afb2)}
+.gold .cover-art{background:linear-gradient(130deg,#5c482d,#b99e60)}
+.cover-date{position:absolute;z-index:2;top:18px;left:18px;width:56px;height:66px;background:#fffffff2;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#203e31;box-shadow:0 2px 12px #0001}
+.cover-date strong{font-size:27px;font-weight:650;line-height:1.05;letter-spacing:-.05em}.cover-date span{font-size:11px;margin-top:4px}
+.photo-card .city-card-main{display:block;padding:22px 24px 0}
+.photo-card .city-topline{margin-bottom:8px;font-size:12px}
+.photo-card .city-content h2{font-size:21px;line-height:1.4;margin-bottom:10px;letter-spacing:-.035em}
+.photo-card .city-place{font-size:13px;color:#6c7971}
+.photo-card .city-card-footer{margin:18px 24px 0;padding-top:15px;flex-wrap:nowrap}
+.photo-card .city-fee{font-size:13px;line-height:1.5;max-width:55%}
+.photo-card .city-actions{gap:12px;flex-shrink:0}.photo-card .city-actions .outline-btn{border-radius:9px;background:#f6f8f3}
+.photo-card .city-disclosure{margin:0 24px 13px}.photo-card .city-disclosure summary{min-height:36px;display:flex;align-items:center;font-size:11px;color:#778278}.photo-card .city-disclosure summary:before{content:'＋';margin-right:5px}.photo-card .city-disclosure[open] summary:before{content:'−'}
+.image-credit{font-size:11px;color:#778278}
+@media(max-width:800px){#eventsHeading{font-size:32px}.city-grid{gap:20px}.event-cover{aspect-ratio:2.3/1}}
+@media(max-width:600px){#eventsHeading{font-size:27px}.city-grid{gap:18px}.photo-card .city-card-main{padding:18px 18px 0}.photo-card .city-content h2{font-size:19px}.photo-card .city-card-footer{margin:16px 18px 0;gap:8px}.photo-card .city-disclosure{margin:0 18px 10px}.photo-card .city-fee{font-size:12px;max-width:48%}.photo-card .city-actions{gap:10px}.cover-date{top:12px;left:12px;width:48px;height:58px}.cover-date strong{font-size:24px}}
+@media(prefers-reduced-motion:reduce){.photo-card,.event-cover img{transition:none!important;transform:none!important}}
