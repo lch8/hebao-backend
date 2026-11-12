@@ -74,3 +74,25 @@ test('QR promotion uses the production site and only promises saved published in
   // Exercise the bundled encoder at the longest normal URL, without network requests.
   assert.doesNotThrow(()=>makeQr(posterDestination({publishedId:'12345678-1234-1234-1234-123456789012',dirty:false}).url));
 });
+
+
+const {marketProducts, itemPrice} = await import('../delft/market-view.js');
+test('search presents the matched item and price, excluding unrelated cheaper items in the same bundle', () => {
+  const listings=[{id:'bundle',title:'搬家',pickup:'Delft',updatedAt:'2026-11-11',items:[{id:'bike',name:'自行车',price:80,category:'自行车',status:'available'},{id:'desk',name:'书桌',price:20,category:'家具',status:'available'},{id:'sold-bike',name:'自行车',price:5,status:'sold'}]}];
+  const found=marketProducts(listings,{query:'自行车'});
+  assert.deepEqual(found.map(x=>[x.item.id,x.price]),[['bike',80]]);
+  assert.equal(marketProducts(listings,{query:'自行车',category:'家具'}).length,0);
+  assert.equal(marketProducts([{...listings[0],stale:true}]).length,0);
+});
+test('price sorting treats free items as zero and unknown prices as unknown, without mutating listings',()=>{
+  const listings=[{id:'a',updatedAt:'2026-11-11',items:[{id:'unknown',price:'',status:'available'},{id:'paid',price:'10',status:'available'},{id:'free',price:0,status:'available'},{id:'null',price:null,status:'available'}]}];
+  const before=JSON.stringify(listings);
+  assert.deepEqual(marketProducts(listings,{sort:'price'}).map(x=>x.item.id),['free','paid','unknown','null']);
+  assert.equal(itemPrice({price:''}),null);assert.equal(itemPrice({price:0}),0);assert.equal(itemPrice({price:'invalid'}),null);
+  assert.equal(JSON.stringify(listings),before);
+});
+test('recent sorting uses listing confirmation times and preserves keyword matching in pickup and condition',()=>{
+  const listings=[{id:'old',updatedAt:'2026-11-01',pickup:'TU 校园',items:[{id:'a',name:'椅子',condition:'九成新',status:'available'}]},{id:'new',updatedAt:'2026-11-11',pickup:'TU 校园',items:[{id:'b',name:'桌子',status:'available'}]}];
+  assert.deepEqual(marketProducts(listings,{query:'tu'}).map(x=>x.item.id),['b','a']);
+  assert.deepEqual(marketProducts(listings,{query:'九成新'}).map(x=>x.item.id),['a']);
+});

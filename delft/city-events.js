@@ -5,7 +5,7 @@ export const CITY_EVENTS_CHECKED = '2026-11-11';
 export const CITY_AGENDA_URL = 'https://www.indelft.nl/nl/uitagenda/uitagenda-delft';
 export const cityEvents = [
   {
-    id: 'mirror-2026-11-12', category: '舞台', tone: 'clay',
+    id: 'mirror-2026-11-12', summary: '杂技、舞蹈与现场音乐', fee: '€34.50 · 学生 €32.50', category: '舞台', tone: 'clay',
     title: 'The Mirror · 当代杂技与舞蹈', originalTitle: 'Gravity & Other Myths',
     startsAt: '2026-11-12T20:15:00+01:00',
     place: 'Theater de Veste · Vesteplein 1', price: '普通票 €34.50 · 学生票 €32.50',
@@ -15,7 +15,7 @@ export const cityEvents = [
     checkedOn: CITY_EVENTS_CHECKED,
   },
   {
-    id: 'bonavox-2026-11-14', category: '音乐', tone: 'blue',
+    id: 'bonavox-2026-11-14', summary: 'U2 经典曲目的现场演出', fee: '€15', category: '音乐', tone: 'blue',
     title: 'Bonavox · U2 致敬现场', originalTitle: 'U2 Tribute by Bonavox',
     startsAt: '2026-11-14T21:00:00+01:00',
     place: 'Cultuurlab · Brabantse Turfmarkt 9', price: '€15',
@@ -25,7 +25,7 @@ export const cityEvents = [
     checkedOn: CITY_EVENTS_CHECKED,
   },
   {
-    id: 'cello-2026-11-15', category: '音乐', tone: 'sage',
+    id: 'cello-2026-11-15', summary: 'Jurre Koopmans 独奏，含咖啡或茶', fee: '€23.50 · 学生 €15', category: '音乐', tone: 'sage',
     title: '周日早场 · 大提琴音乐会', originalTitle: 'Jurre Koopmans · Zondagochtendconcert',
     startsAt: '2026-11-15T11:30:00+01:00',
     place: 'Theater de Veste · Vesteplein 1', price: '普通票 €23.50 · 学生票 €15',
@@ -35,7 +35,7 @@ export const cityEvents = [
     checkedOn: CITY_EVENTS_CHECKED,
   },
   {
-    id: 'forest-2026-11-20', category: '户外', tone: 'sage',
+    id: 'forest-2026-11-20', summary: '两小时森林导览，需预约', fee: '€15.50', category: '户外', tone: 'sage',
     title: '跟着护林员走进 Abtswoudse Bos', originalTitle: 'Met de boswachter door het Abtswoudse bos',
     startsAt: '2026-11-20T13:30:00+01:00', endsAt: '2026-11-20T15:30:00+01:00',
     place: 'Tanthofdreef 停车场 · Delft', price: '€15.50 · 需预约',
@@ -46,7 +46,7 @@ export const cityEvents = [
     checkedOn: CITY_EVENTS_CHECKED,
   },
   {
-    id: 'lichtjesavond-2026-12-08', category: '节日', tone: 'gold',
+    id: 'lichtjesavond-2026-12-08', summary: '老城灯光、音乐与冬日集市', fee: '费用见官方安排', category: '节日', tone: 'gold',
     title: 'Lichtjesavond · Delft 灯光之夜', originalTitle: '29e Lichtjesavond Delft',
     startsAt: '2026-12-08T16:00:00+01:00', endsAt: '2026-12-08T22:00:00+01:00',
     place: 'Delft 老城 · Markt 及周边', price: '各项活动安排见官方页面',
