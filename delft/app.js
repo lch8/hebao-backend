@@ -2,7 +2,7 @@
 import {readDraft,writeDraft,deleteDraft} from './draft-store.js';
 import {createPoster,createEventPoster} from './poster.js';
 import {marketProducts, itemPrice} from './market-view.js';
-import {cities,cityEvents, CITY_EVENTS_CHECKED, CITY_AGENDA_URL, upcomingCityEvents, amsterdamInput, amsterdamInstant, cityEventDraft} from './city-events.js';
+import {cities,cityEvents, CITY_EVENTS_CHECKED, CITY_AGENDA_URL, upcomingCityEvents, amsterdamInput, amsterdamInstant, cityEventDraft,eventPlace} from './city-events.js';
 const $ = id => document.getElementById(id);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const state = {photos:[],listings:[],myListings:[],events:[],currentListing:null,currentEvent:null,publishedId:null,editingId:null,editVersion:null,dirty:false,activeTab:null,category:'',saving:false};
@@ -234,7 +234,7 @@ $('btnCopy').addEventListener('click',async()=>{
 });
 let posterUrl = '', posterFile;
 $('btnPoster').addEventListener('click',async()=>{
-  const button=$('btnPoster');$('eventShareText').hidden=true;$('copyEventShare').hidden=true;$('downloadPoster').download='Delft-闲置分享海报.jpg';$('posterImage').alt='闲置分享海报';
+  const button=$('btnPoster');$('posterHeading').textContent='分享海报';$('eventShareText').hidden=true;$('copyEventShare').hidden=true;$('downloadPoster').download='Delft-闲置分享海报.jpg';$('posterImage').alt='闲置分享海报';
   try{
     validateDraft();setBusy(button,true,'海报生成中…');
     // Snapshot before awaiting images so edits cannot mix different revisions.
@@ -350,7 +350,7 @@ function renderCityEvents(){
   $('cityCheckedNote').textContent=eventSource==='city'?`荷兰时间 · ${feedUpdated.slice(5).replace('-','/')} 更新${feedFailed?' · 更新暂不可用':''}`:'荷兰当地时间';
   $('cityEvents').innerHTML=picks.length?picks.map(ev=>{
     const local=amsterdamInput(ev.startsAt),month=Number(local.slice(5,7)),day=local.slice(8,10);
-    return `<article class="city-card ${esc(ev.tone)}"><div class="city-card-main"><div class="city-date-block" aria-label="${month} 月 ${Number(day)} 日"><span>${month} 月</span><strong>${day}</strong></div><div class="city-content"><div class="city-topline"><span>${esc(eventClock(ev.startsAt))}${ev.endsAt?' – '+amsterdamInput(ev.endsAt).slice(11):''}</span><span class="city-kind">${esc(ev.category)}</span></div><h2>${esc(ev.title)}</h2><p class="city-teaser">${esc(ev.summary)}</p><p class="city-place" title="${esc(ev.place)}">${esc(cities[ev.city||'delft'])} · ${esc(ev.place)}</p></div></div><div class="city-card-footer"><strong class="city-fee">${esc(ev.fee)}</strong><div class="city-actions"><button class="text-btn" type="button" data-city-meetup="${esc(ev.id)}">约人同行 ＋</button><a href="${esc(ev.sourceUrl)}" target="_blank" rel="noopener noreferrer" class="outline-btn">${ev.category==='节日'?'官方安排':'查看票务'} ↗</a></div></div><details class="city-disclosure"><summary>详情与来源</summary><div><p><strong>${esc(ev.originalTitle)}</strong><br>${esc(ev.description)}</p><p>${esc(ev.price)}</p><a href="${esc(ev.sourceUrl)}" target="_blank" rel="noopener noreferrer">${esc(ev.sourceName)} ↗</a><span> · ${esc(ev.checkedOn)} 核对</span></div></details></article>`;
+    return `<article class="city-card ${esc(ev.tone)}"><div class="city-card-main"><div class="city-date-block" aria-label="${month} 月 ${Number(day)} 日"><span>${month} 月</span><strong>${day}</strong></div><div class="city-content"><div class="city-topline"><span>${esc(eventClock(ev.startsAt))}${ev.endsAt?' – '+amsterdamInput(ev.endsAt).slice(11):''}</span><span class="city-kind">${esc(ev.category)}</span></div><h2>${esc(ev.title)}</h2><p class="city-place" title="${esc(ev.place)}">${esc(eventPlace(ev,selectedCity==='all'))}</p></div></div><div class="city-card-footer"><strong class="city-fee">${esc(ev.fee)}</strong><div class="city-actions"><button class="text-btn" type="button" data-city-meetup="${esc(ev.id)}">约同行</button><a href="${esc(ev.sourceUrl)}" target="_blank" rel="noopener noreferrer" class="outline-btn">官方详情 ↗</a></div></div><details class="city-disclosure"><summary>详情</summary><div>${ev.originalTitle&&ev.originalTitle!==ev.title?`<p><strong>${esc(ev.originalTitle)}</strong></p>`:''}<p>${esc(ev.description||ev.summary)}</p>${ev.price&&ev.price!==ev.fee?`<p>${esc(ev.price)}</p>`:''}<a href="${esc(ev.sourceUrl)}" target="_blank" rel="noopener noreferrer">${esc(ev.sourceName)} ↗</a><span> · ${esc(ev.checkedOn)} 核对</span></div></details></article>`;
   }).join(''):`<div class="empty-state"><h2>${cityPeriod==='all'?'这个城市暂无近期精选活动':'这个时间段暂无精选活动'}</h2><p>可以查看官方日历，或换一个时间范围。</p><a class="outline-btn" href="${CITY_AGENDA_URL}" target="_blank" rel="noopener noreferrer">浏览官方活动日历 ↗</a></div>`;
 }
 $('eventSourceSwitch').addEventListener('click',e=>{
@@ -376,7 +376,7 @@ function openEventForm(event){
     const draft=cityEventDraft(event);form.reset();
     Object.entries(draft).forEach(([key,value])=>form.elements[key].value=value);
     $('sourceEventNote').hidden=false;
-    $('sourceEventNote').innerHTML=`约同行 · 门票请各自办理。可调整集合时间与地点。 <a href="${esc(event.sourceUrl)}" target="_blank" rel="noopener noreferrer">查看主办方安排 ↗</a>`;
+    $('sourceEventNote').innerHTML=`可修改集合时间与地点。 <a href="${esc(event.sourceUrl)}" target="_blank" rel="noopener noreferrer">查看主办方安排 ↗</a>`;
     eventDraftTouched=true;
   }
   $('hostName').value=$('hostName').value||nickname();showModal('createEventBox');form.elements.title.focus({preventScroll:true});
@@ -392,8 +392,8 @@ function renderEvents(){
   const events=upcomingCityEvents(state.events,cityPeriod,new Date(),selectedCity);
   $('communityCount').textContent=upcomingCityEvents(state.events,'all',new Date(),selectedCity).length;
   $('eventsList').innerHTML=events.length?events.map(ev=>`<article class="event-card"><div class="event-top"><span class="pill">${esc(ev.category)}</span><span class="pill ${ev.count>=ev.capacity?'gray':''}">${ev.count>=ev.capacity?'已满员':`还差 ${ev.capacity-ev.count} 人`}</span></div>
-    <h2>${esc(ev.title)}</h2><div class="event-meta"><span>${esc(dateText(ev.startsAt))}</span><span>${esc(cities[ev.city||'delft'])} · ${esc(ev.place)}</span><span>${esc(ev.host)} 发起 · ${ev.count}/${ev.capacity} 人</span></div>${ev.description?`<details class="event-description"><summary>活动说明</summary><p class="preserve-lines">${esc(ev.description)}</p></details>`:''}
-    <div class="event-footer"><button type="button" class="text-btn" data-share-event="${esc(ev.id)}">分享到微信</button><button type="button" class="${ev.joined?'outline-btn':'primary-btn'}" data-event="${esc(ev.id)}" ${ev.hostIsMe||(!ev.joined&&ev.count>=ev.capacity)?'disabled':''}>${ev.hostIsMe?'我发起的':ev.joined?'取消报名':ev.count>=ev.capacity?'已满员':'报名参加'}</button></div>${ev.hostIsMe?`<div class="event-footer"><button class="text-btn" type="button" data-attendees="${esc(ev.id)}">查看报名昵称</button><button class="text-btn danger" type="button" data-cancel-event="${esc(ev.id)}">取消活动</button></div>`:''}</article>`).join(''):`<div class="empty-state"><h2>${state.events.length?'这个时间段暂无组局':'还没有人发起组局'}</h2><p>约两三个人喝咖啡，或一起去看场演出。</p><button type="button" class="outline-btn" data-create-event>发起组局</button></div>`;
+    <h2>${esc(ev.title)}</h2><div class="event-meta"><span>${esc(dateText(ev.startsAt))}</span><span>${esc(eventPlace(ev,selectedCity==='all'))}</span><span>${esc(ev.host)} 发起</span></div>${ev.description?`<details class="event-description"><summary>活动说明</summary><p class="preserve-lines">${esc(ev.description)}</p></details>`:''}
+    <div class="event-footer"><button type="button" class="text-btn" data-share-event="${esc(ev.id)}">分享到微信</button><button type="button" class="${ev.joined?'outline-btn':'primary-btn'}" data-event="${esc(ev.id)}" ${ev.hostIsMe||(!ev.joined&&ev.count>=ev.capacity)?'disabled':''}>${ev.hostIsMe?'我发起的':ev.joined?'取消报名':ev.count>=ev.capacity?'已满员':'报名参加'}</button></div>${ev.hostIsMe?`<div class="event-footer"><button class="text-btn" type="button" data-attendees="${esc(ev.id)}">报名名单</button><button class="text-btn danger" type="button" data-cancel-event="${esc(ev.id)}">取消活动</button></div>`:''}</article>`).join(''):`<div class="empty-state"><h2>${state.events.length?'这个时间段暂无组局':'还没有人发起组局'}</h2><p>约两三个人喝咖啡，或一起去看场演出。</p><button type="button" class="outline-btn" data-create-event>发起组局</button></div>`;
 }
 function beginRsvp(id){
   if(!requireAuth(()=>beginRsvp(id)))return;
@@ -411,9 +411,9 @@ $('eventsList').addEventListener('click',async e=>{
       posterFile=new File([blob],'荷包-同行邀请.jpg',{type:'image/jpeg'});
       $('posterImage').src=posterUrl;$('posterImage').alt='同行邀请海报与报名二维码';$('downloadPoster').href=posterUrl;$('downloadPoster').download=posterFile.name;
       $('sharePoster').hidden=!navigator.canShare?.({files:[posterFile]});
-      $('eventShareText').value=`${ev.title}\n${dateText(ev.startsAt)}\n${cities[ev.city||'delft']} · ${ev.place}\n查看详情与报名：${url}`;
-      $('eventShareText').hidden=false;$('copyEventShare').hidden=false;
-      $('posterHint').textContent='保存海报发到微信群或朋友圈；朋友长按识别二维码即可查看报名。人数与安排以网页为准。';showModal('posterModal');
+      $('eventShareText').value=`${ev.title}\n${dateText(ev.startsAt)}\n${eventPlace(ev)}\n查看详情与报名：${url}`;
+      $('eventShareText').hidden=true;$('copyEventShare').hidden=false;$('posterHeading').textContent='分享邀请';
+      $('posterHint').textContent='保存图片或复制邀请，发到微信。';showModal('posterModal');
     }catch(error){toast(error.message);}return;
   }
   const cancel=e.target.closest('[data-cancel-event]');
@@ -554,4 +554,4 @@ applyRoute();
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&state.activeTab==='events'){loadCityFeed();renderEvents();}});
 
 $('citySelect').addEventListener('change',()=>{selectedCity=$('citySelect').value;const url=new URL(location.href);url.searchParams.set('city',selectedCity);history.pushState(null,'',url);renderCityEvents();renderEvents();});
-$('copyEventShare').addEventListener('click',async()=>{try{await navigator.clipboard.writeText($('eventShareText').value);toast('邀请已复制，粘贴到微信即可');}catch{$('eventShareText').focus();$('eventShareText').select();toast('请长按或按 Ctrl+C 复制邀请');}});
+$('copyEventShare').addEventListener('click',async()=>{try{await navigator.clipboard.writeText($('eventShareText').value);toast('邀请已复制，粘贴到微信即可');}catch{$('eventShareText').hidden=false;$('eventShareText').focus();$('eventShareText').select();toast('请长按或按 Ctrl+C 复制邀请');}});

@@ -102,6 +102,16 @@ export function cityEventDraft(event) {
     title: `一起去：${event.title}`.slice(0, 75),
     category: event.category === '户外' ? '散步' : '其他',
     startsAt: amsterdamInput(event.startsAt), place: event.place,
-    description: `一起参加 ${event.originalTitle}。\n${event.price}；票务和预约请各自通过官方页面完成。\n活动详情：${event.sourceUrl}`.slice(0, 450),
+    description: `${event.price}；门票请自行预约。\n活动详情：${event.sourceUrl}`.slice(0, 450),
   };
+}
+
+// Add the city only when the venue does not already contain it.
+export function eventPlace(event, includeCity = true) {
+  const place = String(event.place || '').trim(), city = cities[event.city || 'delft'] || '';
+  return includeCity && city && !place.toLocaleLowerCase().includes(city.toLocaleLowerCase()) ? `${city} · ${place}` : place;
+}
+// The poster is a summary; URLs belong in its QR code and full web details.
+export function eventPosterNote(event) {
+  return String(event.description || '').split('\n').filter(line => !/^一起参加 |^活动详情：/.test(line.trim())).join(' ').replace(/https?:\/\/\S+/g, '').trim();
 }

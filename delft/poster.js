@@ -1,3 +1,4 @@
+import {eventPlace,eventPosterNote} from './city-events.js';
 import qrcode from './vendor/qrcode.mjs';
 import { posterDestination } from './site-config.js';
 
@@ -123,17 +124,17 @@ export async function createEventPoster(event) {
   await document.fonts.ready;const ctx=canvas.getContext('2d');
   ctx.fillStyle='#f8f7f3';ctx.fillRect(0,0,1000,1100);
   ctx.fillStyle='#204f3d';ctx.fillRect(0,0,1000,330);
-  ctx.fillStyle='#c5d8cb';ctx.font=`26px ${font}`;ctx.fillText('一起出门 · 同行邀请',60,75);
+  ctx.fillStyle='#c5d8cb';ctx.font=`26px ${font}`;ctx.fillText('同行邀请',60,75);
   ctx.fillStyle='#ffffff';ctx.font=`700 48px ${font}`;text(ctx,event.title,60,155,880,3,65);
   const date=new Intl.DateTimeFormat('zh-CN',{timeZone:'Europe/Amsterdam',month:'long',day:'numeric',weekday:'long',hour:'2-digit',minute:'2-digit'}).format(new Date(event.startsAt));
   ctx.fillStyle='#204f3d';ctx.font=`600 32px ${font}`;text(ctx,date+'（荷兰时间）',60,410,880,2,44);
-  ctx.font=`30px ${font}`;text(ctx,event.place,60,495,880,2,44);
+  ctx.font=`30px ${font}`;text(ctx,eventPlace(event),60,495,880,2,44);
   ctx.fillStyle='#526c5e';ctx.font=`26px ${font}`;text(ctx,`${event.host} 发起 · ${event.count}/${event.capacity} 人`,60,610,880);
-  text(ctx,event.description||'来认识新朋友，一起出发。',60,675,880,3,40);
+  text(ctx,eventPosterNote(event),60,675,880,3,40);
   const qr=makeQr(url.href),cell=4,margin=4,size=(qr.getModuleCount()+8)*cell,qx=940-size,qy=850;
   ctx.strokeStyle='#d8e1d7';ctx.beginPath();ctx.moveTo(60,820);ctx.lineTo(940,820);ctx.stroke();
-  ctx.fillStyle='#526c5e';ctx.font=`600 26px ${font}`;ctx.fillText('长按识别 · 查看详情与报名',60,885);
-  ctx.font=`22px ${font}`;ctx.fillText('荷包 · 在荷兰，约人一起玩',60,934);
+  ctx.fillStyle='#526c5e';ctx.font=`600 26px ${font}`;ctx.fillText('长按二维码报名',60,885);
+  ctx.font=`22px ${font}`;ctx.fillText('荷包 · hebao-backend.vercel.app',60,934);
   ctx.font=`18px ${font}`;ctx.fillText('人数、时间和活动状态以网页为准',60,978);
   ctx.fillStyle='#fff';ctx.fillRect(qx,qy,size,size);ctx.fillStyle='#263d32';
   for(let r=0;r<qr.getModuleCount();r++)for(let c=0;c<qr.getModuleCount();c++)if(qr.isDark(r,c))ctx.fillRect(qx+(c+margin)*cell,qy+(r+margin)*cell,cell,cell);
