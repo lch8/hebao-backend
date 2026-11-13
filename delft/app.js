@@ -28,6 +28,7 @@ let resumeAfterLogin=null;
 function requireAuth(resume){if(token())return true;resumeAfterLogin=resume||null;showModal('loginModal');return false;}
 const modalFocus=new Map();
 let modalLayer=1000;
+let dutchView,dutchLoading;
 function showModal(id){modalFocus.set(id,document.activeElement);$(id).hidden=false;$(id).style.zIndex=++modalLayer;document.body.style.overflow='hidden';$(id).querySelector('input,textarea,button')?.focus();}
 function hideModal(id,{updateUrl=true}={}){
   $(id).hidden=true;document.body.style.overflow=document.querySelector('.overlay:not([hidden])')?'hidden':'';modalFocus.get(id)?.focus();
@@ -38,7 +39,8 @@ function hideModal(id,{updateUrl=true}={}){
   }
 }
 async function tab(name,{updateUrl=true}={}){
-  if(!['sell','market','events','mine'].includes(name))return;
+  if(!['sell','market','events','dutch','mine'].includes(name))return;
+  if(name!=='dutch')dutchView?.pauseMedia();
   state.activeTab=name;
   document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
   document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tab===name)));
@@ -46,6 +48,10 @@ async function tab(name,{updateUrl=true}={}){
   if(updateUrl){const url=new URL(location.href);url.searchParams.delete('item');url.searchParams.delete('event');url.searchParams.delete('product');url.searchParams.set('tab',name);if(url.href!==location.href)history.pushState(null,'',url);}
   window.scrollTo({top:0,behavior:'smooth'});
   if(name==='market')await loadListings();if(name==='events'){renderCityEvents();await Promise.all([loadEvents(),loadCityFeed()]);}if(name==='mine')await loadMine();
+  if(name==='dutch'){
+    try{if(!dutchView){dutchLoading??=import('./dutch.js').then(({mountDutch})=>{dutchView=mountDutch($('dutchApp'));});await dutchLoading;}}
+    catch{dutchLoading=null;$('dutchApp').innerHTML='<div class="empty-state error-state"><p>练习暂未载入，请刷新页面重试。</p><a href="https://www.inburgeren.nl/examen-doen/oefenen.jsp" target="_blank" rel="noopener noreferrer">先做 DUO 官方练习 ↗</a></div>';}
+  }
 }
 document.addEventListener('click',e=>{
   const nav=e.target.closest('[data-tab]');if(nav)tab(nav.dataset.tab);
@@ -538,7 +544,7 @@ async function applyRoute(){
   const query=new URLSearchParams(location.search),item=query.get('item'),event=query.get('event');
   selectedCity=cities[query.get('city')]?query.get('city'):query.get('city')==='all'?'all':'delft';$('citySelect').value=selectedCity;
   const requested=item?'market':event?'events':query.get('tab')||'events';
-  const name=['sell','market','events','mine'].includes(requested)?requested:'events';
+  const name=['sell','market','events','dutch','mine'].includes(requested)?requested:'events';
   if(!item&&!$('detailModal').hidden)hideModal('detailModal',{updateUrl:false});
   await tab(name,{updateUrl:false});
   if(item)await openListing(item,{itemId:query.get('product'),updateUrl:false});

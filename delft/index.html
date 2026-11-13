@@ -4,9 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#f6f7f3" />
-  <title>荷包 · Delft 闲置与活动</title>
-  <meta name="description" content="发现 Delft 附近的闲置和近期活动。整理商品、生成分享海报，或约人一起出门。" />
+  <title>荷包 · 荷兰活动、闲置与荷语学习</title>
+  <meta name="description" content="发现荷兰城市活动、分享闲置，或每天练一点荷兰语，为 A2 融入考试做准备。" />
   <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./dutch.css" />
   <script type="module" src="./app.js"></script>
 </head>
 <body>
@@ -17,6 +18,7 @@
       <button type="button" class="tab active" data-tab="events" aria-controls="panel-events" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14v16H5zM8 3v4m8-4v4M5 10h14m-11 5h3m2 0h3"/></svg><span>找活动</span></button>
       <button type="button" class="tab" data-tab="market" aria-controls="panel-market" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16v11H4zM3 9l2-5h14l2 5M9 20v-7h6v7"/></svg><span>逛闲置</span></button>
       <button type="button" class="tab sell-tab" data-tab="sell" aria-controls="panel-sell" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg><span>发闲置</span></button>
+      <button type="button" class="tab" data-tab="dutch" aria-controls="panel-dutch" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v15M12 6C9 3 5 3 2 4v15c3-1 7-1 10 2M12 6c3-3 7-3 10-2v15c-3-1-7-1-10 2"/></svg><span>学荷语</span></button>
       <button type="button" class="tab" data-tab="mine" aria-controls="panel-mine" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg><span>我的</span></button>
     </nav>
     <button type="button" id="loginTrigger" class="outline-btn login-trigger">登录</button>
@@ -60,6 +62,11 @@
         </div>
         <aside class="side-column" aria-label="清单预览"><div class="preview-label">清单预览 </div><div class="list-preview" id="listPreview"></div></aside>
       </div>
+    </section>
+
+    <section id="panel-dutch" class="panel" aria-labelledby="dutchHeading">
+      <div class="section-heading dutch-heading"><div><p class="section-kicker">一步一步，准备 A2</p><h1 id="dutchHeading">学荷语，也学会生活。</h1></div><span class="dutch-level">A2 · 融入考试</span></div>
+      <div id="dutchApp"><p class="empty-state" role="status">正在准备你的荷语练习…</p></div>
     </section>
 
     <section id="panel-mine" class="panel" aria-labelledby="mineHeading">
