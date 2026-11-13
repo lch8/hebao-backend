@@ -41,7 +41,7 @@ export function mountDutch(root){
     return `<button type="button" class="study-scene" data-study-lesson="${lesson.id}"><span class="study-scene-number">${String(index).padStart(2,'0')}${completed?' · 已完成':''}</span><strong>${esc(lesson.title)}</strong><span class="study-scene-copy">${esc(lesson.subtitle)}</span><span class="study-skill-tags">${skillTags(lesson.tasks)}</span><span class="study-scene-arrow" aria-hidden="true">↗</span></button>`;
   }
   function renderLessons(){
-    el('studyBody').innerHTML=`<div class="study-page-heading"><h2>从你用得上的场景开始</h2><p>每节三小步；学过的内容会换时间、人物和情境再出现。</p></div><div class="study-scene-grid">${LESSONS.map(lessonCard).join('')}</div>`;
+    el('studyBody').innerHTML=`<div class="study-page-heading"><h2>从你用得上的场景开始</h2><p>每节三小步，把理解和表达连起来。</p></div><div class="study-scene-grid">${LESSONS.map(lessonCard).join('')}</div>`;
   }
   function startSession(tasks,lessonId=null){
     releaseRecording();session={tasks,lessonId,index:0,checked:false,assisted:false,heard:0,results:[],drafts:{},done:false};renderTask();scrollPractice();
