@@ -1,42 +1,6 @@
 {
-  "updatedAt": "2026-11-16",
+  "updatedAt": "2026-11-19",
   "events": [
-    {
-      "id": "gen-z-amare-2026-11-16",
-      "city": "den-haag",
-      "title": "Gen Z 在抗议什么？· 免费时事讲座",
-      "originalTitle": "Gen Z in opstand: wie luistert er naar jongeren?",
-      "summary": "Leiden 大学教授解析青年抗议与政治参与",
-      "description": "Sarah de Lange 教授以法国青年抗议为切入点，讨论社会不平等、政治信任及年轻人如何影响欧洲政治。讲座后设有提问与讨论环节；16:45 开放入场。",
-      "startsAt": "2026-11-16T17:00:00+01:00",
-      "endsAt": "2026-11-16T18:45:00+01:00",
-      "place": "Amare · Tribunetrap · Den Haag",
-      "fee": "免费 · 自由入场",
-      "price": "免费，自由入场",
-      "category": "文化",
-      "tone": "blue",
-      "sourceName": "Amare",
-      "sourceUrl": "https://www.amare.nl/nl/agenda/gen-z-in-opstand-wie-luistert-er-naar-jongeren-c2c8",
-      "checkedOn": "2026-11-16"
-    },
-    {
-      "id": "open-eindje-2026-11-17",
-      "city": "eindhoven",
-      "title": "Open Eindje · 免费喜剧开放麦",
-      "originalTitle": "Open Eindje: open mic voor cabaret en kleinkunst",
-      "summary": "看新生代喜剧与小剧场创作者试演",
-      "description": "Koningstheateracademie 的学生与毕业生在 Café C 测试新段子、歌曲和短场景。观众可免费预约席位；想登台者可按官方页面说明联系主办方。",
-      "startsAt": "2026-11-17T20:00:00+01:00",
-      "endsAt": "2026-11-17T21:30:00+01:00",
-      "place": "CKE · Café C · Pastoor Petersstraat 180 · Eindhoven",
-      "fee": "免费 · 建议预约",
-      "price": "免费，官方页面提供席位预约",
-      "category": "社交",
-      "tone": "clay",
-      "sourceName": "CKE Eindhoven",
-      "sourceUrl": "https://cke.nl/agenda/open-eindje-open-podium-voor-cabaret-en-kleinkunst/",
-      "checkedOn": "2026-11-15"
-    },
     {
       "id": "sketch-cafe-eindhoven-2026-11-19",
       "city": "eindhoven",
@@ -212,6 +176,24 @@
       "checkedOn": "2026-11-14"
     },
     {
+      "id": "familiezondag-amare-2026-11-22",
+      "city": "den-haag",
+      "title": "Amare 家庭日 · 免费亲子艺术体验",
+      "originalTitle": "Familiezondag – Jubileumeditie",
+      "summary": "音乐、舞蹈、戏剧与创意工作坊遍布场馆",
+      "description": "Amare 周年家庭日面向儿童、家长与祖辈开放。10:00—15:00 的公共家庭项目可免费参加，包含舞蹈、音乐和创意体验；部分剧场演出可能需要单独购票，请以官方页面为准。",
+      "startsAt": "2026-11-22T10:00:00+01:00",
+      "endsAt": "2026-11-22T15:00:00+01:00",
+      "place": "Amare · Spuiplein 150 · Den Haag",
+      "fee": "公共家庭项目免费",
+      "price": "10:00—15:00 公共家庭项目免费；部分单独演出另行售票",
+      "category": "亲子",
+      "tone": "gold",
+      "sourceName": "Amare",
+      "sourceUrl": "https://www.amare.nl/nl/agenda/familiezondag-xnwn",
+      "checkedOn": "2026-11-19"
+    },
+    {
       "id": "art-amsterdam-spui-2026-11-22",
       "city": "amsterdam",
       "title": "Art Amsterdam Spui · 露天艺术市集",
@@ -228,6 +210,24 @@
       "sourceName": "I amsterdam",
       "sourceUrl": "https://www.iamsterdam.com/uit/agenda/winkelen/markten/art-amsterdam-spui",
       "checkedOn": "2026-11-16"
+    },
+    {
+      "id": "verhalenvertelavond-eindhoven-2026-11-24",
+      "city": "eindhoven",
+      "title": "故事之夜 · 用英语练习讲故事",
+      "originalTitle": "Verhalenvertelavond en workshop",
+      "summary": "英语工作坊后，用任意语言分享友情故事",
+      "description": "19:00—20:15 由戏剧教师带领英语故事表达工作坊，学习用声音、表情和肢体动作讲故事；20:30 起观众可入场听多语言分享。活动免费，但官方要求提前报名。",
+      "startsAt": "2026-11-24T19:00:00+01:00",
+      "endsAt": "2026-11-24T21:00:00+01:00",
+      "place": "CKE · Café C · Pastoor Petersstraat 180 · Eindhoven",
+      "fee": "免费 · 必须报名",
+      "price": "免费，须通过官方页面提前报名",
+      "category": "社交",
+      "tone": "clay",
+      "sourceName": "CKE Eindhoven",
+      "sourceUrl": "https://cke.nl/agenda/verhalenvertelavond-en-workshop/",
+      "checkedOn": "2026-11-19"
     },
     {
       "id": "concertgebouw-jazz-lunch-2026-11-25",
