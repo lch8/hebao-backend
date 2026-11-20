@@ -1,24 +1,6 @@
 {
-  "updatedAt": "2026-11-19",
+  "updatedAt": "2026-11-20",
   "events": [
-    {
-      "id": "sketch-cafe-eindhoven-2026-11-19",
-      "city": "eindhoven",
-      "title": "Sketch Café · 一起画画认识新朋友",
-      "originalTitle": "Maandelijks sketch café",
-      "summary": "不同水平的画画爱好者一起创作交流",
-      "description": "带上纸、速写本、平板或自己的绘画工具，在 Café C 画个人项目、交换技巧并认识其他创作者。活动免费，官网提供席位预约。",
-      "startsAt": "2026-11-19T19:00:00+01:00",
-      "endsAt": "2026-11-19T21:30:00+01:00",
-      "place": "CKE · Café C · Pastoor Petersstraat 180 · Eindhoven",
-      "fee": "免费 · 可预约席位",
-      "price": "免费，请自带绘画材料",
-      "category": "社交",
-      "tone": "clay",
-      "sourceName": "CKE Eindhoven",
-      "sourceUrl": "https://cke.nl/agenda/maandelijks-sketch-cafe-6/",
-      "checkedOn": "2026-11-15"
-    },
     {
       "id": "jazz-lunch-utrecht-2026-11-20",
       "city": "utrecht",
@@ -230,26 +212,22 @@
       "checkedOn": "2026-11-19"
     },
     {
-      "id": "concertgebouw-jazz-lunch-2026-11-25",
-      "city": "amsterdam",
-      "title": "免费午间爵士 · Grachtenfestival",
-      "originalTitle": "Gratis Lunchconcert: Grachtenfestival Jazz Competition 2026",
-      "summary": "TJ’s Pretty People 的半小时午间演出",
-      "description": "TJ’s Pretty People 在小厅演出，12:30—13:00，无中场休息。免费票从 11 月 19 日 10:00 开放在线领取，每人最多两张，饮品另付费。",
-      "startsAt": "2026-11-25T12:30:00+01:00",
-      "endsAt": "2026-11-25T13:00:00+01:00",
-      "place": "Het Concertgebouw · Kleine Zaal · Amsterdam",
-      "fee": "免费 · 11/19 10:00 起领票",
-      "price": "免费，需在线领取门票，每人最多两张",
-      "category": "音乐",
-      "tone": "blue",
-      "sourceName": "Het Concertgebouw",
-      "sourceUrl": "https://www.concertgebouw.nl/concerten/46012204-gratis-lunchconcert-grachtenfestival-jazz-competition-2026",
-      "imageUrl": "https://d35w1qwxagl33g.cloudfront.net/production/_1560x750_crop_center-center_none/lunchconcert-2025.png?stamp=2507301539&tag=xs",
-      "imageAlt": "Concertgebouw 午间音乐会官方宣传配图",
-      "imageCredit": "Het Concertgebouw · Eduardus Lee",
-      "imageSourceUrl": "https://www.concertgebouw.nl/concerten/46012204-gratis-lunchconcert-grachtenfestival-jazz-competition-2026",
-      "checkedOn": "2026-11-13"
+      "id": "scrap-lab-eindhoven-2026-11-25",
+      "city": "eindhoven",
+      "title": "Scrap Lab · 免费拼贴创作夜",
+      "originalTitle": "Scrap Lab",
+      "summary": "用纸张、杂志与回收包装一起做拼贴",
+      "description": "CKE 提供部分材料和创意任务，也可以带上自己的图片、旧杂志、包装材料或未完成作品，与其他手作爱好者一起创作。活动免费，官网可预约席位。",
+      "startsAt": "2026-11-25T19:00:00+01:00",
+      "endsAt": "2026-11-25T21:30:00+01:00",
+      "place": "CKE · Pastoor Petersstraat 180 · Eindhoven",
+      "fee": "免费 · 可预约席位",
+      "price": "免费，官网可预约；可自带拼贴材料",
+      "category": "社交",
+      "tone": "clay",
+      "sourceName": "CKE Eindhoven",
+      "sourceUrl": "https://cke.nl/agenda/scrap-lab-4/",
+      "checkedOn": "2026-11-20"
     },
     {
       "id": "lunch-classic-utrecht-2026-11-27",
@@ -345,6 +323,24 @@
       "imageAlt": "Delft Markt 灯光之夜官方配图",
       "imageCredit": "In Delft",
       "imageSourceUrl": "https://www.indelft.nl/nl/uitagenda/delft-verlicht/lichtjesavond"
+    },
+    {
+      "id": "museum-market-amsterdam-2026-12-13",
+      "city": "amsterdam",
+      "title": "Museum Market · 设计与手作市集",
+      "originalTitle": "Museum Market",
+      "summary": "在 Museumplein 逛艺术、设计、首饰与手作摊位",
+      "description": "设计师与收藏者在 Museumplein 展示艺术、时装配饰、家居、纸品、首饰、儿童玩具和手作，也有餐饮摊位。入场免费，购物和餐饮另付费。",
+      "startsAt": "2026-12-13T10:00:00+01:00",
+      "endsAt": "2026-12-13T18:00:00+01:00",
+      "place": "Museumplein · 1071 DJ Amsterdam",
+      "fee": "免费入场",
+      "price": "免费入场，购物与餐饮另付费",
+      "category": "市集",
+      "tone": "gold",
+      "sourceName": "I amsterdam",
+      "sourceUrl": "https://www.iamsterdam.com/uit/agenda/winkelen/markten/museum-market",
+      "checkedOn": "2026-11-20"
     }
   ]
 }
