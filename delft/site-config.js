@@ -1,6 +1,12 @@
 // Public destination for poster promotion. Keep this aligned with the production domain.
 export const PUBLIC_SITE_URL = 'https://hebao-backend.vercel.app/delft/';
 
+export function activityLink(id) {
+  const url = new URL(PUBLIC_SITE_URL);
+  url.searchParams.set('activity', id);
+  return url.href;
+}
+
 export function posterDestination({ publishedId, dirty } = {}) {
   const url = new URL(PUBLIC_SITE_URL);
   const published = Boolean(publishedId && !dirty);

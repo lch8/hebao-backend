@@ -81,11 +81,21 @@ export function amsterdamInstant(value) {
   throw new Error('这个荷兰当地时间不存在，请重新选择（夏令时切换）');
 }
 
+const dayNumber = iso => Date.parse(iso.slice(0, 10) + 'T00:00:00Z') / 86400000;
+function weekendStart(day) {
+  const weekday = new Date(day * 86400000).getUTCDay();
+  return day + (weekday === 0 ? -1 : 6 - weekday);
+}
+
+export function weekendLabel(now) {
+  const saturday = weekendStart(dayNumber(amsterdamInput(now)));
+  const start = new Date(saturday * 86400000), end = new Date((saturday + 1) * 86400000);
+  const month = date => date.getUTCMonth() + 1;
+  return `${month(start)} 月 ${start.getUTCDate()} 日–${month(start) === month(end) ? '' : month(end) + ' 月 '}${end.getUTCDate()} 日`;
+}
+
 export function upcomingCityEvents(events = cityEvents, period = 'all', now = new Date(), city = 'all') {
-  const today = amsterdamInput(now).slice(0, 10);
-  const dayNumber = iso => Date.parse(iso.slice(0, 10) + 'T00:00:00Z') / 86400000;
-  const day = dayNumber(today), weekday = new Date(day * 86400000).getUTCDay();
-  const saturday = day + (weekday === 0 ? -1 : (6 - weekday));
+  const day = dayNumber(amsterdamInput(now)), saturday = weekendStart(day);
   return events.filter(event => {
     if (city !== 'all' && (event.city || 'delft') !== city) return false;
     if (Date.parse(event.startsAt) <= now.getTime()) return false;
@@ -96,13 +106,39 @@ export function upcomingCityEvents(events = cityEvents, period = 'all', now = ne
   }).sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
 }
 
+const nearbyCities = {
+  delft: ['den-haag', 'rotterdam'], 'den-haag': ['delft', 'rotterdam'],
+  rotterdam: ['delft', 'den-haag'], amsterdam: ['utrecht'], utrecht: ['amsterdam'],
+};
+
+export function discoveryFilters(params) {
+  if (params.has('event')) return {city:'all', period:'all', source:'community'};
+  const city = params.get('city'), period = params.get('period');
+  return {
+    city: city === 'all' || Object.hasOwn(cities, city) ? city : 'delft',
+    period: ['all', 'weekend', 'fortnight'].includes(period) ? period : 'weekend',
+    source: params.get('source') === 'community' ? 'community' : 'city',
+  };
+}
+
+export function citySelection(events, period, now, city) {
+  const inPeriod = upcomingCityEvents(events, period, now);
+  const local = city === 'all' ? inPeriod : inPeriod.filter(event => event.city === city);
+  const nearby = local.length ? [] : inPeriod.filter(event => nearbyCities[city]?.includes(event.city));
+  return {local, nearby, inPeriod};
+}
+
 export function cityEventDraft(event) {
+  const activity = `${event.title} ${event.originalTitle || ''}`;
+  let category = '其他';
+  if (event.category === '运动' || /滑冰|滑雪|骑行|跑步|schaats/i.test(activity)) category = '运动';
+  else if (event.category === '户外' && /散步|徒步|护林员|步行|wandeling|boswachter/i.test(activity)) category = '散步';
   return {
     city: event.city || 'delft',
     title: `一起去：${event.title}`.slice(0, 75),
-    category: event.category === '户外' ? '散步' : '其他',
+    category,
     startsAt: amsterdamInput(event.startsAt), place: event.place,
-    description: `${event.price}；门票请自行预约。\n活动详情：${event.sourceUrl}`.slice(0, 450),
+    description: `${event.price}\n活动详情：${event.sourceUrl}`.slice(0, 450),
   };
 }
 

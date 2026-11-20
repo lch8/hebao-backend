@@ -2,12 +2,14 @@
 import {readDraft,writeDraft,deleteDraft} from './draft-store.js';
 import {createPoster,createEventPoster} from './poster.js';
 import {marketProducts, itemPrice} from './market-view.js';
-import {cities,cityEvents, CITY_EVENTS_CHECKED, CITY_AGENDA_URL, upcomingCityEvents, amsterdamInput, amsterdamInstant, cityEventDraft,eventPlace} from './city-events.js';
+import {cities,cityEvents, CITY_EVENTS_CHECKED, CITY_AGENDA_URL, upcomingCityEvents, amsterdamInput, amsterdamInstant, cityEventDraft,eventPlace,discoveryFilters,citySelection,weekendLabel} from './city-events.js';
 const $ = id => document.getElementById(id);
-const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+import {escapeHtml as esc, activityCard, activityDetailContent} from './activity-view.js';
+import {activityLink} from './site-config.js';
 const state = {photos:[],listings:[],myListings:[],events:[],currentListing:null,currentEvent:null,publishedId:null,editingId:null,editVersion:null,dirty:false,activeTab:null,category:'',saving:false};
 const itemCategories=['家具','自行车','数码','生活用品','书籍','其他'];
 const statusNames = {available:'在售',reserved:'已预订',sold:'已售出'};
+const siteTitle = document.title;
 const uuid = () => crypto.randomUUID();
 const token = () => localStorage.getItem('hebao_token') || '';
 const nickname = () => localStorage.getItem('delft_nickname') || localStorage.getItem('hp_name') || '';
@@ -42,10 +44,17 @@ async function tab(name,{updateUrl=true}={}){
   if(!['sell','market','events','dutch','mine'].includes(name))return;
   if(name!=='dutch')dutchView?.pauseMedia();
   state.activeTab=name;
+  document.title=siteTitle;
   document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
   document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tab===name)));
   document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id===`panel-${name}`));
-  if(updateUrl){const url=new URL(location.href);url.searchParams.delete('item');url.searchParams.delete('event');url.searchParams.delete('product');url.searchParams.set('tab',name);if(url.href!==location.href)history.pushState(null,'',url);}
+  if(updateUrl){
+    activeActivity='';
+    const url=name==='events'?discoveryUrl():new URL(location.href);
+    for(const key of ['activity','item','event','product'])url.searchParams.delete(key);
+    url.searchParams.set('tab',name);
+    if(url.href!==location.href)history.pushState(null,'',url);
+  }
   window.scrollTo({top:0,behavior:'smooth'});
   if(name==='market')await loadListings();if(name==='events'){renderCityEvents();await Promise.all([loadEvents(),loadCityFeed()]);}if(name==='mine')await loadMine();
   if(name==='dutch'){
@@ -346,35 +355,182 @@ $('sendInquiry').addEventListener('click',async()=>{
 
 // ---- Events ----
 const dateText = iso => new Intl.DateTimeFormat('zh-CN',{timeZone:'Europe/Amsterdam',month:'long',day:'numeric',weekday:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(iso));
-let selectedCity='delft',feedEvents=cityEvents,feedUpdated=CITY_EVENTS_CHECKED,feedFailed=false;
-async function loadCityFeed(){try{const r=await fetch('./events-feed.json',{cache:'no-cache'});if(!r.ok)throw new Error();const data=await r.json();if(!Array.isArray(data.events)||!/^\d{4}-\d{2}-\d{2}$/.test(data.updatedAt))throw new Error();const ids=new Set();for(const ev of data.events){if(!cities[ev.city]||!ev.id||ids.has(ev.id)||!ev.title||!Number.isFinite(Date.parse(ev.startsAt))||!/^https:\/\//.test(ev.sourceUrl))throw new Error();ids.add(ev.id);}feedEvents=data.events;feedUpdated=data.updatedAt;feedFailed=false;}catch{feedFailed=true;}renderCityEvents();}
-let cityPeriod='all',eventSource='city',eventsRequest=0,eventDraftTouched=false,eventsFailed=false;
-const safeEventImage=ev=>{try{const url=new URL(ev.imageUrl);return url.protocol==='https:'?url.href:'';}catch{return '';}};
-$('cityEvents').addEventListener('error',e=>{if(e.target.matches('.event-cover img'))e.target.remove();},true);
-const eventClock=iso=>new Intl.DateTimeFormat('zh-CN',{timeZone:'Europe/Amsterdam',weekday:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(iso));
-function renderCityEvents(){
-  const picks=upcomingCityEvents(feedEvents,cityPeriod,new Date(),selectedCity);
-  $('cityCount').textContent=upcomingCityEvents(feedEvents,'all',new Date(),selectedCity).length;
-  $('cityCheckedNote').textContent=eventSource==='city'?`荷兰时间 · ${feedUpdated.slice(5).replace('-','/')} 更新${feedFailed?' · 更新暂不可用':''}`:'荷兰当地时间';
-  $('cityEvents').innerHTML=picks.length?picks.map((ev,index)=>{
-    const local=amsterdamInput(ev.startsAt),month=Number(local.slice(5,7)),day=local.slice(8,10);
-    return `<article class="city-card photo-card ${esc(ev.tone)}"><div class="event-cover"><div class="cover-art" aria-hidden="true"><span>${esc(ev.category)}</span></div>${safeEventImage(ev)?`<img src="${esc(safeEventImage(ev))}" alt="${esc(ev.imageAlt||ev.title)}" loading="${index<2?'eager':'lazy'}" decoding="async" referrerpolicy="no-referrer" width="960" height="480" />`:''}<div class="cover-date" aria-label="${month} 月 ${Number(day)} 日"><strong>${day}</strong><span>${month} 月</span></div></div><div class="city-card-main"><div class="city-content"><div class="city-topline"><span>${esc(eventClock(ev.startsAt))}${ev.endsAt?' – '+amsterdamInput(ev.endsAt).slice(11):''}</span><span class="city-kind">${esc(ev.category)}</span></div><h2>${esc(ev.title)}</h2><p class="city-place" title="${esc(ev.place)}">${esc(eventPlace(ev,selectedCity==='all'))}</p></div></div><div class="city-card-footer"><strong class="city-fee">${esc(ev.fee)}</strong><div class="city-actions"><button class="text-btn" type="button" data-city-meetup="${esc(ev.id)}">约同行</button><a href="${esc(ev.sourceUrl)}" target="_blank" rel="noopener noreferrer" class="outline-btn">官方详情 ↗</a></div></div><details class="city-disclosure"><summary>详情</summary><div>${ev.originalTitle&&ev.originalTitle!==ev.title?`<p><strong>${esc(ev.originalTitle)}</strong></p>`:''}<p>${esc(ev.description||ev.summary)}</p>${ev.price&&ev.price!==ev.fee?`<p>${esc(ev.price)}</p>`:''}<a href="${esc(ev.sourceUrl)}" target="_blank" rel="noopener noreferrer">${esc(ev.sourceName)} ↗</a><span> · ${esc(ev.checkedOn)} 核对</span>${safeEventImage(ev)?`<p class="image-credit">配图：${esc(ev.imageCredit||ev.sourceName)} · 官方页面宣传图</p>`:''}</div></details></article>`;
-  }).join(''):`<div class="empty-state"><h2>${cityPeriod==='all'?'这个城市暂无近期精选活动':'这个时间段暂无精选活动'}</h2><p>可以查看官方日历，或换一个时间范围。</p><a class="outline-btn" href="${CITY_AGENDA_URL}" target="_blank" rel="noopener noreferrer">浏览官方活动日历 ↗</a></div>`;
+let selectedCity='delft', cityPeriod='weekend', eventSource='city', activeActivity='';
+let feedEvents=cityEvents, feedUpdated=CITY_EVENTS_CHECKED, feedFailed=false, feedReady=false, feedRequest=0;
+let eventsRequest=0, eventDraftTouched=false, eventsFailed=false, eventsReady=false;
+const periodNames={weekend:'本周末', fortnight:'未来两周', all:'近期'};
+
+async function loadCityFeed(){
+  const request=++feedRequest;
+  try{
+    const response=await fetch('./events-feed.json',{cache:'no-cache'});
+    if(!response.ok)throw new Error();
+    const data=await response.json(), ids=new Set();
+    if(!Array.isArray(data.events)||!/^\d{4}-\d{2}-\d{2}$/.test(data.updatedAt))throw new Error();
+    for(const ev of data.events){
+      if(!Object.hasOwn(cities,ev.city)||!ev.id||ids.has(ev.id)||!ev.title||!Number.isFinite(Date.parse(ev.startsAt))||
+         (ev.endsAt&&!Number.isFinite(Date.parse(ev.endsAt)))||!/^https:\/\//.test(ev.sourceUrl))throw new Error();
+      ids.add(ev.id);
+    }
+    if(request!==feedRequest)return;
+    feedEvents=data.events;feedUpdated=data.updatedAt;feedFailed=false;
+  }catch{
+    if(request!==feedRequest)return;
+    feedFailed=true;
+  }
+  feedReady=true;
+  renderCityEvents();
 }
+
+function discoveryUrl({city=selectedCity,period=cityPeriod,source=eventSource,activity=''}={}){
+  const url=new URL(location.href);
+  for(const key of ['event','item','product','activity','source'])url.searchParams.delete(key);
+  url.searchParams.set('tab','events');
+  url.searchParams.set('city',city);
+  url.searchParams.set('period',period);
+  if(source==='community')url.searchParams.set('source',source);
+  if(activity)url.searchParams.set('activity',activity);
+  return url;
+}
+
+function syncDiscoveryControls(){
+  $('citySelect').value=selectedCity;
+  for(const [group,key,value] of [['cityEventFilters','period',cityPeriod],['eventSourceSwitch','source',eventSource]]){
+    for(const button of $(group).querySelectorAll('button')){
+      const active=button.dataset[key]===value;
+      button.classList.toggle('active',active);
+      button.setAttribute('aria-pressed',String(active));
+    }
+  }
+  $('citySection').hidden=eventSource!=='city';
+  $('communitySection').hidden=eventSource!=='community';
+  $('refreshEvents').hidden=eventSource!=='community';
+}
+
+function changeDiscovery(updates){
+  const url=discoveryUrl(updates);
+  if(url.href!==location.href)history.pushState(null,'',url);
+  const filters=discoveryFilters(url.searchParams);
+  selectedCity=filters.city;cityPeriod=filters.period;eventSource=filters.source;activeActivity='';
+  syncDiscoveryControls();renderCityEvents();renderEvents();
+}
+
+function pickList(events,includeCity){
+  return `<div class="pick-list">${events.map((event,index)=>activityCard(event,{
+    includeCity, eager:index===0, href:discoveryUrl({activity:event.id}).href,
+  })).join('')}</div>`;
+}
+
+function filterLink(text,updates){
+  return `<a class="text-btn" data-discovery-link href="${esc(discoveryUrl(updates).href)}">${esc(text)} →</a>`;
+}
+
+function renderCityEvents(){
+  const detail=$('officialActivity'), browse=$('eventBrowse');
+  browse.hidden=Boolean(activeActivity);detail.hidden=!activeActivity;
+  $('panel-events').setAttribute('aria-labelledby',activeActivity?'activityTitle':'eventsHeading');
+  const now=new Date();
+  if(activeActivity){
+    const event=feedEvents.find(ev=>ev.id===activeActivity);
+    const query=new URLSearchParams(location.search);
+    const hasListContext=history.state?.fromActivityList||query.has('city')||query.has('period');
+    const returnUrl=hasListContext?discoveryUrl():discoveryUrl({city:event?.city||selectedCity,period:'all',source:'city'});
+    const content=activityDetailContent(event,{ready:feedReady,failed:feedFailed,now});
+    document.title=feedReady&&event?`${event.title} · 荷包`:siteTitle;
+    detail.innerHTML=`<a class="back-to-picks" data-activity-back href="${esc(returnUrl.href)}">← 返回活动列表</a>${content}`;
+    return;
+  }
+  document.title=siteTitle;
+  $('cityCheckedNote').textContent=eventSource==='city'&&feedReady?`荷兰时间 · ${feedUpdated.slice(5).replace('-','/')} 更新`:'荷兰当地时间';
+  if(!feedReady){
+    $('cityCount').textContent='';
+    $('cityEvents').innerHTML='<p class="feed-status" role="status">正在加载城市活动…</p>';
+    return;
+  }
+  const {local,nearby,inPeriod}=citySelection(feedEvents,cityPeriod,now,selectedCity);
+  const cityName=cities[selectedCity]||'全部城市',scope=periodNames[cityPeriod];
+  const dates=cityPeriod==='weekend'?`<span class="list-dates">${esc(weekendLabel(now))}</span>`:'';
+  const status=feedFailed?'<p class="feed-status" role="status">更新暂不可用，当前显示上次载入的活动。 <button type="button" class="text-btn" data-retry-feed>重试</button></p>':'';
+  $('cityCount').textContent=String(local.length);
+  if(local.length){
+    $('cityEvents').innerHTML=status+`<div class="picks-heading"><h2>${esc(cityName)} · ${scope}</h2>${dates}</div>`+pickList(local,selectedCity==='all');
+    return;
+  }
+  const links=[];
+  if(cityPeriod!=='all'&&upcomingCityEvents(feedEvents,'all',now,selectedCity).length){
+    links.push(filterLink(selectedCity==='all'?'看全部日期':`看 ${cityName} 近期活动`,{period:'all'}));
+  }
+  if(selectedCity!=='all'&&inPeriod.length)links.push(filterLink('看全部城市',{city:'all'}));
+  if(selectedCity==='delft'&&!links.length)links.push(`<a class="text-btn" href="${esc(CITY_AGENDA_URL)}" target="_blank" rel="noopener noreferrer">Delft 官方日历 ↗</a>`);
+  if(!links.length)links.push('<button type="button" class="text-btn" data-create-event>发起组局</button>');
+  const empty=`<div class="pick-empty"><div class="picks-heading"><h2>${esc(cityName)} ${scope}暂无精选</h2>${dates}</div><div class="empty-actions">${links.join('')}</div></div>`;
+  const suggestions=nearby.length?`<section class="nearby-picks"><div class="picks-heading"><h2>附近城市</h2><span class="list-dates">${nearby.length} 场</span></div>${pickList(nearby,true)}</section>`:'';
+  $('cityEvents').innerHTML=status+empty+suggestions;
+}
+
 $('eventSourceSwitch').addEventListener('click',e=>{
-  const button=e.target.closest('[data-source]');if(!button)return;eventSource=button.dataset.source;
-  $('eventSourceSwitch').querySelectorAll('button').forEach(el=>{const active=el===button;el.classList.toggle('active',active);el.setAttribute('aria-pressed',String(active));});
-  $('citySection').hidden=eventSource!=='city';$('communitySection').hidden=eventSource!=='community';$('refreshEvents').hidden=eventSource!=='community';renderCityEvents();renderEvents();
+  const button=e.target.closest('[data-source]');
+  if(button)changeDiscovery({source:button.dataset.source});
 });
 $('cityEventFilters').addEventListener('click',e=>{
-  const button=e.target.closest('[data-period]');if(!button)return;cityPeriod=button.dataset.period;
-  $('cityEventFilters').querySelectorAll('button').forEach(el=>{const selected=el===button;el.classList.toggle('active',selected);el.setAttribute('aria-pressed',String(selected));});
-  renderCityEvents();renderEvents();
+  const button=e.target.closest('[data-period]');
+  if(button)changeDiscovery({period:button.dataset.period});
 });
-$('cityEvents').addEventListener('click',e=>{
-  const id=e.target.closest('[data-city-meetup]')?.dataset.cityMeetup;
-  const event=feedEvents.find(event=>event.id===id);
-  if(event){if(Date.parse(event.startsAt)<=Date.now()){renderCityEvents();toast('这场活动已经开始，看看其他活动吧');return;}openEventForm(event);}
+$('citySelect').addEventListener('change',()=>changeDiscovery({city:$('citySelect').value}));
+$('panel-events').addEventListener('error',e=>{
+  if(e.target.matches('img'))e.target.closest('[data-activity-photo]')?.remove();
+},true);
+$('panel-events').addEventListener('click',e=>{
+  const link=e.target.closest('a');
+  if(link&&(e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey))return;
+  if(link?.matches('[data-activity-link]')){
+    e.preventDefault();
+    history.pushState({fromActivityList:true},'',link.href);
+    activeActivity=link.dataset.activityLink;
+    renderCityEvents();$('activityTitle')?.focus({preventScroll:true});window.scrollTo(0,0);
+    return;
+  }
+  if(link?.matches('[data-activity-back]')){
+    e.preventDefault();
+    if(history.state?.fromActivityList)history.back();
+    else{history.replaceState(null,'',link.href);applyRoute();}
+    return;
+  }
+  if(link?.matches('[data-discovery-link]')){
+    e.preventDefault();changeDiscovery(discoveryFilters(new URL(link.href).searchParams));$('citySelect').focus({preventScroll:true});return;
+  }
+  if(e.target.closest('[data-retry-feed]')){loadCityFeed();return;}
+  const button=e.target.closest('[data-share-activity],[data-city-meetup]');
+  if(!button)return;
+  const event=feedEvents.find(ev=>ev.id===(button.dataset.shareActivity||button.dataset.cityMeetup));
+  if(!event)return;
+  if(button.hasAttribute('data-share-activity')){
+    $('activityShareTitle').textContent=event.title;
+    $('activityShareUrl').value=activityLink(event.id);
+    $('activityShareStatus').textContent='';
+    $('nativeActivityShare').hidden=typeof navigator.share!=='function';
+    showModal('activityShare');$('copyActivity').focus();
+  }else if(Date.parse(event.startsAt)>Date.now()){
+    openEventForm(event);
+  }else{renderCityEvents();toast('这场活动已经开始');}
+});
+function selectActivityLink(){
+  const input=$('activityShareUrl');input.focus();input.select();input.setSelectionRange(0,input.value.length);
+}
+$('copyActivity').addEventListener('click',async()=>{
+  try{
+    await navigator.clipboard.writeText($('activityShareUrl').value);
+    $('activityShareStatus').textContent='链接已复制，可以发给朋友了。';
+  }catch{
+    selectActivityLink();$('activityShareStatus').textContent='链接已选中，长按或按 Ctrl+C 复制。';
+  }
+});
+$('nativeActivityShare').addEventListener('click',async()=>{
+  try{
+    await navigator.share({title:$('activityShareTitle').textContent,url:$('activityShareUrl').value});
+  }catch(error){
+    if(error.name!=='AbortError'){selectActivityLink();$('activityShareStatus').textContent='可复制上方链接分享。';}
+  }
 });
 function openEventForm(event){
   if(event&&eventDraftTouched&&!confirm('用这场活动替换正在填写的组局草稿？'))return;
@@ -384,21 +540,22 @@ function openEventForm(event){
     const draft=cityEventDraft(event);form.reset();
     Object.entries(draft).forEach(([key,value])=>form.elements[key].value=value);
     $('sourceEventNote').hidden=false;
-    $('sourceEventNote').innerHTML=`可修改集合时间与地点。 <a href="${esc(event.sourceUrl)}" target="_blank" rel="noopener noreferrer">查看主办方安排 ↗</a>`;
+    $('sourceEventNote').innerHTML=`可修改集合时间与地点。 <a href="${esc(event.sourceUrl)}" target="_blank" rel="noopener noreferrer">查看官方安排 ↗</a>`;
     eventDraftTouched=true;
   }
   $('hostName').value=$('hostName').value||nickname();showModal('createEventBox');form.elements.title.focus({preventScroll:true});
 }
 async function loadEvents(){
   const request=++eventsRequest;$('eventsList').setAttribute('aria-busy','true');
-  try{const result=await api('events');if(request!==eventsRequest)return;state.events=result.events||[];eventsFailed=false;renderEvents();}
+  try{const result=await api('events');if(request!==eventsRequest)return;state.events=result.events||[];eventsFailed=false;eventsReady=true;renderEvents();}
   catch(error){if(request===eventsRequest){eventsFailed=true;renderEvents();}}
   finally{if(request===eventsRequest)$('eventsList').setAttribute('aria-busy','false');}
 }
 function renderEvents(){
   if(eventsFailed){$('communityCount').textContent='';$('eventsList').innerHTML='<div class="empty-state error-state"><h2>组局暂时没能加载</h2><p>可以先看看城市活动，或稍后重试。</p><button type="button" class="outline-btn" data-retry-events>重新加载</button></div>';return;}
+  if(!eventsReady){$('communityCount').textContent='';$('eventsList').innerHTML='<p role="status">正在加载组局…</p>';return;}
   const events=upcomingCityEvents(state.events,cityPeriod,new Date(),selectedCity);
-  $('communityCount').textContent=upcomingCityEvents(state.events,'all',new Date(),selectedCity).length;
+  $('communityCount').textContent=String(events.length);
   $('eventsList').innerHTML=events.length?events.map(ev=>`<article class="event-card"><div class="event-top"><span class="pill">${esc(ev.category)}</span><span class="pill ${ev.count>=ev.capacity?'gray':''}">${ev.count>=ev.capacity?'已满员':`还差 ${ev.capacity-ev.count} 人`}</span></div>
     <h2>${esc(ev.title)}</h2><div class="event-meta"><span>${esc(dateText(ev.startsAt))}</span><span>${esc(eventPlace(ev,selectedCity==='all'))}</span><span>${esc(ev.host)} 发起</span></div>${ev.description?`<details class="event-description"><summary>活动说明</summary><p class="preserve-lines">${esc(ev.description)}</p></details>`:''}
     <div class="event-footer"><button type="button" class="text-btn" data-share-event="${esc(ev.id)}">分享到微信</button><button type="button" class="${ev.joined?'outline-btn':'primary-btn'}" data-event="${esc(ev.id)}" ${ev.hostIsMe||(!ev.joined&&ev.count>=ev.capacity)?'disabled':''}>${ev.hostIsMe?'我发起的':ev.joined?'取消报名':ev.count>=ev.capacity?'已满员':'报名参加'}</button></div>${ev.hostIsMe?`<div class="event-footer"><button class="text-btn" type="button" data-attendees="${esc(ev.id)}">报名名单</button><button class="text-btn danger" type="button" data-cancel-event="${esc(ev.id)}">取消活动</button></div>`:''}</article>`).join(''):`<div class="empty-state"><h2>${state.events.length?'这个时间段暂无组局':'还没有人发起组局'}</h2><p>约两三个人喝咖啡，或一起去看场演出。</p><button type="button" class="outline-btn" data-create-event>发起组局</button></div>`;
@@ -541,18 +698,25 @@ async function restoreDraft(){
 }
 refreshLoginUI();renderItems();restoreDraft();
 async function applyRoute(){
-  const query=new URLSearchParams(location.search),item=query.get('item'),event=query.get('event');
-  selectedCity=cities[query.get('city')]?query.get('city'):query.get('city')==='all'?'all':'delft';$('citySelect').value=selectedCity;
-  const requested=item?'market':event?'events':query.get('tab')||'events';
+  const previousActivity=activeActivity,current=location.href,query=new URL(current).searchParams;
+  if(!$('activityShare').hidden)hideModal('activityShare');
+  const item=query.get('item'),event=query.get('event');
+  const filters=discoveryFilters(query);
+  selectedCity=filters.city;cityPeriod=filters.period;eventSource=filters.source;
+  activeActivity=item||event?'':query.get('activity')||'';
+  const requested=item?'market':event||activeActivity?'events':query.get('tab')||'events';
   const name=['sell','market','events','dutch','mine'].includes(requested)?requested:'events';
+  syncDiscoveryControls();
   if(!item&&!$('detailModal').hidden)hideModal('detailModal',{updateUrl:false});
   await tab(name,{updateUrl:false});
+  if(location.href!==current||state.activeTab!==name)return;
   if(item)await openListing(item,{itemId:query.get('product'),updateUrl:false});
-  if(event&&!item){
-    selectedCity='all';$('citySelect').value='all';eventSource='community';$('eventSourceSwitch').querySelector('[data-source="community"]').click();
-    // A shared event must remain reachable even if a prior filter excluded it.
-    cityPeriod='all';$('cityEventFilters').querySelector('[data-period="all"]').click();
-    const card=$('eventsList').querySelector(`[data-event="${CSS.escape(event)}"]`);card?.closest('.event-card')?.scrollIntoView({behavior:'smooth',block:'center'});
+  if(previousActivity&&name==='events'&&!item&&!event&&!activeActivity){
+    $('cityEvents').querySelector(`[data-activity-link="${CSS.escape(previousActivity)}"]`)?.focus({preventScroll:true});
+  }
+  if(event&&!item&&!eventsFailed){
+    const card=$('eventsList').querySelector(`[data-event="${CSS.escape(event)}"]`);
+    card?.closest('.event-card')?.scrollIntoView({behavior:'smooth',block:'center'});
     if(!card)toast('这场组局已结束或取消，可以看看其他活动');
   }
 }
@@ -561,5 +725,4 @@ applyRoute();
 // Re-evaluate dates when a visitor returns to an open tab, including after midnight.
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&state.activeTab==='events'){loadCityFeed();renderEvents();}});
 
-$('citySelect').addEventListener('change',()=>{selectedCity=$('citySelect').value;const url=new URL(location.href);url.searchParams.set('city',selectedCity);history.pushState(null,'',url);renderCityEvents();renderEvents();});
 $('copyEventShare').addEventListener('click',async()=>{try{await navigator.clipboard.writeText($('eventShareText').value);toast('邀请已复制，粘贴到微信即可');}catch{$('eventShareText').hidden=false;$('eventShareText').focus();$('eventShareText').select();toast('请长按或按 Ctrl+C 复制邀请');}});

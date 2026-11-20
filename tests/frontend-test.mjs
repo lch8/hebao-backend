@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {cityEvents, upcomingCityEvents, amsterdamInput, amsterdamInstant, cityEventDraft} from '../delft/city-events.js';
+import {cityEvents, upcomingCityEvents, amsterdamInput, amsterdamInstant, cityEventDraft, citySelection, discoveryFilters, weekendLabel} from '../delft/city-events.js';
+import {activityCard, activityDetailContent} from '../delft/activity-view.js';
 import {posterLayout, makeQr} from '../delft/poster.js';
-import {PUBLIC_SITE_URL, posterDestination} from '../delft/site-config.js';
+import {PUBLIC_SITE_URL, posterDestination, activityLink} from '../delft/site-config.js';
 
 test('curated events have attributable sources and are chronologically current at verification', () => {
   const picks = upcomingCityEvents(cityEvents, 'all', new Date('2026-11-11T12:00:00Z'));
@@ -102,4 +103,75 @@ test('city selection separates official and legacy community events',()=>{
  const events=[{id:'a',city:'utrecht',startsAt:'2026-11-14T12:00:00+01:00'},{id:'b',startsAt:'2026-11-14T13:00:00+01:00'}];
  assert.deepEqual(upcomingCityEvents(events,'all',now,'utrecht').map(e=>e.id),['a']);
  assert.deepEqual(upcomingCityEvents(events,'all',now,'delft').map(e=>e.id),['b']);
+});
+
+test('discovery restores city, dates and source, including old group invitations', () => {
+  const filters = query => discoveryFilters(new URLSearchParams(query));
+  const defaults = {city:'delft', period:'weekend', source:'city'};
+  assert.deepEqual(filters(''), defaults);
+  assert.deepEqual(filters('city=constructor&period=invalid&source=unknown'), defaults);
+  const choice = {city:'utrecht', period:'fortnight', source:'community'};
+  assert.deepEqual(filters(new URLSearchParams(choice)), choice);
+  assert.deepEqual(filters('city=all&period=weekend'), {...defaults, city:'all'});
+  assert.deepEqual(filters('event=group&city=delft&period=weekend'), {city:'all', period:'all', source:'community'});
+});
+
+test('weekend city counts exclude nearby suggestions, past starts and weekdays', () => {
+  const now=new Date('2026-11-20T11:00:00Z');
+  const event=(id,city,day)=>({id,city,startsAt:'2026-11-'+day+'T12:00:00+01:00'});
+  const events=[event('local-later','delft',27),event('sunday','den-haag',22),event('out-of-area','utrecht',21),event('saturday','rotterdam',21),event('past','delft',15)];
+  const picks=citySelection(events,'weekend',now,'delft');
+  assert.equal(picks.local.length,0);
+  assert.deepEqual(picks.nearby.map(e=>e.id),['saturday','sunday']);
+  assert.equal(picks.inPeriod.length,3);
+  assert.equal(citySelection(events,'weekend',now,'all').local.length,3);
+  assert.equal(citySelection(events,'all',now,'delft').local[0].id,'local-later');
+  assert.deepEqual(citySelection(events,'all',now,'delft').nearby,[]);
+  assert.deepEqual(citySelection(events,'weekend',now,'eindhoven').nearby,[]);
+  assert.equal(weekendLabel(now),'11 月 21 日–22 日');
+  assert.equal(weekendLabel(new Date('2026-10-31T23:10:00Z')),'10 月 31 日–11 月 1 日');
+});
+
+test('official sharing uses a standalone production URL, independent of discovery and group links', () => {
+  const id='event/123?city=all&item=x';
+  const link=new URL(activityLink(id));
+  assert.equal(link.origin+link.pathname,PUBLIC_SITE_URL);
+  assert.deepEqual([...link.searchParams],[['activity',id]]);
+});
+
+test('cards use optional official images and detail pages retain the original venue, fee and check date', () => {
+  const event={...cityEvents[0],title:'Titel <test>',imageUrl:'',imageAlt:'Programma',fee:'免费',price:'市集免费，演出另售票'};
+  const opts={includeCity:true,href:'?activity=test'};
+  assert.doesNotMatch(activityCard(event,opts),/<img/);
+  assert.doesNotMatch(activityCard({...event,imageUrl:'data:text/plain,invalid'},opts),/<img/);
+  assert.match(activityCard({...event,imageUrl:'https://example.org/photo.jpg'},opts),/data-activity-photo/);
+  assert.match(activityCard(event,opts),/Titel &lt;test&gt;/);
+  assert.match(activityCard({...event,startsAt:'2026-11-21T22:00:00+01:00',endsAt:'2026-11-22T00:30:00+01:00'},opts),/22:00–次日 00:30/);
+  const before=activityDetailContent(event,{ready:true,failed:false,now:new Date(Date.parse(event.startsAt)-1)});
+  for(const key of ['place','price','checkedOn','sourceUrl'])assert.ok(before.includes(event[key]));
+  assert.match(before,/data-city-meetup/);
+  const started=activityDetailContent(event,{ready:true,failed:false,now:new Date(event.startsAt)});
+  assert.ok(started.includes('已开始'));
+  assert.doesNotMatch(started,/data-city-meetup/);
+  assert.match(started,/data-share-activity/);
+});
+
+test('a missing link, a loading feed and a failed refresh produce distinct detail states', () => {
+  const now=new Date('2026-11-20T00:00:00Z');
+  const message=(ready,failed)=>activityDetailContent(undefined,{ready,failed,now});
+  assert.match(message(false,false),/正在加载/);
+  assert.match(message(true,false),/已移出精选或链接有误/);
+  assert.doesNotMatch(message(true,true),/已移出/);
+  assert.match(message(true,true),/data-retry-feed/);
+  const cached=activityDetailContent(cityEvents[0],{ready:true,failed:true,now});
+  assert.ok(cached.includes(cityEvents[0].checkedOn));
+  assert.match(cached,/data-retry-feed/);
+});
+
+test('meetup categories follow the activity and admission comes from the original listing', () => {
+  const event={...cityEvents[0],category:'户外',title:'溜冰场开季',originalTitle:'Schaatsbaan Opening',price:'免费，自由入场'};
+  assert.equal(cityEventDraft(event).category,'运动');
+  assert.equal(cityEventDraft({...event,title:'森林徒步',originalTitle:''}).category,'散步');
+  assert.equal(cityEventDraft({...event,title:'露天放映',originalTitle:''}).category,'其他');
+  assert.doesNotMatch(cityEventDraft(event).description,/预约/);
 });
