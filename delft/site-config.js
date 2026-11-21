@@ -1,6 +1,17 @@
 // Public destination for poster promotion. Keep this aligned with the production domain.
 export const PUBLIC_SITE_URL = 'https://hebao-backend.vercel.app/delft/';
 
+export const SITE_TABS = ['dutch','events','market','mine','sell'];
+
+export function pageFromQuery(params) {
+  if (params.get('item')) return 'market';
+  if (params.get('event') || params.get('activity')) return 'events';
+  const tab = params.get('tab');
+  if (SITE_TABS.includes(tab)) return tab;
+  if (params.has('city') || params.has('period') || ['city','community'].includes(params.get('source'))) return 'events';
+  return 'dutch';
+}
+
 export function activityLink(id) {
   const url = new URL(PUBLIC_SITE_URL);
   url.searchParams.set('activity', id);
@@ -13,7 +24,7 @@ export function posterDestination({ publishedId, dirty } = {}) {
   if (published) url.searchParams.set('item', publishedId);
   return {
     url: url.href,
-    label: published ? '扫码查看最新商品状态' : '扫码逛 Delft 闲置与活动',
+    label: published ? '扫码查看最新商品状态' : '扫码打开荷包',
     website: `${url.hostname}${url.pathname}`,
     published,
   };

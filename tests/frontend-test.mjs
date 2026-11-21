@@ -3,7 +3,26 @@ import assert from 'node:assert/strict';
 import {cityEvents, upcomingCityEvents, amsterdamInput, amsterdamInstant, cityEventDraft, citySelection, discoveryFilters, weekendLabel} from '../delft/city-events.js';
 import {activityCard, activityDetailContent} from '../delft/activity-view.js';
 import {posterLayout, makeQr} from '../delft/poster.js';
-import {PUBLIC_SITE_URL, posterDestination, activityLink} from '../delft/site-config.js';
+import {PUBLIC_SITE_URL, posterDestination, activityLink, pageFromQuery} from '../delft/site-config.js';
+
+test('the Delft homepage defaults to A2 prep, including generic referral links', () => {
+  const page = query => pageFromQuery(new URLSearchParams(query));
+  assert.equal(page(''), 'dutch');
+  assert.equal(page('utm_source=wechat&source=poster'), 'dutch');
+  assert.equal(page('tab=unknown'), 'dutch');
+  for (const tab of ['dutch','events','market','mine','sell']) assert.equal(page('tab='+tab), tab);
+});
+
+test('market, official activities, group invitations and event filters can still deep-link past the homepage', () => {
+  const page = query => pageFromQuery(new URLSearchParams(query));
+  assert.equal(page('item=listing-id&product=bike'), 'market');
+  assert.equal(page('tab=dutch&item=listing-id&activity=city-id'), 'market');
+  assert.equal(page('activity=city-id'), 'events');
+  assert.equal(page('event=group-id'), 'events');
+  assert.equal(page('city=rotterdam&period=fortnight'), 'events');
+  assert.equal(page('source=community'), 'events');
+  assert.equal(page('tab=dutch&city=delft'), 'dutch');
+});
 
 test('curated events have attributable sources and are chronologically current at verification', () => {
   const picks = upcomingCityEvents(cityEvents, 'all', new Date('2026-11-11T12:00:00Z'));

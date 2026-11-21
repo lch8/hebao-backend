@@ -5,7 +5,7 @@ import {marketProducts, itemPrice} from './market-view.js';
 import {cities,cityEvents, CITY_EVENTS_CHECKED, CITY_AGENDA_URL, upcomingCityEvents, amsterdamInput, amsterdamInstant, cityEventDraft,eventPlace,discoveryFilters,citySelection,weekendLabel} from './city-events.js';
 const $ = id => document.getElementById(id);
 import {escapeHtml as esc, activityCard, activityDetailContent} from './activity-view.js';
-import {activityLink} from './site-config.js';
+import {activityLink, pageFromQuery, SITE_TABS} from './site-config.js';
 const state = {photos:[],listings:[],myListings:[],events:[],currentListing:null,currentEvent:null,publishedId:null,editingId:null,editVersion:null,dirty:false,activeTab:null,category:'',saving:false};
 const itemCategories=['家具','自行车','数码','生活用品','书籍','其他'];
 const statusNames = {available:'在售',reserved:'已预订',sold:'已售出'};
@@ -41,12 +41,16 @@ function hideModal(id,{updateUrl=true}={}){
   }
 }
 async function tab(name,{updateUrl=true}={}){
-  if(!['sell','market','events','dutch','mine'].includes(name))return;
+  if(!SITE_TABS.includes(name))return;
   if(name!=='dutch')dutchView?.pauseMedia();
   state.activeTab=name;
   document.title=siteTitle;
-  document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
-  document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tab===name)));
+  const navTab=name==='sell'?'market':name;
+  for(const button of document.querySelectorAll('.tabs .tab')){
+    const selected=button.dataset.tab===navTab;
+    button.classList.toggle('active',selected);
+    button.setAttribute('aria-pressed',String(selected));
+  }
   document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id===`panel-${name}`));
   if(updateUrl){
     activeActivity='';
@@ -704,8 +708,7 @@ async function applyRoute(){
   const filters=discoveryFilters(query);
   selectedCity=filters.city;cityPeriod=filters.period;eventSource=filters.source;
   activeActivity=item||event?'':query.get('activity')||'';
-  const requested=item?'market':event||activeActivity?'events':query.get('tab')||'events';
-  const name=['sell','market','events','dutch','mine'].includes(requested)?requested:'events';
+  const name=pageFromQuery(query);
   syncDiscoveryControls();
   if(!item&&!$('detailModal').hidden)hideModal('detailModal',{updateUrl:false});
   await tab(name,{updateUrl:false});
