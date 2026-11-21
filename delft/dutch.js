@@ -1,3 +1,4 @@
+import {mountExamPrep} from './a2-prep.js';
 import {LESSONS,TASKS,QUIZ,SKILLS,SOURCES,CONTENT_CHECKED,EXAMS} from './dutch-content.js';
 import {freshStudy,loadStudy,saveStudy,recordTask,completeLesson,dueTasks,recommendedLesson,targetWindow,dayKey,EXAM_STATUSES} from './dutch-store.js';
 
@@ -8,13 +9,15 @@ const skillTags = tasks => [...new Set(tasks.map(task=>task.skill))].map(skill=>
 export function mountDutch(root){
   let storage;try{storage=window.localStorage;}catch{}
   const loaded=loadStudy(storage);
-  let study=loaded.state,storageOK=loaded.available,view='today',session=null,quiz=null,quizTimer,recorder,stream,recordingUrl='',recordingTimeout,mediaRequest=0,resetPending=false;
+  let study=loaded.state,storageOK=loaded.available,view='prepare',session=null,quiz=null,quizTimer,recorder,stream,recordingUrl='',recordingTimeout,mediaRequest=0,resetPending=false;
   const el=id=>root.querySelector(`#${id}`);
-  root.innerHTML=`<nav class="study-nav" aria-label="荷语学习"><button type="button" data-study-view="today">今日练习</button><button type="button" data-study-view="lessons">场景练习</button><button type="button" data-study-view="quiz">考前自测</button><button type="button" data-study-view="exam">考试安排</button></nav><div id="studyBody"></div><div class="study-foot"><span id="studySaveStatus" role="status" aria-live="polite"></span><details><summary>关于内容与学习记录</summary><p>本站原创 A2 练习，覆盖部分典型生活场景。考试要求与知识题的来源可在相关页面查看；内容核对：${CONTENT_CHECKED}。</p><p>学习进度和考试安排仅保存在当前浏览器，不随登录同步。录音只在本次页面中回放，离开页面后不保留。</p><button type="button" class="text-btn" data-study-action="reset">清除本机学习记录</button></details></div>`;
+  root.innerHTML=`<nav class="study-nav" aria-label="荷语学习"><button type="button" data-study-view="prepare">考试总览</button><button type="button" data-study-view="today">场景与复习</button><button type="button" data-study-view="exam">考试安排</button></nav><div id="a2ExamRoot"></div><div id="studyBody" hidden></div><div class="study-foot"><span id="studySaveStatus" role="status" aria-live="polite"></span><details><summary>关于内容与学习记录</summary><p>专项练习和站内模拟卷由荷包编写。各科页面附 DUO 官方样卷和考试说明。</p><p>学习记录和考试安排保存在当前浏览器。录音和作答正文仅在当前页面保留。</p><button type="button" class="text-btn" data-study-action="reset">清除本机学习记录</button></details></div>`;
+  const prep=mountExamPrep(el('a2ExamRoot'),storage);
 
   function save(){storageOK=saveStudy(storage,study);saveStatus();}
   function saveStatus(){el('studySaveStatus').textContent=storageOK?'进度保存在本机 · 无需登录':'浏览器暂不能保存进度，本次仍可练习';}
   function pauseMedia(){
+    prep.pause();
     mediaRequest++;
     window.speechSynthesis?.cancel();
     if(recorder&&recorder.state!=='inactive')recorder.stop();
@@ -26,7 +29,12 @@ export function mountDutch(root){
   function releaseRecording(){pauseMedia();recorder=null;if(recordingUrl)URL.revokeObjectURL(recordingUrl);recordingUrl='';}
   function setView(next){
     pauseMedia();view=next;
-    root.querySelectorAll('[data-study-view]').forEach(button=>{const active=button.dataset.studyView===view;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));});
+    const prepare=view==='prepare';
+    el('a2ExamRoot').hidden=!prepare;
+    el('studyBody').hidden=prepare;
+    if(prepare)prep.open();else prep.hide();
+    const selected=['lessons','quiz'].includes(view)?'today':view;
+    root.querySelectorAll('.study-nav [data-study-view]').forEach(button=>{const active=button.dataset.studyView===selected;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));});
     if(view==='today')renderToday();if(view==='lessons')renderLessons();if(view==='quiz')renderQuiz();if(view==='exam')renderExam();
     saveStatus();
   }
@@ -34,7 +42,7 @@ export function mountDutch(root){
     const next=recommendedLesson(study)||LESSONS[0],review=dueTasks(study),completed=study.completed.length;
     const current=session&&session.index<session.tasks.length?session:null;
     const currentLesson=current&&LESSONS.find(lesson=>lesson.id===current.lessonId);
-    el('studyBody').innerHTML=`<div class="study-home"><article class="study-hero"><div class="study-eyebrow">${current?'继续上次的小练习':'今天，练会一件小事'}</div><h2>${esc(current?(currentLesson?.title||'复习容易忘的表达'):next.title)}</h2><p>${esc(currentLesson?.subtitle||next.subtitle)}</p><div class="study-phrase" lang="nl">${esc(currentLesson?.phrase||next.phrase)}</div><div class="study-task-path">${(current?.tasks||next.tasks).map((task,index)=>`<span><i>${index+1}</i>${SKILLS[task.skill]}</span>`).join('<b aria-hidden="true">→</b>')}</div><button class="primary-btn" type="button" ${current?'data-study-action="resume"':`data-study-lesson="${next.id}"`}>${current?'继续练习':'开始今天的练习'} <span aria-hidden="true">→</span></button><span class="study-small">每节 3 个小练习 · 约 10–15 分钟</span></article><aside class="study-overview" aria-label="学习进度"><div class="study-overview-head"><span>已经走过</span><strong>${completed}<small> / ${LESSONS.length} 个场景</small></strong></div><div class="study-meter" role="progressbar" aria-label="场景完成进度" aria-valuenow="${completed}" aria-valuemin="0" aria-valuemax="${LESSONS.length}"><span style="width:${completed/LESSONS.length*100}%"></span></div><p>完成一节，就多会一件生活里的小事。</p><div class="study-skill-counts">${Object.entries(SKILLS).map(([id,name])=>`<span>${name}<strong>${TASKS.filter(task=>task.skill===id&&study.answers[task.id]).length}</strong><small>题</small></span>`).join('')}</div>${review.length?`<button class="outline-btn wide" type="button" data-study-action="review">复习 ${review.length} 道容易忘的题</button>`:'<button class="outline-btn wide" type="button" data-study-action="short">今天只练 1 题</button>'}<button class="text-btn" type="button" data-study-view="exam">先看看自己需要考什么 ↗</button></aside></div><div class="study-scene-heading"><h2>把熟悉的生活，变成练习</h2><button class="text-btn" type="button" data-study-view="lessons">全部 ${LESSONS.length} 个场景 →</button></div><div class="study-scene-grid">${LESSONS.slice(0,3).map(lessonCard).join('')}</div>`;
+    el('studyBody').innerHTML=`<div class="study-home"><article class="study-hero"><div class="study-eyebrow">${current?'继续上次的小练习':'今天，练会一件小事'}</div><h2>${esc(current?(currentLesson?.title||'复习容易忘的表达'):next.title)}</h2><p>${esc(currentLesson?.subtitle||next.subtitle)}</p><div class="study-phrase" lang="nl">${esc(currentLesson?.phrase||next.phrase)}</div><div class="study-task-path">${(current?.tasks||next.tasks).map((task,index)=>`<span><i>${index+1}</i>${SKILLS[task.skill]}</span>`).join('<b aria-hidden="true">→</b>')}</div><button class="primary-btn" type="button" ${current?'data-study-action="resume"':`data-study-lesson="${next.id}"`}>${current?'继续练习':'开始今天的练习'} <span aria-hidden="true">→</span></button><span class="study-small">每节 3 个小练习 · 约 10–15 分钟</span></article><aside class="study-overview" aria-label="学习进度"><div class="study-overview-head"><span>已经走过</span><strong>${completed}<small> / ${LESSONS.length} 个场景</small></strong></div><div class="study-meter" role="progressbar" aria-label="场景完成进度" aria-valuenow="${completed}" aria-valuemin="0" aria-valuemax="${LESSONS.length}"><span style="width:${completed/LESSONS.length*100}%"></span></div><p>完成一节，就多会一件生活里的小事。</p><div class="study-skill-counts">${Object.entries(SKILLS).map(([id,name])=>`<span>${name}<strong>${TASKS.filter(task=>task.skill===id&&study.answers[task.id]).length}</strong><small>题</small></span>`).join('')}</div>${review.length?`<button class="outline-btn wide" type="button" data-study-action="review">复习 ${review.length} 道容易忘的题</button>`:'<button class="outline-btn wide" type="button" data-study-action="short">今天只练 1 题</button>'}<button class="text-btn" type="button" data-study-view="exam">先看看自己需要考什么 ↗</button></aside></div><div class="study-scene-heading"><h2>把熟悉的生活，变成练习</h2><button class="text-btn" type="button" data-study-view="lessons">全部 ${LESSONS.length} 个场景 →</button></div><div class="study-scene-grid">${LESSONS.slice(0,3).map(lessonCard).join('')}</div><button class="text-btn" type="button" data-study-view="quiz">阅读与社会知识 · 6 题复习</button>`;
   }
   function lessonCard(lesson){
     const completed=study.completed.includes(lesson.id),index=LESSONS.indexOf(lesson)+1;
@@ -196,10 +204,10 @@ export function mountDutch(root){
     if(action==='close-quiz'){quiz=null;setView('today');}
     if(action==='reset'){
       if(!resetPending){resetPending=true;button.textContent='再次点击，确认清除学习记录';return;}
-      releaseRecording();clearInterval(quizTimer);study=freshStudy();session=null;quiz=null;resetPending=false;button.textContent='清除本机学习记录';save();setView('today');
+      releaseRecording();clearInterval(quizTimer);study=freshStudy();session=null;quiz=null;resetPending=false;button.textContent='清除本机学习记录';prep.reset();save();setView('prepare');
     }
   });
   window.addEventListener('pagehide',releaseRecording);
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')pauseMedia();else if(quiz&&!quiz.finished)tickQuiz();});
-  setView('today');return {pauseMedia};
+  setView('prepare');return {pauseMedia};
 }
