@@ -43,7 +43,7 @@ export function activityCard(event, {includeCity, href, eager = false}) {
       <p class="pick-fee">${esc(event.fee || event.price)}</p>
     </div>
     ${image ? `<div class="pick-photo" data-activity-photo><img src="${esc(image)}" alt="${esc(event.imageAlt || '')}" loading="${eager ? 'eager' : 'lazy'}" decoding="async" referrerpolicy="no-referrer" width="360" height="240"></div>` : ''}
-    <div class="pick-actions"><button type="button" class="text-btn" data-share-activity="${esc(event.id)}" aria-label="分享「${esc(event.title)}」">分享</button><button type="button" class="outline-btn" data-city-meetup="${esc(event.id)}">约同行</button></div>
+    <div class="pick-actions"><button type="button" class="text-btn" data-share-activity="${esc(event.id)}" aria-label="分享「${esc(event.title)}」">分享</button><button type="button" class="outline-btn" data-city-meetup="${esc(event.id)}">约人一起去</button></div>
   </article>`;
 }
 
@@ -62,7 +62,7 @@ function activityDetails(event, started) {
     </dl>
     ${event.description || event.summary ? `<p class="activity-description">${esc(event.description || event.summary)}</p>` : ''}
     <div class="activity-buttons"><a class="primary-btn" href="${esc(event.sourceUrl)}" target="_blank" rel="noopener noreferrer">查看官方详情 ↗</a>
-      ${started ? '' : `<button class="outline-btn" type="button" data-city-meetup="${esc(event.id)}">约同行</button>`}
+      ${started ? '' : `<button class="outline-btn" type="button" data-city-meetup="${esc(event.id)}">约人一起去</button>`}
       <button class="text-btn" type="button" data-share-activity="${esc(event.id)}">分享给朋友</button>
     </div>
     <p class="source-byline">${esc(event.sourceName)} · ${esc(event.checkedOn)} 核对</p>

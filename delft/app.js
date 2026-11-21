@@ -69,7 +69,8 @@ async function tab(name,{updateUrl=true}={}){
 document.addEventListener('click',e=>{
   const nav=e.target.closest('[data-tab]');if(nav)tab(nav.dataset.tab);
   const close=e.target.closest('[data-close]');if(close)hideModal(close.dataset.close);
-  if(e.target.closest('[data-create-event]'))openEventForm();
+  const invite=e.target.closest('[data-create-event]');
+  if(invite)openEventForm(null,meetupIdeas[invite.dataset.createEvent]);
   if(e.target.closest('[data-retry-events]'))loadEvents();
   if(e.target.closest('[data-retry-market]'))loadListings();
   if(e.target.closest('[data-clear-market]')){$('marketSearch').value='';$('marketCategories').querySelector('[data-category=""]').click();}
@@ -359,7 +360,7 @@ $('sendInquiry').addEventListener('click',async()=>{
 
 // ---- Events ----
 const dateText = iso => new Intl.DateTimeFormat('zh-CN',{timeZone:'Europe/Amsterdam',month:'long',day:'numeric',weekday:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(iso));
-let selectedCity='delft', cityPeriod='weekend', eventSource='city', activeActivity='';
+let selectedCity='delft', cityPeriod='weekend', eventSource='community', activeActivity='';
 let feedEvents=cityEvents, feedUpdated=CITY_EVENTS_CHECKED, feedFailed=false, feedReady=false, feedRequest=0;
 let eventsRequest=0, eventDraftTouched=false, eventsFailed=false, eventsReady=false;
 const periodNames={weekend:'本周末', fortnight:'未来两周', all:'近期'};
@@ -392,7 +393,7 @@ function discoveryUrl({city=selectedCity,period=cityPeriod,source=eventSource,ac
   url.searchParams.set('tab','events');
   url.searchParams.set('city',city);
   url.searchParams.set('period',period);
-  if(source==='community')url.searchParams.set('source',source);
+  url.searchParams.set('source',source);
   if(activity)url.searchParams.set('activity',activity);
   return url;
 }
@@ -406,8 +407,8 @@ function syncDiscoveryControls(){
       button.setAttribute('aria-pressed',String(active));
     }
   }
-  $('citySection').hidden=eventSource!=='city';
   $('communitySection').hidden=eventSource!=='community';
+  $('citySection').classList.toggle('companion-picks',eventSource==='community');
   $('refreshEvents').hidden=eventSource!=='community';
 }
 
@@ -440,11 +441,12 @@ function renderCityEvents(){
     const hasListContext=history.state?.fromActivityList||query.has('city')||query.has('period');
     const returnUrl=hasListContext?discoveryUrl():discoveryUrl({city:event?.city||selectedCity,period:'all',source:'city'});
     const content=activityDetailContent(event,{ready:feedReady,failed:feedFailed,now});
-    document.title=feedReady&&event?`${event.title} · 荷包`:siteTitle;
-    detail.innerHTML=`<a class="back-to-picks" data-activity-back href="${esc(returnUrl.href)}">← 返回活动列表</a>${content}`;
+    if(state.activeTab==='events')document.title=feedReady&&event?`${event.title} · 荷包`:siteTitle;
+    const returnLabel=hasListContext&&eventSource==='community'?'返回找搭子':'返回城市活动';
+    detail.innerHTML=`<a class="back-to-picks" data-activity-back href="${esc(returnUrl.href)}">← ${returnLabel}</a>${content}`;
     return;
   }
-  document.title=siteTitle;
+  if(state.activeTab==='events')document.title=siteTitle;
   $('cityCheckedNote').textContent=eventSource==='city'&&feedReady?`荷兰时间 · ${feedUpdated.slice(5).replace('-','/')} 更新`:'荷兰当地时间';
   if(!feedReady){
     $('cityCount').textContent='';
@@ -456,6 +458,23 @@ function renderCityEvents(){
   const dates=cityPeriod==='weekend'?`<span class="list-dates">${esc(weekendLabel(now))}</span>`:'';
   const status=feedFailed?'<p class="feed-status" role="status">更新暂不可用，当前显示上次载入的活动。 <button type="button" class="text-btn" data-retry-feed>重试</button></p>':'';
   $('cityCount').textContent=String(local.length);
+  if(eventSource==='community'){
+    // If there is nothing in the chosen window, name the wider scope explicitly.
+    let picks=local, context=cityName+' · '+scope, more={source:'city'};
+    if(!picks.length && nearby.length){
+      picks=nearby;context='附近城市 · '+scope;more={source:'city',city:'all'};
+    }else if(!picks.length && cityPeriod!=='all'){
+      picks=upcomingCityEvents(feedEvents,'all',now,selectedCity);
+      context=cityName+' · 其他日期';more={source:'city',period:'all'};
+    }
+    if(!picks.length){
+      $('cityEvents').innerHTML=status+filterLink('浏览六城近期活动',{source:'city',city:'all',period:'all'});
+      return;
+    }
+    $('cityEvents').innerHTML=status+`<div class="companion-picks-head"><div><h2>这些活动可以约人一起去</h2><p>${esc(context)}</p></div>${filterLink('更多活动',more)}</div>`+
+      pickList(picks.slice(0,2),selectedCity==='all'||more.city==='all');
+    return;
+  }
   if(local.length){
     $('cityEvents').innerHTML=status+`<div class="picks-heading"><h2>${esc(cityName)} · ${scope}</h2>${dates}</div>`+pickList(local,selectedCity==='all');
     return;
@@ -466,7 +485,7 @@ function renderCityEvents(){
   }
   if(selectedCity!=='all'&&inPeriod.length)links.push(filterLink('看全部城市',{city:'all'}));
   if(selectedCity==='delft'&&!links.length)links.push(`<a class="text-btn" href="${esc(CITY_AGENDA_URL)}" target="_blank" rel="noopener noreferrer">Delft 官方日历 ↗</a>`);
-  if(!links.length)links.push('<button type="button" class="text-btn" data-create-event>发起组局</button>');
+  if(!links.length)links.push('<button type="button" class="text-btn" data-create-event>发个邀约</button>');
   const empty=`<div class="pick-empty"><div class="picks-heading"><h2>${esc(cityName)} ${scope}暂无精选</h2>${dates}</div><div class="empty-actions">${links.join('')}</div></div>`;
   const suggestions=nearby.length?`<section class="nearby-picks"><div class="picks-heading"><h2>附近城市</h2><span class="list-dates">${nearby.length} 场</span></div>${pickList(nearby,true)}</section>`:'';
   $('cityEvents').innerHTML=status+empty+suggestions;
@@ -536,10 +555,21 @@ $('nativeActivityShare').addEventListener('click',async()=>{
     if(error.name!=='AbortError'){selectActivityLink();$('activityShareStatus').textContent='可复制上方链接分享。';}
   }
 });
-function openEventForm(event){
-  if(event&&eventDraftTouched&&!confirm('用这场活动替换正在填写的组局草稿？'))return;
+const meetupIdeas={
+  walk:{title:'一起去散步',category:'散步'},
+  coffee:{title:'找人一起喝咖啡',category:'咖啡'},
+};
+function openEventForm(event,idea){
+  if((event||idea)&&eventDraftTouched&&!confirm('替换正在填写的邀约草稿？'))return;
   const form=$('createEventForm');
-  if(!event&&!eventDraftTouched)form.elements.city.value=selectedCity==='all'?'delft':selectedCity;
+  if(idea){
+    form.reset();
+    form.elements.title.value=idea.title;
+    form.elements.category.value=idea.category;
+    $('sourceEventNote').hidden=true;
+  }
+  if(!event&&(!eventDraftTouched||idea))form.elements.city.value=selectedCity==='all'?'delft':selectedCity;
+  if(idea)eventDraftTouched=true;
   if(event){
     const draft=cityEventDraft(event);form.reset();
     Object.entries(draft).forEach(([key,value])=>form.elements[key].value=value);
@@ -556,13 +586,31 @@ async function loadEvents(){
   finally{if(request===eventsRequest)$('eventsList').setAttribute('aria-busy','false');}
 }
 function renderEvents(){
-  if(eventsFailed){$('communityCount').textContent='';$('eventsList').innerHTML='<div class="empty-state error-state"><h2>组局暂时没能加载</h2><p>可以先看看城市活动，或稍后重试。</p><button type="button" class="outline-btn" data-retry-events>重新加载</button></div>';return;}
-  if(!eventsReady){$('communityCount').textContent='';$('eventsList').innerHTML='<p role="status">正在加载组局…</p>';return;}
-  const events=upcomingCityEvents(state.events,cityPeriod,new Date(),selectedCity);
+  $('meetupHelp').hidden=true;
+  if(eventsFailed){
+    $('communityCount').textContent='';
+    $('eventsList').innerHTML='<div class="invites-empty"><h2>邀约暂时没能加载</h2><button type="button" class="text-btn" data-retry-events>重新加载邀约</button></div>';
+    return;
+  }
+  if(!eventsReady){$('communityCount').textContent='';$('eventsList').innerHTML='<p role="status">正在加载邀约…</p>';return;}
+  const now=new Date(), events=upcomingCityEvents(state.events,cityPeriod,now,selectedCity);
   $('communityCount').textContent=String(events.length);
-  $('eventsList').innerHTML=events.length?events.map(ev=>`<article class="event-card"><div class="event-top"><span class="pill">${esc(ev.category)}</span><span class="pill ${ev.count>=ev.capacity?'gray':''}">${ev.count>=ev.capacity?'已满员':`还差 ${ev.capacity-ev.count} 人`}</span></div>
+  if(!events.length){
+    const scope=cities[selectedCity]||'全部城市', alternatives=[];
+    if(cityPeriod!=='all'&&upcomingCityEvents(state.events,'all',now,selectedCity).length)
+      alternatives.push(filterLink('看其他日期的邀约',{period:'all',source:'community'}));
+    if(selectedCity!=='all'&&upcomingCityEvents(state.events,cityPeriod,now).length)
+      alternatives.push(filterLink('看其他城市的邀约',{city:'all',source:'community'}));
+    if(!alternatives.length&&upcomingCityEvents(state.events,'all',now).length)
+      alternatives.push(filterLink('看全部邀约',{city:'all',period:'all',source:'community'}));
+    const prompts='<button type="button" class="outline-btn" data-create-event="walk">约人散步</button><button type="button" class="outline-btn" data-create-event="coffee">约杯咖啡</button>';
+    $('eventsList').innerHTML=`<div class="invites-empty"><div><h2>${esc(scope)} · ${periodNames[cityPeriod]}暂无邀约</h2><p>${alternatives.length?'换个范围，看看已经发出的邀约。':'想先发一个？选个主题，再定时间和集合地点。'}</p></div><div class="invite-options">${alternatives.length?alternatives.join(''):prompts}</div></div>`;
+    return;
+  }
+  $('meetupHelp').hidden=false;
+  $('eventsList').innerHTML=events.map(ev=>`<article class="event-card"><div class="event-top"><span class="pill">${esc(ev.category)}</span><span class="pill ${ev.count>=ev.capacity?'gray':''}">${ev.count>=ev.capacity?'已满员':`还可报名 ${ev.capacity-ev.count} 人`}</span></div>
     <h2>${esc(ev.title)}</h2><div class="event-meta"><span>${esc(dateText(ev.startsAt))}</span><span>${esc(eventPlace(ev,selectedCity==='all'))}</span><span>${esc(ev.host)} 发起</span></div>${ev.description?`<details class="event-description"><summary>活动说明</summary><p class="preserve-lines">${esc(ev.description)}</p></details>`:''}
-    <div class="event-footer"><button type="button" class="text-btn" data-share-event="${esc(ev.id)}">分享到微信</button><button type="button" class="${ev.joined?'outline-btn':'primary-btn'}" data-event="${esc(ev.id)}" ${ev.hostIsMe||(!ev.joined&&ev.count>=ev.capacity)?'disabled':''}>${ev.hostIsMe?'我发起的':ev.joined?'取消报名':ev.count>=ev.capacity?'已满员':'报名参加'}</button></div>${ev.hostIsMe?`<div class="event-footer"><button class="text-btn" type="button" data-attendees="${esc(ev.id)}">报名名单</button><button class="text-btn danger" type="button" data-cancel-event="${esc(ev.id)}">取消活动</button></div>`:''}</article>`).join(''):`<div class="empty-state"><h2>${state.events.length?'这个时间段暂无组局':'还没有人发起组局'}</h2><p>约两三个人喝咖啡，或一起去看场演出。</p><button type="button" class="outline-btn" data-create-event>发起组局</button></div>`;
+    <div class="event-footer"><button type="button" class="text-btn" data-share-event="${esc(ev.id)}">分享到微信</button><button type="button" class="${ev.joined?'outline-btn':'primary-btn'}" data-event="${esc(ev.id)}" ${ev.hostIsMe||(!ev.joined&&ev.count>=ev.capacity)?'disabled':''}>${ev.hostIsMe?'我发起的':ev.joined?'取消报名':ev.count>=ev.capacity?'已满员':'报名参加'}</button></div>${ev.hostIsMe?`<div class="event-footer"><button class="text-btn" type="button" data-attendees="${esc(ev.id)}">报名名单</button><button class="text-btn danger" type="button" data-cancel-event="${esc(ev.id)}">取消活动</button></div>`:''}</article>`).join('');
 }
 function beginRsvp(id){
   if(!requireAuth(()=>beginRsvp(id)))return;
@@ -613,7 +661,8 @@ $('createEventForm').addEventListener('submit',async e=>{
   let startsAt;try{startsAt=amsterdamInstant(values.startsAt);}catch(error){toast(error.message);return;}
   const button=form.querySelector('[type=submit]');setBusy(button,true,'发布中…');
   try{await api('createEvent','POST',{city:values.city,title:values.title,host:values.host,category:values.category,startsAt:startsAt.toISOString(),capacity:Number(values.capacity),place:values.place,description:values.description});
-    localStorage.setItem('delft_nickname',values.host);hideModal('createEventBox');form.reset();eventDraftTouched=false;$('sourceEventNote').hidden=true;toast('活动发布成功！可邀请朋友来报名');loadEvents();}
+    localStorage.setItem('delft_nickname',values.host);hideModal('createEventBox');form.reset();eventDraftTouched=false;$('sourceEventNote').hidden=true;toast('邀约已发布，可以分享给朋友了');
+    changeDiscovery({source:'community',city:values.city,period:'all'});loadEvents();}
   catch(error){toast(error.message);}finally{setBusy(button,false);}
 });
 
@@ -646,7 +695,7 @@ async function loadMine(){
   }else $('myMessages').innerHTML=mineError;
   if(events.status==='fulfilled'){
     const mine=events.value.events.filter(event=>event.joined||event.hostIsMe);
-    $('myEvents').innerHTML=mine.length?mine.map(event=>`<a class="my-event" href="/delft/?event=${encodeURIComponent(event.id)}"><span class="pill">${event.hostIsMe?'我发起的':'已报名'}</span><h2>${esc(event.title)}</h2><p>${esc(dateText(event.startsAt))} · ${esc(event.place)}</p></a>`).join(''):'<div class="empty-state"><h2>还没有参加组局</h2><p>报名后，集合时间和地点会显示在这里。</p><button type="button" class="outline-btn" data-tab="events">找个活动</button></div>';
+    $('myEvents').innerHTML=mine.length?mine.map(event=>`<a class="my-event" href="/delft/?event=${encodeURIComponent(event.id)}"><span class="pill">${event.hostIsMe?'我发起的':'已报名'}</span><h2>${esc(event.title)}</h2><p>${esc(dateText(event.startsAt))} · ${esc(event.place)}</p></a>`).join(''):'<div class="empty-state"><h2>还没有参加邀约</h2><p>报名后，集合时间和地点会显示在这里。</p><button type="button" class="outline-btn" data-tab="events">去找搭子</button></div>';
   }else $('myEvents').innerHTML=mineError;
   renderMineView();
 }
@@ -720,7 +769,7 @@ async function applyRoute(){
   if(event&&!item&&!eventsFailed){
     const card=$('eventsList').querySelector(`[data-event="${CSS.escape(event)}"]`);
     card?.closest('.event-card')?.scrollIntoView({behavior:'smooth',block:'center'});
-    if(!card)toast('这场组局已结束或取消，可以看看其他活动');
+    if(!card)toast('这条邀约已结束或取消，可以看看其他邀约');
   }
 }
 window.addEventListener('popstate',applyRoute);

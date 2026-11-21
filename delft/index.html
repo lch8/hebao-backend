@@ -4,8 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#f6f7f3" />
-  <title>荷包 · 荷兰语 A2 备考、活动与闲置</title>
-  <meta name="description" content="了解荷兰语 A2 融入考试题型，查词、做专项练习和模拟卷，也可以找荷兰城市活动与 Delft 闲置。" />
+  <title>荷包 · 找搭子、学荷兰语、逛闲置</title>
+  <meta name="description" content="在荷兰找搭子，加入同城邀约，或约人一起去城市活动。在荷包也能分科练习荷兰语 A2、做模拟卷和逛 Delft 闲置。" />
   <link rel="stylesheet" href="./styles.css" />
   <link rel="stylesheet" href="./dutch.css" />
   <link rel="stylesheet" href="./a2-prep.css" />
@@ -16,28 +16,46 @@
   <header class="topbar">
     <a class="brand" href="/delft/" aria-label="荷包首页"><span class="brand-icon">荷</span><strong>荷包</strong></a>
     <nav class="tabs" aria-label="主要功能">
-      <button type="button" class="tab active" data-tab="dutch" aria-controls="panel-dutch" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v15M12 6C9 3 5 3 2 4v15c3-1 7-1 10 2M12 6c3-3 7-3 10-2v15c-3-1-7-1-10 2"/></svg><span>A2 备考</span></button>
-      <button type="button" class="tab" data-tab="events" aria-controls="panel-events" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h14v16H5zM8 3v4m8-4v4M5 10h14m-11 5h3m2 0h3"/></svg><span>找活动</span></button>
+      <button type="button" class="tab active" data-tab="events" aria-controls="panel-events" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.4"/><path d="M2 20v-1a7 7 0 0 1 14 0v1M16 5a3.4 3.4 0 0 1 0 6.5M18 14a6 6 0 0 1 4 5.5"/></svg><span>找搭子</span></button>
+      <button type="button" class="tab" data-tab="dutch" aria-controls="panel-dutch" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v15M12 6C9 3 5 3 2 4v15c3-1 7-1 10 2M12 6c3-3 7-3 10-2v15c-3-1-7-1-10 2"/></svg><span>荷兰语学习</span></button>
       <button type="button" class="tab" data-tab="market" aria-controls="panel-market" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16v11H4zM3 9l2-5h14l2 5M9 20v-7h6v7"/></svg><span>逛闲置</span></button>
       <button type="button" class="tab" data-tab="mine" aria-controls="panel-mine" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg><span>我的</span></button>
     </nav>
     <button type="button" id="loginTrigger" class="outline-btn login-trigger">登录</button>
   </header>
   <main class="shell" id="workspace">
-    <section id="panel-dutch" class="panel active" aria-labelledby="dutchHeading">
-      <div class="section-heading dutch-heading"><h1 id="dutchHeading">荷兰语 A2 融入考试备考</h1></div>
-      <div id="dutchApp"><p class="empty-state" role="status">正在准备你的荷语练习…</p></div>
-    </section>
-
-    <section id="panel-events" class="panel" aria-labelledby="eventsHeading">
+    <section id="panel-events" class="panel active" aria-labelledby="eventsHeading">
       <div id="eventBrowse">
-        <div class="section-heading"><div><h1 id="eventsHeading">找活动</h1></div><button class="primary-btn" type="button" id="openCreateEvent">＋ 发起组局</button></div>
-        <div class="view-switch" id="eventSourceSwitch" role="group" aria-label="活动来源"><button type="button" class="active" data-source="city" aria-pressed="true">城市活动 <span id="cityCount"></span></button><button type="button" data-source="community" aria-pressed="false">约伴 <span id="communityCount"></span></button></div>
-        <div class="event-tools"><label class="city-selector">城市 <select id="citySelect"><option value="delft">Delft</option><option value="den-haag">Den Haag</option><option value="rotterdam">Rotterdam</option><option value="amsterdam">Amsterdam</option><option value="utrecht">Utrecht</option><option value="eindhoven">Eindhoven</option><option value="all">全部城市</option></select></label><div class="category-filters" id="cityEventFilters" role="group" aria-label="活动时间筛选"><button class="category-chip active" type="button" data-period="weekend" aria-pressed="true">本周末</button><button class="category-chip" type="button" data-period="fortnight" aria-pressed="false">未来两周</button><button class="category-chip" type="button" data-period="all" aria-pressed="false">全部日期</button></div><span class="event-checked" id="cityCheckedNote"></span><button type="button" class="icon-btn" id="refreshEvents" aria-label="刷新组局" title="刷新组局" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M6 7a7 7 0 0 1 12-1l2 3M4 15l2 3a7 7 0 0 0 12-1"/></svg></button></div>
-        <div id="citySection"><div id="cityEvents" class="city-grid"></div></div>
-        <div id="communitySection" hidden><div id="eventsList" class="event-grid"><div class="empty-state">正在加载组局…</div></div><details class="meetup-note"><summary>报名后怎么联系？</summary><p>报名昵称会显示给组织者。请按活动说明安排集合；目前没有群聊或自动通知。报名组局不包含门票，票务请各自办理。</p></details></div>
+        <div class="companion-hero">
+          <div class="companion-intro">
+            <h1 id="eventsHeading">找搭子</h1>
+            <p>加入同城邀约，或挑一场活动约人一起去。</p>
+            <button class="primary-btn" type="button" id="openCreateEvent">发个邀约 <span aria-hidden="true">＋</span></button>
+          </div>
+          <img class="companion-cover" src="./canal-houses.webp" alt="" width="940" height="840" fetchpriority="high" />
+        </div>
+        <div class="view-switch" id="eventSourceSwitch" role="group" aria-label="浏览邀约或官方活动">
+          <button type="button" class="active" data-source="community" aria-pressed="true">同城邀约 <span id="communityCount"></span></button>
+          <button type="button" data-source="city" aria-pressed="false">城市活动 <span id="cityCount"></span></button>
+        </div>
+        <div class="event-tools">
+          <label class="city-selector">城市 <select id="citySelect"><option value="delft">Delft</option><option value="den-haag">Den Haag</option><option value="rotterdam">Rotterdam</option><option value="amsterdam">Amsterdam</option><option value="utrecht">Utrecht</option><option value="eindhoven">Eindhoven</option><option value="all">全部城市</option></select></label>
+          <div class="category-filters" id="cityEventFilters" role="group" aria-label="日期筛选"><button class="category-chip active" type="button" data-period="weekend" aria-pressed="true">本周末</button><button class="category-chip" type="button" data-period="fortnight" aria-pressed="false">未来两周</button><button class="category-chip" type="button" data-period="all" aria-pressed="false">全部日期</button></div>
+          <span class="event-checked" id="cityCheckedNote"></span>
+          <button type="button" class="icon-btn" id="refreshEvents" aria-label="刷新邀约" title="刷新邀约"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M6 7a7 7 0 0 1 12-1l2 3M4 15l2 3a7 7 0 0 0 12-1"/></svg></button>
+        </div>
+        <div id="communitySection">
+          <div id="eventsList" class="event-grid" aria-busy="true"><p role="status">正在加载邀约…</p></div>
+          <details class="meetup-note" id="meetupHelp" hidden><summary>报名后怎么联系？</summary><p>组织者可以看到你的报名昵称。集合方式请看邀约说明，门票需自行办理。</p></details>
+        </div>
+        <div id="citySection"><div id="cityEvents"></div></div>
       </div>
       <div id="officialActivity" hidden></div>
+    </section>
+
+    <section id="panel-dutch" class="panel" aria-labelledby="dutchHeading">
+      <div class="section-heading dutch-heading"><h1 id="dutchHeading">荷兰语 A2 备考</h1></div>
+      <div id="dutchApp"><p class="empty-state" role="status">正在加载练习…</p></div>
     </section>
 
     <section id="panel-market" class="panel" aria-labelledby="marketHeading">
@@ -46,7 +64,7 @@
       <div class="category-filters" id="marketCategories" role="group" aria-label="商品分类"></div>
       <div class="result-line"><p id="marketSummary" role="status" aria-live="polite"></p><span>卖家近 14 天确认在售</span></div>
       <div class="cards-grid" id="marketGrid" aria-live="polite"><div class="empty-state">正在加载商品…</div></div>
-      <button type="button" class="weekend-shortcut" data-tab="events"><strong>找个活动，一起出门</strong><span aria-hidden="true">↗</span></button>
+      <button type="button" class="weekend-shortcut" data-tab="events"><strong>去找搭子，一起出门</strong><span aria-hidden="true">↗</span></button>
     </section>
 
     <section id="panel-sell" class="panel" aria-labelledby="sellHeading">
@@ -76,7 +94,7 @@
     <section id="panel-mine" class="panel" aria-labelledby="mineHeading">
       <div class="section-heading"><div><h1 id="mineHeading">我的</h1></div><button type="button" class="icon-btn" id="refreshMine" aria-label="刷新我的内容" title="刷新"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5M6 7a7 7 0 0 1 12-1l2 3M4 15l2 3a7 7 0 0 0 12-1"/></svg></button></div>
       <div id="profileArea" class="profile-area"></div>
-      <div class="view-switch" id="mineSwitch" role="group" aria-label="我的内容" hidden><button type="button" class="active" data-mine-view="listings" aria-pressed="true">我的闲置</button><button type="button" data-mine-view="events" aria-pressed="false">我的组局</button><button type="button" data-mine-view="messages" aria-pressed="false">私信</button></div>
+      <div class="view-switch" id="mineSwitch" role="group" aria-label="我的内容" hidden><button type="button" class="active" data-mine-view="listings" aria-pressed="true">我的闲置</button><button type="button" data-mine-view="events" aria-pressed="false">我的邀约</button><button type="button" data-mine-view="messages" aria-pressed="false">私信</button></div>
       <div id="myListings" class="stack"></div><div id="myEvents" class="stack" hidden></div><div id="myMessages" class="stack" hidden></div>
     </section>
     <footer><span><strong>荷包</strong></span><details><summary>使用与安全</summary><p>优先在公共场所见面，当面验货；平台不提供支付担保。公开发布的照片和信息对其他用户可见，草稿只保存在当前浏览器。</p></details></footer>
@@ -85,7 +103,7 @@
   <div class="overlay" id="loginModal" hidden><div class="modal" role="dialog" aria-modal="true" aria-labelledby="loginHeading"><button type="button" class="modal-x" data-close="loginModal" aria-label="关闭登录窗口">✕</button><h2 id="loginHeading">登录后继续</h2><p>邮箱验证码登录，首次使用会自动创建账号。</p><form id="loginForm"><label>邮箱<input id="authEmail" type="email" autocomplete="email" required placeholder="you@example.com" /></label><div class="field-grid otp-row"><label>验证码<input id="authCode" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="6 位数字" required /></label><button type="button" class="outline-btn" id="sendCode">获取验证码</button></div><p class="auth-status" id="authStatus" role="status"></p><button type="submit" class="primary-btn wide" id="verifyCode">登录并继续</button></form></div></div>
   <div class="overlay" id="detailModal" hidden><div class="modal large-modal" role="dialog" aria-modal="true" aria-labelledby="detailHeading"><button type="button" class="modal-x" data-close="detailModal" aria-label="关闭商品详情">✕</button><div id="detailContent"></div><div class="line-actions"><button type="button" class="text-btn" id="copyListingLink">复制清单链接</button><button type="button" class="text-btn" id="refreshListingDetail">刷新状态</button></div><div class="inquiry-box"><label for="inquiryText">问问卖家</label><textarea id="inquiryText" maxlength="500" rows="2" placeholder="想要哪一件？什么时候方便自取？"></textarea><button class="primary-btn wide" type="button" id="sendInquiry">发送咨询</button><p class="fineprint">回复在「我的 → 私信」中查看，请当面验货。</p></div></div></div>
   <div class="overlay" id="rsvpModal" hidden><div class="modal" role="dialog" aria-modal="true" aria-labelledby="rsvpHeading"><button type="button" class="modal-x" data-close="rsvpModal" aria-label="关闭报名窗口">✕</button><h2 id="rsvpHeading">报名参加</h2><p>组织者只能看到你的昵称，邮箱不会公开。</p><label>活动昵称<input id="rsvpName" maxlength="35" placeholder="如何称呼你" /></label><button class="primary-btn wide" id="confirmRsvp" type="button">确认报名</button></div></div>
-  <div class="overlay" id="createEventBox" hidden><div class="modal large-modal" role="dialog" aria-modal="true" aria-labelledby="createEventHeading"><button type="button" id="closeCreateEvent" class="modal-x" aria-label="关闭组局窗口">✕</button><h2 id="createEventHeading">发起组局</h2><div class="source-event-note" id="sourceEventNote" hidden></div><form id="createEventForm"><label>活动名称<input name="title" required maxlength="75" placeholder="例如：周六下午四人桌游" /></label><div class="field-grid"><label>集合时间<input type="datetime-local" name="startsAt" required /><small>荷兰当地时间</small></label><label>人数（含你）<input type="number" min="2" max="12" name="capacity" value="5" required /></label></div><label>活动城市<select name="city"><option value="delft">Delft</option><option value="den-haag">Den Haag</option><option value="rotterdam">Rotterdam</option><option value="amsterdam">Amsterdam</option><option value="utrecht">Utrecht</option><option value="eindhoven">Eindhoven</option></select></label><label>公共集合地点<input name="place" required maxlength="100" placeholder="例如：Delft 火车站正门" /></label><div class="field-grid"><label>你的昵称<input name="host" id="hostName" required maxlength="35" placeholder="如何称呼你" /></label><label>类别<select name="category"><option>桌游</option><option>散步</option><option>运动</option><option>咖啡</option><option>其他</option></select></label></div><label>活动说明 <span class="optional">选填</span><textarea name="description" rows="3" maxlength="450" placeholder="聊聊玩什么、费用和集合安排"></textarea></label><label class="checkline"><input name="rules" type="checkbox" required />我已满 18 岁，同意在公共场所文明、安全地组织活动。</label><button class="primary-btn wide" type="submit">发布组局</button></form></div></div>
+  <div class="overlay" id="createEventBox" hidden><div class="modal large-modal" role="dialog" aria-modal="true" aria-labelledby="createEventHeading"><button type="button" id="closeCreateEvent" class="modal-x" aria-label="关闭邀约窗口">✕</button><h2 id="createEventHeading">发个邀约</h2><div class="source-event-note" id="sourceEventNote" hidden></div><form id="createEventForm"><label>活动名称<input name="title" required maxlength="75" placeholder="例如：周六下午四人桌游" /></label><div class="field-grid"><label>集合时间<input type="datetime-local" name="startsAt" required /><small>荷兰当地时间</small></label><label>人数（含你）<input type="number" min="2" max="12" name="capacity" value="5" required /></label></div><label>活动城市<select name="city"><option value="delft">Delft</option><option value="den-haag">Den Haag</option><option value="rotterdam">Rotterdam</option><option value="amsterdam">Amsterdam</option><option value="utrecht">Utrecht</option><option value="eindhoven">Eindhoven</option></select></label><label>公共集合地点<input name="place" required maxlength="100" placeholder="例如：Delft 火车站正门" /></label><div class="field-grid"><label>你的昵称<input name="host" id="hostName" required maxlength="35" placeholder="如何称呼你" /></label><label>类别<select name="category"><option>桌游</option><option>散步</option><option>运动</option><option>咖啡</option><option>其他</option></select></label></div><label>活动说明 <span class="optional">选填</span><textarea name="description" rows="3" maxlength="450" placeholder="聊聊玩什么、费用和集合安排"></textarea></label><label class="checkline"><input name="rules" type="checkbox" required />我已满 18 岁，同意在公共场所文明、安全地组织活动。</label><button class="primary-btn wide" type="submit">发布邀约</button></form></div></div>
   <div class="overlay" id="posterModal" hidden><div class="modal poster-modal" role="dialog" aria-modal="true" aria-labelledby="posterHeading"><button type="button" class="modal-x" data-close="posterModal" aria-label="关闭海报预览">✕</button><h2 id="posterHeading">海报准备好了</h2><p id="posterHint">下载后发到微信，手机也可长按保存。</p><textarea id="eventShareText" rows="4" readonly hidden aria-label="邀请文案"></textarea><img id="posterImage" alt="包含商品名称、价格、状态与荷包二维码的分享海报" /><div class="poster-actions"><button id="copyEventShare" class="outline-btn" type="button" hidden>复制邀请</button><a id="downloadPoster" class="primary-btn" download="Delft-闲置分享海报.jpg">下载海报</a><button id="sharePoster" class="outline-btn" type="button" hidden>分享图片</button></div></div></div>
   <div class="overlay" id="activityShare" hidden>
     <div class="modal share-activity" role="dialog" aria-modal="true" aria-labelledby="activityShareHeading">

@@ -114,10 +114,14 @@ const nearbyCities = {
 export function discoveryFilters(params) {
   if (params.has('event')) return {city:'all', period:'all', source:'community'};
   const city = params.get('city'), period = params.get('period');
+  // Older city-list links encoded filters without a source. New links name the view.
+  const source = params.get('source');
+  const cityList = source === 'city' || (source !== 'community' &&
+    (params.has('activity') || params.has('city') || params.has('period')));
   return {
     city: city === 'all' || Object.hasOwn(cities, city) ? city : 'delft',
     period: ['all', 'weekend', 'fortnight'].includes(period) ? period : 'weekend',
-    source: params.get('source') === 'community' ? 'community' : 'city',
+    source: cityList ? 'city' : 'community',
   };
 }
 

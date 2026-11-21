@@ -1,16 +1,26 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {cityEvents, upcomingCityEvents, amsterdamInput, amsterdamInstant, cityEventDraft, citySelection, discoveryFilters, weekendLabel} from '../delft/city-events.js';
 import {activityCard, activityDetailContent} from '../delft/activity-view.js';
 import {posterLayout, makeQr} from '../delft/poster.js';
 import {PUBLIC_SITE_URL, posterDestination, activityLink, pageFromQuery} from '../delft/site-config.js';
 
-test('the Delft homepage defaults to A2 prep, including generic referral links', () => {
+test('the Delft homepage opens the companion board for new visitors and generic referrals', () => {
   const page = query => pageFromQuery(new URLSearchParams(query));
-  assert.equal(page(''), 'dutch');
-  assert.equal(page('utm_source=wechat&source=poster'), 'dutch');
-  assert.equal(page('tab=unknown'), 'dutch');
+  assert.equal(page(''), 'events');
+  assert.equal(page('utm_source=wechat&source=poster'), 'events');
+  assert.equal(page('tab=unknown'), 'events');
   for (const tab of ['dutch','events','market','mine','sell']) assert.equal(page('tab='+tab), tab);
+});
+
+test('the first paint and the primary navigation match the homepage route', () => {
+  const html = readFileSync(new URL('../delft/index.html',import.meta.url),'utf8');
+  const nav = html.match(/<nav class="tabs"[^>]*>([\s\S]*?)<\/nav>/)[1];
+  assert.deepEqual([...nav.matchAll(/data-tab="([^"]+)"/g)].map(match=>match[1]), ['events','dutch','market','mine']);
+  const home = pageFromQuery(new URLSearchParams());
+  assert.match(nav,new RegExp('class="tab active" data-tab="'+home+'"[^>]*aria-pressed="true"'));
+  assert.deepEqual([...html.matchAll(/<section id="panel-([^"]+)" class="panel active"/g)].map(match=>match[1]),[home]);
 });
 
 test('market, official activities, group invitations and event filters can still deep-link past the homepage', () => {
@@ -126,12 +136,16 @@ test('city selection separates official and legacy community events',()=>{
 
 test('discovery restores city, dates and source, including old group invitations', () => {
   const filters = query => discoveryFilters(new URLSearchParams(query));
-  const defaults = {city:'delft', period:'weekend', source:'city'};
+  const defaults = {city:'delft', period:'weekend', source:'community'};
   assert.deepEqual(filters(''), defaults);
-  assert.deepEqual(filters('city=constructor&period=invalid&source=unknown'), defaults);
+  assert.deepEqual(filters('utm_source=wechat&source=poster'), defaults);
+  assert.deepEqual(filters('tab=events'), defaults);
+  assert.deepEqual(filters('tab=events&source=city'), {...defaults, source:'city'});
+  assert.deepEqual(filters('activity=old-official-id'), {...defaults, source:'city'});
+  assert.deepEqual(filters('city=constructor&period=invalid&source=unknown'), {...defaults, source:'city'});
   const choice = {city:'utrecht', period:'fortnight', source:'community'};
   assert.deepEqual(filters(new URLSearchParams(choice)), choice);
-  assert.deepEqual(filters('city=all&period=weekend'), {...defaults, city:'all'});
+  assert.deepEqual(filters('city=all&period=weekend'), {...defaults, city:'all', source:'city'});
   assert.deepEqual(filters('event=group&city=delft&period=weekend'), {city:'all', period:'all', source:'community'});
 });
 

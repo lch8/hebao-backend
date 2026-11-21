@@ -1,15 +1,14 @@
 // Public destination for poster promotion. Keep this aligned with the production domain.
 export const PUBLIC_SITE_URL = 'https://hebao-backend.vercel.app/delft/';
 
-export const SITE_TABS = ['dutch','events','market','mine','sell'];
+export const SITE_TABS = ['events','dutch','market','mine','sell'];
 
 export function pageFromQuery(params) {
   if (params.get('item')) return 'market';
   if (params.get('event') || params.get('activity')) return 'events';
   const tab = params.get('tab');
   if (SITE_TABS.includes(tab)) return tab;
-  if (params.has('city') || params.has('period') || ['city','community'].includes(params.get('source'))) return 'events';
-  return 'dutch';
+  return 'events';
 }
 
 export function activityLink(id) {

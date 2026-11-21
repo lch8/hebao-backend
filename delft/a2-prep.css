@@ -17,7 +17,7 @@
   outline: 3px solid #36795e;
   outline-offset: 3px;
 }
-.a2-overhead,.a2-subhead,.a2-resume,.a2-bottom,.a2-session-head,.a2-taskfoot {
+.a2-overhead,.a2-resume,.a2-bottom,.a2-session-head,.a2-taskfoot {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -25,56 +25,44 @@
   flex-wrap: wrap;
 }
 .a2-overhead { margin-bottom: 16px; }
-.a2-overhead p,.a2-subhead p,.a2-section>p,.a2-content h2+p { margin-top: 6px; color: var(--muted); }
-.a2-exams {
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background: var(--paper);
+.a2-overhead p,.a2-section>p,.a2-content h2+p { margin-top: 6px; color: var(--muted); }
+.a2-meta,.a2-bottom,.a2-official-links small { font-size: 14px; color: var(--muted); }
+.a2-picker-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.a2-content .a2-picker-head h2 { font-size: 18px; letter-spacing: -.02em; }
+.a2-picker { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 8px; margin: 1px 0 14px; }
+.a2-subject-choice {
+  display: grid; gap: 1px; min-height: 60px; padding: 7px 12px; align-content: center;
+  border: 1px solid #d5dfd3; border-radius: 10px; background: #fff; color: #344e42; text-align: left;
 }
-.a2-exam-row {
-  display: grid;
-  grid-template-columns: minmax(116px,.7fr) 90px minmax(0,2.9fr) auto;
-  gap: 20px;
-  align-items: center;
-  width: 100%;
-  min-height: 94px;
-  padding: 16px 24px;
-  border: 0;
-  border-bottom: 1px solid var(--line);
-  background: var(--paper);
-  color: var(--ink);
-  text-align: left;
+.a2-subject-choice strong { font-size: 16px; }
+.a2-subject-choice span { font-size: 12px; line-height: 1.4; color: #586d60; }
+.a2-subject-choice[aria-pressed=true] { background: #244d40; border-color: #244d40; color: #fff; }
+.a2-subject-choice[aria-pressed=true] span { color: #e4efe8; }
+.a2-subject-choice:hover:not([aria-pressed=true]) { border-color: #709284; }
+.a2-subject-brief {
+  display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 16px 28px;
+  align-items: center; padding: clamp(18px,3vw,32px); border: 1px solid #e3d8b8;
+  border-radius: 16px; background: #faf4e3; color: #363c2c;
 }
-.a2-exam-row:last-child { border-bottom: 0; }
-.a2-exam-row:is(:hover,:focus-visible) { background: #eff5ee; }
-.a2-exam-row:focus-visible { outline-offset: -3px !important; }
-.a2-name,.a2-summary { display: grid; gap: 3px; }
-.a2-name strong { font-size: 21px; line-height: 1.4; font-weight: 650; }
-.a2-name [lang],.a2-summary small,.a2-meta,.a2-bottom,.a2-official-links small { font-size: 14px; color: var(--muted); }
-.a2-summary { font-size: 16px; line-height: 1.55; }
-.a2-time {
-  width: fit-content;
-  padding: 3px 10px;
-  border-radius: 6px;
-  color: #325a42;
-  background: #eaf1e7;
-  font-size: 14px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-.a2-open { font-size: 14px; color: var(--green); font-weight: 650; white-space: nowrap; }
-.a2-open::after { content: " ›"; }
+.a2-brief-copy { max-width: 700px; }
+.a2-brief-copy .a2-dutch-name { margin-bottom: 1px; color: #706044; font-size: 15px; }
+.a2-brief-copy h2+p { color: #3f4d3c; }
+.a2-challenge { margin-top: 8px !important; font-size: 14px; }
+.a2-challenge strong { margin-right: .5em; color: #6e4b26; }
+.a2-duration { display: grid; align-content: center; gap: 0; border-left: 1px solid #d8cdae; padding-left: clamp(14px,3vw,32px); color: #614c2e; }
+.a2-duration span,.a2-duration a { font-size: 13px; }
+.a2-duration strong { font: 600 clamp(32px,4vw,47px)/1.2 ui-sans-serif, system-ui, sans-serif; letter-spacing: -.04em; }
+.a2-duration small { font: 500 13px/1.4 sans-serif; letter-spacing: 0; }
+.a2-duration a { display: inline-flex; align-items: center; min-height: 44px; }
+.a2-brief-actions { grid-column: 1/-1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.a2-brief-actions span { font-size: 13px; color: #5c624e; }
+.a2-type details { width: 100%; font-size: 14px; }
 .a2-bottom { margin-top: 16px; }
 .a2-resume,.a2-assess,.a2-assess-note,.a2-answer { padding: 18px 22px; background: #eaf2e7; border-radius: 14px; }
 .a2-resume { font-size: 15px; margin-bottom: 18px; }
 .a2-content .text-btn { min-height: 44px; font-size: 14px; }
 .a2-back { margin: 0 0 8px; }
 .a2-back::before { content: "‹ "; }
-.a2-subhead h2 small { font-size: .62em; color: var(--muted); font-weight: 500; }
-.a2-challenge { padding: 12px 15px; margin-top: 15px !important; background: #eef2e9; border-left: 3px solid #789171; }
-.a2-challenge strong,.a2-tip strong { margin-right: .35em; }
-.a2-challenge a { font-size: 14px; white-space: nowrap; }
 .a2-section { margin: 27px 0; scroll-margin-top: 88px; }
 .a2-types { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
 .a2-type {
@@ -138,18 +126,23 @@
 .a2-review[open] { padding-bottom: 14px; }
 
 @media (max-width: 770px) {
-  .a2-exam-row { grid-template-columns: minmax(110px,1fr) auto; gap: 7px 14px; padding: 14px 18px; }
-  .a2-name { display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap; }
-  .a2-exam-row .a2-time,.a2-open { justify-self: end; }
   .a2-types { grid-template-columns: 1fr; }
   .a2-type { gap: 6px; padding: 15px; }
   .a2-type button { margin-top: 5px; }
 }
 @media (max-width: 580px) {
-  .a2-exam-row { grid-template-columns: minmax(0,1fr) auto; gap: 8px; }
-  .a2-summary { grid-column: 1/-1; }
-  .a2-open { display: none; }
-  .a2-name strong { font-size: 19px; }
+  .a2-picker { gap: 4px; margin-bottom: 10px; }
+  .a2-subject-choice { min-height: 50px; padding: 4px 2px; text-align: center; border-radius: 7px; }
+  .a2-subject-choice strong { font-size: 13px; }
+  .a2-subject-choice span { font-size: 10px; }
+  .a2-subject-brief { padding: 15px; gap: 10px; }
+  .a2-brief-copy { display: grid; grid-template-columns: minmax(0,1fr); align-self: start; }
+  .a2-brief-copy .a2-dutch-name { font-size: 13px; }
+  .a2-challenge { font-size: 13px; }
+  .a2-duration { align-self: start; padding-left: 10px; }
+  .a2-duration span,.a2-duration a { font-size: 11px; }
+  .a2-duration strong { font-size: 29px; }
+  .a2-brief-actions > button { min-height: 44px; }
   .a2-overhead { gap: 8px; }
   .a2-assess,.a2-filters,#a2OfficialForm { grid-template-columns: minmax(0,1fr); }
   .a2-assess { gap: 13px; padding: 16px; }

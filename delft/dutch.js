@@ -11,7 +11,7 @@ export function mountDutch(root){
   const loaded=loadStudy(storage);
   let study=loaded.state,storageOK=loaded.available,view='prepare',session=null,quiz=null,quizTimer,recorder,stream,recordingUrl='',recordingTimeout,mediaRequest=0,resetPending=false;
   const el=id=>root.querySelector(`#${id}`);
-  root.innerHTML=`<nav class="study-nav" aria-label="荷语学习"><button type="button" data-study-view="prepare">考试总览</button><button type="button" data-study-view="today">场景与复习</button><button type="button" data-study-view="exam">考试安排</button></nav><div id="a2ExamRoot"></div><div id="studyBody" hidden></div><div class="study-foot"><span id="studySaveStatus" role="status" aria-live="polite"></span><details><summary>关于内容与学习记录</summary><p>专项练习和站内模拟卷由荷包编写。各科页面附 DUO 官方样卷和考试说明。</p><p>学习记录和考试安排保存在当前浏览器。录音和作答正文仅在当前页面保留。</p><button type="button" class="text-btn" data-study-action="reset">清除本机学习记录</button></details></div>`;
+  root.innerHTML=`<nav class="study-nav" aria-label="荷语学习"><button type="button" data-study-view="prepare">分科备考</button><button type="button" data-study-view="today">场景复习</button><button type="button" data-study-view="exam">考试安排</button></nav><div id="a2ExamRoot"></div><div id="studyBody" hidden></div><div class="study-foot"><span id="studySaveStatus" role="status" aria-live="polite"></span><details><summary>关于内容与学习记录</summary><p>专项练习和站内模拟卷由荷包编写。各科页面附 DUO 官方样卷和考试说明。</p><p>学习记录和考试安排保存在当前浏览器。录音和作答正文仅在当前页面保留。</p><button type="button" class="text-btn" data-study-action="reset">清除本机学习记录</button></details></div>`;
   const prep=mountExamPrep(el('a2ExamRoot'),storage);
 
   function save(){storageOK=saveStudy(storage,study);saveStatus();}
