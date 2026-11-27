@@ -1,5 +1,6 @@
 // Server-side HTML shell + dynamic Open Graph injector for WeChat, WhatsApp & search engines.
 import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { sql } from './_delft-db.js';
 import { cities, cityEvents } from '../delft/city-events.js';
 import { DEFAULT_SITE_ORIGIN } from '../delft/site-config.js';
@@ -7,9 +8,26 @@ import { DEFAULT_SITE_ORIGIN } from '../delft/site-config.js';
 let cachedHtml = '';
 let cachedFeed = null;
 
+// Vercel may transpile this file to CommonJS, where `import.meta.url` is undefined.
+// Resolve bundled static files from the function's working directory first.
+function readProjectFile(relativePath) {
+  const candidates = [
+    path.join(process.cwd(), relativePath),
+    path.join(process.cwd(), '..', relativePath),
+  ];
+  try {
+    if (typeof __dirname === 'string') candidates.push(path.join(__dirname, '..', relativePath));
+  } catch { /* ESM runtime: __dirname not defined */ }
+  let lastError;
+  for (const file of candidates) {
+    try { return readFileSync(file, 'utf8'); } catch (error) { lastError = error; }
+  }
+  throw lastError || new Error(`Cannot read ${relativePath}`);
+}
+
 function getTemplateHtml() {
   if (!cachedHtml) {
-    cachedHtml = readFileSync(new URL('../delft/index.html', import.meta.url), 'utf8');
+    cachedHtml = readProjectFile('delft/index.html');
   }
   return cachedHtml;
 }
@@ -17,7 +35,7 @@ function getTemplateHtml() {
 function getCuratedFeed() {
   if (!cachedFeed) {
     try {
-      const raw = JSON.parse(readFileSync(new URL('../delft/events-feed.json', import.meta.url), 'utf8'));
+      const raw = JSON.parse(readProjectFile('delft/events-feed.json'));
       cachedFeed = Array.isArray(raw?.events) ? raw.events : cityEvents;
     } catch {
       cachedFeed = cityEvents;
@@ -208,7 +226,23 @@ async function queryEventFromDb(id) {
 }
 
 export default async function handler(req, res) {
-  const html = getTemplateHtml();
+  let html;
+  try {
+    html = getTemplateHtml();
+  } catch (error) {
+    // Never 500 the homepage: fall back to the static app shell.
+    console.error('share-page template error:', error);
+    const qs = String(req.url || '').split('?')[1] || '';
+    const params = new URLSearchParams(qs);
+    const tab = String(params.get('__path') || '/').replace(/^\//, '');
+    params.delete('__path');
+    if (tab && !params.has('page')) params.set('page', tab === 'dutch-a2' ? 'dutch' : tab);
+    const query = params.toString();
+    res.setHeader('Cache-Control', 'no-store');
+    res.writeHead(302, { Location: `/delft/${query ? `?${query}` : ''}` });
+    res.end();
+    return;
+  }
   try {
     const host = String(req.headers['x-forwarded-host'] || req.headers.host || '').split(',')[0].trim();
     const proto = String(req.headers['x-forwarded-proto'] || 'https').split(',')[0].trim();
