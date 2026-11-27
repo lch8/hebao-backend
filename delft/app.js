@@ -279,9 +279,10 @@ function refreshLoginUI() {
   if (!signedIn) updateUnreadBadges(0);
   if (signedIn) {
     const emailHint = localStorage.getItem('hebao_email') ? `（${esc(localStorage.getItem('hebao_email'))}）` : '';
-    profile.innerHTML = `<p><strong>${esc(nickname() || '你好')}</strong> ${emailHint} <span class="hint">· 新私信与活动变动会自动发邮件提醒</span></p><button id="logout" class="text-btn" type="button">退出登录</button>`;
+    const initial = esc((nickname() || localStorage.getItem('hebao_email') || '荷').trim().charAt(0).toUpperCase());
+    profile.innerHTML = `<span class="profile-avatar" aria-hidden="true">${initial}</span><p><strong>${esc(nickname() || '你好')}</strong> ${emailHint} <span class="hint">· 新私信与活动变动会自动发邮件提醒</span></p><button id="logout" class="text-btn" type="button">退出登录</button>`;
   } else {
-    profile.innerHTML = `<h2>把自己的事，放在一处</h2><p>邮箱验证码登录，接收买家咨询邮件提醒、查看集合联络方式、云端备份荷语错题。</p><button id="mineLogin" class="primary-btn" type="button">邮箱登录</button>`;
+    profile.innerHTML = `<img class="profile-art" src="/delft/mine-hello.webp" alt="" width="278" height="280" loading="lazy" /><div class="profile-copy"><h2>把自己的事，放在一处</h2><p>邮箱验证码登录，无需密码，首次登录自动创建账号。</p><ul class="profile-perks"><li><strong>闲置管理</strong>改价、标记已售</li><li><strong>买家私信</strong>咨询即时邮件提醒</li><li><strong>邀约报名</strong>解锁集合联络方式</li><li><strong>荷语错题</strong>云端备份不丢失</li></ul><button id="mineLogin" class="primary-btn" type="button">邮箱登录</button></div>`;
   }
   const trigger = $('mineLogin');
   if (trigger) trigger.onclick = openLogin;
@@ -1418,10 +1419,16 @@ function renderEvents() {
   }
 
   $('meetupHelp').hidden = false;
+  const metaIcon = {
+    time: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
+    place: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11Z"/><circle cx="12" cy="10" r="2.3"/></svg>',
+    host: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>',
+  };
   $('eventsList').innerHTML = events.map(ev => `<article class="event-card">
     <div class="event-top"><span class="pill">${esc(ev.category)}</span><span class="pill ${ev.count >= ev.capacity ? 'gray' : ''}">${ev.count >= ev.capacity ? '已满员' : `差 ${ev.capacity - ev.count} 人（${ev.count}/${ev.capacity}）`}</span></div>
     <h2>${esc(ev.title)}</h2>
-    <div class="event-meta"><span>${esc(dateText(ev.startsAt))}（荷兰时间）</span><span>${esc(eventPlace(ev, showCity))}</span><span>${esc(ev.host)} 发起${ev.hasContactHint ? ' · 报名可见联络暗号' : ''}</span></div>
+    <div class="event-capacity" aria-hidden="true"><i style="width:${Math.min(100, Math.round((ev.count / Math.max(1, ev.capacity)) * 100))}%"></i></div>
+    <div class="event-meta"><span>${metaIcon.time}${esc(dateText(ev.startsAt))}（荷兰时间）</span><span>${metaIcon.place}${esc(eventPlace(ev, showCity))}</span><span>${metaIcon.host}${esc(ev.host)} 发起${ev.hasContactHint ? ' · 报名可见联络暗号' : ''}</span></div>
     ${ev.description ? `<details class="event-description"><summary>活动说明</summary><p class="preserve-lines">${esc(ev.description)}</p></details>` : ''}
     <div class="event-footer">
       <div class="line-actions" style="margin:0;gap:12px">
@@ -1705,7 +1712,7 @@ async function loadMine() {
     $('myListings').innerHTML = state.myListings.length ? state.myListings.map(l => `<div class="my-listing"><h2>${esc(l.title)}</h2><p class="hint">${esc(cities[l.city || 'delft'] || 'Delft')} · ${esc(l.pickup)}</p>
       ${l.items.map(item => `<div class="my-item"><span>${esc(item.name)}</span><select data-listing-id="${esc(l.id)}" data-item-id="${esc(item.id)}" aria-label="${esc(item.name)}的状态">${Object.entries(statusNames).map(([value, label]) => `<option value="${value}" ${item.status === value ? 'selected' : ''}>${label}</option>`).join('')}</select></div>`).join('')}
       <div class="inventory-meta">${l.stale ? '超过 14 天未确认，已自动从集市隐藏（原分享链接仍可访问）' : '最近确认：' + esc(dateText(l.updatedAt))}</div><div class="inventory-actions"><button class="outline-btn" type="button" data-edit-listing="${esc(l.id)}">编辑 / 生成海报</button><button class="outline-btn" type="button" data-refresh-listing="${esc(l.id)}">确认仍在售</button><a href="/market?item=${encodeURIComponent(l.id)}">分享清单 ↗</a><button class="text-btn danger" type="button" data-delete-listing="${esc(l.id)}">删除</button></div></div>`).join('')
-      : '<div class="empty-state"><h2>还没有发布闲置</h2><p>可以先整理商品生成微信海报，随时改状态免刷屏。</p><button class="primary-btn" type="button" data-tab="sell">添加商品 / 生成海报</button></div>';
+      : '<div class="empty-state"><h2>还没有发布闲置</h2><p>拍张照 1 分钟就能发布；卖出后在这里改状态，多件还能生成微信群海报。</p><button class="primary-btn" type="button" data-tab="sell">＋ 发布闲置</button></div>';
 
     $('myEvents').innerHTML = state.myEvents.length ? state.myEvents.map(event => `<div class="my-event">
       <div class="event-top">
@@ -2038,3 +2045,9 @@ document.addEventListener('visibilitychange', () => {
 $('copyEventShare').addEventListener('click', () => {
   copyTextWithFallback($('eventShareText').value, '同行邀请文案已复制，打开微信粘贴即可');
 });
+
+// Topbar elevation only after the page has scrolled, so the first screen stays calm.
+let scrollTick = false;
+const syncScrolled = () => { document.body.classList.toggle('is-scrolled', window.scrollY > 8); scrollTick = false; };
+window.addEventListener('scroll', () => { if (!scrollTick) { scrollTick = true; requestAnimationFrame(syncScrolled); } }, { passive: true });
+syncScrolled();
