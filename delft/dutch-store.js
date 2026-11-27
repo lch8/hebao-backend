@@ -51,3 +51,19 @@ export function targetWindow(targetDate,now=new Date()){
   const days=Math.round((Date.parse(`${targetDate}T12:00:00Z`)-Date.parse(`${dayKey(now)}T12:00:00Z`))/86400000);
   return {days,tight:days<112};
 }
+export function mergeStudy(localRaw, remoteRaw) {
+  const a = normalizeStudy(localRaw), b = normalizeStudy(remoteRaw), out = freshStudy();
+  for (const id of taskIds) {
+    const aa = a.answers[id], ba = b.answers[id];
+    if (!aa || !ba) { if (aa || ba) out.answers[id] = aa || ba; continue; }
+    out.answers[id] = aa.lastDay >= ba.lastDay ? { ...aa, attempts: Math.max(aa.attempts, ba.attempts) } : { ...ba, attempts: Math.max(aa.attempts, ba.attempts) };
+  }
+  out.completed = LESSONS.filter(l => (a.completed.includes(l.id) || b.completed.includes(l.id)) && l.tasks.every(t => out.answers[t.id])).map(l => l.id);
+  out.exams = { ...b.exams, ...a.exams };
+  out.targetDate = a.targetDate || b.targetDate || '';
+  const seen = new Map();
+  for (const item of [...b.quizHistory, ...a.quizHistory]) seen.set(`${item.day}:${item.correct}`, item);
+  out.quizHistory = [...seen.values()].slice(-5);
+  return normalizeStudy(out);
+}
+

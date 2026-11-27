@@ -1,117 +1,94 @@
 // api/verify-auth-code.js
+import { sql } from './_delft-db.js';
 export const config = { runtime: 'edge' };
 
-// ========== JWT 工具函数 ==========
 function b64url(obj) {
-    return btoa(JSON.stringify(obj)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+  return btoa(JSON.stringify(obj)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
 }
 
 async function signJwt(payload, secret) {
-    const header = b64url({ alg: 'HS256', typ: 'JWT' });
-    const body = b64url(payload);
-    const data = `${header}.${body}`;
-    const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-    const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(data));
-    const sigB64 = btoa(String.fromCharCode(...new Uint8Array(sig))).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-    return `${data}.${sigB64}`;
+  const header = b64url({ alg: 'HS256', typ: 'JWT' });
+  const body = b64url(payload);
+  const data = `${header}.${body}`;
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const sig = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(data));
+  const sigB64 = btoa(String.fromCharCode(...new Uint8Array(sig))).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+  return `${data}.${sigB64}`;
 }
-// ===================================
+
+const jsonCors = (data, status = 200) => new Response(JSON.stringify(data), {
+  status,
+  headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+});
 
 export default async function handler(req) {
-    if (req.method === 'OPTIONS') return new Response(null, { status: 200, headers: { 'Access-Control-Allow-Origin': '*' }});
+  if (req.method === 'OPTIONS') return new Response(null, { status: 200, headers: { 'Access-Control-Allow-Origin': '*' } });
+  if (req.method !== 'POST') return jsonCors({ error: 'Method Not Allowed' }, 405);
 
-    const { email, code, userId } = await req.json(); 
-    if (!email || !code || !userId) {
-        return new Response(JSON.stringify({ error: '参数不全' }), { status: 400, headers: { 'Access-Control-Allow-Origin': '*' } });
+  let body;
+  try { body = await req.json(); } catch { return jsonCors({ error: '请求格式有误' }, 400); }
+  const email = String(body?.email || '').trim().toLowerCase();
+  const code = String(body?.code || '').trim();
+  const userId = String(body?.userId || '').trim();
+  if (!email || !/^[0-9]{6}$/.test(code) || !userId || userId.length > 90) {
+    return jsonCors({ error: '请填写有效的邮箱和 6 位数字验证码' }, 400);
+  }
+
+  try {
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) return jsonCors({ error: '登录配置缺失' }, 503);
+
+    await sql(`CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY, verified_email TEXT,
+      email_verified INTEGER DEFAULT 0, deal_count INTEGER DEFAULT 0
+    )`);
+    try { await sql('ALTER TABLE users ADD COLUMN deal_count INTEGER DEFAULT 0'); } catch {}
+    try { await sql('ALTER TABLE verification_codes ADD COLUMN attempts INTEGER DEFAULT 0'); } catch {}
+
+    const codeRow = (await sql('SELECT code, expires_at, COALESCE(attempts, 0) AS attempts FROM verification_codes WHERE email = ?', [email])).rows[0];
+    if (!codeRow) return jsonCors({ error: '验证码不存在或已失效，请重新获取' }, 400);
+
+    if (new Date() > new Date(codeRow.expires_at)) {
+      await sql('DELETE FROM verification_codes WHERE email = ?', [email]);
+      return jsonCors({ error: '验证码已过期，请重新获取' }, 400);
     }
 
-    try {
-        let dbUrl = process.env.TURSO_DATABASE_URL.replace('libsql://', 'https://');
-        const authToken = process.env.TURSO_AUTH_TOKEN;
-        const jwtSecret = process.env.JWT_SECRET;
-
-        // 1. 验证 Code 是否正确且未过期
-        const verifyRes = await fetch(`${dbUrl}/v2/pipeline`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                requests: [
-                    { type: "execute", stmt: { sql: "SELECT code, expires_at FROM verification_codes WHERE email = ?", args: [{type:"text", value:email}] } },
-                    { type: "close" }
-                ]
-            })
-        });
-        const verifyData = await verifyRes.json();
-        const rows = verifyData.results[0].response.result.rows;
-
-        if (!rows || rows.length === 0) throw new Error('验证码不存在');
-        const dbCode = rows[0][0].value;
-        const dbExpiresAt = rows[0][1].value;
-
-        if (dbCode !== code) throw new Error('验证码错误');
-        if (new Date() > new Date(dbExpiresAt)) throw new Error('验证码已过期');
-
-        // 2. 自动迁移 + 查询用户是否已存在，顺带取成交数
-        await fetch(`${dbUrl}/v2/pipeline`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ requests: [{ type: "execute", stmt: { sql: "ALTER TABLE users ADD COLUMN deal_count INTEGER DEFAULT 0" } }, { type: "close" }] })
-        }).catch(() => {});
-
-        const userCheckRes = await fetch(`${dbUrl}/v2/pipeline`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                requests: [
-                    { type: "execute", stmt: { sql: "SELECT id, deal_count FROM users WHERE verified_email = ?", args: [{type:"text", value:email}] } },
-                    { type: "close" }
-                ]
-            })
-        });
-        const userCheckData = await userCheckRes.json();
-        const userRows = userCheckData.results[0].response.result.rows;
-
-        let finalUserId = userId; 
-        let isNewUser = true;
-        let userDealCount = 0; // 默认成交数
-
-        if (userRows && userRows.length > 0) {
-            // 老用户回归！
-            finalUserId = userRows[0][0].value; 
-            userDealCount = userRows[0][1].value !== null ? parseInt(userRows[0][1].value) : 0; 
-            isNewUser = false;
-        }
-
-        // 3. 注册新用户，并销毁验证码
-        const sqlRequests = [];
-        if (isNewUser) {
-            sqlRequests.push({ type: "execute", stmt: { sql: "INSERT INTO users (id, verified_email, email_verified, deal_count) VALUES (?, ?, 1, 0)", args: [{type:"text", value:finalUserId}, {type:"text", value:email}] } });
-        }
-        sqlRequests.push({ type: "execute", stmt: { sql: "DELETE FROM verification_codes WHERE email = ?", args: [{type:"text", value:email}] } });
-        sqlRequests.push({ type: "close" });
-
-        await fetch(`${dbUrl}/v2/pipeline`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ requests: sqlRequests })
-        });
-
-        const now = Math.floor(Date.now() / 1000);
-        const token = await signJwt({ userId: finalUserId, email, iat: now, exp: now + 7 * 24 * 3600 }, jwtSecret);
-
-        // 🌟 核心修复：必须把数据库里真正的 finalUserId 返回给前端，覆盖前端的临时 ID！
-        return new Response(JSON.stringify({ 
-            success: true, 
-            token: token, 
-            isNewUser: isNewUser, 
-            deal_count: userDealCount,
-            userId: finalUserId // 👈 新增这一行！
-        }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
-        });
-
-    } catch (e) {
-        return new Response(JSON.stringify({ error: e.message }), { status: 400, headers: { 'Access-Control-Allow-Origin': '*' } });
+    if (String(codeRow.code) !== code) {
+      const nextAttempts = Number(codeRow.attempts || 0) + 1;
+      if (nextAttempts >= 5) {
+        await sql('DELETE FROM verification_codes WHERE email = ?', [email]);
+        return jsonCors({ error: '验证码连续输错次数过多，请重新获取验证码' }, 429);
+      }
+      await sql('UPDATE verification_codes SET attempts = ? WHERE email = ?', [nextAttempts, email]);
+      return jsonCors({ error: '验证码错误，请核对后重试' }, 400);
     }
+
+    // Match case-insensitively so legacy mixed-case emails seamlessly reuse their existing account.
+    const existing = (await sql('SELECT id, deal_count FROM users WHERE lower(verified_email) = ? LIMIT 1', [email])).rows[0];
+    let finalUserId = userId;
+    let isNewUser = true;
+    let userDealCount = 0;
+
+    if (existing) {
+      finalUserId = String(existing.id);
+      userDealCount = existing.deal_count != null ? Number(existing.deal_count) : 0;
+      isNewUser = false;
+    } else {
+      await sql('INSERT INTO users (id, verified_email, email_verified, deal_count) VALUES (?, ?, 1, 0)', [finalUserId, email]);
+    }
+    await sql('DELETE FROM verification_codes WHERE email = ?', [email]);
+
+    const now = Math.floor(Date.now() / 1000);
+    const token = await signJwt({ userId: finalUserId, email, iat: now, exp: now + 7 * 24 * 3600 }, jwtSecret);
+
+    return jsonCors({
+      success: true,
+      token,
+      isNewUser,
+      deal_count: userDealCount,
+      userId: finalUserId,
+    });
+  } catch (e) {
+    return jsonCors({ error: e.message || '验证失败' }, 400);
+  }
 }

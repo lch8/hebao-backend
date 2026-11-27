@@ -3,7 +3,21 @@
 // together; the UI hides past starts rather than recycling old events.
 export const CITY_EVENTS_CHECKED = '2026-11-11';
 export const CITY_AGENDA_URL = 'https://www.indelft.nl/nl/uitagenda/uitagenda-delft';
-export const cities = {delft:'Delft', 'den-haag':'Den Haag', rotterdam:'Rotterdam', amsterdam:'Amsterdam', utrecht:'Utrecht', eindhoven:'Eindhoven'};
+export const cities = {
+  delft: 'Delft',
+  'den-haag': 'Den Haag',
+  rotterdam: 'Rotterdam',
+  amsterdam: 'Amsterdam',
+  utrecht: 'Utrecht',
+  eindhoven: 'Eindhoven',
+};
+export const SOUTH_HOLLAND_CITIES = ['delft', 'den-haag', 'rotterdam'];
+export const cityLabels = {
+  'zuid-holland': '南荷兰省（Delft·海牙·鹿特丹）',
+  ...cities,
+  all: '全部荷兰城市',
+};
+
 export const cityEvents = [
   {
     city: 'delft', id: 'mirror-2026-11-12', summary: '杂技、舞蹈与现场音乐', fee: '€34.50 · 学生 €32.50', category: '舞台', tone: 'clay',
@@ -68,9 +82,6 @@ export function amsterdamInput(value) {
   return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`;
 }
 
-// datetime-local has no timezone. Resolve explicitly, independent of the device.
-// A nonexistent spring-forward time is rejected; an ambiguous autumn time uses
-// its first occurrence, matching the first local wall-clock reading.
 export function amsterdamInstant(value) {
   if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) throw new Error('请选择有效日期和时间');
   const wall = Date.parse(value + 'Z');
@@ -94,10 +105,17 @@ export function weekendLabel(now) {
   return `${month(start)} 月 ${start.getUTCDate()} 日–${month(start) === month(end) ? '' : month(end) + ' 月 '}${end.getUTCDate()} 日`;
 }
 
+export function matchesCityScope(eventCity = 'delft', scope = 'all') {
+  const normalized = eventCity || 'delft';
+  if (!scope || scope === 'all') return true;
+  if (scope === 'zuid-holland') return SOUTH_HOLLAND_CITIES.includes(normalized);
+  return normalized === scope;
+}
+
 export function upcomingCityEvents(events = cityEvents, period = 'all', now = new Date(), city = 'all') {
   const day = dayNumber(amsterdamInput(now)), saturday = weekendStart(day);
   return events.filter(event => {
-    if (city !== 'all' && (event.city || 'delft') !== city) return false;
+    if (!matchesCityScope(event.city || 'delft', city)) return false;
     if (Date.parse(event.startsAt) <= now.getTime()) return false;
     const eventDay = dayNumber(amsterdamInput(event.startsAt));
     if (period === 'weekend') return eventDay >= saturday && eventDay <= saturday + 1;
@@ -107,29 +125,38 @@ export function upcomingCityEvents(events = cityEvents, period = 'all', now = ne
 }
 
 const nearbyCities = {
-  delft: ['den-haag', 'rotterdam'], 'den-haag': ['delft', 'rotterdam'],
-  rotterdam: ['delft', 'den-haag'], amsterdam: ['utrecht'], utrecht: ['amsterdam'],
+  delft: ['den-haag', 'rotterdam'],
+  'den-haag': ['delft', 'rotterdam'],
+  rotterdam: ['delft', 'den-haag'],
+  'zuid-holland': ['amsterdam', 'utrecht'],
+  amsterdam: ['utrecht'],
+  utrecht: ['amsterdam'],
 };
 
 export function discoveryFilters(params) {
-  if (params.has('event')) return {city:'all', period:'all', source:'community'};
+  if (params.has('event')) return { city: 'all', period: 'all', source: 'community' };
   const city = params.get('city'), period = params.get('period');
-  // Older city-list links encoded filters without a source. New links name the view.
   const source = params.get('source');
   const cityList = source === 'city' || (source !== 'community' &&
     (params.has('activity') || params.has('city') || params.has('period')));
+  const resolvedSource = cityList ? 'city' : 'community';
+  // Cold-start focus: default community invitations aggregate South Holland (Delft + Den Haag + Rotterdam)
+  // so visitors don't land on a 0-invite single city, while curated city events still support exact city defaults.
+  const defaultCity = resolvedSource === 'community' ? 'zuid-holland' : 'delft';
+  const validScope = city === 'all' || city === 'zuid-holland' || Object.hasOwn(cities, city);
+  const defaultPeriod = resolvedSource === 'community' ? 'fortnight' : 'weekend';
   return {
-    city: city === 'all' || Object.hasOwn(cities, city) ? city : 'delft',
-    period: ['all', 'weekend', 'fortnight'].includes(period) ? period : 'weekend',
-    source: cityList ? 'city' : 'community',
+    city: validScope ? city : defaultCity,
+    period: ['all', 'weekend', 'fortnight'].includes(period) ? period : defaultPeriod,
+    source: resolvedSource,
   };
 }
 
 export function citySelection(events, period, now, city) {
   const inPeriod = upcomingCityEvents(events, period, now);
-  const local = city === 'all' ? inPeriod : inPeriod.filter(event => event.city === city);
+  const local = city === 'all' ? inPeriod : inPeriod.filter(event => matchesCityScope(event.city || 'delft', city));
   const nearby = local.length ? [] : inPeriod.filter(event => nearbyCities[city]?.includes(event.city));
-  return {local, nearby, inPeriod};
+  return { local, nearby, inPeriod };
 }
 
 export function cityEventDraft(event) {
@@ -151,7 +178,7 @@ export function eventPlace(event, includeCity = true) {
   const place = String(event.place || '').trim(), city = cities[event.city || 'delft'] || '';
   return includeCity && city && !place.toLocaleLowerCase().includes(city.toLocaleLowerCase()) ? `${city} · ${place}` : place;
 }
-// The poster is a summary; URLs belong in its QR code and full web details.
+
 export function eventPosterNote(event) {
   return String(event.description || '').split('\n').filter(line => !/^一起参加 |^活动详情：/.test(line.trim())).join(' ').replace(/https?:\/\/\S+/g, '').trim();
 }

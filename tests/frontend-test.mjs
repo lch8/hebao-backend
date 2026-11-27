@@ -4,14 +4,27 @@ import {readFileSync} from 'node:fs';
 import {cityEvents, upcomingCityEvents, amsterdamInput, amsterdamInstant, cityEventDraft, citySelection, discoveryFilters, weekendLabel} from '../delft/city-events.js';
 import {activityCard, activityDetailContent} from '../delft/activity-view.js';
 import {posterLayout, makeQr} from '../delft/poster.js';
-import {PUBLIC_SITE_URL, posterDestination, activityLink, pageFromQuery} from '../delft/site-config.js';
+import {DEFAULT_SITE_ORIGIN, PUBLIC_SITE_URL, resolveSiteOrigin, posterDestination, activityLink, pageFromQuery, pageFromLocation, legalModalFromLocation} from '../delft/site-config.js';
+import {mergeStudy, freshStudy, recordTask, completeLesson} from '../delft/dutch-store.js';
+import {mergePrep, openPrepLedger} from '../delft/a2-progress.js';
+import {resolveShareMeta, renderShareHtml} from '../api/share-page.js';
 
-test('the Delft homepage opens the companion board for new visitors and generic referrals', () => {
+test('the homepage and clean channel paths route accurately while preserving /delft/ compatibility', () => {
   const page = query => pageFromQuery(new URLSearchParams(query));
   assert.equal(page(''), 'events');
   assert.equal(page('utm_source=wechat&source=poster'), 'events');
   assert.equal(page('tab=unknown'), 'events');
   for (const tab of ['dutch','events','market','mine','sell']) assert.equal(page('tab='+tab), tab);
+
+  assert.equal(pageFromLocation({pathname:'/', search:''}), 'events');
+  assert.equal(pageFromLocation({pathname:'/events', search:''}), 'events');
+  assert.equal(pageFromLocation({pathname:'/market', search:''}), 'market');
+  assert.equal(pageFromLocation({pathname:'/dutch-a2', search:''}), 'dutch');
+  assert.equal(pageFromLocation({pathname:'/mine', search:'?view=messages'}), 'mine');
+  assert.equal(pageFromLocation({pathname:'/sell', search:''}), 'sell');
+  assert.equal(pageFromLocation({pathname:'/delft/', search:'?tab=market'}), 'market');
+  assert.equal(legalModalFromLocation({pathname:'/privacy', search:''}), 'privacy');
+  assert.equal(legalModalFromLocation({pathname:'/terms', search:''}), 'terms');
 });
 
 test('the first paint and the primary navigation match the homepage route', () => {
@@ -94,58 +107,68 @@ test('all 1–12 poster items fit above the attribution, including the old 10–
   assert.throws(()=>posterLayout(0)); assert.throws(()=>posterLayout(13));
 });
 
-test('QR promotion uses the production site and only promises saved published inventory', () => {
+test('QR promotion never prints .vercel.app, adapts to custom domains, and only promises saved published inventory', () => {
+  assert.equal(resolveSiteOrigin({protocol:'https:', hostname:'hebao-backend.vercel.app', origin:'https://hebao-backend.vercel.app'}), DEFAULT_SITE_ORIGIN);
+  assert.equal(resolveSiteOrigin({protocol:'http:', hostname:'localhost', origin:'http://localhost:3000'}), DEFAULT_SITE_ORIGIN);
+  assert.equal(resolveSiteOrigin({protocol:'https:', hostname:'hebaogj.xyz', origin:'https://hebaogj.xyz'}), 'https://hebaogj.xyz');
+  assert.equal(resolveSiteOrigin({protocol:'https:', hostname:'nl.hebaogj.xyz', origin:'https://nl.hebaogj.xyz'}), 'https://nl.hebaogj.xyz');
+
   const draft=posterDestination();assert.equal(draft.url,PUBLIC_SITE_URL);assert.equal(draft.published,false);
   const saved=posterDestination({publishedId:'test/listing?a=1',dirty:false});
   assert.equal(new URL(saved.url).searchParams.get('item'),'test/listing?a=1');assert.equal(saved.published,true);
+  assert.equal(new URL(saved.url).pathname,'/market');
   const unsaved=posterDestination({publishedId:'test',dirty:true});
   assert.equal(unsaved.url,PUBLIC_SITE_URL);assert.equal(unsaved.published,false);
-  assert.equal(new URL(saved.url).hostname,'hebao-backend.vercel.app');
-  // Exercise the bundled encoder at the longest normal URL, without network requests.
+  assert.equal(new URL(saved.url).hostname,'hebaogj.xyz');
   assert.doesNotThrow(()=>makeQr(posterDestination({publishedId:'12345678-1234-1234-1234-123456789012',dirty:false}).url));
 });
 
-
 const {marketProducts, itemPrice} = await import('../delft/market-view.js');
 test('search presents the matched item and price, excluding unrelated cheaper items in the same bundle', () => {
-  const listings=[{id:'bundle',title:'搬家',pickup:'Delft',updatedAt:'2026-11-11',items:[{id:'bike',name:'自行车',price:80,category:'自行车',status:'available'},{id:'desk',name:'书桌',price:20,category:'家具',status:'available'},{id:'sold-bike',name:'自行车',price:5,status:'sold'}]}];
+  const listings=[{id:'bundle',city:'delft',title:'搬家',pickup:'Delft',updatedAt:'2026-11-11',items:[{id:'bike',name:'自行车',price:80,category:'自行车',status:'available'},{id:'desk',name:'书桌',price:20,category:'家具',status:'available'},{id:'sold-bike',name:'自行车',price:5,status:'sold'}]}];
   const found=marketProducts(listings,{query:'自行车'});
   assert.deepEqual(found.map(x=>[x.item.id,x.price]),[['bike',80]]);
   assert.equal(marketProducts(listings,{query:'自行车',category:'家具'}).length,0);
+  assert.equal(marketProducts(listings,{city:'zuid-holland'}).length,2);
+  assert.equal(marketProducts(listings,{city:'amsterdam'}).length,0);
   assert.equal(marketProducts([{...listings[0],stale:true}]).length,0);
 });
-test('price sorting treats free items as zero and unknown prices as unknown, without mutating listings',()=>{
+
+test('price sorting treats free items as zero and strictly places unpriced negotiable items at the end',()=>{
   const listings=[{id:'a',updatedAt:'2026-11-11',items:[{id:'unknown',price:'',status:'available'},{id:'paid',price:'10',status:'available'},{id:'free',price:0,status:'available'},{id:'null',price:null,status:'available'}]}];
   const before=JSON.stringify(listings);
   assert.deepEqual(marketProducts(listings,{sort:'price'}).map(x=>x.item.id),['free','paid','unknown','null']);
   assert.equal(itemPrice({price:''}),null);assert.equal(itemPrice({price:0}),0);assert.equal(itemPrice({price:'invalid'}),null);
   assert.equal(JSON.stringify(listings),before);
 });
+
 test('recent sorting uses listing confirmation times and preserves keyword matching in pickup and condition',()=>{
   const listings=[{id:'old',updatedAt:'2026-11-01',pickup:'TU 校园',items:[{id:'a',name:'椅子',condition:'九成新',status:'available'}]},{id:'new',updatedAt:'2026-11-11',pickup:'TU 校园',items:[{id:'b',name:'桌子',status:'available'}]}];
   assert.deepEqual(marketProducts(listings,{query:'tu'}).map(x=>x.item.id),['b','a']);
   assert.deepEqual(marketProducts(listings,{query:'九成新'}).map(x=>x.item.id),['a']);
 });
 
-test('city selection separates official and legacy community events',()=>{
- const now=new Date('2026-11-12T00:00:00Z');
- const events=[{id:'a',city:'utrecht',startsAt:'2026-11-14T12:00:00+01:00'},{id:'b',startsAt:'2026-11-14T13:00:00+01:00'}];
- assert.deepEqual(upcomingCityEvents(events,'all',now,'utrecht').map(e=>e.id),['a']);
- assert.deepEqual(upcomingCityEvents(events,'all',now,'delft').map(e=>e.id),['b']);
+test('city selection separates official and legacy community events and supports South Holland scope',()=>{
+  const now=new Date('2026-11-12T00:00:00Z');
+  const events=[{id:'a',city:'utrecht',startsAt:'2026-11-14T12:00:00+01:00'},{id:'b',startsAt:'2026-11-14T13:00:00+01:00'},{id:'c',city:'rotterdam',startsAt:'2026-11-14T14:00:00+01:00'}];
+  assert.deepEqual(upcomingCityEvents(events,'all',now,'utrecht').map(e=>e.id),['a']);
+  assert.deepEqual(upcomingCityEvents(events,'all',now,'delft').map(e=>e.id),['b']);
+  assert.deepEqual(upcomingCityEvents(events,'all',now,'zuid-holland').map(e=>e.id),['b','c']);
 });
 
-test('discovery restores city, dates and source, including old group invitations', () => {
+test('discovery defaults community invitations to South Holland fortnight and curated city picks to Delft weekend', () => {
   const filters = query => discoveryFilters(new URLSearchParams(query));
-  const defaults = {city:'delft', period:'weekend', source:'community'};
-  assert.deepEqual(filters(''), defaults);
-  assert.deepEqual(filters('utm_source=wechat&source=poster'), defaults);
-  assert.deepEqual(filters('tab=events'), defaults);
-  assert.deepEqual(filters('tab=events&source=city'), {...defaults, source:'city'});
-  assert.deepEqual(filters('activity=old-official-id'), {...defaults, source:'city'});
-  assert.deepEqual(filters('city=constructor&period=invalid&source=unknown'), {...defaults, source:'city'});
+  const communityDefaults = {city:'zuid-holland', period:'fortnight', source:'community'};
+  const cityDefaults = {city:'delft', period:'weekend', source:'city'};
+  assert.deepEqual(filters(''), communityDefaults);
+  assert.deepEqual(filters('utm_source=wechat&source=poster'), communityDefaults);
+  assert.deepEqual(filters('tab=events'), communityDefaults);
+  assert.deepEqual(filters('tab=events&source=city'), cityDefaults);
+  assert.deepEqual(filters('activity=old-official-id'), cityDefaults);
+  assert.deepEqual(filters('city=constructor&period=invalid&source=unknown'), cityDefaults);
   const choice = {city:'utrecht', period:'fortnight', source:'community'};
   assert.deepEqual(filters(new URLSearchParams(choice)), choice);
-  assert.deepEqual(filters('city=all&period=weekend'), {...defaults, city:'all', source:'city'});
+  assert.deepEqual(filters('city=all&period=weekend'), {...cityDefaults, city:'all'});
   assert.deepEqual(filters('event=group&city=delft&period=weekend'), {city:'all', period:'all', source:'community'});
 });
 
@@ -165,10 +188,10 @@ test('weekend city counts exclude nearby suggestions, past starts and weekdays',
   assert.equal(weekendLabel(new Date('2026-10-31T23:10:00Z')),'10 月 31 日–11 月 1 日');
 });
 
-test('official sharing uses a standalone production URL, independent of discovery and group links', () => {
+test('official sharing uses a clean production /events URL, independent of discovery and group links', () => {
   const id='event/123?city=all&item=x';
   const link=new URL(activityLink(id));
-  assert.equal(link.origin+link.pathname,PUBLIC_SITE_URL);
+  assert.equal(link.origin+link.pathname,`${DEFAULT_SITE_ORIGIN}/events`);
   assert.deepEqual([...link.searchParams],[['activity',id]]);
 });
 
@@ -207,4 +230,59 @@ test('meetup categories follow the activity and admission comes from the origina
   assert.equal(cityEventDraft({...event,title:'森林徒步',originalTitle:''}).category,'散步');
   assert.equal(cityEventDraft({...event,title:'露天放映',originalTitle:''}).category,'其他');
   assert.doesNotMatch(cityEventDraft(event).description,/预约/);
+});
+
+test('dynamic Open Graph metadata injects accurate listing, meetup, activity and route cards without XSS', async () => {
+  const template = readFileSync(new URL('../delft/index.html',import.meta.url),'utf8');
+  const listingMeta = await resolveShareMeta({
+    pathname: '/market',
+    searchParams: new URLSearchParams('item=list-1&product=p2'),
+    origin: 'https://hebaogj.xyz',
+    getListing: async () => ({
+      id: 'list-1', city: 'rotterdam', seller: '小林', title: '毕业整屋清仓 <script>', pickup: 'Blaak',
+      items: [
+        { id: 'p1', name: '台灯', price: 10, status: 'sold', photo: 'https://bucket.cos.eu-frankfurt.myqcloud.com/1.jpg' },
+        { id: 'p2', name: '人体工学椅', price: 65, status: 'available', photo: 'https://bucket.cos.eu-frankfurt.myqcloud.com/2.jpg' },
+      ],
+    }),
+  });
+  assert.match(listingMeta.title, /人体工学椅（€65）· Rotterdam 闲置/);
+  assert.equal(listingMeta.image, 'https://bucket.cos.eu-frankfurt.myqcloud.com/2.jpg');
+  const rendered = renderShareHtml(template, listingMeta);
+  assert.match(rendered, /<meta property="og:image" content="https:\/\/bucket\.cos\.eu-frankfurt\.myqcloud\.com\/2\.jpg" \/>/);
+  assert.doesNotMatch(rendered, /<script>.*毕业/);
+
+  const eventMeta = await resolveShareMeta({
+    pathname: '/events',
+    searchParams: new URLSearchParams('event=ev-9'),
+    origin: 'https://hebaogj.xyz',
+    getEvent: async () => ({
+      id: 'ev-9', city: 'delft', host: '阿泽', title: '周六桌游局',
+      startsAt: '2026-11-28T14:00:00+01:00', place: 'TU 图书馆', capacity: 5, count: 3, cancelled: false,
+    }),
+  });
+  assert.match(eventMeta.title, /周六桌游局 · Delft 同城约伴/);
+  assert.match(eventMeta.description, /3\/5 人/);
+});
+
+test('A2 cloud sync merges local pre-login answers and mock papers without losing progress', () => {
+  let local = freshStudy();
+  for (const id of ['coffee-1','coffee-2']) local = recordTask(local, id, {correct:true}, new Date('2026-11-20T12:00:00Z'));
+  local = recordTask(local, 'coffee-3', {correct:true, selfRated:true}, new Date('2026-11-20T12:00:00Z'));
+  local = completeLesson(local, 'coffee');
+
+  let remote = freshStudy();
+  remote = recordTask(remote, 'doctor-1', {correct:false}, new Date('2026-11-19T12:00:00Z'));
+  const merged = mergeStudy(local, remote);
+  assert.deepEqual(merged.completed, ['coffee']);
+  assert.equal(merged.answers['doctor-1'].needsReview, true);
+
+  const s1 = new Map(), s2 = new Map();
+  const l1 = openPrepLedger({getItem:k=>s1.get(k), setItem:(k,v)=>s1.set(k,v)});
+  const l2 = openPrepLedger({getItem:k=>s2.get(k), setItem:(k,v)=>s2.set(k,v)});
+  l1.start('read','a','tok-a'); l1.finish('read','a','tok-a',{attempted:6,correct:5});
+  l2.start('listen','b','tok-b'); l2.finish('listen','b','tok-b',{attempted:6,correct:4});
+  const mp = mergePrep(l1.read(), l2.read());
+  assert.equal(mp.forms['read/a'].first.correct, 5);
+  assert.equal(mp.forms['listen/b'].first.correct, 4);
 });

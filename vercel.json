@@ -4,5 +4,27 @@
       "path": "/api/cron-clean",
       "schedule": "0 3 * * *"
     }
+  ],
+  "functions": {
+    "api/share-page.js": {
+      "includeFiles": "delft/{index.html,events-feed.json,city-events.js,site-config.js}"
+    }
+  },
+  "rewrites": [
+    { "source": "/", "destination": "/api/share-page?__path=/" },
+    { "source": "/events", "destination": "/api/share-page?__path=/events" },
+    { "source": "/events/", "destination": "/api/share-page?__path=/events" },
+    { "source": "/market", "destination": "/api/share-page?__path=/market" },
+    { "source": "/market/", "destination": "/api/share-page?__path=/market" },
+    { "source": "/dutch-a2", "destination": "/api/share-page?__path=/dutch-a2" },
+    { "source": "/dutch-a2/", "destination": "/api/share-page?__path=/dutch-a2" },
+    { "source": "/mine", "destination": "/api/share-page?__path=/mine" },
+    { "source": "/mine/", "destination": "/api/share-page?__path=/mine" },
+    { "source": "/sell", "destination": "/api/share-page?__path=/sell" },
+    { "source": "/sell/", "destination": "/api/share-page?__path=/sell" },
+    { "source": "/privacy", "destination": "/api/share-page?__path=/privacy" },
+    { "source": "/privacy/", "destination": "/api/share-page?__path=/privacy" },
+    { "source": "/terms", "destination": "/api/share-page?__path=/terms" },
+    { "source": "/terms/", "destination": "/api/share-page?__path=/terms" }
   ]
 }

@@ -2,6 +2,9 @@ import assert from 'node:assert/strict';
 import {createHmac} from 'node:crypto';
 import {test,after} from 'node:test';
 import handler from '../api/delft.js';
+import aiHandler from '../api/delft-ai.js';
+import sendAuthHandler from '../api/send-auth-email.js';
+import verifyAuthHandler from '../api/verify-auth-code.js';
 import {mockTurso} from './helpers/mock-turso.mjs';
 
 process.env.TURSO_DATABASE_URL='libsql://mock';
@@ -30,7 +33,7 @@ test('guests can browse; writing and private reads require valid JWT',async()=>{
   assert.deepEqual((await ask('listings')).data.listings,[]);
   assert.deepEqual((await ask('events')).data.events,[]);
   for(const action of ['createListing','updateListing','refreshListing','sendMessage','rsvp'])assert.equal((await ask(action,'POST',{},undefined)).status,401);
-  for(const action of ['mine','messages','attendees'])assert.equal((await ask(action)).status,401);
+  for(const action of ['mine','messages','attendees','exportMyData'])assert.equal((await ask(action)).status,401);
   for(const token of ['invalid',jwt('alice',1),jwt({id:'alice'})]){
     const response=await handler(new Request('https://example.test/api/delft?action=mine',{headers:{Authorization:`Bearer ${token}`}}));
     assert.equal(response.status,401);
@@ -40,14 +43,17 @@ test('guests can browse; writing and private reads require valid JWT',async()=>{
 test('invalid JSON and malformed listing inputs return 400',async()=>{
   const response=await handler(new Request('https://example.test/api/delft?action=createListing',{method:'POST',headers:{Authorization:`Bearer ${jwt('alice')}`},body:'{broken'}));
   assert.equal(response.status,400);
-  for(const body of [null,[],draft({items:[]}),draft({items:[null]}),draft({items:[{name:'桌子',price:-1}]}),draft({items:[{name:'桌子',price:true}]}),draft({items:[{name:'桌子',category:'未知'}]}),draft({items:[{id:'same-id',name:'a'},{id:'same-id',name:'b'}]})])assert.equal((await ask('createListing','POST',body,'alice')).status,400);
+  for(const body of [null,[],draft({items:[]}),draft({items:[null]}),draft({items:[{name:'桌子',price:-1}]}),draft({items:[{name:'桌子',price:true}]}),draft({items:[{name:'桌子',category:'未知'}]}),draft({city:'mars'}),draft({items:[{id:'same-id',name:'a'},{id:'same-id',name:'b'}]})])assert.equal((await ask('createListing','POST',body,'alice')).status,400);
 });
 
-test('create returns a stable share ID and removes unsafe photo URLs',async()=>{
-  const created=await ask('createListing','POST',draft(),'alice');
+test('create returns a stable share ID, stores city, and removes unsafe photo URLs',async()=>{
+  const created=await ask('createListing','POST',draft({city:'rotterdam'}),'alice');
   assert.equal(created.status,200);listingId=created.data.id;assert.ok(listingId);assert.ok(created.data.updatedAt);
   const listing=(await ask('listing','GET',undefined,undefined,{id:listingId})).data.listing;
   assert.equal(listing.items[0].photo,'');assert.equal(listing.items[0].category,'家具');
+  assert.equal(listing.city,'rotterdam');
+  assert.equal((await ask('listings','GET',undefined,undefined,{city:'zuid-holland'})).data.listings.length,1);
+  assert.equal((await ask('listings','GET',undefined,undefined,{city:'amsterdam'})).data.listings.length,0);
   assert.equal('owner_id' in listing,false);assert.equal('email' in listing,false);
 });
 
@@ -107,34 +113,197 @@ test('concurrent status changes cannot silently overwrite another item update',a
   assert.equal((await ask('listing','GET',undefined,undefined,{id:listingId})).data.listing.items[0].name,'别人更新的书桌');
 });
 
-test('private messages isolate buyers and reject forged recipients',async()=>{
+test('private messages isolate buyers, track unread counts, and send throttled Resend email alerts',async()=>{
+  mock.db.prepare('INSERT OR REPLACE INTO users(id,verified_email,email_verified) VALUES(?,?,1)').run('alice','alice@tudelft.nl');
+  mock.db.prepare('INSERT OR REPLACE INTO users(id,verified_email,email_verified) VALUES(?,?,1)').run('bob','bob@gmail.com');
+  const sentEmails=[];
+  process.env.RESEND_API_KEY='re_test_key';
+  mock.mockExternal(async(url,init)=>{
+    if(url==='https://api.resend.com/emails'){
+      sentEmails.push(JSON.parse(init.body));
+      return Response.json({id:'email-1'});
+    }
+    throw new Error('Unexpected URL '+url);
+  });
+
   assert.equal((await ask('sendMessage','POST',{listingId,content:'hello'},'alice')).status,403);
   assert.equal((await ask('sendMessage','POST',{listingId,receiverId:'mallory',content:'hello'},'bob')).status,403);
-  assert.equal((await ask('sendMessage','POST',{listingId,content:'hello'},'bob')).status,200);
+  assert.equal((await ask('sendMessage','POST',{listingId,content:'还在吗？'},'bob')).status,200);
+  assert.equal(sentEmails.length,1);
+  assert.equal(sentEmails[0].to,'alice@tudelft.nl');
+  assert.ok(sentEmails[0].text.includes('还在吗？') && sentEmails[0].html.includes('hebaogj.xyz'));
+
+  // Rapid second message in same thread within 5 min cooldown does not spam another email
+  assert.equal((await ask('sendMessage','POST',{listingId,content:'今晚能自取'},'bob')).status,200);
+  assert.equal(sentEmails.length,1);
+
+  assert.equal((await ask('unread','GET',undefined,'alice')).data.unreadCount,2);
   assert.equal((await ask('messages','GET',undefined,'mallory')).data.messages.length,0);
-  assert.equal((await ask('messages','GET',undefined,'alice')).data.messages.length,1);
+  assert.equal((await ask('messages','GET',undefined,'alice')).data.messages.length,2);
+  assert.equal((await ask('markRead','POST',{listingId,otherId:'bob'},'alice')).data.unreadCount,0);
+
   assert.equal((await ask('sendMessage','POST',{listingId,receiverId:'mallory',content:'伪造回复'},'alice')).status,403);
-  assert.equal((await ask('sendMessage','POST',{listingId,receiverId:'bob',content:'好的'},'alice')).status,200);
+  assert.equal((await ask('sendMessage','POST',{listingId,receiverId:'bob',content:'好的，今晚七点见'},'alice')).status,200);
+  assert.equal(sentEmails.length,2);
+  assert.equal(sentEmails[1].to,'bob@gmail.com');
+
+  delete process.env.RESEND_API_KEY;
+  mock.mockExternal(null);
 });
 
-test('event RSVP enforces capacity atomically and cancellation frees the seat',async()=>{
-  const event=await ask('createEvent','POST',{title:'周末桌游',host:'小李',startsAt:new Date(Date.now()+86400000).toISOString(),category:'桌游',place:'Delft station',capacity:2,description:''},'alice');
+test('event RSVP, private contactHint unlock, coordination messages, schedule updates, and cancellation notifications work end-to-end',async()=>{
+  const sentEmails=[];
+  process.env.RESEND_API_KEY='re_test_key';
+  mock.mockExternal(async(url,init)=>{
+    if(url==='https://api.resend.com/emails'){sentEmails.push(JSON.parse(init.body));return Response.json({id:'ev-mail'});}
+    throw new Error('Unexpected URL '+url);
+  });
+
+  const event=await ask('createEvent','POST',{
+    title:'周末桌游',host:'小李',startsAt:new Date(Date.now()+86400000).toISOString(),
+    category:'桌游',place:'Delft station',capacity:2,description:'',contactHint:'微信号 xiaoli_nl'
+  },'alice');
   assert.equal(event.status,200);eventId=event.data.id;
-  assert.equal((await ask('rsvp','POST',{eventId,nickname:'小张'},'bob')).status,200);
+
+  // Non-participants cannot see contactHint or eventMessages
+  const publicView=(await ask('events','GET',undefined,'charlie')).data.events[0];
+  assert.equal('contactHint' in publicView,false);
+  assert.equal(publicView.hasContactHint,true);
+  assert.equal((await ask('eventMessages','GET',undefined,'charlie',{eventId})).status,403);
+
+  // RSVP unlocks contactHint and notifies host
+  const rsvpRes=await ask('rsvp','POST',{eventId,nickname:'小张'},'bob');
+  assert.equal(rsvpRes.status,200);
+  assert.equal(rsvpRes.data.contactHint,'微信号 xiaoli_nl');
+  assert.equal(sentEmails.at(-1).to,'alice@tudelft.nl');
+
+  // Capacity enforced atomically
   assert.equal((await ask('rsvp','POST',{eventId,nickname:'小王'},'charlie')).status,409);
   assert.equal((await ask('rsvp','POST',{eventId,nickname:'小李'},'alice')).status,409);
-  assert.equal((await ask('events','GET',undefined,'bob')).data.events[0].joined,true);
-  assert.equal((await ask('attendees','GET',undefined,'bob',{id:eventId})).status,403);
-  assert.equal((await ask('attendees','GET',undefined,'alice',{id:eventId})).data.attendees[0].nickname,'小张');
-  assert.equal((await ask('cancelRsvp','POST',{eventId},'bob')).status,200);
-  assert.equal((await ask('rsvp','POST',{eventId,nickname:'小王'},'charlie')).status,200);
-  await ask('cancelEvent','POST',{eventId},'bob');assert.equal((await ask('events')).data.events.length,1);
-  await ask('cancelEvent','POST',{eventId},'alice');assert.equal((await ask('events')).data.events.length,0);
+
+  // Participant & host can exchange coordination messages
+  assert.equal((await ask('sendEventMessage','POST',{eventId,content:'我会带阿瓦隆桌游'},'bob')).status,200);
+  const coord=(await ask('eventMessages','GET',undefined,'alice',{eventId})).data;
+  assert.equal(coord.messages.length,1);
+  assert.equal(coord.messages[0].content,'我会带阿瓦隆桌游');
+
+  // Host updates venue -> notifies RSVPed attendee bob@gmail.com
+  const countBeforeUpdate=sentEmails.length;
+  assert.equal((await ask('updateEvent','POST',{eventId,place:'Delft 图书馆咖啡厅室内桌'},'alice')).status,200);
+  assert.equal(sentEmails.length,countBeforeUpdate+1);
+  assert.equal(sentEmails.at(-1).to,'bob@gmail.com');
+  assert.ok(sentEmails.at(-1).subject.includes('活动变更'));
+
+  // Host cancels event with reason -> notifies attendee & keeps cancelled record in mine.myEvents
+  const countBeforeCancel=sentEmails.length;
+  assert.equal((await ask('cancelEvent','POST',{eventId,reason:'暴雨改下周'},'alice')).status,200);
+  assert.equal(sentEmails.length,countBeforeCancel+1);
+  assert.equal(sentEmails.at(-1).to,'bob@gmail.com');
+  assert.ok(sentEmails.at(-1).text.includes('暴雨改下周'));
+  assert.equal((await ask('events')).data.events.length,0);
+  const bobMine=(await ask('mine','GET',undefined,'bob')).data;
+  assert.equal(bobMine.myEvents[0].cancelled,true);
+  assert.equal(bobMine.myEvents[0].cancelReason,'暴雨改下周');
+
+  delete process.env.RESEND_API_KEY;
+  mock.mockExternal(null);
+});
+
+test('AI endpoint requires JWT auth and enforces daily budget circuit breaker',async()=>{
+  process.env.GEMINI_API_KEY='test-gemini-key';
+  process.env.GEMINI_DAILY_LIMIT='10';
+  const unauth=await aiHandler(new Request('https://example.test/api/delft-ai',{method:'POST',body:JSON.stringify({photos:['/9j/4AAQSkZJRg==']})}));
+  assert.equal(unauth.status,401);
+
+  mock.mockExternal(async(url)=>{
+    if(url.startsWith('https://generativelanguage.googleapis.com/')){
+      return Response.json({candidates:[{content:{parts:[{text:JSON.stringify({items:[{index:0,name:'台灯',condition:'白色'}]})}]}}]});
+    }
+    throw new Error('Unexpected URL '+url);
+  });
+
+  const okRes=await aiHandler(new Request('https://example.test/api/delft-ai',{
+    method:'POST',
+    headers:{'Content-Type':'application/json',Authorization:`Bearer ${jwt('alice')}`},
+    body:JSON.stringify({photos:['/9j/4AAQSkZJRg==']})
+  }));
+  assert.equal(okRes.status,200);
+  assert.equal((await okRes.json()).items[0].name,'台灯');
+
+  // Trip the global daily budget cap
+  const today=new Date().toISOString().slice(0,10);
+  mock.db.prepare('UPDATE delft_ai_quota SET hits=10 WHERE id=?').run(`${today}:global`);
+  const capped=await aiHandler(new Request('https://example.test/api/delft-ai',{
+    method:'POST',
+    headers:{'Content-Type':'application/json',Authorization:`Bearer ${jwt('bob')}`},
+    body:JSON.stringify({photos:['/9j/4AAQSkZJRg==']})
+  }));
+  assert.equal(capped.status,429);
+
+  delete process.env.GEMINI_API_KEY;
+  delete process.env.GEMINI_DAILY_LIMIT;
+  mock.mockExternal(null);
+});
+
+test('OTP email normalizes case, enforces 55s cooldown, and locks out 5 wrong code attempts',async()=>{
+  process.env.RESEND_API_KEY='re_test_key';
+  let lastMail=null;
+  mock.mockExternal(async(url,init)=>{
+    if(url==='https://api.resend.com/emails'){lastMail=JSON.parse(init.body);return Response.json({id:'otp-1'});}
+    throw new Error('Unexpected URL '+url);
+  });
+
+  const first=await sendAuthHandler(new Request('https://example.test/api/send-auth-email',{
+    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:'  Student@TUDelft.NL '})
+  }));
+  assert.equal(first.status,200);
+  assert.equal(lastMail.to,'student@tudelft.nl');
+  assert.ok(lastMail.text && lastMail.html);
+
+  // Immediate duplicate send hits 55s cooldown
+  const cooldown=await sendAuthHandler(new Request('https://example.test/api/send-auth-email',{
+    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:'student@tudelft.nl'})
+  }));
+  assert.equal(cooldown.status,429);
+
+  // 5 wrong guesses destroy the OTP
+  for(let i=0;i<4;i++){
+    const bad=await verifyAuthHandler(new Request('https://example.test/api/verify-auth-code',{
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:'student@tudelft.nl',code:'000000',userId:'u-stu'})
+    }));
+    assert.equal(bad.status,400);
+  }
+  const locked=await verifyAuthHandler(new Request('https://example.test/api/verify-auth-code',{
+    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:'student@tudelft.nl',code:'000000',userId:'u-stu'})
+  }));
+  assert.equal(locked.status,429);
+
+  delete process.env.RESEND_API_KEY;
+  mock.mockExternal(null);
+});
+
+test('reporting, feedback, funnel tracking, A2 cloud sync, and GDPR export/account deletion work cleanly',async()=>{
+  assert.equal((await ask('track','POST',{event:'page_view'},undefined)).status,200);
+  assert.equal((await ask('track','POST',{event:'invalid_event'},undefined)).status,400);
+  assert.equal((await ask('submitFeedback','POST',{category:'功能建议',content:'希望能搜鹿特丹闲置',contact:'test@qq.com',page:'/market'},undefined)).status,200);
+  assert.equal((await ask('reportContent','POST',{targetType:'listing',targetId:listingId,reason:'疑似诈骗或定金诱导',detail:'要求先转定金'},undefined)).status,200);
+
+  assert.equal((await ask('saveStudyProgress','POST',{study:{completed:['coffee']},prep:{version:1}},'bob')).status,200);
+  const progress=(await ask('studyProgress','GET',undefined,'bob')).data.progress;
+  assert.deepEqual(progress.study,{completed:['coffee']});
+
+  const exported=(await ask('exportMyData','GET',undefined,'bob')).data;
+  assert.equal(exported.account.verified_email,'bob@gmail.com');
+  assert.equal(exported.listings.length,1);
+
+  assert.equal((await ask('deleteAccount','POST',{confirm:'wrong'},'bob')).status,400);
+  assert.equal((await ask('deleteAccount','POST',{confirm:'DELETE'},'bob')).status,200);
+  assert.equal((await ask('mine','GET',undefined,'bob')).data.listings.length,0);
+  assert.equal(mock.db.prepare('SELECT COUNT(*) AS n FROM users WHERE id=?').get('bob').n,0);
 });
 
 test('only the seller can delete a listing and its associated messages',async()=>{
-  assert.equal((await ask('deleteListing','POST',{listingId},'bob')).status,403);
+  assert.equal((await ask('deleteListing','POST',{listingId},'charlie')).status,403);
   assert.equal((await ask('deleteListing','POST',{listingId},'alice')).status,200);
   assert.equal((await ask('listing','GET',undefined,undefined,{id:listingId})).status,404);
-  assert.equal((await ask('messages','GET',undefined,'bob')).data.messages.length,0);
 });

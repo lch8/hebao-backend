@@ -32,21 +32,21 @@
 
 只收录可以在场馆、主办方或 Delft 官方活动日历核对的场次，不把示例组局当成真实用户内容。标题和简介是荷包整理，来源保留在每张卡片上。过去的开始时间不会继续显示，也不会自动滚动到下一周；精选过期后仍可访问 [Delft 官方日历](https://www.indelft.nl/nl/uitagenda/uitagenda-delft)。
 
-## 海报入口与依赖
+## 海报入口、统一路由与动态分享卡片
 
-`delft/site-config.js` 的 `PUBLIC_SITE_URL` 是公开推广入口，当前为仓库配置的生产域名 `https://hebao-backend.vercel.app/delft/`，不会把 Vercel 受保护的预览域名印上海报。**本 PR 合并到生产并部署 `/delft/` 后，海报入口才生效**；预览阶段生成的海报用于验收。更换自定义域名时需同步修改该常量，已下载的海报内容不会改变。
+`delft/site-config.js` 默认公开推广域名为 `https://hebaogj.xyz`（在已绑定的正式 HTTPS 自定义域名下自动适配当前域名，预览站不会将 `.vercel.app` 印上海报）。`vercel.json` 与 `api/share-page.js` 统一提供 `/events`、`/market`、`/dutch-a2`、`/mine`、`/sell`、`/privacy`、`/terms` 及根路径 `/` 路由（同时完整保留 `/delft/` 旧链接兼容），并为单条闲置清单（`?item=`）、同城邀约（`?event=`）与城市活动（`?activity=`）服务端注入动态 Open Graph 标题、摘要与预览图。
 
 二维码在浏览器本地生成，使用随代码固定的 [qrcode-generator 2.0.4](https://github.com/kazuhikoarase/qrcode-generator/tree/js2.0.4)，原始文件为 `js/dist/qrcode.mjs`（Git blob `444522524987df3a4e37c2a5150dc5c8a052bd44`）。MIT 许可保留在 `delft/vendor/qrcode-LICENSE`。没有第三方二维码生成请求或额外运行时安装步骤。
 
-## v0.2 的变化
+## v0.2 – v1.1 核心能力
 
-- **刷新不丢草稿**：商品照片、名称、价格、分类和发布信息保存在浏览器 IndexedDB；刷新后恢复。新建会清除当前草稿，退出登录也会清除，已发布清仓页保留。
+- **刷新不丢草稿 + 微信 WebView 防回收**：商品照片与清单草稿保存在浏览器 IndexedDB（附 `localStorage` 降级兜底），登录邮箱后自动将草稿元数据与已上传图片备份到云端；微信内置浏览器内海报自动切换为 Base64 `<img>` 以支持原生「长按保存/转发」。
 - **发布后继续编辑**：在「我的」打开清仓页，可调整价格、描述、商品与自取区域；保存后沿用原来的分享链接，并保留预订/售出状态。发布成功后再次点击保存会更新原页，不重复创建。
-- **在售商品筛选**：支持家具、自行车、数码、生活用品、书籍、其他六类与关键词搜索；服务端在分页截断前筛选同一件在售商品。售出、预订和 14 天未确认的清仓页不进入默认集市。
-- **确认仍在售**：卖家可重新确认库存，使过期清仓页回到集市。分享链接始终可访问，包括已售或过期商品。
-- **状态与分享**：分享页每次打开都会读取最新数据，也可手动刷新状态；可针对某件商品预填咨询。生成的文案和海报包含预订/售出标识。
-- **并发保护**：编辑使用更新时间校验，多窗口旧版本保存返回 409；状态更新也检查快照，避免覆盖其他窗口刚改过的库存。
-- **校验与登录体验**：无效 JSON、非法价格和重复商品编号返回 400；失效登录返回登录状态；从商品详情打开登录弹窗时保持正确层级，支持键盘焦点与 Escape 关闭。
+- **多城在售商品筛选与低价排序净化**：支持荷兰六城与南荷兰省（Delft / 海牙 / 鹿特丹）范围筛选、六大分类与关键词搜索；价格从低到高排序严格将「价格待议」商品排在末尾。售出、预订和 14 天未确认的清仓页不进入默认集市。
+- **私信红点与即时邮件通知闭环**：买家咨询与卖家回复自动通过 Resend 发送纯文本 + HTML 双格式邮件提醒（带 5 分钟防刷屏冷却），站内「我的」导航同步展示未读角标。
+- **约搭子「最后一公里」闭环**：支持发起人设置「仅报名成员可见的集合联络方式」、活动内行前留言板、发起人修改时间地点或取消活动并自动邮件通知全体已报名成员。
+- **荷兰语 A2 云端错题同步**：未登录本机即练；登录邮箱后自动合并并云端同步学习进度、错题本与模拟卷记录。
+- **AI 防刷熔断与欧盟 GDPR 合规**：Gemini 批量识图强制要求登录鉴权，内置单用户、单 IP 与全站日预算熔断（`GEMINI_DAILY_LIMIT`）；页脚与 `/privacy`、`/terms` 提供完整 GDPR 隐私声明、一键举报、问题反馈，以及账号内一键导出 JSON 数据与永久注销删除。
 
 ## 目录与部署
 
@@ -59,31 +59,34 @@ delft/
   city-events.js
   poster.js
   site-config.js
+  og-cover.jpg
   vendor/qrcode.mjs
   vendor/qrcode-LICENSE
 api/
   _delft-db.js
+  _notify.js
   delft.js
   delft-ai.js
   delft-upload.js
+  share-page.js
 tests/
   api-test.mjs
   frontend-test.mjs
+  dutch-test.mjs
+  a2-exam-test.mjs
   helpers/mock-turso.mjs
 ```
 
-这批代码必须按上述目录部署；API 文件不应放在仓库根目录。`api/_auth.js`、`api/send-auth-email.js`、`api/verify-auth-code.js` 使用原项目版本。
+这批代码必须按上述目录部署；API 文件不应放在仓库根目录。旧版入口归档保留于 `legacy-guanjia.html`。
 
-Vercel 预览发布使用功能分支。部署后打开预览地址的 `/delft/`，先完成下面的验收，再合并到 `main`。
-
-数据库沿用现有四张 `delft_*` 表，首次访问时按需创建表和索引。商品分类存放在现有 JSON 字段中，无需修改表结构；旧商品未指定分类时归入「其他」。
+数据库沿用并自动迁移 `delft_*` 表（首次访问时按需建表、补列与建索引）。
 
 ## 环境变量
 
 变量名见 `.env.example`，实际值在 Vercel 项目设置中配置：
 
-- 数据与登录：`TURSO_DATABASE_URL`、`TURSO_AUTH_TOKEN`、`JWT_SECRET`、`RESEND_API_KEY`。
-- AI：`GEMINI_API_KEY`。
+- 数据与登录：`TURSO_DATABASE_URL`、`TURSO_AUTH_TOKEN`、`JWT_SECRET`、`RESEND_API_KEY`、`RESEND_FROM_EMAIL`（默认 `荷包 <noreply@hebaogj.xyz>`）、`PUBLIC_SITE_ORIGIN`（默认 `https://hebaogj.xyz`）、`ADMIN_NOTIFY_EMAIL`（可选，接收举报与反馈提醒）。
+- AI：`GEMINI_API_KEY`、`GEMINI_DAILY_LIMIT`（可选，全站每日识图熔断上限，默认 `300`）。
 - 图片：`COS_SECRET_ID`、`COS_SECRET_KEY`、`COS_BUCKET`、`COS_REGION`。
 
 本分支移除 Git 当前版本中的 `.env` 并保留忽略规则。原历史中的凭据仍可能被访问；需要在服务商后台撤销、轮换，再更新 Vercel 变量。删除当前文件不等于撤销令牌。

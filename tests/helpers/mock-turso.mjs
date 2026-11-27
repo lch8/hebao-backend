@@ -7,8 +7,12 @@ export function mockTurso() {
   const fromValue=value=>value.type==='null'?null:['integer','float'].includes(value.type)?Number(value.value):String(value.value);
   const toValue=value=>value==null?{type:'null'}:typeof value==='number'?{type:Number.isInteger(value)?'integer':'float',value:String(value)}:{type:'text',value:String(value)};
   let beforeExecute;
+  let externalHandler;
   globalThis.fetch=async(url,init)=>{
-    if(!String(url).endsWith('/v2/pipeline'))throw new Error('Unexpected external request in test');
+    if(!String(url).endsWith('/v2/pipeline')){
+      if(externalHandler)return externalHandler(String(url),init);
+      throw new Error('Unexpected external request in test: '+url);
+    }
     const {sql,args=[]}=JSON.parse(init.body).requests[0].stmt;
     const values=args.map(fromValue);
     if(beforeExecute)beforeExecute(sql,values);
@@ -21,5 +25,10 @@ export function mockTurso() {
       return Response.json({results:[{type:'ok',response:{result:{cols:columns.map(name=>({name})),rows:rows.map(row=>columns.map(column=>toValue(row[column]))),affected_row_count:affected}}}]});
     }catch(error){return Response.json({results:[{type:'error',error:{message:error.message}}]});}
   };
-  return {db,intercept:callback=>{beforeExecute=callback;},restore:()=>{globalThis.fetch=originalFetch;db.close();}};
+  return {
+    db,
+    intercept:callback=>{beforeExecute=callback;},
+    mockExternal:callback=>{externalHandler=callback;},
+    restore:()=>{globalThis.fetch=originalFetch;db.close();},
+  };
 }

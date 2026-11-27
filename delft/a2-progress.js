@@ -39,6 +39,22 @@ function normalize(data) {
   return clean;
 }
 
+export function mergePrep(localRaw, remoteRaw) {
+  const a = normalize(localRaw), b = normalize(remoteRaw), out = empty();
+  for (const key of new Set([...Object.keys(a.forms), ...Object.keys(b.forms)])) {
+    const fa = a.forms[key], fb = b.forms[key];
+    if (!fa || !fb) { out.forms[key] = fa || fb; continue; }
+    const first = fa.first && fb.first ? (fa.first.at <= fb.first.at ? fa.first : fb.first) : (fa.first || fb.first);
+    const last = fa.last && fb.last ? (fa.last.at >= fb.last.at ? fa.last : fb.last) : (fa.last || fb.last);
+    out.forms[key] = { token: fa.token || fb.token, first, last };
+  }
+  for (const url of new Set([...Object.keys(a.official), ...Object.keys(b.official)])) {
+    const oa = a.official[url], ob = b.official[url];
+    out.official[url] = oa && ob ? (oa.at >= ob.at ? oa : ob) : (oa || ob);
+  }
+  return out;
+}
+
 // Store outcomes, never typed answers or microphone data. Re-read before editing
 // so that saves in another tab do not overwrite results for another paper.
 export function openPrepLedger(storage) {

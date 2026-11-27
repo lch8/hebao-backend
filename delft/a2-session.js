@@ -56,8 +56,9 @@ export function createExamSession(root, ledger, hooks) {
     return false;
   }
   function audio(item, response) {
+    const audioSrc = new URL(`./a2-audio/${encodeURIComponent(item.id)}.mp3`, import.meta.url).pathname;
     return `<div class="a2-listening"><span>听力材料 · 荷兰语合成录音</span>
-      <audio id="a2Audio" controls preload="metadata" aria-label="播放本题荷兰语录音" src="./a2-audio/${encodeURIComponent(item.id)}.mp3"></audio>
+      <audio id="a2Audio" controls preload="metadata" aria-label="播放本题荷兰语录音" src="${audioSrc}"></audio>
       <p class="a2-meta" id="a2AudioState" role="status">${response.heard?'已听完，可作答。':'先听完整段录音，再选择答案。'}</p>
       ${!mock()?`<details id="a2Transcript" ${response.transcript?'open':''}><summary>借助原文练习</summary><p lang="nl">${esc(item.text)}</p></details>`:''}</div>`;
   }

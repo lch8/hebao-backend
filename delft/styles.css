@@ -441,3 +441,172 @@ footer details>p{position:absolute;bottom:34px;left:0;width:280px;background:#ff
   .companion-picks-head { margin-bottom: 9px; gap: 6px; }
   .companion-picks-head a { font-size: 12px; }
 }
+
+/* Skeleton placeholders (replaces raw "正在加载…" flashes) */
+@keyframes pulseSoft { 0%, 100% { opacity: 1; } 50% { opacity: 0.52; } }
+.skeleton-card {
+  border: 1px solid #e2e8dd;
+  border-radius: 14px;
+  background: #fff;
+  padding: 20px;
+  animation: pulseSoft 1.5s ease-in-out infinite;
+}
+.skeleton-photo {
+  width: 100%;
+  aspect-ratio: 1.18;
+  background: #e9eee4;
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+.skeleton-line {
+  height: 14px;
+  border-radius: 6px;
+  background: #e6ece1;
+  margin-bottom: 10px;
+}
+.skeleton-line.short { width: 42%; }
+.skeleton-line.medium { width: 68%; }
+.skeleton-line.tall { height: 22px; width: 55%; }
+
+/* Unread notification badges */
+.tab { position: relative; }
+.unread-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: #b94a34;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.tab .unread-dot { margin-left: 2px; }
+@media(max-width:600px) {
+  .tab .unread-dot { position: absolute; top: 4px; right: calc(50% - 22px); min-width: 16px; height: 16px; font-size: 10px; }
+}
+
+/* Marketplace solo-tool growth banner (WeChat poster hook) & negotiable price tag */
+.poster-tool-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 24px;
+  padding: 18px 22px;
+  margin-bottom: 20px;
+  border: 1px solid #cfe0cb;
+  border-radius: 15px;
+  background: #ecf3e7;
+}
+.poster-tool-card h2 {
+  margin: 0 0 4px;
+  font-size: 17px;
+  font-weight: 650;
+  color: #1f4734;
+  letter-spacing: -0.02em;
+}
+.poster-tool-card p {
+  margin: 0;
+  font-size: 13px;
+  color: #4f6655;
+  line-height: 1.55;
+}
+.poster-tool-card .primary-btn { white-space: nowrap; flex-shrink: 0; }
+.market-city-select {
+  height: 48px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 28px 10px 12px;
+  background: #fff;
+  color: #355241;
+  font-size: 13px;
+}
+.product-price.negotiable {
+  font-size: 17px;
+  color: #5c6f61;
+  font-weight: 600;
+}
+.city-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #eef3ea;
+  color: #486651;
+  font-size: 11px;
+  margin-right: 4px;
+}
+@media(max-width:600px) {
+  .poster-tool-card { flex-direction: column; align-items: stretch; padding: 15px 16px; gap: 12px; }
+  .poster-tool-card h2 { font-size: 15px; }
+  .poster-tool-card p { font-size: 12px; }
+  .market-city-select { height: 38px; font-size: 12px; padding: 4px 20px 4px 8px; }
+  #panel-market>.category-filters { margin-top: 0; width: 100%; }
+}
+
+/* WeChat browser tips & cloud draft notice */
+.wechat-banner {
+  padding: 12px 15px;
+  margin-bottom: 16px;
+  border-radius: 10px;
+  border: 1px solid #dfcfa9;
+  background: #fbf6e8;
+  color: #6b5326;
+  font-size: 12px;
+  line-height: 1.65;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Event coordination ("last mile" contact & discussion) */
+.contact-unlock-box {
+  padding: 14px 16px;
+  margin: 12px 0 18px;
+  border-radius: 11px;
+  border: 1px solid #c7dabf;
+  background: #eef5ea;
+  color: #244834;
+  font-size: 13px;
+}
+.contact-unlock-box strong { display: block; margin-bottom: 4px; font-size: 13px; }
+.coord-messages {
+  max-height: 280px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: #f9faf7;
+  margin: 12px 0;
+}
+.coord-empty { color: var(--muted); font-size: 12px; text-align: center; padding: 18px 8px; margin: 0; }
+.pill.cancelled { background: #f6e7e2; color: #9c442b; }
+.pill.unread-pill { background: #fbe9e4; color: #a83f28; margin-left: 8px; }
+
+/* Footer, GDPR legal prose & account data management */
+footer { flex-wrap: wrap; row-gap: 10px; }
+.footer-links { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 18px; }
+.footer-links .text-btn { font-size: 12px; min-height: 34px; padding: 4px 0; color: #526859; font-weight: 500; }
+.legal-prose { font-size: 13px; color: #354c3e; line-height: 1.75; }
+.legal-prose h3 { font-size: 15px; margin: 18px 0 6px; color: #1f4230; }
+.legal-prose p, .legal-prose ul { margin: 6px 0 10px; }
+.legal-prose ul { padding-left: 18px; }
+.gdpr-box {
+  margin-top: 28px;
+  padding: 16px 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  font-size: 13px;
+}
+.gdpr-box summary { cursor: pointer; font-weight: 550; color: #3c5543; min-height: 36px; display: flex; align-items: center; }
+.gdpr-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+
