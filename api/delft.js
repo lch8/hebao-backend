@@ -1,5 +1,6 @@
 import { sql, ensureSchema, json, clipped, authId } from './_delft-db.js';
 import { sendTransactionalEmail, notifyEventAttendees } from './_notify.js';
+import { isCosUrl, isDbImageUrl, deleteDbImagesFor } from './_image-store.js';
 export const config = { runtime: 'edge' };
 
 const statuses = new Set(['available', 'reserved', 'sold']);
@@ -20,12 +21,8 @@ const feedbackCategories = new Set(['问题反馈', '功能建议', '体验吐�
 
 class InputError extends Error {}
 
-const safeUrl = value => {
-  try {
-    const url = new URL(value);
-    return url.protocol === 'https:' && /\.myqcloud\.com$/.test(url.hostname) ? url.href : '';
-  } catch { return ''; }
-};
+// Photos may live on Tencent COS or in the database fallback (/api/delft-image?id=<uuid>).
+const safeUrl = value => isDbImageUrl(value) ? String(value) : isCosUrl(value) ? new URL(value).href : '';
 
 async function ipQuotaKey(request, prefix) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
@@ -418,8 +415,10 @@ export default async function handler(request) {
       const owner = (await sql('SELECT owner_id FROM delft_listings WHERE id=?', [id])).rows[0];
       if (!owner) return json({ error: '页面不存在' }, 404);
       if (owner.owner_id !== user) return json({ error: '无权删除' }, 403);
+      const photos = (await sql('SELECT items_json FROM delft_listings WHERE id=?', [id])).rows.map(r => r.items_json);
       await sql('DELETE FROM delft_messages WHERE listing_id=?', [id]);
       await sql('DELETE FROM delft_listings WHERE id=? AND owner_id=?', [id, user]);
+      await deleteDbImagesFor(photos).catch(error => console.error('delete listing images', error));
       return json({ ok: true });
     }
     if (action === 'updateStatus') {
@@ -698,7 +697,10 @@ export default async function handler(request) {
       }
       await sql('DELETE FROM delft_messages WHERE listing_id IN (SELECT id FROM delft_listings WHERE owner_id=?)', [user]);
       await sql('DELETE FROM delft_messages WHERE sender_id=? OR receiver_id=?', [user, user]);
+      const ownedPhotos = (await sql('SELECT items_json FROM delft_listings WHERE owner_id=?', [user])).rows.map(r => r.items_json);
       await sql('DELETE FROM delft_listings WHERE owner_id=?', [user]);
+      await deleteDbImagesFor(ownedPhotos).catch(error => console.error('delete account images', error));
+      await sql('DELETE FROM delft_images WHERE owner_id=?', [user]).catch(() => {});
       await sql('DELETE FROM delft_event_messages WHERE event_id IN (SELECT id FROM delft_events WHERE host_id=?) OR user_id=?', [user, user]);
       await sql('DELETE FROM delft_rsvps WHERE event_id IN (SELECT id FROM delft_events WHERE host_id=?) OR user_id=?', [user, user]);
       await sql('DELETE FROM delft_events WHERE host_id=?', [user]);

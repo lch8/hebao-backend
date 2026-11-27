@@ -433,7 +433,7 @@ async function restoreOrSyncCloudDraft() {
 
 function renderDraftMode() {
   $('editBanner').hidden = !state.editingId;
-  $('btnPublish').textContent = state.editingId ? '保存修改到集市' : '发布到集市';
+  $('btnPublish').textContent = state.editingId ? '保存修改' : '发布到集市';
 }
 
 function persistDraft() {
@@ -463,7 +463,7 @@ function resetDraft() {
   clearTimeout(draftTimer);
   draftRevision++;
   state.photos = []; state.editingId = null; state.editVersion = null; state.publishedId = null; state.dirty = false;
-  $('listingTitle').value = '我的闲置清单';
+  $('listingTitle').value = '';
   $('listingCity').value = cities[selectedCity] ? selectedCity : 'delft';
   $('sellerName').value = nickname();
   $('pickup').value = '';
@@ -476,7 +476,7 @@ function resetDraft() {
 }
 
 $('newDraft').addEventListener('click', () => {
-  if (state.photos.length && !confirm('新建会清除当前草稿。已发布的清仓页仍然保留，是否继续？')) return;
+  if (state.photos.length && !confirm('新建会清除当前草稿（已发布的闲置不受影响），是否继续？')) return;
   resetDraft();
 });
 
@@ -534,6 +534,7 @@ async function asJpeg(file) {
       try {
         let dataUrl = drawScaledJpeg(bitmap, bitmap.width, bitmap.height, 1200, 0.75);
         if (dataUrl.length > 720000) dataUrl = drawScaledJpeg(bitmap, bitmap.width, bitmap.height, 960, 0.58);
+        if (dataUrl.length > 1000000) dataUrl = drawScaledJpeg(bitmap, bitmap.width, bitmap.height, 800, 0.5);
         return dataUrl;
       } finally {
         bitmap.close?.();
@@ -546,6 +547,7 @@ async function asJpeg(file) {
       try {
         let dataUrl = drawScaledJpeg(img, img.naturalWidth, img.naturalHeight, 1200, 0.75);
         if (dataUrl.length > 720000) dataUrl = drawScaledJpeg(img, img.naturalWidth, img.naturalHeight, 960, 0.58);
+        if (dataUrl.length > 1000000) dataUrl = drawScaledJpeg(img, img.naturalWidth, img.naturalHeight, 800, 0.5);
         resolve(dataUrl);
       } catch (e) { reject(e); }
       finally { URL.revokeObjectURL(url); }
@@ -558,17 +560,19 @@ async function asJpeg(file) {
 $('photoInput').addEventListener('change', async e => {
   const files = [...e.target.files].filter(f => !f.type || f.type.startsWith('image/'));
   if (!files.length) return;
-  if (files.length + state.photos.length > 12) { toast('每份清仓清单最多添加 12 件商品'); e.target.value = ''; return; }
+  if (files.length + state.photos.length > 12) { toast(`一次最多发布 12 件商品，还能再加 ${Math.max(0, 12 - state.photos.length)} 件`); e.target.value = ''; return; }
   $('btnPublish').disabled = true;
   $('choosePhotos').disabled = true;
   try {
+    let failed = 0, lastError = '';
     for (let idx = 0; idx < files.length; idx++) {
       $('uploadLabel').textContent = `正在压缩照片 ${idx + 1} / ${files.length}…`;
-      const dataUrl = await asJpeg(files[idx]);
-      state.photos.push({ id: uuid(), name: '', price: '', condition: '', category: '其他', dataUrl, photo: '', status: 'available' });
+      try {
+        const dataUrl = await asJpeg(files[idx]);
+        state.photos.push({ id: uuid(), name: '', price: '', condition: '', category: '其他', dataUrl, photo: '', status: 'available' });
+      } catch (error) { failed++; lastError = error.message; }
     }
-  } catch (error) {
-    toast('部分图片处理失败：' + error.message);
+    if (failed) toast(`${failed} 张照片无法读取：${lastError}`);
   } finally {
     e.target.value = '';
     $('choosePhotos').disabled = false;
@@ -595,7 +599,7 @@ function renderItems() {
   document.querySelector('.upload-card').classList.toggle('has-items', Boolean(count));
   $('itemEditor').innerHTML = state.photos.map((item, i) => `<div class="item-card" data-id="${esc(item.id)}">
     ${item.dataUrl || item.photo ? `<img class="item-thumb" src="${esc(item.dataUrl || item.photo)}" alt="商品 ${i + 1}" />` : '<div class="item-thumb image-fallback" aria-hidden="true">＋</div>'}
-    <div class="item-fields"><div class="item-main-fields"><label>商品名称<input aria-label="第 ${i + 1} 件商品名称" data-field="name" maxlength="70" placeholder="这是什么？" value="${esc(item.name)}" /></label><label>价格 €<input aria-label="第 ${i + 1} 件商品价格" type="number" min="0" max="10000" step="0.01" data-field="price" value="${esc(item.price)}" placeholder="留空=待议" /></label><button type="button" class="remove-btn" data-remove="${esc(item.id)}" aria-label="删除第 ${i + 1} 件商品" title="删除商品">×</button></div>
+    <div class="item-fields">${item.uploadFailed ? '<span class="upload-failed">照片未上传成功，下次保存时会自动重试</span>' : ''}<div class="item-main-fields"><label>商品名称<input aria-label="第 ${i + 1} 件商品名称" data-field="name" maxlength="70" placeholder="这是什么？" value="${esc(item.name)}" /></label><label>价格 €<input aria-label="第 ${i + 1} 件商品价格" type="number" min="0" max="10000" step="0.01" data-field="price" value="${esc(item.price)}" placeholder="留空=待议" /></label><button type="button" class="remove-btn" data-remove="${esc(item.id)}" aria-label="删除第 ${i + 1} 件商品" title="删除商品">×</button></div>
     <details class="item-more"><summary>分类与成色<span>${esc(item.category || '其他')}${item.condition ? ' · 已填写成色' : ''}</span>${item.status !== 'available' ? ` <span class="pill gray">${statusNames[item.status] || ''}</span>` : ''}</summary><div class="field-grid"><label>分类<select data-field="category" aria-label="第 ${i + 1} 件商品分类">${itemCategories.map(c => `<option ${c === item.category ? 'selected' : ''}>${c}</option>`).join('')}</select></label><label>成色或说明<input data-field="condition" aria-label="第 ${i + 1} 件商品成色" maxlength="140" value="${esc(item.condition)}" placeholder="例如：九成新，送车锁" /></label></div></details></div></div>`).join('');
   renderListPreview();
 }
@@ -603,7 +607,7 @@ function renderItems() {
 function renderListPreview() {
   const items = state.photos;
   const cityName = cities[$('listingCity')?.value] || 'Delft';
-  $('listPreview').innerHTML = `<div class="preview-cover"><span>${esc($('sellerName').value.trim() || '我的')} · ${esc(cityName)}</span><h3>${esc($('listingTitle').value.trim() || `${cityName} 闲置出清`)}</h3><p>${esc($('pickup').value.trim() || '自取区域待填写')}</p></div><div class="preview-items">${items.length ? items.slice(0, 4).map(item => `<div class="preview-item">${item.dataUrl || item.photo ? `<img src="${esc(item.dataUrl || item.photo)}" alt="" />` : '<span class="preview-placeholder" aria-hidden="true">＋</span>'}<span>${esc(item.name || '待填写商品名')}<small>${item.status === 'available' ? '在售' : statusNames[item.status] || '在售'}</small></span><strong>${item.price === '' || item.price == null ? '待议' : Number(item.price) === 0 ? '免费' : '€' + esc(Number(item.price))}</strong></div>`).join('') : '<div class="preview-empty"><svg viewBox="0 0 80 80" aria-hidden="true"><path d="m15 22 25-12 25 12v35L40 70 15 57Z M15 22l25 13 25-13 M40 35v35 M28 16l25 13v15"/></svg>添加商品后，这里实时预览你的清仓单</div>'}${items.length > 4 ? `<p class="hint">还有 ${items.length - 4} 件 · 生成的海报将包含全部商品</p>` : ''}</div><div class="preview-signature"><strong>荷包 · ${esc(cityName)}</strong><span>扫码看实时库存状态</span></div>`;
+  $('listPreview').innerHTML = `<div class="preview-cover"><span>${esc($('sellerName').value.trim() || '我的')} · ${esc(cityName)}</span><h3>${esc($('listingTitle').value.trim() || autoTitle() || `${cityName} 闲置`)}</h3><p>${esc($('pickup').value.trim() || '自取区域待填写')}</p></div><div class="preview-items">${items.length ? items.slice(0, 4).map(item => `<div class="preview-item">${item.dataUrl || item.photo ? `<img src="${esc(item.dataUrl || item.photo)}" alt="" />` : '<span class="preview-placeholder" aria-hidden="true">＋</span>'}<span>${esc(item.name || '待填写商品名')}<small>${item.status === 'available' ? '在售' : statusNames[item.status] || '在售'}</small></span><strong>${item.price === '' || item.price == null ? '待议' : Number(item.price) === 0 ? '免费' : '€' + esc(Number(item.price))}</strong></div>`).join('') : '<div class="preview-empty"><svg viewBox="0 0 80 80" aria-hidden="true"><path d="m15 22 25-12 25 12v35L40 70 15 57Z M15 22l25 13 25-13 M40 35v35 M28 16l25 13v15"/></svg>添加商品后，这里实时预览你的闲置清单</div>'}${items.length > 4 ? `<p class="hint">还有 ${items.length - 4} 件 · 生成的海报将包含全部商品</p>` : ''}</div><div class="preview-signature"><strong>荷包 · ${esc(cityName)}</strong><span>扫码看实时库存状态</span></div>`;
 }
 
 $('itemEditor').addEventListener('input', e => {
@@ -686,7 +690,7 @@ function listingCopy() {
   validateDraft();
   const city = $('listingCity').value || 'delft';
   const cityName = cities[city] || 'Delft';
-  const title = $('listingTitle').value.trim() || `${cityName} 二手闲置`;
+  const title = $('listingTitle').value.trim() || autoTitle() || `${cityName} 二手闲置`;
   const pickup = $('pickup').value.trim() || `${cityName}（具体地点私聊）`;
   const lines = [
     `📦 ${title}`,
@@ -775,7 +779,7 @@ $('btnPoster').addEventListener('click', async () => {
   const button = $('btnPoster');
   const city = $('listingCity').value || 'delft';
   const cityName = cities[city] || 'Delft';
-  $('posterHeading').textContent = '微信清仓海报';
+  $('posterHeading').textContent = '微信分享海报';
   $('eventShareText').hidden = true;
   $('copyEventShare').hidden = true;
   try {
@@ -793,10 +797,10 @@ $('btnPoster').addEventListener('click', async () => {
     const { canvas, missingPhotos, destination } = await createPoster(draft);
     trackEvent('poster_generate');
     const hint = (missingPhotos ? `${missingPhotos} 张照片暂未载入，可关闭后重试。` : '下载图片发到微信群，手机也可直接长按图片保存。') +
-      (destination.published ? ' 海报二维码已绑定这份清单的实时库存状态。' : ' 先点「发布到集市」再生成海报，二维码即可实时同步已售状态。');
+      (destination.published ? ' 海报二维码已绑定这份清单的实时库存状态。' : ' 提示：先点「发布到集市」再生成海报，二维码才能实时同步已售状态。');
     await presentPosterModal(canvas, {
       fileName: `荷包-${cityName}-闲置海报.jpg`,
-      altText: '闲置清仓分享海报',
+      altText: '闲置分享海报',
       isListingPoster: true,
       hintText: hint,
     });
@@ -813,62 +817,111 @@ $('sharePoster').addEventListener('click', async () => {
   catch (error) { if (error.name !== 'AbortError') toast('当前环境不支持直接拉起分享，请长按图片或下载保存'); }
 });
 
+function autoTitle() {
+  const named = state.photos.map(item => item.name.trim()).filter(Boolean);
+  if (!named.length) return '';
+  return named.length === 1 ? named[0].slice(0, 100) : `${named[0].slice(0, 60)} 等 ${named.length} 件闲置`;
+}
+
+class UploadError extends Error {
+  constructor(message, { auth = false, status = 0 } = {}) { super(message); this.auth = auth; this.status = status; }
+}
+
+async function uploadPhoto(item) {
+  let resp;
+  try {
+    resp = await fetch('/api/delft-upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` },
+      body: JSON.stringify({ imageBase64: item.dataUrl.split(',')[1] }),
+    });
+  } catch { throw new UploadError('网络连接中断'); }
+  // Vercel timeouts / 413s return HTML, so never assume a JSON body.
+  const data = await resp.json().catch(() => ({}));
+  if (resp.status === 401) {
+    ['hebao_token', 'hebao_logged_in', 'hebao_email'].forEach(k => localStorage.removeItem(k));
+    refreshLoginUI();
+    throw new UploadError('登录已过期，请重新登录后再发布', { auth: true, status: 401 });
+  }
+  if (!resp.ok || !data.url) {
+    throw new UploadError(data.error || (resp.status === 413 ? '照片太大' : resp.status >= 500 ? '图片服务暂时不可用' : '图片上传失败'), { status: resp.status });
+  }
+  return data.url;
+}
+
+/** Uploads pending photos (3 at a time). Returns the failures instead of aborting the whole publish. */
+async function uploadPendingPhotos(onProgress) {
+  const pending = state.photos.filter(it => it.dataUrl && !it.photo);
+  const failures = [];
+  let done = 0, cursor = 0;
+  const worker = async () => {
+    while (cursor < pending.length) {
+      const item = pending[cursor++];
+      try { item.photo = await uploadPhoto(item); item.uploadFailed = false; }
+      catch (error) {
+        if (error.auth) throw error;
+        item.uploadFailed = true;
+        failures.push({ item, error });
+      }
+      onProgress(++done, pending.length);
+    }
+  };
+  if (pending.length) await Promise.all(Array.from({ length: Math.min(3, pending.length) }, worker));
+  return failures;
+}
+
 $('btnPublish').addEventListener('click', async () => {
   if (state.saving) return;
   let controls = [];
   try {
     validateDraft();
     const city = $('listingCity').value || 'delft';
+    if (!$('listingTitle').value.trim()) $('listingTitle').value = autoTitle();
     const seller = $('sellerName').value.trim(), pickup = $('pickup').value.trim(), title = $('listingTitle').value.trim();
     if (!seller || !pickup || !title) {
       const missing = !title ? 'listingTitle' : !seller ? 'sellerName' : 'pickup';
       $(missing).setAttribute('aria-invalid', 'true');
       $(missing).focus();
-      toast('发布到集市前，请填写标题、昵称和自取区域');
+      toast(!seller ? '请填写昵称，方便买家称呼你' : !pickup ? '请填写自取区域（街区或地标即可）' : '请填写标题');
       return;
     }
     if (!requireAuth(() => $('btnPublish').click())) return;
     const button = $('btnPublish');
-    setBusy(button, true, '上传并发布中…');
+    setBusy(button, true, '发布中…');
     state.saving = true;
     controls = [...document.querySelectorAll('#panel-sell button,#panel-sell input,#panel-sell textarea,#panel-sell select')].map(el => ({ el, disabled: el.disabled }));
     controls.forEach(({ el }) => { el.disabled = true; });
-    const items = [];
-    for (let idx = 0; idx < state.photos.length; idx++) {
-      const it = state.photos[idx];
-      let photo = it.photo || '';
-      if (it.dataUrl && !photo) {
-        button.textContent = `上传图片 (${idx + 1}/${state.photos.length})…`;
-        const resp = await fetch('/api/delft-upload', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` },
-          body: JSON.stringify({ imageBase64: it.dataUrl.split(',')[1] }),
-        });
-        const data = await resp.json();
-        if (!resp.ok) throw new Error(data.error || '图片上传失败');
-        photo = data.url;
-        it.photo = photo;
-      }
-      items.push({ id: it.id, name: it.name, price: it.price, condition: it.condition, category: it.category, photo, status: it.status });
+    const failures = await uploadPendingPhotos((done, total) => { button.textContent = `上传照片 ${done}/${total}…`; });
+    if (failures.length) {
+      renderItems();
+      const reason = failures[0].error.message;
+      const proceed = confirm(`${failures.length} 张照片上传失败（${reason}）。\n\n点「确定」先发布，这些商品暂时不显示照片；之后在「我的 → 编辑」保存时会自动重新上传。\n点「取消」留在本页，稍后再试。`);
+      if (!proceed) { toast('照片已保留在草稿中，稍后可再次点击发布'); return; }
     }
+    button.textContent = '保存清单…';
+    const items = state.photos.map(it => ({ id: it.id, name: it.name, price: it.price, condition: it.condition, category: it.category, photo: it.photo || '', status: it.status }));
     const published = await api(state.editingId ? 'updateListing' : 'createListing', 'POST', {
       city, seller, title, pickup, note: $('listingNote').value, items,
       ...(state.editingId ? { listingId: state.editingId, expectedUpdatedAt: state.editVersion } : {}),
     });
+    const wasEditing = Boolean(state.editingId);
     state.publishedId = published.id;
     state.editingId = published.id;
     state.editVersion = published.updatedAt;
-    state.dirty = false;
+    // Keep failed photos marked dirty so the next save retries them.
+    state.dirty = failures.length > 0;
     draftRevision++;
     await persistDraft();
     trackEvent('listing_publish');
     const shareLink = listingShareLink(published.id);
     const localHref = `/market?item=${encodeURIComponent(published.id)}`;
     $('shareResult').hidden = false;
-    $('shareResult').innerHTML = `已公开上架！现在点上方「生成清仓海报」或「复制群文案」，二维码会自动指向实时库存页。<a href="${esc(localHref)}" target="_blank" rel="noopener">预览分享页（${esc(shareLink)}）↗</a>`;
+    $('shareResult').innerHTML = `<strong>${wasEditing ? '修改已保存' : '已发布到集市！'}</strong>${failures.length ? `（${failures.length} 张照片未上传，可稍后再点「保存修改」重试）` : ''}<br>买家咨询会邮件通知你。想发微信群，可以点下方「生成微信海报」或「复制群文案」，二维码会指向实时在售状态。<div class="result-actions"><a class="text-btn" href="${esc(localHref)}" target="_blank" rel="noopener">查看发布页 ↗</a><button type="button" class="text-btn" data-copy-share="${esc(shareLink)}">复制链接</button><button type="button" class="text-btn" data-tab="mine">去「我的」管理</button></div>`;
     localStorage.setItem('delft_nickname', seller);
-    toast('发布成功！买家发消息会邮件通知你');
+    toast(wasEditing ? '修改已保存' : '发布成功！买家发消息会邮件通知你');
+    if (state.activeTab === 'market' || state.listings.length) loadListings();
   } catch (error) {
+    if (error.auth) { requireAuth(() => $('btnPublish').click()); }
     toast(error.message);
   } finally {
     controls.forEach(({ el, disabled }) => { el.disabled = disabled; });
@@ -876,6 +929,10 @@ $('btnPublish').addEventListener('click', async () => {
     setBusy($('btnPublish'), false);
     renderDraftMode();
   }
+});
+$('shareResult').addEventListener('click', e => {
+  const link = e.target.closest('[data-copy-share]')?.dataset.copyShare;
+  if (link) copyTextWithFallback(link, '链接已复制，发到微信会自动显示预览卡片');
 });
 
 // ---- Marketplace ----
@@ -963,7 +1020,7 @@ function renderMarket() {
     return `<article class="listing-card" role="button" tabindex="0" data-listing="${esc(l.id)}" data-product="${esc(item.id)}" aria-label="${esc(item.name)}，${esc(priceLabel(item))}，${esc(cityTag)} ${esc(l.pickup)}">
       ${item.photo ? `<img loading="lazy" class="listing-photo" src="${esc(item.photo)}" alt="${esc(item.name)}" />` : '<div class="listing-photo image-fallback" aria-hidden="true"><svg viewBox="0 0 80 80"><path d="m15 22 25-12 25 12v35L40 70 15 57Z M15 22l25 13 25-13 M40 35v35 M28 16l25 13v15"/></svg></div>'}
       <div class="listing-details"><div class="product-price ${price === null ? 'negotiable' : ''}">${esc(priceLabel(item))}</div><h2>${esc(item.name)}</h2><p class="product-condition">${esc(item.condition || item.category || '其他')}</p><div class="listing-bottom"><span>${showCityTag ? `<b class="city-badge">${esc(cityTag)}</b>` : ''}${esc(l.pickup)}</span><span>${esc(l.seller)}</span></div></div></article>`;
-  }).join('') : `<div class="empty-state"><h2>${hasFilter ? '没有找到匹配的在售闲置' : '这一带闲置正在陆续上架'}</h2><p>${hasFilter ? '试试切换「全部城市」、清除分类筛选，或换个关键词。' : '毕业搬家或腾房间？30 秒生成带实时状态的微信清仓海报。'}</p>${hasFilter ? '<button type="button" class="outline-btn" data-clear-market>查看全部在荷闲置</button>' : '<button type="button" class="primary-btn" data-tab="sell">生成清仓海报 / 发布闲置</button>'}</div>`;
+  }).join('') : `<div class="empty-state"><h2>${hasFilter ? '没有找到匹配的在售闲置' : '这一带闲置正在陆续上架'}</h2><p>${hasFilter ? '试试切换「全部城市」、清除分类筛选，或换个关键词。' : '有用不上的东西？拍张照 1 分钟就能发布，搬家清仓还能一键生成微信群海报。'}</p>${hasFilter ? '<button type="button" class="outline-btn" data-clear-market>查看全部在荷闲置</button>' : '<button type="button" class="primary-btn" data-tab="sell">＋ 发布闲置</button>'}</div>`;
 }
 
 $('marketGrid').addEventListener('click', e => {
@@ -1011,7 +1068,7 @@ $('detailContent').addEventListener('click', e => {
 });
 $('copyListingLink').addEventListener('click', () => {
   if (!state.currentListing) return;
-  copyTextWithFallback(listingShareLink(state.currentListing.id), '清仓清单链接已复制（发到微信自带预览卡片）');
+  copyTextWithFallback(listingShareLink(state.currentListing.id), '链接已复制（发到微信自带预览卡片）');
 });
 $('refreshListingDetail').addEventListener('click', () => {
   if (state.currentListing) openListing(state.currentListing.id, { itemId: state.currentProduct, updateUrl: false });
@@ -1701,7 +1758,7 @@ $('myEvents').addEventListener('click', e => {
 $('myListings').addEventListener('click', async e => {
   const edit = e.target.closest('[data-edit-listing]');
   if (edit) {
-    if (state.photos.length && state.dirty && !confirm('打开其他清仓页将替换当前未保存的草稿，是否继续？')) return;
+    if (state.photos.length && state.dirty && !confirm('编辑这份闲置会替换当前未保存的草稿，是否继续？')) return;
     try {
       const listing = (await api('listing', 'GET', null, true, { id: edit.dataset.editListing })).listing;
       state.photos = listing.items.map(item => ({ ...item, price: item.price == null ? '' : item.price, dataUrl: '' }));
@@ -1726,8 +1783,8 @@ $('myListings').addEventListener('click', async e => {
     return;
   }
   const id = e.target.closest('[data-delete-listing]')?.dataset.deleteListing;
-  if (!id || !confirm('确认永久删除这个清仓页及相关私信？')) return;
-  try { await api('deleteListing', 'POST', { listingId: id }); if (state.editingId === id) resetDraft(); toast('清仓页已删除'); loadMine(); }
+  if (!id || !confirm('确认永久删除这份闲置及相关私信？')) return;
+  try { await api('deleteListing', 'POST', { listingId: id }); if (state.editingId === id) resetDraft(); toast('已删除'); loadMine(); }
   catch (error) { toast(error.message); }
 });
 

@@ -87,7 +87,7 @@ tests/
 
 - 数据与登录：`TURSO_DATABASE_URL`、`TURSO_AUTH_TOKEN`、`JWT_SECRET`、`RESEND_API_KEY`、`RESEND_FROM_EMAIL`（默认 `荷包 <noreply@hebaogj.xyz>`）、`PUBLIC_SITE_ORIGIN`（默认 `https://hebaogj.xyz`）、`ADMIN_NOTIFY_EMAIL`（可选，接收举报与反馈提醒）。
 - AI：`GEMINI_API_KEY`、`GEMINI_DAILY_LIMIT`（可选，全站每日识图熔断上限，默认 `300`）。
-- 图片：`COS_SECRET_ID`、`COS_SECRET_KEY`、`COS_BUCKET`、`COS_REGION`。
+- 图片：`COS_SECRET_ID`、`COS_SECRET_KEY`、`COS_BUCKET`（`桶名-APPID`）、`COS_REGION`（建议 `eu-frankfurt`）。COS 不可用时自动改存 Turso（`delft_images` 表，经 `/api/delft-image` 输出）；可用 `IMAGE_STORAGE=cos|db|auto` 强制。访问 `/api/delft-upload?check=1` 自检存储配置（不返回密钥）。
 
 本分支移除 Git 当前版本中的 `.env` 并保留忽略规则。原历史中的凭据仍可能被访问；需要在服务商后台撤销、轮换，再更新 Vercel 变量。删除当前文件不等于撤销令牌。
 

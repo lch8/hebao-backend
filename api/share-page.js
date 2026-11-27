@@ -99,9 +99,9 @@ export async function resolveShareMeta({
           ? '价格待议'
           : Number(focus.price) === 0 ? '免费赠送' : `€${Number(focus.price)}`)
         : '';
-      const photo = (focus?.photo && /^https:\/\//.test(focus.photo))
-        ? focus.photo
-        : (items.find(i => i.photo && /^https:\/\//.test(i.photo))?.photo || defaultImage);
+      // Database-fallback photos are stored as same-origin paths; OG cards need absolute URLs.
+      const absolute = src => /^https:\/\//.test(src || '') ? src : /^\/api\/delft-image\?id=/.test(src || '') ? `${cleanOrigin}${src}` : '';
+      const photo = absolute(focus?.photo) || items.map(i => absolute(i.photo)).find(Boolean) || defaultImage;
       const url = new URL('/market', cleanOrigin);
       url.searchParams.set('item', itemId);
       if (productId) url.searchParams.set('product', productId);
