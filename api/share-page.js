@@ -166,7 +166,8 @@ export async function resolveShareMeta({
     };
   }
   if (cleanPath === '/dutch-a2' || cleanPath === '/dutch') {
-    if (searchParams.get('view') === 'news') {
+    const viewParam = searchParams.get('view');
+    if (viewParam === 'news') {
       return {
         title: '每日荷语新闻简报（A2+/B1 精读）· 荷包',
         description: '每日精选 3 条荷兰本地生活、交通与政策资讯，AI 改写为地道 A2+/B1 荷语短文，配语音朗读、实用生词本与理解自测。',
@@ -174,9 +175,17 @@ export async function resolveShareMeta({
         image: defaultImage,
       };
     }
+    if (['a2', 'prepare', 'today', 'exam'].includes(viewParam)) {
+      return {
+        title: '荷兰语 A2 备考 · DUO 五科专项与 AI 批改 · 荷包',
+        description: '全荷通用：DUO 五科专项与 A/B 模拟卷、写作 AI 按评分要点批改、全科错题本与高频词闪卡。',
+        url: `${cleanOrigin}/dutch-a2?view=${viewParam}`,
+        image: defaultImage,
+      };
+    }
     return {
-      title: '荷兰语 A2 备考与每日荷语简报 · 荷包',
-      description: '全荷通用：DUO 五科专项与模拟卷、写作 AI 按评分要点批改、全科错题本、高频词闪卡，以及每日 A2+/B1 荷兰新闻精读。',
+      title: '每日荷语简报与荷兰语 A2 备考 · 荷包',
+      description: '每天 3 条荷兰本地 A2+/B1 荷语新闻精读（配朗读与生词本），并内置全荷通用 DUO A2 五科专项、模拟卷与写作 AI 批改。',
       url: `${cleanOrigin}/dutch-a2`,
       image: defaultImage,
     };

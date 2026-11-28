@@ -860,6 +860,70 @@ footer { border-top-color: var(--line); color: var(--muted); font-size: 12px; }
   padding: 5px 12px;
   border-radius: 999px;
 }
+.dutch-pillars {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.dutch-pillar {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  align-content: center;
+  text-align: left;
+  padding: 16px 20px 18px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  box-shadow: var(--shadow-xs);
+  cursor: pointer;
+  transition: border-color .18s var(--ease), box-shadow .18s var(--ease), transform .14s var(--ease), background .18s;
+}
+.dutch-pillar strong {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -.015em;
+  color: var(--ink);
+  line-height: 1.3;
+}
+.dutch-pillar span {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+.dutch-pillar:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+@media (hover: hover) {
+  .dutch-pillar:hover:not(.active) {
+    border-color: var(--blue-200);
+    background: #fafcff;
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
+  }
+}
+.dutch-pillar.active {
+  background: linear-gradient(155deg, #21549e 0%, #12366b 100%);
+  border-color: #113364;
+  color: #fff;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .16), 0 10px 22px -12px rgb(18 54 107 / .65);
+}
+.dutch-pillar.active::after {
+  content: "";
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: 0;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: linear-gradient(90deg, #f6e3b0, #c69135);
+}
+.dutch-pillar.active strong { color: #fff; }
+.dutch-pillar.active span { color: #d1e1f6; }
 .study-cloud-bar {
   background: #fff;
   border: 1px solid var(--line);
@@ -1403,6 +1467,11 @@ footer { border-top-color: var(--line); color: var(--muted); font-size: 12px; }
   .weekend-shortcut strong { font-size: 13px; }
 
   /* 荷兰语学习 & 每日简报 mobile */
+  .dutch-pillars { gap: 9px; margin-bottom: 12px; }
+  .dutch-pillar { padding: 12px 13px 14px; border-radius: 14px; gap: 3px; }
+  .dutch-pillar strong { font-size: 15px; }
+  .dutch-pillar span { font-size: 11.5px; line-height: 1.4; }
+  .dutch-pillar.active::after { left: 13px; right: 13px; }
   .study-nav.view-switch { gap: 18px; overflow-x: auto; scrollbar-width: none; }
   .study-nav.view-switch::-webkit-scrollbar { display: none; }
   .study-nav.view-switch > button { white-space: nowrap; font-size: 14.5px; }

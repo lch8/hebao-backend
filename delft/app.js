@@ -2983,8 +2983,15 @@ async function applyRoute() {
   if (location.href !== current || state.activeTab !== name) return;
 
   const cleanPath = location.pathname.replace(/\/+$/, '') || '/';
-  if (name === 'dutch' && (cleanPath === '/news' || ['prepare', 'news', 'today', 'exam'].includes(query.get('view')))) {
-    dutchView?.openView?.(cleanPath === '/news' ? 'news' : query.get('view'));
+  if (name === 'dutch') {
+    const reqView = query.get('view');
+    if (cleanPath === '/news') {
+      dutchView?.openView?.('news');
+    } else if (['news', 'a2', 'prepare', 'today', 'exam'].includes(reqView)) {
+      dutchView?.openView?.(reqView);
+    } else {
+      dutchView?.openView?.('news');
+    }
   }
 
   const legal = legalModalFromLocation(location);

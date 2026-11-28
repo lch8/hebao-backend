@@ -494,9 +494,9 @@ export function createExamSession(root, ledger, hooks, storage) {
           stat:`${meta.label} · 得分要点命中 ${metCount}/${(grade.checks||[]).length}`,
           highlights:(grade.checks||[]).map(c=>`${c.met?'✓':'✗'} ${c.check}`),
           footerHint:'扫码免费练 DUO A2 五科模拟卷、写作 AI 批改与每日荷语简报',
-          targetPath:'/dutch-a2?from=study_card',
+          targetPath:'/dutch-a2?view=a2&from=study_card',
           fileName:'荷包-A2写作AI批改打卡.jpg',
-          shareCopy:`🇳🇱 刚在荷包练了荷兰语 A2 写作（${typeName('write',item.type)}），AI 按 DUO 得分要点批改：${meta.label}（命中 ${metCount}/${(grade.checks||[]).length} 条）\n免费备考工具：https://hebaogj.xyz/dutch-a2?from=study_card`,
+          shareCopy:`🇳🇱 刚在荷包练了荷兰语 A2 写作（${typeName('write',item.type)}），AI 按 DUO 得分要点批改：${meta.label}（命中 ${metCount}/${(grade.checks||[]).length} 条）\n免费备考工具：https://hebaogj.xyz/dutch-a2?view=a2&from=study_card`,
         });
       }
       return;
@@ -512,9 +512,9 @@ export function createExamSession(root, ledger, hooks, storage) {
         stat:statLine,
         highlights:rows,
         footerHint:'扫码免费刷 DUO A2 五科专项、模拟卷与每日荷语简报',
-        targetPath:'/dutch-a2?from=study_card',
+        targetPath:'/dutch-a2?view=a2&from=study_card',
         fileName:`荷包-A2备考战报-${subject}.jpg`,
-        shareCopy:`🇳🇱 荷兰语 A2 备考打卡：${isMistakes()?'错题本重练':`${zh} ${run.title}`} — ${statLine}\n免费 DUO 五科模拟卷 + 写作 AI 批改：https://hebaogj.xyz/dutch-a2?from=study_card`,
+        shareCopy:`🇳🇱 荷兰语 A2 备考打卡：${isMistakes()?'错题本重练':`${zh} ${run.title}`} — ${statLine}\n免费 DUO 五科模拟卷 + 写作 AI 批改：https://hebaogj.xyz/dutch-a2?view=a2&from=study_card`,
       });
       return;
     }

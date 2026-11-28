@@ -33,6 +33,7 @@ export function mountDailyNews(root, storage, hooks = {}) {
 
   async function ensureLoaded(force = false) {
     if (editions.length && !force) { render(); return; }
+    if (loading && !force) return;
     loading = true;
     loadError = '';
     render();

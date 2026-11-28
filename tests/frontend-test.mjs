@@ -378,6 +378,27 @@ test('marketProducts filters free items, price ceilings, and buyer favorites wit
   assert.match(shortNewsMeta.title, /每日荷语新闻简报/);
   assert.equal(shortNewsMeta.url, 'https://hebaogj.xyz/news');
 
+  const dutchDefaultMeta = await resolveShareMeta({
+    pathname: '/dutch-a2',
+    searchParams: new URLSearchParams(''),
+    origin: 'https://hebaogj.xyz',
+  });
+  assert.match(dutchDefaultMeta.title, /每日荷语简报与荷兰语 A2 备考/);
+
+  const dutchA2Meta = await resolveShareMeta({
+    pathname: '/dutch-a2',
+    searchParams: new URLSearchParams('view=a2'),
+    origin: 'https://hebaogj.xyz',
+  });
+  assert.match(dutchA2Meta.title, /荷兰语 A2 备考/);
+  assert.equal(dutchA2Meta.url, 'https://hebaogj.xyz/dutch-a2?view=a2');
+
+  const dutchSrc = readFileSync(new URL('../delft/dutch.js', import.meta.url), 'utf8');
+  assert.match(dutchSrc, /view='news'/);
+  assert.match(dutchSrc, /id="a2SubNav" hidden/);
+  assert.match(dutchSrc, /data-dutch-pillar="news"/);
+  assert.match(dutchSrc, /data-dutch-pillar="a2"/);
+
   const sitemap = readFileSync(new URL('../sitemap.xml', import.meta.url), 'utf8');
   assert.match(sitemap, /https:\/\/hebaogj\.xyz\/news/);
 
