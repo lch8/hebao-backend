@@ -77,12 +77,12 @@ export default async function handler(req) {
       '—— 荷包 (hebaogj.xyz)'
     ].join('\n');
 
-    const html = `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;max-width:480px;margin:0 auto;padding:24px;border:1px solid #dde3da;border-radius:14px;background:#ffffff;color:#243d32">
-      <div style="font-size:13px;color:#647468;margin-bottom:6px">荷包 · 邮箱登录验证</div>
-      <h2 style="margin:0 0 12px;font-size:20px;color:#204f3d">您的登录验证码</h2>
-      <p style="margin:0 0 16px;font-size:14px;line-height:1.6">请在登录窗口输入以下 6 位数字验证码完成验证：</p>
-      <div style="background:#f6f7f3;border:1px solid #dde3da;border-radius:10px;padding:16px;font-size:28px;font-weight:700;text-align:center;letter-spacing:6px;color:#204f3d;font-variant-numeric:tabular-nums">${code}</div>
-      <p style="color:#647468;font-size:12px;margin:18px 0 0;line-height:1.6">验证码 10 分钟内有效。如使用高校邮箱（如 @tudelft.nl）或 QQ/163 邮箱，可将发件人加入白名单以确保后续收到私信与报名提醒。如非本人操作，请忽略此邮件。</p>
+    const html = `<div style="font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;max-width:480px;margin:0 auto;padding:24px;border:1px solid #dfe6f0;border-radius:16px;background:#ffffff;color:#111e33">
+      <div style="font-size:12px;letter-spacing:.04em;color:#617087;margin-bottom:6px">荷包 · 邮箱登录验证</div>
+      <h2 style="margin:0 0 12px;font-size:20px;color:#14386e">您的登录验证码</h2>
+      <p style="margin:0 0 16px;font-size:14px;line-height:1.6;color:#273852">请在登录窗口输入以下 6 位数字验证码完成验证：</p>
+      <div style="background:#f3f6fb;border:1px solid #d8e3f2;border-radius:12px;padding:16px;font-size:28px;font-weight:700;text-align:center;letter-spacing:6px;color:#1c4b8f;font-variant-numeric:tabular-nums">${code}</div>
+      <p style="color:#617087;font-size:12px;margin:18px 0 0;line-height:1.6">验证码 10 分钟内有效。如使用高校邮箱（如 @tudelft.nl）或 QQ/163 邮箱，可将发件人加入白名单以确保后续收到私信与报名提醒。如非本人操作，请忽略此邮件。</p>
     </div>`;
 
     const mailRes = await fetch('https://api.resend.com/emails', {

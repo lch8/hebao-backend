@@ -471,7 +471,7 @@ function refreshLoginUI() {
     const initial = esc((nickname() || email || '荷').trim().charAt(0).toUpperCase());
     profile.innerHTML = `<span class="profile-avatar" aria-hidden="true">${initial}</span><p><strong>${esc(nickname() || '你好')}</strong> ${emailHint} <span class="hint">· 新私信与活动变动会自动发邮件提醒</span></p><button id="logout" class="text-btn" type="button">退出登录</button>`;
   } else {
-    profile.innerHTML = `<img class="profile-art" src="/delft/mine-hello.webp" alt="" width="278" height="280" loading="lazy" /><div class="profile-copy"><h2>把自己的事，放在一处</h2><p>邮箱验证码登录，无需密码，首次登录自动创建账号。</p><ul class="profile-perks"><li><strong>闲置管理</strong>改价、标记已售</li><li><strong>买家私信</strong>咨询即时邮件提醒</li><li><strong>邀约报名</strong>解锁集合联络方式</li><li><strong>荷语错题</strong>云端备份不丢失</li></ul><button id="mineLogin" class="primary-btn" type="button">邮箱登录</button></div>`;
+    profile.innerHTML = `<img class="profile-art" src="/delft/mine-hello.webp?v=20261128e" alt="" width="760" height="680" loading="lazy" /><div class="profile-copy"><h2>把自己的事，放在一处</h2><p>邮箱验证码登录，无需密码，首次登录自动创建账号。</p><ul class="profile-perks"><li><strong>闲置管理</strong>改价、标记已售</li><li><strong>买家私信</strong>咨询即时邮件提醒</li><li><strong>邀约报名</strong>解锁集合联络方式</li><li><strong>荷语错题</strong>云端备份不丢失</li></ul><button id="mineLogin" class="primary-btn" type="button">邮箱登录</button></div>`;
   }
   const trigger = $('mineLogin');
   if (trigger) trigger.onclick = openLogin;

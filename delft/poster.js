@@ -3,7 +3,24 @@ import qrcode from './vendor/qrcode.mjs';
 import { eventShareLink, posterDestination, resolveSiteOrigin } from './site-config.js';
 
 const statusNames = { reserved: '已预订', sold: '已售出' };
-const font = '"Noto Sans SC", system-ui, sans-serif';
+const font = '"Plus Jakarta Sans", "PingFang SC", "Noto Sans SC", system-ui, sans-serif';
+const serif = '"Newsreader", "Noto Serif SC", "Songti SC", Georgia, serif';
+
+function drawDelftHeader(ctx, width, height) {
+  const grad = ctx.createLinearGradient(0, 0, width, height);
+  grad.addColorStop(0, '#091E3C');
+  grad.addColorStop(0.55, '#13376B');
+  grad.addColorStop(1, '#1C4B8F');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, width, height);
+  // Refined porcelain-gold architectural accent hairline
+  ctx.strokeStyle = 'rgba(235, 208, 146, 0.34)';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(24, 24, width - 48, height - 48);
+  // Gold bottom trim bar
+  ctx.fillStyle = '#D9B566';
+  ctx.fillRect(0, height - 5, width, 5);
+}
 
 export function posterLayout(count) {
   if (!Number.isInteger(count) || count < 1 || count > 12) throw new Error('海报需要 1–12 件商品');
@@ -66,52 +83,54 @@ export async function createPoster({ city = 'delft', title, pickup, seller, item
   const canvas = document.createElement('canvas'); canvas.width = 1000; canvas.height = layout.height;
   const ctx = canvas.getContext('2d');
   await document.fonts.ready;
-  ctx.fillStyle = '#f8f7f3'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = '#204f3d'; ctx.fillRect(0, 0, 1000, 190);
-  ctx.fillStyle = '#c5d8cb'; ctx.font = `22px ${font}`;
-  text(ctx, `${seller || `${cityName} 卖家`}的闲置清单 · ${items.length} 件商品`, 48, 44, 900);
-  ctx.fillStyle = '#fff'; ctx.font = `700 42px ${font}`;
-  text(ctx, title || `${cityName} 闲置出清`, 48, 100, 904);
-  ctx.fillStyle = '#deebe0'; ctx.font = `24px ${font}`;
-  text(ctx, `自取 · ${cityName} · ${pickup || '具体地点私聊'}`, 48, 151, 904);
+  ctx.fillStyle = '#F8F7F4'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+  drawDelftHeader(ctx, 1000, 192);
+  ctx.fillStyle = '#F1D99B'; ctx.font = `600 21px ${font}`;
+  text(ctx, `${seller || `${cityName} 卖家`}的闲置清单 · ${items.length} 件商品`, 54, 62, 892);
+  ctx.fillStyle = '#FFFFFF'; ctx.font = `700 41px ${serif}`;
+  text(ctx, title || `${cityName} 闲置出清`, 54, 115, 892);
+  ctx.fillStyle = '#D3E2F7'; ctx.font = `500 22px ${font}`;
+  text(ctx, `自取 · ${cityName} · ${pickup || '具体地点私聊'}`, 54, 158, 892);
 
   const images = await Promise.all(items.map(item => loadImage(item.dataUrl || item.photo)));
   let missingPhotos = 0;
   items.forEach((item, index) => {
     const { columns, gap, left, width, cardHeight, photoHeight, top } = layout;
     const x = left + (index % columns) * (width + gap), y = top + Math.floor(index / columns) * (cardHeight + gap);
-    ctx.fillStyle = '#fff'; ctx.fillRect(x, y, width, cardHeight);
+    ctx.fillStyle = '#FFFFFF'; ctx.fillRect(x, y, width, cardHeight);
+    ctx.strokeStyle = '#DCE4F0'; ctx.lineWidth = 1.5; ctx.strokeRect(x, y, width, cardHeight);
     if (images[index]) cover(ctx, images[index], x, y, width, photoHeight);
     else {
       if (item.dataUrl || item.photo) missingPhotos++;
-      ctx.fillStyle = '#e5ebe2'; ctx.fillRect(x, y, width, photoHeight);
-      ctx.fillStyle = '#778d7a'; ctx.font = `500 22px ${font}`; ctx.textAlign = 'center';
+      ctx.fillStyle = '#EDF2F9'; ctx.fillRect(x, y, width, photoHeight);
+      ctx.fillStyle = '#6E82A0'; ctx.font = `500 22px ${font}`; ctx.textAlign = 'center';
       ctx.fillText(item.dataUrl || item.photo ? '图片暂未载入' : '好物待认领', x + width / 2, y + photoHeight / 2);
       ctx.textAlign = 'left';
     }
-    ctx.fillStyle = '#203c2d'; ctx.font = `600 25px ${font}`;
+    ctx.fillStyle = '#111E33'; ctx.font = `600 25px ${font}`;
     text(ctx, item.name, x + 16, y + photoHeight + 36, width - 32, 2, 32);
-    ctx.fillStyle = '#276b53'; ctx.font = `700 32px ${font}`;
+    ctx.fillStyle = '#1C4B8F'; ctx.font = `700 32px ${font}`;
     text(ctx, item.price === '' || item.price == null ? '价格私聊' : Number(item.price) === 0 ? '免费赠送' : `€${Number(item.price)}`, x + 16, y + cardHeight - 21, width - 32);
     if (statusNames[item.status]) {
-      ctx.fillStyle = '#204f3de8'; ctx.fillRect(x, y, width, 43);
-      ctx.fillStyle = '#fff'; ctx.font = `600 23px ${font}`;
+      ctx.fillStyle = 'rgba(15, 39, 77, 0.88)'; ctx.fillRect(x, y, width, 43);
+      ctx.fillStyle = '#F7E7BE'; ctx.font = `600 22px ${font}`;
       ctx.fillText(statusNames[item.status], x + 16, y + 30);
     }
   });
 
   const y = layout.footerTop, qr = makeQr(destination.url), cell = 3, margin = 4;
   const size = (qr.getModuleCount() + margin * 2) * cell, qx = 952 - size, qy = y + 24;
-  ctx.strokeStyle = '#d8e1d7'; ctx.beginPath(); ctx.moveTo(48, y); ctx.lineTo(952, y); ctx.stroke();
-  ctx.fillStyle = '#526c5e'; ctx.font = `600 25px ${font}`;
-  ctx.fillText(`荷包 · ${cityName} 闲置`, 48, y + 47);
-  ctx.font = `22px ${font}`; ctx.fillText(destination.label, 48, y + 83);
-  ctx.fillStyle = '#697d70'; ctx.font = `18px ${font}`;
-  text(ctx, destination.website, 48, y + 115, qx - 66);
+  ctx.strokeStyle = '#D9E1EE'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(48, y); ctx.lineTo(952, y); ctx.stroke();
+  ctx.fillStyle = '#14386E'; ctx.font = `700 25px ${serif}`;
+  ctx.fillText(`荷包 · ${cityName} 闲置`, 48, y + 48);
+  ctx.fillStyle = '#334560'; ctx.font = `500 21px ${font}`; ctx.fillText(destination.label, 48, y + 84);
+  ctx.fillStyle = '#617087'; ctx.font = `500 18px ${font}`;
+  text(ctx, destination.website, 48, y + 116, qx - 66);
   ctx.font = `17px ${font}`;
   text(ctx, destination.published ? '售出后卖家在网页一键改状态，扫码即看最新库存。' : '在荷包免费生成清仓海报 · 支持实时更新已出状态', 48, y + 153, qx - 66);
-  ctx.fillStyle = '#fff'; ctx.fillRect(qx, qy, size, size);
-  ctx.fillStyle = '#263d32';
+  ctx.fillStyle = '#FFFFFF'; ctx.fillRect(qx, qy, size, size);
+  ctx.strokeStyle = '#DCE4F0'; ctx.strokeRect(qx, qy, size, size);
+  ctx.fillStyle = '#10284D';
   for (let row = 0; row < qr.getModuleCount(); row++) for (let col = 0; col < qr.getModuleCount(); col++) {
     if (qr.isDark(row, col)) ctx.fillRect(qx + (col + margin) * cell, qy + (row + margin) * cell, cell, cell);
   }
@@ -123,21 +142,26 @@ export async function createEventPoster(event) {
   const hostLabel = new URL(resolveSiteOrigin()).hostname;
   const canvas = document.createElement('canvas'); canvas.width = 1000; canvas.height = 1100;
   await document.fonts.ready; const ctx = canvas.getContext('2d');
-  ctx.fillStyle = '#f8f7f3'; ctx.fillRect(0, 0, 1000, 1100);
-  ctx.fillStyle = '#204f3d'; ctx.fillRect(0, 0, 1000, 330);
-  ctx.fillStyle = '#c5d8cb'; ctx.font = `26px ${font}`; ctx.fillText('同行邀请', 60, 75);
-  ctx.fillStyle = '#ffffff'; ctx.font = `700 48px ${font}`; text(ctx, event.title, 60, 155, 880, 3, 65);
+  ctx.fillStyle = '#F8F7F4'; ctx.fillRect(0, 0, 1000, 1100);
+  drawDelftHeader(ctx, 1000, 332);
+  ctx.fillStyle = '#F1D99B'; ctx.font = `600 24px ${font}`; ctx.fillText('荷包 · 同城邀约邀请卡', 64, 84);
+  ctx.fillStyle = '#FFFFFF'; ctx.font = `700 48px ${serif}`; text(ctx, event.title, 64, 158, 872, 3, 64);
   const date = new Intl.DateTimeFormat('zh-CN', { timeZone: 'Europe/Amsterdam', month: 'long', day: 'numeric', weekday: 'long', hour: '2-digit', minute: '2-digit' }).format(new Date(event.startsAt));
-  ctx.fillStyle = '#204f3d'; ctx.font = `600 32px ${font}`; text(ctx, date + '（荷兰时间）', 60, 410, 880, 2, 44);
-  ctx.font = `30px ${font}`; text(ctx, eventPlace(event), 60, 495, 880, 2, 44);
-  ctx.fillStyle = '#526c5e'; ctx.font = `26px ${font}`; text(ctx, `${event.host} 发起 · ${event.count}/${event.capacity} 人`, 60, 610, 880);
-  text(ctx, eventPosterNote(event), 60, 675, 880, 3, 40);
-  const qr = makeQr(shareUrl), cell = 4, margin = 4, size = (qr.getModuleCount() + 8) * cell, qx = 940 - size, qy = 850;
-  ctx.strokeStyle = '#d8e1d7'; ctx.beginPath(); ctx.moveTo(60, 820); ctx.lineTo(940, 820); ctx.stroke();
-  ctx.fillStyle = '#526c5e'; ctx.font = `600 26px ${font}`; ctx.fillText('长按识别二维码报名', 60, 885);
-  ctx.font = `22px ${font}`; ctx.fillText(`荷包 · ${hostLabel}`, 60, 934);
-  ctx.font = `18px ${font}`; ctx.fillText('人数、集合联络与活动状态以网页为准', 60, 978);
-  ctx.fillStyle = '#fff'; ctx.fillRect(qx, qy, size, size); ctx.fillStyle = '#263d32';
+  ctx.fillStyle = '#FFFFFF'; ctx.fillRect(60, 378, 880, 166);
+  ctx.strokeStyle = '#DCE4F0'; ctx.lineWidth = 1.5; ctx.strokeRect(60, 378, 880, 166);
+  ctx.fillStyle = '#1C4B8F'; ctx.fillRect(60, 378, 8, 166);
+  ctx.fillStyle = '#111E33'; ctx.font = `700 31px ${font}`; text(ctx, date + '（荷兰时间）', 92, 438, 824, 2, 42);
+  ctx.fillStyle = '#334560'; ctx.font = `500 28px ${font}`; text(ctx, eventPlace(event), 92, 504, 824, 2, 40);
+  ctx.fillStyle = '#1C4B8F'; ctx.font = `600 26px ${font}`; text(ctx, `${event.host} 发起 · 当前 ${event.count}/${event.capacity} 人`, 64, 608, 872);
+  ctx.fillStyle = '#4B5E78'; ctx.font = `500 24px ${font}`; text(ctx, eventPosterNote(event), 64, 668, 872, 3, 40);
+  const qr = makeQr(shareUrl), cell = 4, margin = 4, size = (qr.getModuleCount() + 8) * cell, qx = 940 - size, qy = 848;
+  ctx.strokeStyle = '#D9E1EE'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(60, 818); ctx.lineTo(940, 818); ctx.stroke();
+  ctx.fillStyle = '#14386E'; ctx.font = `700 28px ${serif}`; ctx.fillText('长按识别二维码报名同行', 60, 885);
+  ctx.fillStyle = '#334560'; ctx.font = `600 22px ${font}`; ctx.fillText(`荷包 · ${hostLabel}`, 60, 934);
+  ctx.fillStyle = '#617087'; ctx.font = `500 18px ${font}`; ctx.fillText('实时人数、集合联络与活动动态以网页为准', 60, 978);
+  ctx.fillStyle = '#FFFFFF'; ctx.fillRect(qx, qy, size, size);
+  ctx.strokeStyle = '#DCE4F0'; ctx.strokeRect(qx, qy, size, size);
+  ctx.fillStyle = '#10284D';
   for (let r = 0; r < qr.getModuleCount(); r++) for (let c = 0; c < qr.getModuleCount(); c++) {
     if (qr.isDark(r, c)) ctx.fillRect(qx + (c + margin) * cell, qy + (r + margin) * cell, cell, cell);
   }
@@ -161,7 +185,7 @@ export async function createStudyPoster({
   const cell = 4, margin = 4;
   const size = (qr.getModuleCount() + margin * 2) * cell;
   const contentEndY = 390 + (stat ? 130 : 0) + (rows.length ? (rows.length - 1) * 82 + 78 : 0);
-  const footerY = Math.max(820, contentEndY + 40);
+  const footerY = Math.max(820, contentEndY + 42);
   const totalHeight = Math.max(1140, footerY + Math.max(size + 76, 260));
 
   const canvas = document.createElement('canvas');
@@ -170,47 +194,51 @@ export async function createStudyPoster({
   await document.fonts.ready;
   const ctx = canvas.getContext('2d');
 
-  // Warm paper base + forest header
-  ctx.fillStyle = '#f6f4ec';
+  // Warm porcelain base + Delft cobalt header with fine gold frame
+  ctx.fillStyle = '#F8F7F4';
   ctx.fillRect(0, 0, 1000, totalHeight);
-  ctx.fillStyle = '#1f4e3d';
-  ctx.fillRect(0, 0, 1000, 340);
+  drawDelftHeader(ctx, 1000, 340);
 
-  ctx.fillStyle = '#c8dece';
-  ctx.font = `600 24px ${font}`;
-  ctx.fillText(badge, 60, 74);
+  ctx.fillStyle = '#F1D99B';
+  ctx.font = `600 23px ${font}`;
+  ctx.fillText(badge, 64, 80);
 
-  ctx.fillStyle = '#ffffff';
-  ctx.font = `700 46px ${font}`;
-  text(ctx, title, 60, 146, 880, 2, 60);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `700 46px ${serif}`;
+  text(ctx, title, 64, 152, 872, 2, 60);
 
   if (subtitle) {
-    ctx.fillStyle = '#dcebe0';
-    ctx.font = `500 26px ${font}`;
-    text(ctx, subtitle, 60, 276, 880, 1, 36);
+    ctx.fillStyle = '#D5E4F7';
+    ctx.font = `500 25px ${font}`;
+    text(ctx, subtitle, 64, 278, 872, 1, 36);
   }
 
   // Highlight stat banner
   let y = 390;
   if (stat) {
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(60, y, 880, 102);
-    ctx.strokeStyle = '#d7e2d5';
+    ctx.strokeStyle = '#DCE4F0';
     ctx.lineWidth = 2;
     ctx.strokeRect(60, y, 880, 102);
-    ctx.fillStyle = '#1f4e3d';
-    ctx.font = `700 34px ${font}`;
-    text(ctx, stat, 92, y + 63, 816, 1, 40);
+    ctx.fillStyle = '#D9B566';
+    ctx.fillRect(60, y, 880, 4);
+    ctx.fillStyle = '#14386E';
+    ctx.font = `700 33px ${font}`;
+    text(ctx, stat, 92, y + 64, 816, 1, 40);
     y += 130;
   }
 
   // Key highlights / vocab / breakdown rows
   rows.forEach((line, idx) => {
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(60, y, 880, 68);
-    ctx.fillStyle = '#24684e';
-    ctx.fillRect(60, y, 8, 68);
-    ctx.fillStyle = '#213a2d';
+    ctx.strokeStyle = '#E4EAF3';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(60, y, 880, 68);
+    ctx.fillStyle = '#1C4B8F';
+    ctx.fillRect(60, y, 7, 68);
+    ctx.fillStyle = '#111E33';
     ctx.font = `500 25px ${font}`;
     text(ctx, line, 90, y + 43, 826, 1, 32);
     y += idx < rows.length - 1 ? 82 : 78;
@@ -218,26 +246,28 @@ export async function createStudyPoster({
 
   // Footer + QR
   const qx = 940 - size, qy = footerY + 28;
-  ctx.strokeStyle = '#d8e1d7';
+  ctx.strokeStyle = '#D9E1EE';
   ctx.lineWidth = 1.5;
   ctx.beginPath();
   ctx.moveTo(60, footerY);
   ctx.lineTo(940, footerY);
   ctx.stroke();
 
-  ctx.fillStyle = '#1f4e3d';
-  ctx.font = `700 28px ${font}`;
+  ctx.fillStyle = '#14386E';
+  ctx.font = `700 28px ${serif}`;
   ctx.fillText(`荷包 · ${hostLabel}`, 60, footerY + 62);
-  ctx.fillStyle = '#526c5e';
+  ctx.fillStyle = '#3B4F6B';
   ctx.font = `500 22px ${font}`;
   text(ctx, footerHint, 60, footerY + 108, qx - 90, 2, 34);
-  ctx.fillStyle = '#6f8275';
+  ctx.fillStyle = '#6B7D96';
   ctx.font = `500 18px ${font}`;
   ctx.fillText('长按识别右侧二维码立即免费体验', 60, footerY + 194);
 
-  ctx.fillStyle = '#fff';
+  ctx.fillStyle = '#FFFFFF';
   ctx.fillRect(qx, qy, size, size);
-  ctx.fillStyle = '#213a2d';
+  ctx.strokeStyle = '#DCE4F0';
+  ctx.strokeRect(qx, qy, size, size);
+  ctx.fillStyle = '#10284D';
   for (let r = 0; r < qr.getModuleCount(); r++) for (let c = 0; c < qr.getModuleCount(); c++) {
     if (qr.isDark(r, c)) ctx.fillRect(qx + (c + margin) * cell, qy + (r + margin) * cell, cell, cell);
   }

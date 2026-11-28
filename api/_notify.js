@@ -67,14 +67,14 @@ export async function sendTransactionalEmail({
       '此邮件为站内互动即时提醒，请勿在未核实物品前提前转账。'
     ].join('\n');
 
-    const html = `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;max-width:520px;margin:0 auto;padding:24px;border:1px solid #dde3da;border-radius:14px;background:#ffffff;color:#243d32;line-height:1.65">
-      <div style="font-size:13px;color:#647468;margin-bottom:8px">荷包 · 站内动态提醒</div>
-      <h2 style="font-size:19px;margin:0 0 14px;color:#204f3d">${esc(heading || cleanSubject)}</h2>
-      ${bodyLines.map(line => `<p style="margin:0 0 10px;font-size:14px;color:#243d32;white-space:pre-line">${esc(line)}</p>`).join('')}
+    const html = `<div style="font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;max-width:520px;margin:0 auto;padding:24px;border:1px solid #dfe6f0;border-radius:16px;background:#ffffff;color:#111e33;line-height:1.65">
+      <div style="font-size:12px;letter-spacing:.04em;color:#617087;margin-bottom:8px">荷包 · 站内动态提醒</div>
+      <h2 style="font-size:19px;margin:0 0 14px;color:#14386e">${esc(heading || cleanSubject)}</h2>
+      ${bodyLines.map(line => `<p style="margin:0 0 10px;font-size:14px;color:#273852;white-space:pre-line">${esc(line)}</p>`).join('')}
       <div style="margin:20px 0 16px">
-        <a href="${esc(actionUrl)}" style="display:inline-block;background:#24684e;color:#ffffff;text-decoration:none;padding:10px 20px;border-radius:9px;font-size:14px;font-weight:600">${esc(ctaLabel)}</a>
+        <a href="${esc(actionUrl)}" style="display:inline-block;background:#1c4b8f;color:#ffffff;text-decoration:none;padding:10px 22px;border-radius:10px;font-size:14px;font-weight:600">${esc(ctaLabel)}</a>
       </div>
-      <p style="margin:16px 0 0;padding-top:12px;border-top:1px solid #edf0e8;font-size:12px;color:#647468">如按钮无法点击，请复制此链接到浏览器打开：<br><a href="${esc(actionUrl)}" style="color:#24684e;word-break:break-all">${esc(actionUrl)}</a></p>
+      <p style="margin:16px 0 0;padding-top:12px;border-top:1px solid #edf1f7;font-size:12px;color:#617087">如按钮无法点击，请复制此链接到浏览器打开：<br><a href="${esc(actionUrl)}" style="color:#1c4b8f;word-break:break-all">${esc(actionUrl)}</a></p>
     </div>`;
 
     const response = await fetch('https://api.resend.com/emails', {
