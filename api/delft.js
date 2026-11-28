@@ -13,7 +13,7 @@ const cityLabels = {
 };
 const funnelEvents = new Set([
   'page_view', 'auth_request', 'auth_success', 'poster_generate',
-  'listing_publish', 'event_create', 'event_rsvp', 'inquiry_send', 'a2_practice'
+  'listing_publish', 'event_create', 'event_rsvp', 'inquiry_send', 'a2_practice', 'a2_ai_grade'
 ]);
 const reportTargets = new Set(['listing', 'event', 'message']);
 const reportReasons = new Set(['疑似诈骗或定金诱导', '虚假或违禁商品', '骚扰或不当言论', '活动信息失实', '其他问题']);
@@ -23,6 +23,20 @@ class InputError extends Error {}
 
 // Photos may live on Tencent COS or in the database fallback (/api/delft-image?id=<uuid>).
 const safeUrl = value => isDbImageUrl(value) ? String(value) : isCosUrl(value) ? new URL(value).href : '';
+const normalizePhotos = (primary, list) => {
+  const seen = new Set();
+  const raw = [primary, ...(Array.isArray(list) ? list : [])];
+  const out = [];
+  for (const entry of raw) {
+    const clean = safeUrl(entry);
+    if (clean && !seen.has(clean)) {
+      seen.add(clean);
+      out.push(clean);
+      if (out.length >= 4) break;
+    }
+  }
+  return out;
+};
 
 async function ipQuotaKey(request, prefix) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
@@ -64,10 +78,11 @@ const parseItems = (source) => {
     const id = /^[\w-]{5,60}$/.test(i.id || '') ? i.id : crypto.randomUUID();
     if (ids.has(id)) throw new InputError('商品编号重复，请重新添加商品');
     ids.add(id);
-    const photo = safeUrl(i.photo);
+    const photos = normalizePhotos(i.photo, i.photos);
+    const photo = photos[0] || '';
     return {
       id, name, category: i.category || '其他',
-      price, condition: clipped(i.condition, 140), photo,
+      price, condition: clipped(i.condition, 140), photo, photos,
       status: statuses.has(i.status) ? i.status : 'available'
     };
   });
@@ -80,7 +95,12 @@ const listingView = row => ({
   title: row.title,
   pickup: row.pickup,
   note: row.note,
-  items: JSON.parse(row.items_json).map(item => ({ ...item, category: item.category || '其他' })),
+  items: JSON.parse(row.items_json).map(item => {
+    const photos = Array.isArray(item.photos) && item.photos.length
+      ? item.photos.filter(Boolean).slice(0, 4)
+      : (item.photo ? [item.photo] : []);
+    return { ...item, photo: photos[0] || '', photos, category: item.category || '其他' };
+  }),
   createdAt: row.created_at,
   updatedAt: row.updated_at,
   stale: Date.now() - new Date(row.updated_at).getTime() > 14 * 86400000
@@ -449,9 +469,24 @@ export default async function handler(request) {
       await deleteDbImagesFor(photos).catch(error => console.error('delete listing images', error));
       return json({ ok: true });
     }
-    if (action === 'updateStatus') {
+    if (action === 'updateStatus' || action === 'updateItem') {
       const id = clipped(body.listingId, 60), itemId = clipped(body.itemId, 60);
-      if (!statuses.has(body.status)) return json({ error: '无效状态' }, 400);
+      const hasStatus = body.status !== undefined;
+      const hasPrice = action === 'updateItem' && Object.hasOwn(body, 'price');
+      if (action === 'updateStatus' && !statuses.has(body.status)) return json({ error: '无效状态' }, 400);
+      if (hasStatus && !statuses.has(body.status)) return json({ error: '无效状态' }, 400);
+      let nextPrice;
+      if (hasPrice) {
+        if (body.price === '' || body.price === null) nextPrice = null;
+        else {
+          const parsed = Number(body.price);
+          if (!['string', 'number'].includes(typeof body.price) || !Number.isFinite(parsed) || parsed < 0 || parsed > 10000) {
+            return json({ error: '价格须在 €0–10,000 之间，或留空表示待议' }, 400);
+          }
+          nextPrice = parsed;
+        }
+      }
+      if (!hasStatus && !hasPrice) return json({ error: '没有需要更新的字段' }, 400);
       const result = await sql('SELECT owner_id,items_json,updated_at FROM delft_listings WHERE id=?', [id]);
       const row = result.rows[0];
       if (!row) return json({ error: '清仓页不存在' }, 404);
@@ -459,11 +494,12 @@ export default async function handler(request) {
       const items = JSON.parse(row.items_json);
       const item = items.find(i => i.id === itemId);
       if (!item) return json({ error: '商品不存在' }, 404);
-      item.status = body.status;
+      if (hasStatus) item.status = body.status;
+      if (hasPrice) item.price = nextPrice;
       const updatedAt = nextUpdate(row);
       const saved = await sql('UPDATE delft_listings SET items_json=?,updated_at=? WHERE id=? AND owner_id=? AND items_json=? AND updated_at=?', [JSON.stringify(items), updatedAt, id, user, row.items_json, row.updated_at]);
       if (!saved.affected) return json({ error: '其他窗口刚刚更新了商品，请刷新后重试' }, 409);
-      return json({ ok: true, updatedAt });
+      return json({ ok: true, updatedAt, item: { id: item.id, status: item.status, price: item.price } });
     }
     if (action === 'createEvent') {
       const title = clipped(body.title, 75), host = clipped(body.host, 35), place = clipped(body.place, 100);

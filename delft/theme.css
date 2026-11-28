@@ -438,8 +438,8 @@ footer { border-top-color: var(--line); color: var(--muted); font-size: 12px; }
     background-color: #fff;
   }
   .sort-label { order: 0; margin-left: 0; }
-  #marketCategories, #eventCategoryFilters { margin-inline: -16px; padding: 2px 16px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 16px, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(90deg, transparent 0, #000 16px, #000 calc(100% - 28px), transparent); }
-  #marketCategories::-webkit-scrollbar, #eventCategoryFilters::-webkit-scrollbar { display: none; }
+  #marketCategories, #marketQuickFilters, #eventCategoryFilters { margin-inline: -16px; padding: 2px 16px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 16px, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(90deg, transparent 0, #000 16px, #000 calc(100% - 28px), transparent); }
+  #marketCategories::-webkit-scrollbar, #marketQuickFilters::-webkit-scrollbar, #eventCategoryFilters::-webkit-scrollbar { display: none; }
   .category-chip { min-height: 36px; padding: 6px 14px; font-size: 13px; }
   .cards-grid { gap: 14px 12px; }
   .listing-card { border-radius: 16px; }
@@ -848,6 +848,528 @@ footer { border-top-color: var(--line); color: var(--muted); font-size: 12px; }
   .profile-perks { grid-template-columns: 1fr; }
   .market-controls { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .tab svg { width: 48px; padding-inline: 14px; }
+}
+
+/* ==========================================================================
+   Batch 2 (Route A): A2 AI Grader, Mistakes, Flashcards, Multi-Photo, Filters & Seller Speedups
+   ========================================================================== */
+
+/* Dutch A2 — Mistake Notebook Banner & Listening Speed Toggle */
+.a2-mistakes-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 18px;
+  flex-wrap: wrap;
+  padding: 13px 18px;
+  margin-bottom: 16px;
+  border-radius: 16px;
+  background: var(--clay-50);
+  border: 1px solid #ead1bc;
+  box-shadow: var(--shadow-xs);
+  font-size: 13.5px;
+  color: #663b22;
+}
+.a2-mistakes-bar strong { color: #7e3d1d; }
+.a2-audio-top {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.a2-speed-group {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  background: #ecefe7;
+  border: 1px solid var(--line);
+}
+.a2-speed-btn {
+  border: 0;
+  background: transparent;
+  padding: 4px 10px;
+  min-height: 28px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background .15s, color .15s, box-shadow .15s;
+}
+.a2-speed-btn.active {
+  background: #fff;
+  color: var(--green);
+  box-shadow: var(--shadow-xs);
+}
+
+/* Dutch A2 — AI Writing Grading Card */
+.ai-grade-trigger {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--green-50);
+  border: 1px solid var(--green-100);
+}
+.ai-grade-err { font-size: 13px; color: #a4492c; font-weight: 500; }
+.ai-grade-card {
+  margin: 0 0 18px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: #fff;
+  border: 1px solid #cadac7;
+  box-shadow: var(--shadow-sm);
+  display: grid;
+  gap: 12px;
+}
+.ai-grade-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.ai-grade-head small { font-size: 11.5px; color: var(--muted); }
+.ai-verdict {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 11px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.ai-verdict.pass { background: var(--green-100); color: var(--green-700); }
+.ai-verdict.almost { background: #fbf1d8; color: #7e5214; }
+.ai-verdict.needs-work { background: #fae7e1; color: #9c3d22; }
+.ai-grade-summary { margin: 0; font-size: 14px; line-height: 1.65; color: var(--ink); }
+.ai-check-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 7px;
+}
+.ai-check-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 8px 11px;
+  border-radius: 11px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.ai-check-list li.met { background: var(--green-50); color: var(--ink); }
+.ai-check-list li.miss { background: #fdf1ec; color: #6e311d; }
+.ai-check-list li > span {
+  flex-shrink: 0;
+  font-weight: 800;
+  width: 18px;
+  text-align: center;
+}
+.ai-check-list li.met > span { color: var(--green); }
+.ai-check-list li.miss > span { color: #b44324; }
+.ai-check-list li > div { display: grid; gap: 2px; }
+.ai-check-list li small { font-size: 12px; color: var(--muted); }
+.ai-grade-section h5 { margin: 0 0 6px; font-size: 13px; font-weight: 700; color: var(--ink-2); }
+.ai-corr-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ai-corr-list li {
+  padding: 9px 12px;
+  border-radius: 11px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  font-size: 13px;
+}
+.ai-corr-diff { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; font-weight: 600; }
+.ai-corr-diff del { color: #9b3f24; text-decoration-thickness: 1.5px; }
+.ai-corr-diff ins { color: var(--green-700); text-decoration: none; background: var(--green-50); padding: 1px 6px; border-radius: 6px; }
+.ai-corr-list li p { margin: 4px 0 0; font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+
+/* Dutch A2 — Wordbook & Flashcards */
+.word-mode-switch {
+  display: inline-flex;
+  gap: 3px;
+  padding: 4px;
+  border-radius: 12px;
+  background: #eef0e8;
+  border: 1px solid #e3e6dc;
+  flex-shrink: 0;
+}
+.word-mode-switch > button {
+  border: 0;
+  background: transparent;
+  padding: 6px 14px;
+  min-height: 34px;
+  border-radius: 9px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background .18s, color .18s, box-shadow .18s;
+}
+.word-mode-switch > button.active {
+  background: #fff;
+  color: var(--green);
+  box-shadow: var(--shadow-xs);
+}
+.word-row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-self: end;
+}
+.word-icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--muted);
+  font-size: 15px;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s, transform .12s;
+}
+.word-icon-btn:hover { background: var(--green-50); border-color: #b7ccb9; color: var(--green); }
+.word-icon-btn.saved { background: #fef7e4; border-color: #ebd08c; color: #c78316; }
+.flash-card, .flash-done {
+  margin-top: 10px;
+  padding: 24px 26px 20px;
+  border-radius: 20px;
+  background: #fff;
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-sm);
+  display: grid;
+  gap: 18px;
+}
+.flash-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.flash-top-tools { display: flex; align-items: center; gap: 14px; }
+.flash-top-tools .text-btn { min-height: 32px; padding: 2px 0; font-size: 13.5px; }
+.flash-front {
+  text-align: center;
+  font-size: clamp(24px, 5vw, 34px);
+  font-weight: 750;
+  letter-spacing: -.02em;
+  color: var(--ink);
+  padding: 20px 12px 10px;
+}
+.flash-back {
+  text-align: center;
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  display: grid;
+  gap: 8px;
+}
+.flash-back strong { font-size: 18px; color: var(--green-700); }
+.flash-back p { margin: 0; font-size: 14.5px; color: var(--ink-2); line-height: 1.6; }
+.flash-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.flash-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid #eef0ea;
+}
+.flash-done { text-align: center; justify-items: center; padding: 32px 24px; }
+.flash-done h3 { margin: 0; font-size: 20px; color: var(--ink); }
+.flash-done p { margin: 0; color: var(--muted); }
+
+/* Market — Quick Price / Favorites Filters & Card Overlays */
+.quick-price-filters { margin: -2px 0 16px; }
+#favCountBadge {
+  display: inline-block;
+  margin-left: 4px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgb(255 255 255 / .24);
+}
+.category-chip:not(.active) #favCountBadge {
+  background: #fef3d3;
+  color: #a66c11;
+}
+.listing-media {
+  position: relative;
+  overflow: hidden;
+}
+.photo-count-badge {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  z-index: 2;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgb(20 40 30 / .72);
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+.fav-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgb(255 255 255 / .7);
+  background: rgb(255 255 255 / .88);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  color: var(--ink-2);
+  font-size: 17px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgb(20 40 30 / .15);
+  transition: transform .15s var(--ease), background .15s, color .15s;
+}
+.fav-btn:hover { background: #fff; transform: scale(1.06); }
+.fav-btn.active { color: #d68b18; background: #fffbf0; border-color: #f0d38c; }
+
+/* Market Detail — Multi-Photo Gallery & Lightbox Navigation */
+.detail-item > .detail-gallery {
+  flex: 0 0 auto;
+  display: grid;
+  gap: 6px;
+  width: 96px;
+}
+.detail-thumbs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+.detail-thumb-btn {
+  padding: 0;
+  border: 1.5px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--surface-2);
+  cursor: pointer;
+  display: block;
+}
+.detail-thumb-btn:hover { border-color: var(--green); }
+.detail-item .detail-thumb-btn img {
+  display: block;
+  width: 100%;
+  height: 22px;
+  object-fit: cover;
+  border-radius: 0;
+}
+.detail-item-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-top: 6px;
+}
+.detail-item .detail-item-actions [data-inquire] { margin-top: 0; }
+.detail-fav-btn { min-height: 32px; padding: 4px 0; font-size: 13px; color: var(--muted); }
+.detail-fav-btn.active { color: #c47d12; }
+.lightbox-modal { padding-top: 48px; }
+.lightbox-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+.lightbox-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px solid rgb(255 255 255 / .4);
+  background: rgb(20 40 30 / .68);
+  color: #fff;
+  font-size: 26px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background .15s, transform .15s;
+}
+.lightbox-nav:hover { background: rgb(20 40 30 / .88); }
+.lightbox-nav.prev { left: 8px; }
+.lightbox-nav.next { right: 8px; }
+.lightbox-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+}
+
+/* Sell Step 1 & 2 — Extra Detail Photos & Available-Only Poster Toggle */
+.item-extra-photos {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.extra-thumb-wrap {
+  position: relative;
+  width: 46px;
+  height: 46px;
+}
+.extra-thumb-btn {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  overflow: hidden;
+  background: var(--surface-2);
+  cursor: pointer;
+  display: block;
+}
+.extra-thumb-btn:hover { border-color: var(--green); }
+.extra-thumb-btn img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.extra-remove-btn {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid #fff;
+  background: #39483e;
+  color: #fff;
+  font-size: 13px;
+  line-height: 1;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.extra-remove-btn:hover { background: #a4492c; }
+.add-extra-btn {
+  min-height: 34px;
+  padding: 5px 11px;
+  border-radius: 9px;
+  border: 1px dashed #b3c7b2;
+  background: var(--green-50);
+  color: var(--green);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+.add-extra-btn:hover { background: var(--green-100); border-color: var(--green); }
+.poster-only-check {
+  margin: 0 0 12px;
+  padding: 9px 12px;
+  border-radius: 11px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+/* Mine — Inline Price Edit & Sold Archive */
+.my-item-name { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.my-photo-tag {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--green-50);
+  color: var(--green);
+}
+.my-item-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.my-price-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px 0 9px;
+  min-height: 40px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+.my-price-wrap:focus-within { border-color: var(--green); box-shadow: var(--ring); }
+.my-price-input {
+  width: 68px;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 6px 0 !important;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.sold-archive {
+  margin-top: 8px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.sold-archive > summary {
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--muted);
+  padding: 2px 0;
+}
+.sold-archive-list { margin-top: 14px; }
+.sold-archive .my-listing { opacity: .88; }
+
+@media (max-width: 600px) {
+  .a2-mistakes-bar { padding: 12px 14px; border-radius: 14px; }
+  .a2-words .word-row-actions { grid-column: 2; grid-row: 1; }
+  .a2-words small { grid-column: auto; grid-row: auto; }
+  .flash-card { padding: 18px 16px 16px; border-radius: 16px; }
+  .flash-actions { display: grid; grid-template-columns: 1fr; }
+  .flash-actions > button { width: 100%; }
+  .detail-item > .detail-gallery { width: 72px; }
+  .detail-photo-zoom img { width: 72px; height: 72px; }
+  .lightbox-nav { width: 36px; height: 36px; font-size: 22px; }
+  .my-item { flex-wrap: wrap; gap: 8px; }
+  .my-item-controls { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+  .my-price-wrap { width: 100%; max-width: none; }
+  .my-item-controls select { width: 100%; min-width: 0; }
+  .my-price-input { width: 100%; font-size: 16px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

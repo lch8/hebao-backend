@@ -2,7 +2,7 @@
 import { readDraft, writeDraft, deleteDraft } from './draft-store.js';
 import { createPoster, createEventPoster } from './poster.js';
 import { downloadCalendarIcs } from './ics.js';
-import { marketProducts, itemPrice } from './market-view.js';
+import { marketProducts, itemPrice, favoriteKey } from './market-view.js';
 import {
   cities, cityLabels, cityEvents, CITY_EVENTS_CHECKED, CITY_AGENDA_URL,
   upcomingCityEvents, amsterdamInput, amsterdamInstant, cityEventDraft,
@@ -16,13 +16,32 @@ import {
 
 const $ = id => document.getElementById(id);
 const isWeChat = /MicroMessenger/i.test(navigator.userAgent || '');
+const FAVS_KEY = 'hebao_market_favs_v1';
+
+function loadFavorites() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(FAVS_KEY) || '[]');
+    if (!Array.isArray(raw)) return new Set();
+    return new Set(raw.filter(v => typeof v === 'string' && v.includes(':')).slice(0, 200));
+  } catch { return new Set(); }
+}
+
+function saveFavorites(set) {
+  try { localStorage.setItem(FAVS_KEY, JSON.stringify([...set].slice(0, 200))); } catch {}
+}
+
+const itemGalleryUrls = item => {
+  if (Array.isArray(item?.photos) && item.photos.length) return item.photos.filter(Boolean).slice(0, 4);
+  return item?.photo ? [item.photo] : [];
+};
 
 const state = {
   photos: [], listings: [], myListings: [], events: [], myEvents: [],
   currentListing: null, currentProduct: null, currentEvent: null, coordEvent: null,
   editingEventId: null, reportTarget: null,
   publishedId: null, editingId: null, editVersion: null,
-  dirty: false, activeTab: null, category: '', eventCategory: '', marketCity: 'all',
+  dirty: false, activeTab: null, category: '', priceFilter: '', eventCategory: '', marketCity: 'all',
+  favorites: loadFavorites(),
   saving: false, unreadCount: 0,
 };
 
@@ -30,6 +49,23 @@ const itemCategories = ['家具', '自行车', '数码', '生活用品', '书籍
 const statusNames = { available: '在售', reserved: '已预订', sold: '已售出' };
 const siteTitle = document.title;
 const uuid = () => crypto.randomUUID();
+const normalizeDraftItem = raw => ({
+  id: raw?.id || uuid(),
+  name: String(raw?.name || ''),
+  price: raw?.price ?? '',
+  condition: String(raw?.condition || ''),
+  category: raw?.category || '其他',
+  dataUrl: String(raw?.dataUrl || ''),
+  photo: String(raw?.photo || ''),
+  extraPhotos: Array.isArray(raw?.extraPhotos)
+    ? raw.extraPhotos
+        .filter(p => p && (p.dataUrl || p.photo))
+        .slice(0, 3)
+        .map(p => ({ dataUrl: String(p.dataUrl || ''), photo: String(p.photo || ''), uploadFailed: Boolean(p.uploadFailed) }))
+    : [],
+  status: raw?.status || 'available',
+  uploadFailed: Boolean(raw?.uploadFailed),
+});
 const token = () => localStorage.getItem('hebao_token') || '';
 const nickname = () => localStorage.getItem('delft_nickname') || localStorage.getItem('hp_name') || '';
 const savedCity = () => {
@@ -97,12 +133,22 @@ function setBusy(button, busy, label) {
   }
 }
 
-let resumeAfterLogin = null;
+let resumeAfterLogin = null, cancelAfterLogin = null;
 function requireAuth(resume) {
   if (token()) return true;
+  if (cancelAfterLogin) { const prev = cancelAfterLogin; cancelAfterLogin = null; prev(); }
   resumeAfterLogin = resume || null;
   showModal('loginModal');
   return false;
+}
+function ensureAuth() {
+  if (token()) return Promise.resolve(true);
+  return new Promise(resolve => {
+    if (cancelAfterLogin) { const prev = cancelAfterLogin; cancelAfterLogin = null; prev(); }
+    resumeAfterLogin = () => { cancelAfterLogin = null; resolve(true); };
+    cancelAfterLogin = () => resolve(false);
+    showModal('loginModal');
+  });
 }
 
 const modalFocus = new Map();
@@ -125,7 +171,10 @@ function hideModal(id, { updateUrl = true } = {}) {
   modal.hidden = true;
   document.body.style.overflow = document.querySelector('.overlay:not([hidden])') ? 'hidden' : '';
   modalFocus.get(id)?.focus?.();
-  if (id === 'loginModal') resumeAfterLogin = null;
+  if (id === 'loginModal') {
+    resumeAfterLogin = null;
+    if (cancelAfterLogin) { const cancel = cancelAfterLogin; cancelAfterLogin = null; cancel(); }
+  }
   if (id === 'createEventBox') state.editingEventId = null;
   if (id === 'actionDialogModal' && dialogResolver) {
     const resolve = dialogResolver;
@@ -275,6 +324,23 @@ async function tab(name, { updateUrl = true } = {}) {
             loadCloudProgress: async () => (await api('studyProgress')).progress,
             saveCloudProgress: async payload => api('saveStudyProgress', 'POST', payload),
             onPractice: () => trackEvent('a2_practice'),
+            gradeWriting: async payload => {
+              if (!(await ensureAuth())) return null;
+              const resp = await fetch('/api/delft-ai', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` },
+                body: JSON.stringify({ mode: 'a2_write', ...payload }),
+              });
+              const data = await resp.json().catch(() => ({}));
+              if (resp.status === 401) {
+                ['hebao_token', 'hebao_logged_in', 'hebao_email'].forEach(k => localStorage.removeItem(k));
+                refreshLoginUI();
+                throw new Error('登录已过期，请重新登录后使用 AI 批改');
+              }
+              if (!resp.ok || !data.grade) throw new Error(data.error || 'AI 批改暂时不可用，可先对照范文自查');
+              trackEvent('a2_ai_grade');
+              return data.grade;
+            },
           });
         });
         await dutchLoading;
@@ -311,7 +377,9 @@ document.addEventListener('click', e => {
   if (e.target.closest('[data-clear-market]')) {
     $('marketSearch').value = '';
     state.marketCity = 'all';
+    state.priceFilter = '';
     $('marketCity').value = 'all';
+    syncQuickFiltersUI();
     updateMarketHeading();
     $('marketCategories').querySelector('[data-category=""]').click();
   }
@@ -322,6 +390,10 @@ document.addEventListener('keydown', e => {
   const top = [...document.querySelectorAll('.overlay:not([hidden])')].sort((a, b) => Number(b.style.zIndex) - Number(a.style.zIndex))[0];
   if (!top) return;
   if (e.key === 'Escape') { hideModal(top.id); return; }
+  if (top.id === 'photoLightboxModal' && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+    stepLightbox(e.key === 'ArrowRight' ? 1 : -1);
+    return;
+  }
   if (e.key === 'Tab') {
     const items = [...top.querySelectorAll('button,input,textarea,select,a[href],summary')].filter(el => !el.disabled && el.getClientRects().length);
     const first = items[0], last = items.at(-1);
@@ -373,7 +445,12 @@ function refreshLoginUI() {
   });
 }
 
-function openLogin() { resumeAfterLogin = null; showModal('loginModal'); $('authEmail').focus(); }
+function openLogin() {
+  if (cancelAfterLogin) { const prev = cancelAfterLogin; cancelAfterLogin = null; prev(); }
+  resumeAfterLogin = null;
+  showModal('loginModal');
+  $('authEmail').focus();
+}
 $('loginTrigger').addEventListener('click', () => token() ? tab('mine') : openLogin());
 $('wechatCloudSaveBtn')?.addEventListener('click', () => requireAuth(() => { syncCloudDraft(); toast('已登录，草稿将自动云端备份'); }));
 
@@ -433,6 +510,8 @@ $('loginForm').addEventListener('submit', async e => {
     localStorage.setItem('hebao_email', email);
     trackEvent('auth_success');
     const resume = resumeAfterLogin;
+    resumeAfterLogin = null;
+    cancelAfterLogin = null;
     refreshLoginUI();
     refreshUnreadBadge();
     dutchView?.syncCloud?.();
@@ -455,7 +534,7 @@ let draftTimer, cloudDraftTimer, draftQueue = Promise.resolve(), draftRevision =
 
 const draftSnapshot = () => ({
   version: 1,
-  photos: state.photos.map(item => ({ ...item })),
+  photos: state.photos.map(item => ({ ...item, extraPhotos: (item.extraPhotos || []).map(p => ({ ...p })) })),
   fields: Object.fromEntries(draftFields.map(id => [id, $(id).value])),
   editingId: state.editingId,
   editVersion: state.editVersion,
@@ -466,7 +545,11 @@ const draftSnapshot = () => ({
 
 const cloudDraftPayload = () => ({
   version: 1,
-  photos: state.photos.map(item => ({ ...item, dataUrl: '' })),
+  photos: state.photos.map(item => ({
+    ...item,
+    dataUrl: '',
+    extraPhotos: (item.extraPhotos || []).filter(p => p.photo).map(p => ({ dataUrl: '', photo: p.photo })),
+  })),
   fields: Object.fromEntries(draftFields.map(id => [id, $(id).value])),
   editingId: state.editingId,
   editVersion: state.editVersion,
@@ -494,7 +577,7 @@ async function restoreOrSyncCloudDraft() {
     const res = await api('cloudDraft');
     const saved = res.draft;
     if (saved?.version === 1 && Array.isArray(saved.photos) && saved.photos.length) {
-      state.photos = saved.photos.slice(0, 12).map(item => ({ ...item, dataUrl: '' }));
+      state.photos = saved.photos.slice(0, 12).map(item => normalizeDraftItem({ ...item, dataUrl: '' }));
       state.editingId = saved.editingId || null;
       state.editVersion = saved.editVersion || null;
       state.publishedId = saved.publishedId || null;
@@ -520,6 +603,14 @@ function renderDraftMode() {
     $('shareDisclosureHint').textContent = isPublishedClean
       ? '生成海报图片或复制文案发到微信群，群友扫码即可看实时在售与已售状态。'
       : '建议先点上方「发布到集市」：生成的海报二维码会自动指向实时在售状态。';
+  }
+  const availLabel = $('posterAvailableOnlyLabel');
+  if (availLabel) {
+    const total = state.photos.length;
+    const avail = state.photos.filter(i => i.status === 'available').length;
+    availLabel.textContent = total > 0 && avail < total
+      ? `仅包含仍在售商品（当前 ${avail}/${total} 件在售，重发清仓海报更清爽）`
+      : '仅包含仍在售商品（卖掉一半后重发清仓海报）';
   }
 }
 
@@ -667,7 +758,7 @@ $('photoInput').addEventListener('change', async e => {
       $('uploadLabel').textContent = `正在压缩照片 ${idx + 1} / ${files.length}…`;
       try {
         const dataUrl = await asJpeg(files[idx]);
-        state.photos.push({ id: uuid(), name: '', price: '', condition: '', category: '其他', dataUrl, photo: '', status: 'available' });
+        state.photos.push(normalizeDraftItem({ dataUrl }));
       } catch (error) { failed++; lastError = error.message; }
     }
     if (failed) toast(`${failed} 张照片无法读取：${lastError}`);
@@ -680,9 +771,48 @@ $('photoInput').addEventListener('change', async e => {
   }
 });
 
+let pendingExtraItemId = null;
+$('extraPhotoInput')?.addEventListener('change', async e => {
+  const targetId = pendingExtraItemId;
+  pendingExtraItemId = null;
+  const files = [...e.target.files].filter(f => !f.type || f.type.startsWith('image/'));
+  e.target.value = '';
+  if (!targetId || !files.length) return;
+  const item = state.photos.find(i => i.id === targetId);
+  if (!item) return;
+  item.extraPhotos ||= [];
+  const hasCover = Boolean(item.dataUrl || item.photo);
+  const currentTotal = (hasCover ? 1 : 0) + item.extraPhotos.length;
+  const slots = Math.max(0, 4 - currentTotal);
+  if (!slots) { toast('每件商品最多 4 张照片（1 张封面 + 3 张细节图）'); return; }
+  const picked = files.slice(0, slots);
+  if (files.length > slots) toast(`每件商品最多 4 张照片，已自动选取前 ${slots} 张`);
+  $('btnPublish').disabled = true;
+  try {
+    let failed = 0, lastError = '';
+    for (const file of picked) {
+      try {
+        const dataUrl = await asJpeg(file);
+        if (!item.dataUrl && !item.photo) {
+          item.dataUrl = dataUrl;
+          item.photo = '';
+          item.uploadFailed = false;
+        } else {
+          item.extraPhotos.push({ dataUrl, photo: '', uploadFailed: false });
+        }
+      } catch (error) { failed++; lastError = error.message; }
+    }
+    if (failed) toast(`${failed} 张细节图无法读取：${lastError}`);
+  } finally {
+    renderItems();
+    markDraftChanged();
+    $('btnPublish').disabled = false;
+  }
+});
+
 $('addManualItem').addEventListener('click', () => {
   if (state.photos.length >= 12) { toast('最多 12 件商品'); return; }
-  state.photos.push({ id: uuid(), name: '', price: '', condition: '', category: '其他', dataUrl: '', photo: '', status: 'available' });
+  state.photos.push(normalizeDraftItem({}));
   renderItems();
   markDraftChanged();
 });
@@ -695,17 +825,24 @@ function renderItems() {
   $('sellShareStep').disabled = !count;
   $('uploadLabel').textContent = count ? '继续添加照片' : '添加商品照片';
   document.querySelector('.upload-card').classList.toggle('has-items', Boolean(count));
-  $('itemEditor').innerHTML = state.photos.map((item, i) => `<div class="item-card" data-id="${esc(item.id)}">
-    ${item.dataUrl || item.photo ? `<img class="item-thumb" src="${esc(item.dataUrl || item.photo)}" alt="商品 ${i + 1}" />` : '<div class="item-thumb image-fallback" aria-hidden="true">＋</div>'}
-    <div class="item-fields">${item.uploadFailed ? '<span class="upload-failed">照片未上传成功，下次保存时会自动重试</span>' : ''}<div class="item-main-fields"><label>商品名称<input aria-label="第 ${i + 1} 件商品名称" data-field="name" maxlength="70" placeholder="这是什么？" value="${esc(item.name)}" /></label><label>价格 €<input aria-label="第 ${i + 1} 件商品价格" type="number" min="0" max="10000" step="0.01" data-field="price" value="${esc(item.price)}" placeholder="留空=待议" /></label><button type="button" class="remove-btn" data-remove="${esc(item.id)}" aria-label="删除第 ${i + 1} 件商品" title="删除商品">×</button></div>
-    <details class="item-more"><summary>分类与成色<span>${esc(item.category || '其他')}${item.condition ? ' · 已填写成色' : ''}</span>${item.status !== 'available' ? ` <span class="pill gray">${statusNames[item.status] || ''}</span>` : ''}</summary><div class="field-grid"><label>分类<select data-field="category" aria-label="第 ${i + 1} 件商品分类">${itemCategories.map(c => `<option ${c === item.category ? 'selected' : ''}>${c}</option>`).join('')}</select></label><label>成色或说明<input data-field="condition" aria-label="第 ${i + 1} 件商品成色" maxlength="140" value="${esc(item.condition)}" placeholder="例如：九成新，送车锁" /></label></div></details></div></div>`).join('');
+  $('itemEditor').innerHTML = state.photos.map((item, i) => {
+    const extras = item.extraPhotos || [];
+    const hasCover = Boolean(item.dataUrl || item.photo);
+    const totalPhotos = (hasCover ? 1 : 0) + extras.length;
+    const anyFailed = item.uploadFailed || extras.some(p => p.uploadFailed);
+    return `<div class="item-card" data-id="${esc(item.id)}">
+    ${hasCover ? `<img class="item-thumb" src="${esc(item.dataUrl || item.photo)}" alt="商品 ${i + 1}" />` : '<div class="item-thumb image-fallback" aria-hidden="true">＋</div>'}
+    <div class="item-fields">${anyFailed ? '<span class="upload-failed">有照片未上传成功，下次保存时会自动重试</span>' : ''}<div class="item-main-fields"><label>商品名称<input aria-label="第 ${i + 1} 件商品名称" data-field="name" maxlength="70" placeholder="这是什么？" value="${esc(item.name)}" /></label><label>价格 €<input aria-label="第 ${i + 1} 件商品价格" type="number" min="0" max="10000" step="0.01" data-field="price" value="${esc(item.price)}" placeholder="留空=待议" /></label><button type="button" class="remove-btn" data-remove="${esc(item.id)}" aria-label="删除第 ${i + 1} 件商品" title="删除商品">×</button></div>
+    <div class="item-extra-photos">${extras.map((p, idx) => `<div class="extra-thumb-wrap"><button type="button" class="extra-thumb-btn" data-promote-extra="${esc(item.id)}" data-extra-index="${idx}" title="点击设为封面图" aria-label="将第 ${idx + 2} 张图设为封面"><img src="${esc(p.dataUrl || p.photo)}" alt="细节图 ${idx + 1}" /></button><button type="button" class="extra-remove-btn" data-remove-extra="${esc(item.id)}" data-extra-index="${idx}" aria-label="删除细节图 ${idx + 1}" title="删除此图">×</button></div>`).join('')}${totalPhotos < 4 ? `<button type="button" class="add-extra-btn" data-add-extra="${esc(item.id)}">＋ ${hasCover ? `细节图 (${totalPhotos}/4)` : '添加照片'}</button>` : '<span class="hint">已满 4 张</span>'}</div>
+    <details class="item-more"><summary>分类与成色<span>${esc(item.category || '其他')}${item.condition ? ' · 已填写成色' : ''}</span>${item.status !== 'available' ? ` <span class="pill gray">${statusNames[item.status] || ''}</span>` : ''}</summary><div class="field-grid"><label>分类<select data-field="category" aria-label="第 ${i + 1} 件商品分类">${itemCategories.map(c => `<option ${c === item.category ? 'selected' : ''}>${c}</option>`).join('')}</select></label><label>成色或说明<input data-field="condition" aria-label="第 ${i + 1} 件商品成色" maxlength="140" value="${esc(item.condition)}" placeholder="例如：九成新，送车锁" /></label></div></details></div></div>`;
+  }).join('');
   renderListPreview();
 }
 
 function renderListPreview() {
   const items = state.photos;
   const cityName = cities[$('listingCity')?.value] || 'Delft';
-  $('listPreview').innerHTML = `<div class="preview-cover"><span>${esc($('sellerName').value.trim() || '我的')} · ${esc(cityName)}</span><h3>${esc($('listingTitle').value.trim() || autoTitle() || `${cityName} 闲置`)}</h3><p>${esc($('pickup').value.trim() || '自取区域待填写')}</p></div><div class="preview-items">${items.length ? items.slice(0, 4).map(item => `<div class="preview-item">${item.dataUrl || item.photo ? `<img src="${esc(item.dataUrl || item.photo)}" alt="" />` : '<span class="preview-placeholder" aria-hidden="true">＋</span>'}<span>${esc(item.name || '待填写商品名')}<small>${item.status === 'available' ? '在售' : statusNames[item.status] || '在售'}</small></span><strong>${item.price === '' || item.price == null ? '待议' : Number(item.price) === 0 ? '免费' : '€' + esc(Number(item.price))}</strong></div>`).join('') : '<div class="preview-empty"><svg viewBox="0 0 80 80" aria-hidden="true"><path d="m15 22 25-12 25 12v35L40 70 15 57Z M15 22l25 13 25-13 M40 35v35 M28 16l25 13v15"/></svg>添加商品后，这里实时预览你的闲置清单</div>'}${items.length > 4 ? `<p class="hint">还有 ${items.length - 4} 件 · 生成的海报将包含全部商品</p>` : ''}</div><div class="preview-signature"><strong>荷包 · ${esc(cityName)}</strong><span>扫码看实时库存状态</span></div>`;
+  $('listPreview').innerHTML = `<div class="preview-cover"><span>${esc($('sellerName').value.trim() || '我的')} · ${esc(cityName)}</span><h3>${esc($('listingTitle').value.trim() || autoTitle() || `${cityName} 闲置`)}</h3><p>${esc($('pickup').value.trim() || '自取区域待填写')}</p></div><div class="preview-items">${items.length ? items.slice(0, 4).map(item => `<div class="preview-item">${item.dataUrl || item.photo ? `<img src="${esc(item.dataUrl || item.photo)}" alt="" />` : '<span class="preview-placeholder" aria-hidden="true">＋</span>'}<span>${esc(item.name || '待填写商品名')}<small>${item.status === 'available' ? '在售' : statusNames[item.status] || '在售'}${(item.extraPhotos?.length || 0) ? ` · ${(item.dataUrl || item.photo ? 1 : 0) + item.extraPhotos.length} 图` : ''}</small></span><strong>${item.price === '' || item.price == null ? '待议' : Number(item.price) === 0 ? '免费' : '€' + esc(Number(item.price))}</strong></div>`).join('') : '<div class="preview-empty"><svg viewBox="0 0 80 80" aria-hidden="true"><path d="m15 22 25-12 25 12v35L40 70 15 57Z M15 22l25 13 25-13 M40 35v35 M28 16l25 13v15"/></svg>添加商品后，这里实时预览你的闲置清单</div>'}${items.length > 4 ? `<p class="hint">还有 ${items.length - 4} 件 · 生成的海报将包含全部商品</p>` : ''}</div><div class="preview-signature"><strong>荷包 · ${esc(cityName)}</strong><span>扫码看实时库存状态</span></div>`;
 }
 
 $('itemEditor').addEventListener('input', e => {
@@ -715,6 +852,41 @@ $('itemEditor').addEventListener('input', e => {
   if (item) { item[field] = e.target.value; e.target.removeAttribute('aria-invalid'); markDraftChanged(); }
 });
 $('itemEditor').addEventListener('click', e => {
+  const addExtra = e.target.closest('[data-add-extra]');
+  if (addExtra) {
+    pendingExtraItemId = addExtra.dataset.addExtra;
+    $('extraPhotoInput')?.click();
+    return;
+  }
+  const removeExtra = e.target.closest('[data-remove-extra]');
+  if (removeExtra) {
+    const item = state.photos.find(i => i.id === removeExtra.dataset.removeExtra);
+    const idx = Number(removeExtra.dataset.extraIndex);
+    if (item && Array.isArray(item.extraPhotos) && idx >= 0 && idx < item.extraPhotos.length) {
+      item.extraPhotos.splice(idx, 1);
+      markDraftChanged();
+      renderItems();
+    }
+    return;
+  }
+  const promoteExtra = e.target.closest('[data-promote-extra]');
+  if (promoteExtra) {
+    const item = state.photos.find(i => i.id === promoteExtra.dataset.promoteExtra);
+    const idx = Number(promoteExtra.dataset.extraIndex);
+    if (item && Array.isArray(item.extraPhotos) && idx >= 0 && idx < item.extraPhotos.length) {
+      const picked = item.extraPhotos[idx];
+      const prevCover = { dataUrl: item.dataUrl || '', photo: item.photo || '', uploadFailed: Boolean(item.uploadFailed) };
+      item.dataUrl = picked.dataUrl || '';
+      item.photo = picked.photo || '';
+      item.uploadFailed = Boolean(picked.uploadFailed);
+      if (prevCover.dataUrl || prevCover.photo) item.extraPhotos[idx] = prevCover;
+      else item.extraPhotos.splice(idx, 1);
+      markDraftChanged();
+      renderItems();
+      toast('已切换为商品封面图');
+    }
+    return;
+  }
   const id = e.target.closest('[data-remove]')?.dataset.remove;
   if (!id) return;
   state.photos = state.photos.filter(i => i.id !== id);
@@ -784,8 +956,16 @@ function validateDraft() {
   if (firstError) throw new Error(firstError);
 }
 
+function shareableItems() {
+  const onlyAvail = Boolean($('posterAvailableOnly')?.checked);
+  const list = onlyAvail ? state.photos.filter(i => i.status === 'available') : state.photos;
+  if (!list.length) throw new Error('当前没有「在售」状态的商品，请取消勾选或调整商品状态');
+  return list;
+}
+
 function listingCopy() {
   validateDraft();
+  const items = shareableItems();
   const city = $('listingCity').value || 'delft';
   const cityName = cities[city] || 'Delft';
   const title = $('listingTitle').value.trim() || autoTitle() || `${cityName} 二手闲置`;
@@ -793,7 +973,7 @@ function listingCopy() {
   const lines = [
     `📦 ${title}`,
     '',
-    ...state.photos.map(i => `• ${i.name} ${i.price === '' || i.price == null ? '价格私聊' : Number(i.price) === 0 ? '免费赠送' : `€${Number(i.price)}`}${i.status !== 'available' ? `【${statusNames[i.status]}】` : ''}${i.condition ? `｜${i.condition}` : ''}`),
+    ...items.map(i => `• ${i.name} ${i.price === '' || i.price == null ? '价格私聊' : Number(i.price) === 0 ? '免费赠送' : `€${Number(i.price)}`}${i.status !== 'available' ? `【${statusNames[i.status]}】` : ''}${i.condition ? `｜${i.condition}` : ''}`),
     '',
     `📍 自取：${cityName} · ${pickup}`,
   ];
@@ -882,13 +1062,14 @@ $('btnPoster').addEventListener('click', async () => {
   $('copyEventShare').hidden = true;
   try {
     validateDraft();
+    const selectedItems = shareableItems();
     setBusy(button, true, '海报生成中…');
     const draft = {
       city,
       title: $('listingTitle').value.trim(),
       pickup: $('pickup').value.trim(),
       seller: $('sellerName').value.trim(),
-      items: state.photos.map(item => ({ ...item })),
+      items: selectedItems.map(item => ({ ...item })),
       publishedId: state.publishedId,
       dirty: state.dirty,
     };
@@ -925,13 +1106,13 @@ class UploadError extends Error {
   constructor(message, { auth = false, status = 0 } = {}) { super(message); this.auth = auth; this.status = status; }
 }
 
-async function uploadPhoto(item) {
+async function uploadPhoto(slot) {
   let resp;
   try {
     resp = await fetch('/api/delft-upload', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token()}` },
-      body: JSON.stringify({ imageBase64: item.dataUrl.split(',')[1] }),
+      body: JSON.stringify({ imageBase64: slot.dataUrl.split(',')[1] }),
     });
   } catch { throw new UploadError('网络连接中断'); }
   // Vercel timeouts / 413s return HTML, so never assume a JSON body.
@@ -947,19 +1128,25 @@ async function uploadPhoto(item) {
   return data.url;
 }
 
-/** Uploads pending photos (3 at a time). Returns the failures instead of aborting the whole publish. */
+/** Uploads pending cover & detail photos (3 at a time). Returns the failures instead of aborting the whole publish. */
 async function uploadPendingPhotos(onProgress) {
-  const pending = state.photos.filter(it => it.dataUrl && !it.photo);
+  const pending = [];
+  for (const it of state.photos) {
+    if (it.dataUrl && !it.photo) pending.push({ target: it, item: it });
+    for (const extra of it.extraPhotos || []) {
+      if (extra.dataUrl && !extra.photo) pending.push({ target: extra, item: it });
+    }
+  }
   const failures = [];
   let done = 0, cursor = 0;
   const worker = async () => {
     while (cursor < pending.length) {
-      const item = pending[cursor++];
-      try { item.photo = await uploadPhoto(item); item.uploadFailed = false; }
+      const slot = pending[cursor++];
+      try { slot.target.photo = await uploadPhoto(slot.target); slot.target.uploadFailed = false; }
       catch (error) {
         if (error.auth) throw error;
-        item.uploadFailed = true;
-        failures.push({ item, error });
+        slot.target.uploadFailed = true;
+        failures.push({ item: slot.item, error });
       }
       onProgress(++done, pending.length);
     }
@@ -1002,7 +1189,13 @@ $('btnPublish').addEventListener('click', async () => {
       if (!proceed) { toast('照片已保留在草稿中，稍后可再次点击发布'); return; }
     }
     button.textContent = '保存清单…';
-    const items = state.photos.map(it => ({ id: it.id, name: it.name, price: it.price, condition: it.condition, category: it.category, photo: it.photo || '', status: it.status }));
+    const items = state.photos.map(it => {
+      const photos = [it.photo, ...(it.extraPhotos || []).map(p => p.photo)].filter(Boolean).slice(0, 4);
+      return {
+        id: it.id, name: it.name, price: it.price, condition: it.condition,
+        category: it.category, photo: photos[0] || '', photos, status: it.status
+      };
+    });
     const published = await api(state.editingId ? 'updateListing' : 'createListing', 'POST', {
       city, seller, title, pickup, note: $('listingNote').value, items,
       ...(state.editingId ? { listingId: state.editingId, expectedUpdatedAt: state.editVersion } : {}),
@@ -1052,6 +1245,37 @@ function updateMarketHeading() {
 $('marketCategories').innerHTML = ['', ...itemCategories].map(category =>
   `<button type="button" class="category-chip ${category ? '' : 'active'}" data-category="${category}" aria-pressed="${!category}">${category || '全部'}</button>`
 ).join('');
+
+function syncQuickFiltersUI() {
+  const badge = $('favCountBadge');
+  if (badge) {
+    badge.hidden = state.favorites.size === 0;
+    badge.textContent = String(state.favorites.size);
+  }
+  $('marketQuickFilters')?.querySelectorAll('[data-price-filter]').forEach(el => {
+    const active = el.dataset.priceFilter === state.priceFilter;
+    el.classList.toggle('active', active);
+    el.setAttribute('aria-pressed', String(active));
+  });
+}
+syncQuickFiltersUI();
+
+function toggleFavorite(key) {
+  const existed = state.favorites.has(key);
+  if (existed) state.favorites.delete(key);
+  else state.favorites.add(key);
+  saveFavorites(state.favorites);
+  syncQuickFiltersUI();
+  return !existed;
+}
+
+$('marketQuickFilters')?.addEventListener('click', e => {
+  const button = e.target.closest('[data-price-filter]');
+  if (!button) return;
+  state.priceFilter = button.dataset.priceFilter;
+  syncQuickFiltersUI();
+  renderMarket();
+});
 
 $('marketCategories').addEventListener('click', e => {
   const button = e.target.closest('[data-category]');
@@ -1107,27 +1331,54 @@ const priceLabel = item => {
 
 function renderMarket() {
   const sortMode = $('marketSort').value;
+  const pf = state.priceFilter;
   const products = marketProducts(state.listings, {
     query: $('marketSearch').value,
     category: state.category,
     city: state.marketCity,
     sort: sortMode,
+    freeOnly: pf === 'free',
+    maxPrice: pf === '20' ? 20 : pf === '50' ? 50 : null,
+    favoritesOnly: pf === 'fav',
+    favoriteKeys: state.favorites,
   });
   const root = $('marketGrid');
   const hasNegotiable = products.some(p => p.price === null);
-  $('marketSummary').textContent = `${products.length} 件在售闲置${sortMode === 'price' && hasNegotiable ? ' · 待议商品已排在最后' : ''}`;
+  const filterTag = pf === 'free' ? ' · 免费赠送' : pf === '20' ? ' · ≤ €20' : pf === '50' ? ' · ≤ €50' : pf === 'fav' ? ' · 我的收藏' : '';
+  $('marketSummary').textContent = `${products.length} 件在售闲置${filterTag}${sortMode === 'price' && hasNegotiable ? ' · 待议商品已排在最后' : ''}`;
   const showCityTag = !state.marketCity || state.marketCity === 'all' || state.marketCity === 'zuid-holland';
-  const hasFilter = Boolean(state.category || $('marketSearch').value.trim() || (state.marketCity && state.marketCity !== 'all'));
+  const hasFilter = Boolean(state.category || state.priceFilter || $('marketSearch').value.trim() || (state.marketCity && state.marketCity !== 'all'));
 
-  root.innerHTML = products.length ? products.map(({ listing: l, item, price }) => {
+  if (!products.length) {
+    if (pf === 'fav' && state.favorites.size === 0) {
+      root.innerHTML = `<div class="empty-state"><h2>还没有收藏的商品</h2><p>浏览闲置时点卡片右上角 ☆ 即可收藏，方便对比价格和自取地点。</p><button type="button" class="outline-btn" data-clear-market>回到全部闲置</button></div>`;
+      return;
+    }
+    root.innerHTML = `<div class="empty-state"><h2>${hasFilter ? '没有找到匹配的在售闲置' : '这一带闲置正在陆续上架'}</h2><p>${hasFilter ? '试试切换「全部城市」、清除价格或分类筛选，或换个关键词。' : '有用不上的东西？拍张照 1 分钟就能发布，搬家清仓还能一键生成微信群海报。'}</p>${hasFilter ? '<button type="button" class="outline-btn" data-clear-market>查看全部在荷闲置</button>' : '<button type="button" class="primary-btn" data-tab="sell">＋ 发布闲置</button>'}</div>`;
+    return;
+  }
+
+  root.innerHTML = products.map(({ listing: l, item, price }) => {
     const cityTag = cities[l.city || 'delft'] || 'Delft';
+    const gallery = itemGalleryUrls(item);
+    const cover = gallery[0] || '';
+    const fKey = favoriteKey(l.id, item.id);
+    const isFav = state.favorites.has(fKey);
     return `<article class="listing-card" role="button" tabindex="0" data-listing="${esc(l.id)}" data-product="${esc(item.id)}" aria-label="${esc(item.name)}，${esc(priceLabel(item))}，${esc(cityTag)} ${esc(l.pickup)}">
-      ${item.photo ? `<img loading="lazy" class="listing-photo" src="${esc(item.photo)}" alt="${esc(item.name)}" />` : '<div class="listing-photo image-fallback" aria-hidden="true"><svg viewBox="0 0 80 80"><path d="m15 22 25-12 25 12v35L40 70 15 57Z M15 22l25 13 25-13 M40 35v35 M28 16l25 13v15"/></svg></div>'}
+      <div class="listing-media">${cover ? `<img loading="lazy" class="listing-photo" src="${esc(cover)}" alt="${esc(item.name)}" />` : '<div class="listing-photo image-fallback" aria-hidden="true"><svg viewBox="0 0 80 80"><path d="m15 22 25-12 25 12v35L40 70 15 57Z M15 22l25 13 25-13 M40 35v35 M28 16l25 13v15"/></svg></div>'}${gallery.length > 1 ? `<span class="photo-count-badge" aria-label="共 ${gallery.length} 张照片">${gallery.length} 图</span>` : ''}<button type="button" class="fav-btn ${isFav ? 'active' : ''}" data-toggle-fav="${esc(fKey)}" aria-pressed="${isFav}" aria-label="${isFav ? '取消收藏' : '收藏'} ${esc(item.name)}" title="${isFav ? '已收藏' : '收藏'}">${isFav ? '★' : '☆'}</button></div>
       <div class="listing-details"><div class="product-price ${price === null ? 'negotiable' : ''}">${esc(priceLabel(item))}</div><h2>${esc(item.name)}</h2><p class="product-condition">${esc(item.condition || item.category || '其他')}</p><div class="listing-bottom"><span>${showCityTag ? `<b class="city-badge">${esc(cityTag)}</b>` : ''}${esc(l.pickup)}</span><span>${esc(l.seller)}</span></div></div></article>`;
-  }).join('') : `<div class="empty-state"><h2>${hasFilter ? '没有找到匹配的在售闲置' : '这一带闲置正在陆续上架'}</h2><p>${hasFilter ? '试试切换「全部城市」、清除分类筛选，或换个关键词。' : '有用不上的东西？拍张照 1 分钟就能发布，搬家清仓还能一键生成微信群海报。'}</p>${hasFilter ? '<button type="button" class="outline-btn" data-clear-market>查看全部在荷闲置</button>' : '<button type="button" class="primary-btn" data-tab="sell">＋ 发布闲置</button>'}</div>`;
+  }).join('');
 }
 
 $('marketGrid').addEventListener('click', e => {
+  const favBtn = e.target.closest('[data-toggle-fav]');
+  if (favBtn) {
+    e.stopPropagation();
+    const added = toggleFavorite(favBtn.dataset.toggleFav);
+    toast(added ? '已加入「★ 我的收藏」' : '已取消收藏');
+    renderMarket();
+    return;
+  }
   const card = e.target.closest('[data-listing]');
   if (card) openListing(card.dataset.listing, { itemId: card.dataset.product });
 });
@@ -1146,7 +1397,10 @@ $('marketGrid').addEventListener('error', e => {
   e.target.replaceWith(fallback);
 }, true);
 $('detailContent').addEventListener('error', e => {
-  const btn = e.target.matches('img') && e.target.closest('.detail-photo-zoom');
+  if (!e.target.matches('img')) return;
+  const mini = e.target.closest('.detail-thumb-btn');
+  if (mini) { mini.remove(); return; }
+  const btn = e.target.closest('.detail-photo-zoom');
   if (!btn) return;
   const fallback = document.createElement('div');
   fallback.className = 'item-thumb image-fallback';
@@ -1156,6 +1410,35 @@ $('detailContent').addEventListener('error', e => {
 }, true);
 $('marketSort').addEventListener('change', renderMarket);
 $('marketSearch').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(loadListings, 250); });
+
+let lightboxState = { photos: [], index: 0, caption: '' };
+function renderLightbox() {
+  const { photos, index, caption } = lightboxState;
+  if (!photos.length) return;
+  $('lightboxImage').src = photos[index];
+  $('lightboxImage').alt = caption || '商品照片';
+  $('lightboxCaption').textContent = caption || '';
+  const multi = photos.length > 1;
+  $('lightboxPrev').hidden = !multi;
+  $('lightboxNext').hidden = !multi;
+  $('lightboxCounter').hidden = !multi;
+  if (multi) $('lightboxCounter').textContent = `${index + 1} / ${photos.length}`;
+}
+function openLightbox(photos, index = 0, caption = '') {
+  const clean = (photos || []).filter(Boolean);
+  if (!clean.length) return;
+  lightboxState = { photos: clean, index: Math.max(0, Math.min(clean.length - 1, index)), caption };
+  renderLightbox();
+  showModal('photoLightboxModal');
+}
+function stepLightbox(delta) {
+  const len = lightboxState.photos.length;
+  if (len <= 1) return;
+  lightboxState.index = (lightboxState.index + delta + len) % len;
+  renderLightbox();
+}
+$('lightboxPrev')?.addEventListener('click', () => stepLightbox(-1));
+$('lightboxNext')?.addEventListener('click', () => stepLightbox(1));
 
 async function openListing(id, { itemId = null, updateUrl = true } = {}) {
   let listing;
@@ -1170,8 +1453,15 @@ async function openListing(id, { itemId = null, updateUrl = true } = {}) {
   $('inquirySentNote').innerHTML = '';
   $('copyListingLink').textContent = selected ? '复制此商品链接' : '复制清单链接';
   $('detailContent').innerHTML = `<h2 id="detailHeading">${esc(listing.title)}</h2><p class="hint">${esc(listing.seller)} · 自取：${esc(cityTag)} · ${esc(listing.pickup)}</p>${listing.note ? `<p class="preserve-lines hint">${esc(listing.note)}</p>` : ''}<p class="hint">${listing.stale ? '超过 14 天未确认，请先发消息询问卖家是否仍在售' : '卖家最近确认：' + esc(dateText(listing.updatedAt))}</p>
-    ${items.map(item => `<div class="detail-item ${item.id === itemId ? 'selected' : ''} ${item.status === 'sold' ? 'sold' : ''}">${item.photo ? `<button type="button" class="detail-photo-zoom" data-zoom-photo="${esc(item.photo)}" data-zoom-caption="${esc(item.name)} · ${esc(priceLabel(item))}" aria-label="点击放大查看「${esc(item.name)}」照片"><img src="${esc(item.photo)}" alt="${esc(item.name)}" /><span class="zoom-badge" aria-hidden="true">放大</span></button>` : '<div class="item-thumb image-fallback" aria-hidden="true">＋</div>'}
-      <div><h3>${esc(item.name)}</h3><strong class="detail-price">${esc(priceLabel(item))}</strong>${item.condition ? `<p class="preserve-lines">${esc(item.condition)}</p>` : ''}${item.status === 'available' ? `<button type="button" class="text-btn" data-inquire="${esc(item.name)}">问问这件商品</button>` : ''}</div><span class="pill ${item.status === 'sold' ? 'gray' : ''}">${item.id === itemId ? '当前查看 · ' : ''}${statusNames[item.status] || '在售'}</span></div>`).join('')}`;
+    ${items.map(item => {
+      const gallery = itemGalleryUrls(item);
+      const cover = gallery[0] || '';
+      const fKey = favoriteKey(listing.id, item.id);
+      const isFav = state.favorites.has(fKey);
+      return `<div class="detail-item ${item.id === itemId ? 'selected' : ''} ${item.status === 'sold' ? 'sold' : ''}">
+        <div class="detail-gallery">${cover ? `<button type="button" class="detail-photo-zoom" data-zoom-item="${esc(item.id)}" data-zoom-index="0" aria-label="点击放大查看「${esc(item.name)}」照片"><img src="${esc(cover)}" alt="${esc(item.name)}" /><span class="zoom-badge" aria-hidden="true">${gallery.length > 1 ? `1/${gallery.length} 放大` : '放大'}</span></button>` : '<div class="item-thumb image-fallback" aria-hidden="true">＋</div>'}${gallery.length > 1 ? `<div class="detail-thumbs">${gallery.map((url, idx) => `<button type="button" class="detail-thumb-btn" data-zoom-item="${esc(item.id)}" data-zoom-index="${idx}" aria-label="查看第 ${idx + 1} 张照片"><img src="${esc(url)}" alt="${esc(item.name)} 照片 ${idx + 1}" /></button>`).join('')}</div>` : ''}</div>
+        <div><h3>${esc(item.name)}</h3><strong class="detail-price">${esc(priceLabel(item))}</strong>${item.condition ? `<p class="preserve-lines">${esc(item.condition)}</p>` : ''}<div class="detail-item-actions">${item.status === 'available' ? `<button type="button" class="text-btn" data-inquire="${esc(item.name)}">问问这件商品</button>` : ''}<button type="button" class="text-btn detail-fav-btn ${isFav ? 'active' : ''}" data-toggle-fav="${esc(fKey)}" aria-pressed="${isFav}">${isFav ? '★ 已收藏' : '☆ 收藏'}</button></div></div><span class="pill ${item.status === 'sold' ? 'gray' : ''}">${item.id === itemId ? '当前查看 · ' : ''}${statusNames[item.status] || '在售'}</span></div>`;
+    }).join('')}`;
   $('inquiryText').value = selected?.status === 'available' ? `你好，请问「${selected.name}」还在吗？什么时候方便在 ${cityTag} 自取？` : '';
   document.title = `${selected ? selected.name + ' · ' : ''}${listing.title} · 荷包`;
   if (updateUrl) {
@@ -1184,12 +1474,22 @@ async function openListing(id, { itemId = null, updateUrl = true } = {}) {
 }
 
 $('detailContent').addEventListener('click', e => {
-  const zoom = e.target.closest('[data-zoom-photo]');
-  if (zoom) {
-    $('lightboxImage').src = zoom.dataset.zoomPhoto;
-    $('lightboxImage').alt = zoom.dataset.zoomCaption || '商品照片';
-    $('lightboxCaption').textContent = zoom.dataset.zoomCaption || '';
-    showModal('photoLightboxModal');
+  const favBtn = e.target.closest('[data-toggle-fav]');
+  if (favBtn) {
+    const added = toggleFavorite(favBtn.dataset.toggleFav);
+    favBtn.classList.toggle('active', added);
+    favBtn.setAttribute('aria-pressed', String(added));
+    favBtn.textContent = added ? '★ 已收藏' : '☆ 收藏';
+    toast(added ? '已加入「★ 我的收藏」' : '已取消收藏');
+    if (state.listings.length) renderMarket();
+    return;
+  }
+  const zoom = e.target.closest('[data-zoom-item]');
+  if (zoom && state.currentListing) {
+    const item = state.currentListing.items.find(i => i.id === zoom.dataset.zoomItem);
+    if (item) {
+      openLightbox(itemGalleryUrls(item), Number(zoom.dataset.zoomIndex) || 0, `${item.name} · ${priceLabel(item)}`);
+    }
     return;
   }
   const button = e.target.closest('[data-inquire]');
@@ -1934,10 +2234,19 @@ async function loadMine() {
     state.myListings = mine.value.listings || [];
     state.myEvents = mine.value.myEvents || [];
     updateUnreadBadges(mine.value.unreadCount);
-    $('myListings').innerHTML = state.myListings.length ? state.myListings.map(l => `<div class="my-listing"><h2>${esc(l.title)}</h2><p class="hint">${esc(cities[l.city || 'delft'] || 'Delft')} · ${esc(l.pickup)}</p>
-      ${l.items.map(item => `<div class="my-item"><span>${esc(item.name)}</span><select data-listing-id="${esc(l.id)}" data-item-id="${esc(item.id)}" aria-label="${esc(item.name)}的状态">${Object.entries(statusNames).map(([value, label]) => `<option value="${value}" ${item.status === value ? 'selected' : ''}>${label}</option>`).join('')}</select></div>`).join('')}
-      <div class="inventory-meta">${l.stale ? '超过 14 天未确认，已自动从集市隐藏（原分享链接仍可访问）' : '最近确认：' + esc(dateText(l.updatedAt))}</div><div class="inventory-actions"><button class="outline-btn" type="button" data-edit-listing="${esc(l.id)}">编辑 / 生成海报</button><button class="outline-btn" type="button" data-refresh-listing="${esc(l.id)}">确认仍在售</button><a href="/market?item=${encodeURIComponent(l.id)}">分享清单 ↗</a><button class="text-btn danger" type="button" data-delete-listing="${esc(l.id)}">删除</button></div></div>`).join('')
-      : '<div class="empty-state"><h2>还没有发布闲置</h2><p>拍张照 1 分钟就能发布；卖出后在这里改状态，多件还能生成微信群海报。</p><button class="primary-btn" type="button" data-tab="sell">＋ 发布闲置</button></div>';
+    const renderMyListing = l => `<div class="my-listing"><h2>${esc(l.title)}</h2><p class="hint">${esc(cities[l.city || 'delft'] || 'Delft')} · ${esc(l.pickup)}</p>
+      ${l.items.map(item => `<div class="my-item"><span class="my-item-name">${esc(item.name)}${itemGalleryUrls(item).length > 1 ? `<small class="my-photo-tag">${itemGalleryUrls(item).length} 图</small>` : ''}</span><div class="my-item-controls"><label class="my-price-wrap" title="修改价格，留空为待议，回车或失焦自动保存"><span>€</span><input class="my-price-input" type="number" min="0" max="10000" step="0.01" value="${item.price == null ? '' : esc(item.price)}" data-price-listing="${esc(l.id)}" data-price-item="${esc(item.id)}" data-orig-price="${item.price == null ? '' : esc(item.price)}" placeholder="待议" aria-label="${esc(item.name)}的价格（欧元）" /></label><select data-listing-id="${esc(l.id)}" data-item-id="${esc(item.id)}" aria-label="${esc(item.name)}的状态">${Object.entries(statusNames).map(([value, label]) => `<option value="${value}" ${item.status === value ? 'selected' : ''}>${label}</option>`).join('')}</select></div></div>`).join('')}
+      <div class="inventory-meta">${l.stale ? '超过 14 天未确认，已自动从集市隐藏（原分享链接仍可访问）' : '最近确认：' + esc(dateText(l.updatedAt))}</div><div class="inventory-actions"><button class="outline-btn" type="button" data-edit-listing="${esc(l.id)}">编辑 / 生成海报</button><button class="outline-btn" type="button" data-refresh-listing="${esc(l.id)}">确认仍在售</button><a href="/market?item=${encodeURIComponent(l.id)}">分享清单 ↗</a><button class="text-btn danger" type="button" data-delete-listing="${esc(l.id)}">删除</button></div></div>`;
+    if (state.myListings.length) {
+      const activeListings = state.myListings.filter(l => !l.items.length || l.items.some(i => i.status !== 'sold'));
+      const soldListings = state.myListings.filter(l => l.items.length > 0 && l.items.every(i => i.status === 'sold'));
+      $('myListings').innerHTML = [
+        ...activeListings.map(renderMyListing),
+        soldListings.length ? `<details class="sold-archive" ${!activeListings.length ? 'open' : ''}><summary>已全部售出归档（${soldListings.length} 份清单）</summary><div class="stack sold-archive-list">${soldListings.map(renderMyListing).join('')}</div></details>` : '',
+      ].join('');
+    } else {
+      $('myListings').innerHTML = '<div class="empty-state"><h2>还没有发布闲置</h2><p>拍张照 1 分钟就能发布；卖出后在这里改状态，多件还能生成微信群海报。</p><button class="primary-btn" type="button" data-tab="sell">＋ 发布闲置</button></div>';
+    }
 
     $('myEvents').innerHTML = state.myEvents.length ? state.myEvents.map(event => `<div class="my-event">
       <div class="event-top">
@@ -2005,7 +2314,16 @@ $('myListings').addEventListener('click', async e => {
     }
     try {
       const listing = (await api('listing', 'GET', null, true, { id: edit.dataset.editListing })).listing;
-      state.photos = listing.items.map(item => ({ ...item, price: item.price == null ? '' : item.price, dataUrl: '' }));
+      state.photos = listing.items.map(item => {
+        const urls = itemGalleryUrls(item);
+        return normalizeDraftItem({
+          ...item,
+          price: item.price == null ? '' : item.price,
+          dataUrl: '',
+          photo: urls[0] || '',
+          extraPhotos: urls.slice(1).map(url => ({ dataUrl: '', photo: url })),
+        });
+      });
       state.editingId = listing.id; state.editVersion = listing.updatedAt; state.publishedId = listing.id; state.dirty = false; draftRevision++;
       $('listingTitle').value = listing.title;
       $('listingCity').value = listing.city || 'delft';
@@ -2040,6 +2358,44 @@ $('myListings').addEventListener('click', async e => {
 });
 
 $('myListings').addEventListener('change', async e => {
+  const priceInput = e.target.closest('[data-price-item]');
+  if (priceInput) {
+    const raw = priceInput.value.trim();
+    const prev = priceInput.dataset.origPrice ?? '';
+    if (raw === prev) return;
+    if (raw !== '') {
+      const parsed = Number(raw);
+      if (!Number.isFinite(parsed) || parsed < 0 || parsed > 10000) {
+        toast('价格须在 €0–10,000 之间，或留空表示待议');
+        priceInput.value = prev;
+        return;
+      }
+    }
+    const nextPrice = raw === '' ? null : Number(raw);
+    priceInput.disabled = true;
+    try {
+      const result = await api('updateItem', 'POST', {
+        listingId: priceInput.dataset.priceListing,
+        itemId: priceInput.dataset.priceItem,
+        price: nextPrice,
+      });
+      priceInput.dataset.origPrice = nextPrice == null ? '' : String(nextPrice);
+      if (state.editingId === priceInput.dataset.priceListing && !state.dirty) {
+        const item = state.photos.find(it => it.id === priceInput.dataset.priceItem);
+        if (item) item.price = nextPrice == null ? '' : nextPrice;
+        state.editVersion = result.updatedAt; draftRevision++; renderItems(); persistDraft();
+      }
+      toast(nextPrice == null ? '已改为「价格待议」并实时同步' : nextPrice === 0 ? '已改为「免费赠送」并实时同步' : `价格已更新为 €${nextPrice} 并实时同步`);
+      if (state.listings.length) loadListings();
+    } catch (error) {
+      priceInput.value = prev;
+      toast(error.message);
+      loadMine();
+    } finally {
+      priceInput.disabled = false;
+    }
+    return;
+  }
   const select = e.target.closest('[data-item-id]');
   if (!select) return;
   select.disabled = true;
@@ -2212,7 +2568,7 @@ async function restoreDraft() {
       return;
     }
     if (saved.owner && saved.owner !== localStorage.getItem('hebao_uuid')) { resetDraft(); return; }
-    state.photos = saved.photos.slice(0, 12);
+    state.photos = saved.photos.slice(0, 12).map(normalizeDraftItem);
     state.editingId = saved.editingId || null;
     state.editVersion = saved.editVersion || null;
     state.publishedId = saved.publishedId || null;

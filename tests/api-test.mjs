@@ -337,3 +337,113 @@ test('only the seller can delete a listing and its associated messages',async()=
   assert.equal((await ask('deleteListing','POST',{listingId},'alice')).status,200);
   assert.equal((await ask('listing','GET',undefined,undefined,{id:listingId})).status,404);
 });
+
+test('multi-photo listings normalize up to 4 safe URLs and updateItem supports inline price editing',async()=>{
+  const cos1='https://hebao-1250000000.cos.eu-frankfurt.myqcloud.com/delft/p1.jpg';
+  const cos2='https://hebao-1250000000.cos.eu-frankfurt.myqcloud.com/delft/p2.jpg';
+  const db1='/api/delft-image?id=11111111-1111-4111-8111-111111111111';
+  const db2='/api/delft-image?id=22222222-2222-4222-8222-222222222222';
+  const db3='/api/delft-image?id=33333333-3333-4333-8333-333333333333';
+  const created=await ask('createListing','POST',draft({
+    title:'多图搬家清仓',
+    items:[{
+      id:'multi-1',name:'自行车',price:80,category:'自行车',status:'available',
+      photo:cos1,
+      photos:[cos1,'https://evil.example/x.jpg',cos2,db1,db2,db3]
+    }]
+  }),'alice');
+  assert.equal(created.status,200);
+  const mlId=created.data.id;
+  const loaded=(await ask('listing','GET',undefined,undefined,{id:mlId})).data.listing;
+  assert.equal(loaded.items[0].photo,cos1);
+  assert.deepEqual(loaded.items[0].photos,[cos1,cos2,db1,db2]);
+
+  // Inline price editing: rejects non-owner, negative, >10000, empty payload; accepts numeric, 0, and null (待议)
+  assert.equal((await ask('updateItem','POST',{listingId:mlId,itemId:'multi-1',price:65},'bob')).status,403);
+  assert.equal((await ask('updateItem','POST',{listingId:mlId,itemId:'multi-1',price:-5},'alice')).status,400);
+  assert.equal((await ask('updateItem','POST',{listingId:mlId,itemId:'multi-1',price:10001},'alice')).status,400);
+  assert.equal((await ask('updateItem','POST',{listingId:mlId,itemId:'multi-1'},'alice')).status,400);
+
+  const p1=await ask('updateItem','POST',{listingId:mlId,itemId:'multi-1',price:55},'alice');
+  assert.equal(p1.status,200);
+  assert.equal(p1.data.item.price,55);
+  assert.equal((await ask('listing','GET',undefined,undefined,{id:mlId})).data.listing.items[0].price,55);
+
+  const pFree=await ask('updateItem','POST',{listingId:mlId,itemId:'multi-1',price:0},'alice');
+  assert.equal(pFree.status,200);
+  assert.equal(pFree.data.item.price,0);
+
+  const pNeg=await ask('updateItem','POST',{listingId:mlId,itemId:'multi-1',price:null},'alice');
+  assert.equal(pNeg.status,200);
+  assert.equal(pNeg.data.item.price,null);
+  assert.equal((await ask('listing','GET',undefined,undefined,{id:mlId})).data.listing.items[0].price,null);
+
+  assert.equal((await ask('deleteListing','POST',{listingId:mlId},'alice')).status,200);
+});
+
+test('AI A2 writing grading validates inputs, sanitizes Gemini JSON, and honors daily budget cap',async()=>{
+  process.env.GEMINI_API_KEY='test-gemini-key';
+  process.env.GEMINI_DAILY_LIMIT='20';
+  const today=new Date().toISOString().slice(0,10);
+  mock.db.prepare('DELETE FROM delft_ai_quota').run();
+
+  const bad=await aiHandler(new Request('https://example.test/api/delft-ai',{
+    method:'POST',
+    headers:{'Content-Type':'application/json',Authorization:`Bearer ${jwt('alice')}`},
+    body:JSON.stringify({mode:'a2_write',prompt:'Schrijf een mail',checks:[],answer:'hoi'})
+  }));
+  assert.equal(bad.status,400);
+
+  mock.mockExternal(async(url)=>{
+    if(url.startsWith('https://generativelanguage.googleapis.com/')){
+      return Response.json({candidates:[{content:{parts:[{text:JSON.stringify({
+        verdict:'almost',
+        summary:'要点都写到了，注意动词位置。',
+        checks:[{met:true,note:'写明了理由'},{met:true,note:'提出了新时间'}],
+        corrections:[{original:'Morgen ik kan niet komen',better:'Morgen kan ik niet komen',reason:'时间状语放句首时动词需在第二位'}],
+        rewrite:'Beste docent, morgen kan ik helaas niet komen.'
+      })}]}}]});
+    }
+    throw new Error('Unexpected URL '+url);
+  });
+
+  const ok=await aiHandler(new Request('https://example.test/api/delft-ai',{
+    method:'POST',
+    headers:{'Content-Type':'application/json',Authorization:`Bearer ${jwt('alice')}`},
+    body:JSON.stringify({
+      mode:'a2_write',
+      context:'Je hebt morgen Nederlandse les.',
+      prompt:'Schrijf een e-mail aan je docent.',
+      checks:['说明不能去的原因','提出新的时间','加上礼貌结尾'],
+      answer:'Hallo docent, morgen ik kan niet komen want ik ben ziek. Kan ik vrijdag komen? Groetjes'
+    })
+  }));
+  assert.equal(ok.status,200);
+  const res=await ok.json();
+  assert.equal(res.grade.verdict,'almost');
+  assert.equal(res.grade.checks.length,3);
+  assert.equal(res.grade.checks[0].check,'说明不能去的原因');
+  assert.equal(res.grade.checks[0].met,true);
+  assert.equal(res.grade.checks[2].met,false);
+  assert.equal(res.grade.corrections.length,1);
+  assert.match(res.grade.rewrite,/morgen kan ik/);
+
+  assert.equal((await ask('track','POST',{event:'a2_ai_grade'},undefined)).status,200);
+
+  mock.db.prepare('UPDATE delft_ai_quota SET hits=20 WHERE id=?').run(`${today}:global`);
+  const capped=await aiHandler(new Request('https://example.test/api/delft-ai',{
+    method:'POST',
+    headers:{'Content-Type':'application/json',Authorization:`Bearer ${jwt('charlie')}`},
+    body:JSON.stringify({
+      mode:'a2_write',
+      prompt:'Schrijf een e-mail aan je docent.',
+      checks:['说明原因'],
+      answer:'Ik ben ziek.'
+    })
+  }));
+  assert.equal(capped.status,429);
+
+  delete process.env.GEMINI_API_KEY;
+  delete process.env.GEMINI_DAILY_LIMIT;
+  mock.mockExternal(null);
+});

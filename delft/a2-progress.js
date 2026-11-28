@@ -6,10 +6,21 @@ export const BANK = {...A2_OBJECTIVE, ...A2_OUTPUT};
 export const MOCK_MINUTES = {read:10, listen:9, write:40, speak:8, knm:8};
 export const PREP_KEY = 'hebao_a2_prep_v1';
 export const productive = subject => subject === 'write' || subject === 'speak';
-const empty = () => ({version:1, forms:{}, official:{}, drills:{}});
+const empty = () => ({version:1, forms:{}, official:{}, drills:{}, mistakes:{}, savedWords:[]});
 const modes = ['a', 'b'];
 const officialResults = ['pending', 'met', 'review'];
 const integer = (n, max) => Number.isInteger(n) && n >= 0 && n <= max;
+
+const QUESTION_INDEX = new Map();
+for (const [subject, formsMap] of Object.entries(BANK)) {
+  if (productive(subject)) continue;
+  for (const form of ['practice', 'a', 'b']) {
+    for (const item of formsMap[form] || []) {
+      QUESTION_INDEX.set(item.id, { subject, form, item });
+    }
+  }
+}
+const VALID_WORDS = new Set(Object.values(A2_GUIDE).flatMap(g => g.words.map(w => w.nl)));
 
 function summaryValue(value, subject, form) {
   if (!value || !Number.isFinite(value.at)) return null;
@@ -24,6 +35,14 @@ function drillValue(value, subject, type) {
   if (!total || !integer(value.attempted, total) || !integer(value.correct, value.attempted)) return null;
   const best = integer(value.best, total) ? Math.max(value.correct, value.best) : value.correct;
   return {at:value.at, attempted:value.attempted, correct:value.correct, best, total};
+}
+
+function mistakeValue(id, value) {
+  const ref = QUESTION_INDEX.get(id);
+  if (!ref || !value || !Number.isFinite(value.at)) return null;
+  const misses = Number.isInteger(value.misses) && value.misses > 0 ? Math.min(99, value.misses) : 1;
+  const clearedAt = Number.isFinite(value.clearedAt) && value.clearedAt > 0 ? value.clearedAt : 0;
+  return { subject: ref.subject, form: ref.form, type: ref.item.type, at: value.at, misses, clearedAt };
 }
 
 function normalize(data) {
@@ -49,6 +68,21 @@ function normalize(data) {
       if (drill) clean.drills[key] = drill;
     }
   }
+  if (data.mistakes && typeof data.mistakes === 'object') {
+    for (const [id, entry] of Object.entries(data.mistakes)) {
+      const normalized = mistakeValue(id, entry);
+      if (normalized) clean.mistakes[id] = normalized;
+    }
+  }
+  if (Array.isArray(data.savedWords)) {
+    const seen = new Set();
+    for (const w of data.savedWords) {
+      if (typeof w === 'string' && VALID_WORDS.has(w) && !seen.has(w)) {
+        seen.add(w);
+        clean.savedWords.push(w);
+      }
+    }
+  }
   return clean;
 }
 
@@ -71,7 +105,31 @@ export function mergePrep(localRaw, remoteRaw) {
     const latest = da.at >= db.at ? da : db;
     out.drills[key] = { ...latest, best: Math.max(da.best, db.best) };
   }
+  for (const id of new Set([...Object.keys(a.mistakes), ...Object.keys(b.mistakes)])) {
+    const ma = a.mistakes[id], mb = b.mistakes[id];
+    if (!ma || !mb) { out.mistakes[id] = ma || mb; continue; }
+    out.mistakes[id] = {
+      ...ma,
+      at: Math.max(ma.at, mb.at),
+      misses: Math.max(ma.misses, mb.misses),
+      clearedAt: Math.max(ma.clearedAt || 0, mb.clearedAt || 0),
+    };
+  }
+  out.savedWords = [...new Set([...a.savedWords, ...b.savedWords])];
   return out;
+}
+
+export function activeMistakes(raw, subject = null) {
+  const data = normalize(raw);
+  const out = [];
+  for (const [id, entry] of Object.entries(data.mistakes)) {
+    if (entry.clearedAt && entry.clearedAt >= entry.at) continue;
+    if (subject && subject !== 'all' && entry.subject !== subject) continue;
+    const ref = QUESTION_INDEX.get(id);
+    if (!ref) continue;
+    out.push({ id, subject: ref.subject, form: ref.form, type: ref.item.type, item: ref.item, at: entry.at, misses: entry.misses });
+  }
+  return out.sort((x, y) => y.at - x.at);
 }
 
 export function prepCounts(raw) {
@@ -82,7 +140,9 @@ export function prepCounts(raw) {
   const mocksTotal = subjects.length * modes.length;
   const mocksDone = Object.values(data.forms).filter(f => f?.first || f?.last).length;
   const officialDone = Object.keys(data.official).length;
-  return { drillsDone, drillsTotal, mocksDone, mocksTotal, officialDone };
+  const mistakesCount = activeMistakes(data).length;
+  const savedWordsCount = data.savedWords.length;
+  return { drillsDone, drillsTotal, mocksDone, mocksTotal, officialDone, mistakesCount, savedWordsCount };
 }
 
 // Store outcomes, never typed answers or microphone data. Re-read before editing
@@ -132,6 +192,41 @@ export function openPrepLedger(storage) {
         const next = drillValue({...stats, best:Math.max(prev?.best || 0, stats?.correct || 0), at:Date.now()}, subject, type);
         if (next) data.drills[key] = next;
       });
+    },
+    recordMistakes(items, responses) {
+      const now = Date.now();
+      update(data => {
+        for (const item of items) {
+          const ref = QUESTION_INDEX.get(item.id);
+          if (!ref) continue;
+          const r = responses[item.id];
+          if (!r || !attempted(ref.subject, item, r)) continue;
+          const independentRight = r.choice === item.answer && !r.transcript;
+          const prev = data.mistakes[item.id];
+          if (independentRight) {
+            if (prev) data.mistakes[item.id] = { ...prev, clearedAt: Math.max(now, prev.at + 1) };
+          } else {
+            data.mistakes[item.id] = {
+              subject: ref.subject,
+              form: ref.form,
+              type: item.type,
+              at: Math.max(now, (prev?.clearedAt || 0) + 1),
+              misses: Math.min(99, (prev?.misses || 0) + 1),
+              clearedAt: prev?.clearedAt || 0,
+            };
+          }
+        }
+      });
+    },
+    toggleWord(nl) {
+      if (!VALID_WORDS.has(nl)) return false;
+      let saved = false;
+      update(data => {
+        const idx = data.savedWords.indexOf(nl);
+        if (idx >= 0) { data.savedWords.splice(idx, 1); saved = false; }
+        else { data.savedWords.push(nl); saved = true; }
+      });
+      return saved;
     },
     markOfficial(subject, url, result, timed) {
       if (!A2_GUIDE[subject]?.official.some(paper => paper.url === url) || !officialResults.includes(result)) return;

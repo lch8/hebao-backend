@@ -21,11 +21,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap" media="print" onload="this.media='all'" />
-  <link rel="stylesheet" href="/delft/styles.css?v=20261128b" />
-  <link rel="stylesheet" href="/delft/dutch.css?v=20261128b" />
-  <link rel="stylesheet" href="/delft/a2-prep.css?v=20261128b" />
-  <link rel="stylesheet" href="/delft/theme.css?v=20261128b" />
-  <script type="module" src="/delft/app.js?v=20261128b"></script>
+  <link rel="stylesheet" href="/delft/styles.css?v=20261128c" />
+  <link rel="stylesheet" href="/delft/dutch.css?v=20261128c" />
+  <link rel="stylesheet" href="/delft/a2-prep.css?v=20261128c" />
+  <link rel="stylesheet" href="/delft/theme.css?v=20261128c" />
+  <script type="module" src="/delft/app.js?v=20261128c"></script>
 </head>
 <body>
   <a class="skip-link" href="#workspace">跳到主要内容</a>
@@ -130,6 +130,13 @@
         <label class="sort-label"><span class="sr-only">商品排序</span><select id="marketSort"><option value="recent">最近更新</option><option value="price">价格从低到高</option></select></label>
       </div>
       <div class="category-filters" id="marketCategories" role="group" aria-label="商品分类"></div>
+      <div class="category-filters quick-price-filters" id="marketQuickFilters" role="group" aria-label="价格与收藏筛选">
+        <button class="category-chip active" type="button" data-price-filter="" aria-pressed="true">全部价格</button>
+        <button class="category-chip" type="button" data-price-filter="free" aria-pressed="false">免费赠送 €0</button>
+        <button class="category-chip" type="button" data-price-filter="20" aria-pressed="false">≤ €20</button>
+        <button class="category-chip" type="button" data-price-filter="50" aria-pressed="false">≤ €50</button>
+        <button class="category-chip" type="button" data-price-filter="fav" aria-pressed="false">★ 我的收藏 <span id="favCountBadge" hidden></span></button>
+      </div>
       <div class="result-line"><p id="marketSummary" role="status" aria-live="polite"></p><span>卖家近 14 天确认在售 · 咨询邮件直达</span></div>
       <div class="cards-grid" id="marketGrid" aria-live="polite">
         <div class="skeleton-card" aria-hidden="true"><div class="skeleton-photo"></div><div class="skeleton-line short"></div><div class="skeleton-line medium"></div></div>
@@ -153,7 +160,7 @@
       <div class="layout">
         <div class="main-column">
           <div id="sellItemsPanel">
-            <div class="paper-card upload-card"><button class="upload-zone" type="button" id="choosePhotos"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h4l2-3h4l2 3h4v13H4Z"/><circle cx="12" cy="13" r="4"/></svg><strong id="uploadLabel">添加商品照片</strong><span>1 张照片对应 1 件商品，最多 12 件 · 自动压缩防超限</span></button><input id="photoInput" type="file" accept="image/*" multiple hidden /><div class="photo-tools" id="photoTools" hidden><span id="photoCount"></span><button id="btnAnalyze" class="text-btn" type="button">✦ AI 补全商品名</button><details class="inline-disclosure"><summary>照片如何使用</summary><p>照片在本地浏览器自动压缩；仅在登录后点击「AI 补全商品名」时发送至 Google Gemini 识别，点「发布到集市」时才上传。</p></details></div></div>
+            <div class="paper-card upload-card"><button class="upload-zone" type="button" id="choosePhotos"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h4l2-3h4l2 3h4v13H4Z"/><circle cx="12" cy="13" r="4"/></svg><strong id="uploadLabel">添加商品照片</strong><span>1 张照片对应 1 件商品，最多 12 件 · 每件还可补充 3 张细节图</span></button><input id="photoInput" type="file" accept="image/*" multiple hidden /><input id="extraPhotoInput" type="file" accept="image/*" multiple hidden /><div class="photo-tools" id="photoTools" hidden><span id="photoCount"></span><button id="btnAnalyze" class="text-btn" type="button">✦ AI 补全商品名</button><details class="inline-disclosure"><summary>照片如何使用</summary><p>照片在本地浏览器自动压缩；仅在登录后点击「AI 补全商品名」时发送至 Google Gemini 识别，点「发布到集市」时才上传。</p></details></div></div>
             <div id="itemEditor" class="item-editor"></div>
             <button type="button" id="addManualItem" class="text-btn manual-add">＋ 不传照片，手动添加</button>
             <div class="flow-actions"><span>名称必填，价格可留空（留空显示「待议」并排在低价排序末尾）</span><button type="button" class="primary-btn" id="sellNext" disabled>下一步 <span aria-hidden="true">→</span></button></div>
@@ -179,7 +186,7 @@
             <div class="paper-card share-actions">
               <div class="publish-block"><div><h2>发布到荷包集市</h2><p>所有人都能在「逛闲置」看到，买家咨询会邮件通知你；卖出后可随时改状态。</p></div><button type="button" class="primary-btn" id="btnPublish">发布到集市</button></div>
               <div id="shareResult" class="share-result" hidden></div>
-              <details class="share-block share-disclosure" id="wechatShareDisclosure"><summary>分享到微信群 / 朋友圈 <span class="optional" id="shareDisclosureTag">可选 · 发布后解锁实时库存二维码</span></summary><p id="shareDisclosureHint">建议先点上方「发布到集市」：生成的海报二维码会自动指向实时在售状态。</p><div class="button-stack"><button type="button" class="outline-btn" id="btnPoster">生成微信海报</button><button type="button" class="outline-btn" id="btnCopy">复制群文案</button></div></details>
+              <details class="share-block share-disclosure" id="wechatShareDisclosure"><summary>分享到微信群 / 朋友圈 <span class="optional" id="shareDisclosureTag">可选 · 发布后解锁实时库存二维码</span></summary><p id="shareDisclosureHint">建议先点上方「发布到集市」：生成的海报二维码会自动指向实时在售状态。</p><label class="checkline poster-only-check"><input type="checkbox" id="posterAvailableOnly" /><span id="posterAvailableOnlyLabel">仅包含仍在售商品（卖掉一半后重发清仓海报）</span></label><div class="button-stack"><button type="button" class="outline-btn" id="btnPoster">生成微信海报</button><button type="button" class="outline-btn" id="btnCopy">复制群文案</button></div></details>
             </div>
             <button type="button" class="text-btn" id="sellBack">← 返回编辑商品</button>
           </div>
@@ -231,7 +238,7 @@
 
   <div class="overlay" id="posterModal" hidden><div class="modal poster-modal" role="dialog" aria-modal="true" aria-labelledby="posterHeading"><button type="button" class="modal-x" data-close="posterModal" aria-label="关闭海报预览">✕</button><h2 id="posterHeading">海报准备好了</h2><p id="posterHint">手机长按上方图片即可保存或直接转发微信好友。</p><textarea id="eventShareText" rows="4" readonly hidden aria-label="邀请文案"></textarea><img id="posterImage" alt="包含商品名称、价格、状态与荷包二维码的分享海报" /><div class="poster-actions"><button id="copyPosterCopy" class="primary-btn" type="button" hidden>复制群发文案</button><button id="copyEventShare" class="outline-btn" type="button" hidden>复制邀请文案</button><a id="downloadPoster" class="primary-btn" download="荷包-闲置海报.jpg">下载海报图片</a><button id="sharePoster" class="outline-btn" type="button" hidden>系统分享</button></div></div></div>
 
-  <div class="overlay" id="photoLightboxModal" hidden><div class="modal lightbox-modal" role="dialog" aria-modal="true" aria-label="商品照片大图预览"><button type="button" class="modal-x" data-close="photoLightboxModal" aria-label="关闭大图预览">✕</button><img id="lightboxImage" alt="" /><p id="lightboxCaption" class="hint"></p></div></div>
+  <div class="overlay" id="photoLightboxModal" hidden><div class="modal lightbox-modal" role="dialog" aria-modal="true" aria-label="商品照片大图预览"><button type="button" class="modal-x" data-close="photoLightboxModal" aria-label="关闭大图预览">✕</button><div class="lightbox-stage"><button type="button" class="lightbox-nav prev" id="lightboxPrev" aria-label="上一张照片" hidden>‹</button><img id="lightboxImage" alt="" /><button type="button" class="lightbox-nav next" id="lightboxNext" aria-label="下一张照片" hidden>›</button></div><div class="lightbox-meta"><p id="lightboxCaption" class="hint"></p><span id="lightboxCounter" class="pill gray" hidden></span></div></div></div>
 
   <div class="overlay" id="actionDialogModal" hidden><div class="modal dialog-modal" role="dialog" aria-modal="true" aria-labelledby="dialogHeading"><button type="button" class="modal-x" data-close="actionDialogModal" aria-label="关闭确认窗口">✕</button><h2 id="dialogHeading">请确认</h2><p id="dialogMessage" class="preserve-lines"></p><form id="dialogForm"><label id="dialogInputWrap" hidden><span id="dialogInputLabel"></span><input id="dialogInput" maxlength="200" /></label><div class="dialog-actions"><button type="button" class="outline-btn" id="dialogCancelBtn">取消</button><button type="submit" class="primary-btn" id="dialogConfirmBtn">确认</button></div></form></div></div>
 
@@ -265,7 +272,7 @@
       <li><strong>数据库</strong>：存储于 Turso（libSQL 云数据库），传输全程 TLS 加密。</li>
       <li><strong>公开商品图片</strong>：仅在你点击「发布到集市」时上传至腾讯云对象存储（COS）；未发布的草稿照片仅保存在你本机浏览器的 IndexedDB 中。</li>
       <li><strong>邮件发送</strong>：通过 Resend 发送登录验证码与站内互动提醒。</li>
-      <li><strong>可选 AI 图像识别</strong>：仅当你主动点击「AI 补全商品名」按钮时，压缩后的商品照片才会发送至 Google Gemini API 进行物品名称识别；手动填写不会调用任何 AI 服务。</li>
+      <li><strong>可选 AI 辅助</strong>：仅当你主动点击「AI 补全商品名」或「AI 按 DUO A2 要点批改」时，对应的压缩照片或荷语作答文本才会发送至 Google Gemini API 处理；手动填写与普通刷题不会调用任何 AI 服务。</li>
     </ul>
     <h3>3. 数据保留周期</h3>
     <ul>

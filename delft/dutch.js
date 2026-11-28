@@ -17,6 +17,7 @@ export function mountDutch(root, hooks = {}){
     onChange:()=>{renderCloudBar();saveStatus();pushCloudSoon();},
     onPractice:()=>hooks.onPractice?.(),
     onSessionChange:()=>updatePromoVisibility(),
+    gradeWriting:payload=>hooks.gradeWriting?.(payload),
   });
 
   function readLocalPrep(){
@@ -59,17 +60,18 @@ export function mountDutch(root, hooks = {}){
     const bar=el('studyCloudBar');if(!bar)return;
     const p=prepCounts(readLocalPrep());
     const dueCount=dueTasks(study).length;
-    const wrongCount=Object.values(study.answers||{}).filter(a=>a?.needsReview).length;
+    const sceneWrong=Object.values(study.answers||{}).filter(a=>a?.needsReview).length;
+    const totalMistakes=(p.mistakesCount||0)+sceneWrong;
     const badge=el('studyReviewBadge');
     if(badge){badge.hidden=!dueCount;badge.textContent=String(dueCount);}
     const summary=`专项 ${p.drillsDone}/${p.drillsTotal} · 模拟卷 ${p.mocksDone}/${p.mocksTotal} · 场景 ${study.completed.length}/${LESSONS.length}`;
-    const reviewBtn=wrongCount?` · <button type="button" class="text-btn cloud-inline-btn" data-study-action="jump-review">${wrongCount} 道错题待复习 →</button>`:'';
+    const reviewBtn=totalMistakes?` · <button type="button" class="text-btn cloud-inline-btn" data-study-action="jump-review">${totalMistakes} 道错题待攻克 →</button>`:'';
     if(hooks.isSignedIn?.()){
       bar.innerHTML=`<span><strong>${cloudSynced?'已开启云端备份':'正在同步云端进度…'}</strong> · ${summary}${reviewBtn}</span>`;
       bar.classList.add('synced');
     }else{
       bar.classList.remove('synced');
-      const hasAny=p.drillsDone||p.mocksDone||p.officialDone||study.completed.length||Object.keys(study.answers||{}).length;
+      const hasAny=p.drillsDone||p.mocksDone||p.officialDone||p.mistakesCount||p.savedWordsCount||study.completed.length||Object.keys(study.answers||{}).length;
       bar.innerHTML=`<span><strong>${hasAny?summary:'保存学习进度与错题本'}</strong>${reviewBtn} · 登录邮箱跨手机/电脑同步，清微信缓存也不丢</span><button type="button" class="outline-btn" data-study-action="cloud-login">邮箱登录备份</button>`;
     }
   }
@@ -245,6 +247,12 @@ export function mountDutch(root, hooks = {}){
     const action=button.dataset.studyAction;
     if(action==='cloud-login'){hooks.requestLogin?.(()=>syncCloud());return;}
     if(action==='jump-review'){
+      const p=prepCounts(readLocalPrep());
+      if(p.mistakesCount>0){
+        setView('prepare');
+        prep.startMistakes('all');
+        return;
+      }
       const due=dueTasks(study);
       setView('today');
       const wrong=TASKS.filter(t=>study.answers[t.id]?.needsReview).slice(0,3);

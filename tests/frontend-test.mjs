@@ -326,3 +326,30 @@ test('calendar .ics export, product share links, and SEO/PWA assets are valid an
   const sitemap = readFileSync(new URL('../sitemap.xml', import.meta.url), 'utf8');
   assert.match(sitemap, /https:\/\/hebaogj\.xyz\/dutch-a2/);
 });
+
+test('marketProducts filters free items, price ceilings, and buyer favorites without leaking unpriced items', async () => {
+  const {marketProducts, favoriteKey} = await import('../delft/market-view.js');
+  const listings = [{
+    id: 'list-a', city: 'delft', title: '搬家清仓', pickup: 'TU Delft', updatedAt: '2026-11-28T10:00:00Z', stale: false,
+    items: [
+      {id: 'free-1', name: '衣架', price: 0, category: '生活用品', status: 'available'},
+      {id: 'mid-1', name: '台灯', price: 15, category: '生活用品', status: 'available'},
+      {id: 'high-1', name: '显示器', price: 85, category: '数码', status: 'available'},
+      {id: 'neg-1', name: '沙发', price: null, category: '家具', status: 'available'},
+      {id: 'sold-1', name: '已出单车', price: 10, category: '自行车', status: 'sold'},
+    ],
+  }];
+
+  assert.deepEqual(marketProducts(listings, {freeOnly: true}).map(p => p.item.id), ['free-1']);
+  assert.deepEqual(marketProducts(listings, {maxPrice: 20}).map(p => p.item.id), ['free-1', 'mid-1']);
+  assert.deepEqual(marketProducts(listings, {maxPrice: 50}).map(p => p.item.id), ['free-1', 'mid-1']);
+  const favs = new Set([favoriteKey('list-a', 'high-1'), favoriteKey('list-a', 'sold-1')]);
+  assert.deepEqual(marketProducts(listings, {favoritesOnly: true, favoriteKeys: favs}).map(p => p.item.id), ['high-1']);
+
+  const html = readFileSync(new URL('../delft/index.html', import.meta.url), 'utf8');
+  assert.match(html, /id="marketQuickFilters"/);
+  assert.match(html, /id="extraPhotoInput"/);
+  assert.match(html, /id="posterAvailableOnly"/);
+  assert.match(html, /id="lightboxPrev"/);
+  assert.match(html, /id="lightboxNext"/);
+});

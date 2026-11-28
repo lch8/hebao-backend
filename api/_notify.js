@@ -83,6 +83,7 @@ export async function sendTransactionalEmail({
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
+      signal: AbortSignal.timeout(8000),
       body: JSON.stringify({ from, to: email, subject: cleanSubject, text, html }),
     });
     if (!response.ok) {

@@ -1,6 +1,6 @@
 import {escapeHtml as esc} from './activity-view.js';
 import {A2_GUIDE as GUIDE} from './a2-guide.js';
-import {BANK, MOCK_MINUTES, openPrepLedger, productive, readiness} from './a2-progress.js';
+import {BANK, MOCK_MINUTES, activeMistakes, openPrepLedger, productive, readiness} from './a2-progress.js';
 import {createExamSession} from './a2-session.js';
 
 const practiceHub = 'https://www.inburgeren.nl/examen-doen/oefenen.jsp';
@@ -9,10 +9,24 @@ const link = (url, label) => `<a href="${esc(url)}" target="_blank" rel="noopene
 const command = (action, label, value = '', css = 'outline-btn') => `<button type="button" class="${css}" data-prep="${action}" data-value="${esc(value)}">${esc(label)}</button>`;
 const statusNames = {pending:'待核对',met:'核对达标',review:'仍需复习'};
 
+function speakDutch(text) {
+  const synth = window.speechSynthesis;
+  if (!synth || !window.SpeechSynthesisUtterance) return false;
+  const voice = synth.getVoices().find(v => /^nl(?:[-_]|$)/i.test(v.lang));
+  if (!voice) return false;
+  synth.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.voice = voice;
+  u.lang = voice.lang;
+  u.rate = 0.92;
+  synth.speak(u);
+  return true;
+}
+
 export function mountExamPrep(root, storage, callbacks = {}) {
   const ledger = openPrepLedger(storage);
   const totalWords = Object.values(GUIDE).reduce((sum, g) => sum + g.words.length, 0);
-  let subject = 'read', page = 'subject', wordScope = 'all', wordQuery = '';
+  let subject = 'read', page = 'subject', wordScope = 'all', wordQuery = '', wordMode = 'list', flashDeck = [], flashIndex = 0, flashRevealed = false;
   let active = false;
   const notifySession = () => callbacks.onSessionChange?.(active && page === 'session');
   const setPage = next => { page = next; notifySession(); };
@@ -20,11 +34,14 @@ export function mountExamPrep(root, storage, callbacks = {}) {
   const session = createExamSession(root, ledger, {
     isVisible:() => active && page === 'session',
     subjectHome:(id, official=false) => {
-      subject=id; showSubject();
+      subject=Object.hasOwn(GUIDE, id) ? id : subject; showSubject();
       focusSection(official ? '#a2Official h3' : '#a2SubjectTitle', official);
     },
     drill:(id,type) => {subject=id; launch('practice',type);},
     mock:(id,form) => {subject=id; launch(form,null);},
+    mistakes:(scope='all') => startMistakes(scope),
+    gradeWriting: callbacks.gradeWriting,
+    onLedgerChange:() => callbacks.onChange?.(),
     onFinish:() => { callbacks.onChange?.(); callbacks.onPractice?.(); }
   }, storage);
   const byId = id => root.querySelector('#'+id);
@@ -43,7 +60,16 @@ export function mountExamPrep(root, storage, callbacks = {}) {
   function resumeBanner() {
     const run = session.current();
     if (!run) return '';
-    return `<div class="a2-resume"><span><strong>${run.finished?'上次练习结果：':'未结束练习：'}</strong>${GUIDE[run.subject].zh} · ${esc(run.title)}</span><div class="a2-resume-actions">${!run.finished?command('discard-run','放弃本轮','','text-btn danger'):''}${command('resume',run.finished?'查看刚才的结果':'继续当前作答 →','','primary-btn a2-resume-btn')}</div></div>`;
+    return `<div class="a2-resume"><span><strong>${run.finished?'上次练习结果：':'未结束练习：'}</strong>${GUIDE[run.subject]?.zh || '分科'} · ${esc(run.title)}</span><div class="a2-resume-actions">${!run.finished?command('discard-run','放弃本轮','','text-btn danger'):''}${command('resume',run.finished?'查看刚才的结果':'继续当前作答 →','','primary-btn a2-resume-btn')}</div></div>`;
+  }
+  function mistakeBanner(data) {
+    const allM = activeMistakes(data);
+    if (!allM.length) return '';
+    const curM = activeMistakes(data, subject);
+    const label = curM.length
+      ? `<strong>${GUIDE[subject].zh}错题本：${curM.length} 道待攻克</strong>${allM.length > curM.length ? `（全科共 ${allM.length} 道）` : ''} · 独立答对后自动移出`
+      : `<strong>全科错题本：${allM.length} 道待攻克</strong> · 独立答对后自动移出`;
+    return `<div class="a2-mistakes-bar"><span>${label}</span><div class="a2-resume-actions">${curM.length?command('mistakes',`重练${GUIDE[subject].zh}错题（${curM.length}）→`,subject,'soft-btn'):''}${allM.length>curM.length||!curM.length?command('mistakes',`重练全科错题（${allM.length}）→`,'all',curM.length?'text-btn':'soft-btn'):''}</div></div>`;
   }
   function subjectPicker(data) {
     const buttons=Object.entries(GUIDE).map(([id,g])=>{
@@ -54,7 +80,8 @@ export function mountExamPrep(root, storage, callbacks = {}) {
       return `<button type="button" class="a2-subject-choice" data-prep="subject" data-value="${id}" aria-pressed="${id===subject}">
         <span class="a2-subject-top"><strong>${esc(g.zh)}</strong>${done?`<i>${done}/5</i>`:''}</span><span lang="nl">${esc(name)}</span></button>`;
     });
-    return `<div class="a2-picker-head"><h2 id="a2PickerTitle">选择考试科目</h2>${command('words',GUIDE[subject].zh+'与全科高频词（'+totalWords+'）',subject,'text-btn')}</div>
+    const savedN = data.savedWords?.length || 0;
+    return `<div class="a2-picker-head"><h2 id="a2PickerTitle">选择考试科目</h2><div class="a2-picker-links">${command('words',`${GUIDE[subject].zh}与全科词库 / 闪卡（${totalWords}）${savedN?` · ★${savedN}`:''}`,subject,'text-btn')}</div></div>
       <div class="a2-picker" role="group" aria-labelledby="a2PickerTitle">${buttons.join('')}</div>`;
   }
   function typeCards(g, data) {
@@ -99,7 +126,7 @@ export function mountExamPrep(root, storage, callbacks = {}) {
       if(record) status=s?(productive(subject)?'首次完成 '+s.attempted+'/'+BANK[subject][form].length:'首次 '+s.correct+'/'+BANK[subject][form].length):'已打开';
       return command('mock',form.toUpperCase()+' 卷 · '+status,form,s?'outline-btn':'primary-btn');
     }).join('');
-    layout(`${resumeBanner()}${subjectPicker(data)}
+    layout(`${resumeBanner()}${mistakeBanner(data)}${subjectPicker(data)}
       <section class="a2-subject-brief" aria-labelledby="a2SubjectTitle">
         <div class="a2-brief-copy">
           <div class="a2-brief-top"><h2 id="a2SubjectTitle">${esc(g.zh)}怎么考</h2><span class="a2-dutch-pill"><span lang="nl">${esc(g.nl)}</span> · 正式考试 ${g.minutes} 分钟</span></div>
@@ -107,7 +134,7 @@ export function mountExamPrep(root, storage, callbacks = {}) {
         </div>
         <div class="a2-brief-side">${link(g.formatUrl,'DUO 考试说明 ↗')}</div>
       </section>
-      <section class="a2-section" aria-labelledby="a2PracticeTitle"><div class="a2-overhead"><div><h3 id="a2PracticeTitle">专项练习</h3><p>按题型逐题核对解析，不限时</p></div></div><div class="a2-types">${typeCards(g, data)}</div></section>
+      <section class="a2-section" aria-labelledby="a2PracticeTitle"><div class="a2-overhead"><div><h3 id="a2PracticeTitle">专项练习</h3><p>${subject==='write'?'按题型逐题练习，提交后支持 ✦ AI 按 DUO A2 标准即时批改':'按题型逐题核对解析，不限时；错题自动收入错题本'}</p></div></div><div class="a2-types">${typeCards(g, data)}</div></section>
       <section class="a2-assess" aria-labelledby="a2MockTitle"><div><h3 id="a2MockTitle">限时自测</h3><p>本站模拟卷 · 每卷 ${BANK[subject].a.length} 题，${MOCK_MINUTES[subject]} 分钟</p><div class="a2-actions">${forms}</div><p class="a2-meta">选卷即开始计时，交卷后看各题型对错与解析；未交卷答案会自动暂存，切出页面不丢失。${subject==='speak'?' 本站用文字给出情境，完整视频题见官方样卷。':''}</p></div>
       <div class="a2-signal"><h4>${esc(signal.title)}</h4><p>${esc(signal.detail)}</p></div></section>
       ${officialSection(g,data)}
@@ -116,30 +143,109 @@ export function mountExamPrep(root, storage, callbacks = {}) {
   }
   function filteredWords() {
     const query=wordQuery.trim().toLocaleLowerCase();
-    return Object.entries(GUIDE).filter(([id])=>wordScope==='all'||wordScope===id)
-      .flatMap(([,g])=>g.words.filter(w=>(w.nl+' '+w.zh+' '+w.example).toLocaleLowerCase().includes(query)).map(w=>({g,w})));
+    const savedSet = new Set(ledger.read().savedWords || []);
+    return Object.entries(GUIDE)
+      .filter(([id]) => wordScope === 'all' || wordScope === 'saved' || wordScope === id)
+      .flatMap(([, g]) => g.words
+        .filter(w => (wordScope !== 'saved' || savedSet.has(w.nl)) && (w.nl + ' ' + w.zh + ' ' + w.example).toLocaleLowerCase().includes(query))
+        .map(w => ({ g, w, saved: savedSet.has(w.nl) }))
+      );
   }
-  function syncWordChips() {
+  function syncWordToolbar() {
+    const savedCount = (ledger.read().savedWords || []).length;
+    const savedChip = root.querySelector('[data-prep="word-scope"][data-value="saved"]');
+    if (savedChip) savedChip.textContent = `★ 生词本 (${savedCount})`;
     root.querySelectorAll('[data-prep="word-scope"]').forEach(chip => {
       const selected = chip.dataset.value === wordScope;
       chip.classList.toggle('active', selected);
       chip.setAttribute('aria-pressed', String(selected));
     });
+    root.querySelectorAll('[data-prep="word-mode"]').forEach(btn => {
+      const selected = btn.dataset.value === wordMode;
+      btn.classList.toggle('active', selected);
+      btn.setAttribute('aria-pressed', String(selected));
+    });
+    const searchWrap = root.querySelector('.a2-word-search');
+    if (searchWrap) searchWrap.hidden = wordMode === 'flash';
+  }
+  function rebuildFlashDeck(shuffle = false) {
+    flashDeck = filteredWords();
+    if (shuffle) {
+      for (let i = flashDeck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [flashDeck[i], flashDeck[j]] = [flashDeck[j], flashDeck[i]];
+      }
+    }
+    flashIndex = 0;
+    flashRevealed = false;
   }
   function drawWords() {
-    const words=filteredWords();
-    syncWordChips();
-    byId('a2WordsCount').textContent='共 '+words.length+' 条高频词';
-    byId('a2WordsList').innerHTML=words.length?words.map(({g,w})=>`<div><dt lang="nl">${esc(w.nl)}</dt><dd><strong>${esc(w.zh)}</strong><p lang="nl">${esc(w.example)}</p></dd>${wordScope==='all'?`<small>${esc(g.zh)}</small>`:''}</div>`).join(''):'<p class="a2-meta">没有匹配的词。试试更短的荷语词根或中文关键词。</p>';
+    syncWordToolbar();
+    const host = byId('a2WordsStage');
+    const countEl = byId('a2WordsCount');
+    if (!host || !countEl) return;
+    if (wordMode === 'flash') {
+      const savedSet = new Set(ledger.read().savedWords || []);
+      if (!flashDeck.length) {
+        countEl.textContent = wordScope === 'saved' ? '生词本还是空的' : '当前筛选下没有词条';
+        host.innerHTML = `<div class="empty-state"><h3>${wordScope==='saved'?'还没有收藏生词':'没有可抽背的词条'}</h3><p>${wordScope==='saved'?'在列表里点「☆ 收藏」或在闪卡中标为不熟，就能自动收进生词本。':'切换其他科目再试试。'}</p>${wordScope==='saved'?command('word-scope','看全科高频词','all','outline-btn'):''}</div>`;
+        return;
+      }
+      if (flashIndex >= flashDeck.length) {
+        countEl.textContent = `本轮 ${flashDeck.length} 张闪卡已完成`;
+        host.innerHTML = `<div class="flash-done"><h3>✓ 本轮 ${flashDeck.length} 个词已过完一轮！</h3><p>已收藏 ${savedSet.size} 个生词，可切到「★ 生词本」专项复盘。</p><div class="a2-actions">${command('flash-shuffle','打乱再来一轮','','primary-btn')}${savedSet.size?command('word-scope',`复习生词本 (${savedSet.size})`,'saved','outline-btn'):''}${command('word-mode','切回词表','list','text-btn')}</div></div>`;
+        return;
+      }
+      const cur = flashDeck[flashIndex];
+      const isSaved = savedSet.has(cur.w.nl);
+      countEl.textContent = `第 ${flashIndex + 1} / ${flashDeck.length} 张 · ${cur.g.zh}`;
+      host.innerHTML = `<div class="flash-card">
+        <div class="flash-card-top"><span class="pill">${esc(cur.g.zh)}</span><div class="flash-top-tools"><button type="button" class="text-btn flash-speak" data-prep="speak-word" data-value="${esc(cur.w.nl)}">🔊 听发音</button><button type="button" class="text-btn" data-prep="toggle-word" data-value="${esc(cur.w.nl)}">${isSaved?'★ 已收藏':'☆ 收藏'}</button></div></div>
+        <div class="flash-front" lang="nl">${esc(cur.w.nl)}</div>
+        ${flashRevealed
+          ? `<div class="flash-back"><strong>${esc(cur.w.zh)}</strong><p lang="nl">${esc(cur.w.example)}</p></div>
+             <div class="flash-actions">${command('flash-save-next','不熟 · 进生词本并下一张','','outline-btn')}${command('flash-next','记住了 · 下一张 →','','primary-btn')}</div>`
+          : `<div class="flash-actions">${command('flash-reveal','翻看释义与例句','','primary-btn')}</div>`}
+        <div class="flash-foot">${command('flash-shuffle','随机打乱顺序','','text-btn')}<span id="a2SpeakNote" class="a2-meta" role="status"></span></div>
+      </div>`;
+      return;
+    }
+
+    const words = filteredWords();
+    countEl.textContent = '共 ' + words.length + ' 条高频词';
+    host.innerHTML = words.length
+      ? `<dl class="a2-words">${words.map(({g,w,saved})=>`<div><dt lang="nl">${esc(w.nl)}</dt><dd><strong>${esc(w.zh)}</strong><p lang="nl">${esc(w.example)}</p></dd><div class="word-row-actions">${wordScope==='all'||wordScope==='saved'?`<small>${esc(g.zh)}</small>`:''}<button type="button" class="word-icon-btn" data-prep="speak-word" data-value="${esc(w.nl)}" title="朗读荷语" aria-label="朗读 ${esc(w.nl)}">🔊</button><button type="button" class="word-icon-btn ${saved?'saved':''}" data-prep="toggle-word" data-value="${esc(w.nl)}" aria-pressed="${saved}" title="${saved?'移出生词本':'加入生词本'}" aria-label="${saved?'移出生词本':'加入生词本'} ${esc(w.nl)}">${saved?'★':'☆'}</button></div></div>`).join('')}</dl><p id="a2SpeakNote" class="a2-meta" role="status"></p>`
+      : `<p class="a2-meta">${wordScope==='saved'?'生词本里还没有词。在列表中点 ☆ 即可收藏，登录后自动云同步。':'没有匹配的词。试试更短的荷语词根或中文关键词。'}</p>`;
   }
   function showWords(scope) {
-    setPage('words');wordScope=scope||'all';wordQuery='';
-    const chips = [['all', `全科 (${totalWords})`], ...Object.entries(GUIDE).map(([id, g]) => [id, `${g.zh} (${g.words.length})`])]
-      .map(([id, label]) => `<button type="button" class="category-chip ${id===wordScope?'active':''}" data-prep="word-scope" data-value="${id}" aria-pressed="${id===wordScope}">${esc(label)}</button>`).join('');
-    layout(`${command('words-back','返回'+GUIDE[subject].zh+'备考','','text-btn a2-back')}<h2>备考高频词与搭配</h2><p>按常见考试任务选编，每条配中文释义和荷语例句。</p>
+    setPage('words');wordScope=scope||'all';wordQuery='';wordMode='list';
+    const savedCount = (ledger.read().savedWords || []).length;
+    const chips = [
+      ['all', `全科 (${totalWords})`],
+      ['saved', `★ 生词本 (${savedCount})`],
+      ...Object.entries(GUIDE).map(([id, g]) => [id, `${g.zh} (${g.words.length})`])
+    ].map(([id, label]) => `<button type="button" class="category-chip ${id===wordScope?'active':''}" data-prep="word-scope" data-value="${id}" aria-pressed="${id===wordScope}">${esc(label)}</button>`).join('');
+    layout(`${command('words-back','返回'+GUIDE[subject].zh+'备考','','text-btn a2-back')}
+      <div class="a2-overhead"><div><h2>备考高频词与闪卡</h2><p>按考试任务选编，支持生词本云同步与通勤闪卡自测。</p></div>
+        <div class="word-mode-switch" role="group" aria-label="学习方式">
+          <button type="button" class="active" data-prep="word-mode" data-value="list" aria-pressed="true">列表浏览</button>
+          <button type="button" data-prep="word-mode" data-value="flash" aria-pressed="false">闪卡自测</button>
+        </div>
+      </div>
       <div class="a2-word-toolbar"><div class="category-filters" role="group" aria-label="按科目筛选词汇">${chips}</div><label class="a2-word-search"><span class="sr-only">搜索词或释义</span><input id="a2WordSearch" type="search" placeholder="搜索荷语词或中文释义（如 afspraak / 预约）"></label></div>
-      <p class="a2-meta" id="a2WordsCount" role="status"></p><dl class="a2-words" id="a2WordsList"></dl>`);
+      <p class="a2-meta" id="a2WordsCount" role="status"></p><div id="a2WordsStage"></div>`);
     drawWords();
+  }
+  function startMistakes(scope = 'all') {
+    const old = session.current();
+    if (old && !old.finished) { setPage('session'); session.render('你有一轮尚未结束的作答，请先完成或放弃后再重练错题。'); return true; }
+    setPage('session');
+    if (!session.start(scope, 'mistakes', null)) {
+      showSubject('当前没有待攻克的分科错题，太棒了！');
+      return false;
+    }
+    focusSection('.a2-session-head');
+    return true;
   }
   function launch(form, type) {
     const old=session.current();
@@ -156,8 +262,39 @@ export function mountExamPrep(root, storage, callbacks = {}) {
     }
     if(action==='drill' && lookup(subject,value))launch('practice',value);
     if(action==='mock' && ['a','b'].includes(value))launch(value,null);
+    if(action==='mistakes')startMistakes(value||'all');
     if(action==='words'){showWords(value||subject);focusSection();}
-    if(action==='word-scope' && (value==='all'||Object.hasOwn(GUIDE,value))){wordScope=value;drawWords();}
+    if(action==='word-scope' && (value==='all'||value==='saved'||Object.hasOwn(GUIDE,value))){
+      wordScope=value;
+      if (wordMode === 'flash') rebuildFlashDeck(false);
+      drawWords();
+    }
+    if(action==='word-mode' && ['list','flash'].includes(value)){
+      wordMode=value;
+      if (wordMode === 'flash') rebuildFlashDeck(false);
+      drawWords();
+    }
+    if(action==='toggle-word'){
+      ledger.toggleWord(value);
+      callbacks.onChange?.();
+      drawWords();
+    }
+    if(action==='speak-word'){
+      const ok = speakDutch(value);
+      const note = byId('a2SpeakNote');
+      if (note) note.textContent = ok ? '' : '当前浏览器未安装荷兰语语音包，可直接看例句跟读。';
+    }
+    if(action==='flash-reveal'){flashRevealed=true;drawWords();}
+    if(action==='flash-next'){flashIndex++;flashRevealed=false;drawWords();}
+    if(action==='flash-save-next'){
+      const cur = flashDeck[flashIndex];
+      if (cur && !(ledger.read().savedWords || []).includes(cur.w.nl)) {
+        ledger.toggleWord(cur.w.nl);
+        callbacks.onChange?.();
+      }
+      flashIndex++;flashRevealed=false;drawWords();
+    }
+    if(action==='flash-shuffle'){rebuildFlashDeck(true);drawWords();}
     if(action==='words-back'){showSubject();focusSection('#a2SubjectTitle');}
     if(action==='resume'){setPage('session');session.render();focusSection('.a2-session-head');}
     if(action==='discard-run'){session.clear();showSubject('已放弃未结束作答，可重新选卷练习。');}
@@ -175,6 +312,7 @@ export function mountExamPrep(root, storage, callbacks = {}) {
   });
   return {
     open(){active=true;if(page==='session'&&session.current()){notifySession();session.render();}else showSubject();},
+    startMistakes(scope='all'){active=true;return startMistakes(scope);},
     pause(){session.pauseMedia();},
     hide(){active=false;notifySession();session.pauseMedia();},
     inSession:() => active && page === 'session',

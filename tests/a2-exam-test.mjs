@@ -182,3 +182,51 @@ test('drill completions record best scores and prepCounts summarizes drills and 
   assert.equal(counts.mocksDone, 1);
   assert.equal(counts.mocksTotal, 10);
 });
+
+test('mistake notebook records missed and transcript-assisted items, clears on independent right answer, and syncs with savedWords', async () => {
+  const {activeMistakes, mergePrep, prepCounts} = await import('../delft/a2-progress.js');
+  const s1 = memoryStorage(), l1 = openPrepLedger(s1);
+  const readQ = BANK.read.practice[0];
+  const listenQ = BANK.listen.practice[0];
+  const wrongRead = (readQ.answer + 1) % readQ.options.length;
+
+  l1.recordMistakes([readQ, listenQ], {
+    [readQ.id]: {choice: wrongRead},
+    [listenQ.id]: {choice: listenQ.answer, transcript: true},
+  });
+  assert.equal(activeMistakes(l1.read()).length, 2);
+  assert.equal(activeMistakes(l1.read(), 'read').length, 1);
+  assert.equal(activeMistakes(l1.read(), 'listen').length, 1);
+  assert.equal(prepCounts(l1.read()).mistakesCount, 2);
+
+  // Independent correct answer clears readQ; transcript-assisted listenQ stays in mistakes
+  l1.recordMistakes([readQ, listenQ], {
+    [readQ.id]: {choice: readQ.answer},
+    [listenQ.id]: {choice: listenQ.answer, transcript: true},
+  });
+  assert.equal(activeMistakes(l1.read(), 'read').length, 0);
+  assert.equal(activeMistakes(l1.read(), 'listen').length, 1);
+
+  // Independent listening correct answer clears listenQ
+  l1.recordMistakes([listenQ], {[listenQ.id]: {choice: listenQ.answer, heard: true}});
+  assert.equal(activeMistakes(l1.read()).length, 0);
+
+  // Saved wordbook validates against official guide words and toggles cleanly
+  const wordA = guide.read.words[0].nl;
+  const wordB = guide.knm.words[0].nl;
+  assert.equal(l1.toggleWord(wordA), true);
+  assert.equal(l1.toggleWord('not-in-a2-word-bank'), false);
+  assert.deepEqual(l1.read().savedWords, [wordA]);
+  assert.equal(prepCounts(l1.read()).savedWordsCount, 1);
+
+  // Cloud merge unions savedWords and respects newer mistake timestamps
+  const s2 = memoryStorage(), l2 = openPrepLedger(s2);
+  l2.toggleWord(wordB);
+  const olderMiss = {...l2.read(), mistakes: {[readQ.id]: {at: 100, misses: 1, clearedAt: 0}}};
+  const merged = mergePrep(l1.read(), olderMiss);
+  assert.equal(activeMistakes(merged, 'read').length, 0);
+  assert.deepEqual(merged.savedWords.sort(), [wordA, wordB].sort());
+
+  assert.equal(l1.toggleWord(wordA), false);
+  assert.deepEqual(l1.read().savedWords, []);
+});
