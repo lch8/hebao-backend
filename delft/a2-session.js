@@ -15,7 +15,7 @@ const VERDICT_META = {
   needs_work: { cls: 'needs-work', label: '还需补全要点或修正语病' },
 };
 
-function renderAiGradeCard(grade) {
+function renderAiGradeCard(grade, qid = '', canShare = false) {
   if (!grade) return '';
   const meta = VERDICT_META[grade.verdict] || VERDICT_META.almost;
   const checksHtml = (grade.checks || []).map(c =>
@@ -35,6 +35,7 @@ function renderAiGradeCard(grade) {
     <ul class="ai-check-list">${checksHtml}</ul>
     ${corrHtml}
     ${rewriteHtml}
+    ${canShare && qid ? `<div class="ai-grade-foot"><button type="button" class="outline-btn" data-a2-act="share-ai-grade" data-qid="${esc(qid)}">生成写作批改打卡图</button></div>` : ''}
   </div>`;
 }
 
@@ -216,7 +217,7 @@ export function createExamSession(root, ledger, hooks, storage) {
     if (itemSubject(item) !== 'write' || !hooks.gradeWriting) return '';
     const answer = formatWrittenAnswer(item, response);
     if (!answer) return '';
-    if (response.aiGrade) return renderAiGradeCard(response.aiGrade);
+    if (response.aiGrade) return renderAiGradeCard(response.aiGrade, item.id, Boolean(hooks.onSharePoster));
     return `<div class="ai-grade-trigger"><button type="button" class="soft-btn" data-a2-act="ai-grade" data-qid="${esc(item.id)}" ${response.grading?'disabled':''}>${response.grading?'✦ AI 正在按 DUO A2 标准批改…':'✦ AI 按 DUO A2 要点批改'}</button>${response.aiError?`<span class="ai-grade-err">${esc(response.aiError)}</span>`:'<span class="a2-meta">检查 3 条得分要点、词序与语法，并给出 A2 水平改写</span>'}</div>`;
   }
   function explanation(item,response) {
@@ -365,7 +366,7 @@ export function createExamSession(root, ledger, hooks, storage) {
       <p>${output?'可点每题下方「✦ AI 按 DUO A2 要点批改」获取语法与要点反馈，也可对照范文自查。':(isMistakes()?'独立答对的题目已自动移出错题本；仍答错或借助原文的题目会继续保留。':(stats.total===stats.attempted?'全部题目已作答；答错的题目已自动收入错题本。':(stats.total-stats.attempted)+' 题未作答。')+'展开题目可查看答案依据。')}</p>
       <ul class="a2-breakdown">${split}</ul>
       ${mock()?`<div class="a2-assess-note"><h3>${esc(signal.title)}</h3><p>${esc(signal.detail)}</p>${!run.fresh?'<p>本次为复做，备考建议保留初见卷表现。</p>':''}</div>`:''}
-      <div class="a2-actions">${resultActions(data,weakest)}</div>
+      <div class="a2-actions">${resultActions(data,weakest)}${hooks.onSharePoster?`<button class="outline-btn" type="button" data-a2-act="share-result">生成备考战报图</button>`:''}</div>
       <h3 class="a2-review-title">逐题解析</h3>${run.items.map(resultItem).join('')}</div>`;
   }
   async function runAiGrade(qid) {
@@ -480,6 +481,43 @@ export function createExamSession(root, ledger, hooks, storage) {
     const a=b.dataset.a2Act;
     if(!run.finished&&tick())return;
     if(a==='ai-grade'){runAiGrade(b.dataset.qid);return;}
+    if(a==='share-ai-grade'&&hooks.onSharePoster){
+      const item=run.items.find(q=>q.id===b.dataset.qid);
+      const grade=item&&run.answers[item.id]?.aiGrade;
+      if(grade){
+        const meta=VERDICT_META[grade.verdict]||VERDICT_META.almost;
+        const metCount=(grade.checks||[]).filter(c=>c.met).length;
+        hooks.onSharePoster({
+          badge:'荷包 · 荷兰语 A2 写作 AI 批改打卡',
+          title:`DUO A2 写作 · ${typeName('write',item.type)}`,
+          subtitle:grade.summary,
+          stat:`${meta.label} · 得分要点命中 ${metCount}/${(grade.checks||[]).length}`,
+          highlights:(grade.checks||[]).map(c=>`${c.met?'✓':'✗'} ${c.check}`),
+          footerHint:'扫码免费练 DUO A2 五科模拟卷、写作 AI 批改与每日荷语简报',
+          targetPath:'/dutch-a2?from=study_card',
+          fileName:'荷包-A2写作AI批改打卡.jpg',
+          shareCopy:`🇳🇱 刚在荷包练了荷兰语 A2 写作（${typeName('write',item.type)}），AI 按 DUO 得分要点批改：${meta.label}（命中 ${metCount}/${(grade.checks||[]).length} 条）\n免费备考工具：https://hebaogj.xyz/dutch-a2?from=study_card`,
+        });
+      }
+      return;
+    }
+    if(a==='share-result'&&run.finished&&hooks.onSharePoster){
+      const {subject,stats}=run, output=!isMistakes()&&productive(subject), zh=GUIDE[subject].zh;
+      const statLine=output?`完成 ${stats.attempted} / ${stats.total} 项表达任务`:`独立答对 ${stats.correct} / ${stats.total} 题`;
+      const rows=Object.entries(stats.byType).slice(0,4).map(([k,g])=>`${isMistakes()?k:typeName(subject,k)}：${output?g.attempted:g.correct}/${g.total}`);
+      hooks.onSharePoster({
+        badge:'荷包 · 荷兰语 A2 备考战报',
+        title:`${isMistakes()?'统一错题本':zh} · ${run.title}`,
+        subtitle:`DUO Inburgering A2 自测打卡 · 坚持每天进步一点点`,
+        stat:statLine,
+        highlights:rows,
+        footerHint:'扫码免费刷 DUO A2 五科专项、模拟卷与每日荷语简报',
+        targetPath:'/dutch-a2?from=study_card',
+        fileName:`荷包-A2备考战报-${subject}.jpg`,
+        shareCopy:`🇳🇱 荷兰语 A2 备考打卡：${isMistakes()?'错题本重练':`${zh} ${run.title}`} — ${statLine}\n免费 DUO 五科模拟卷 + 写作 AI 批改：https://hebaogj.xyz/dutch-a2?from=study_card`,
+      });
+      return;
+    }
     if(a==='record')record();
     if(a==='prev'&&run.index>0)changeItem(run.index-1);
     if(a==='next')advance();

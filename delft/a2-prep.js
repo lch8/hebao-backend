@@ -41,6 +41,7 @@ export function mountExamPrep(root, storage, callbacks = {}) {
     mock:(id,form) => {subject=id; launch(form,null);},
     mistakes:(scope='all') => startMistakes(scope),
     gradeWriting: callbacks.gradeWriting,
+    onSharePoster: callbacks.onSharePoster,
     onLedgerChange:() => callbacks.onChange?.(),
     onFinish:() => { callbacks.onChange?.(); callbacks.onPractice?.(); }
   }, storage);

@@ -1,6 +1,7 @@
-import { sql, ensureSchema, json, clipped, authId } from './_delft-db.js';
+import { sql, ensureSchema, json, clipped, authId, isAdminUser, isUserBanned, cleanupOldTempRows } from './_delft-db.js';
 import { sendTransactionalEmail, notifyEventAttendees } from './_notify.js';
 import { isCosUrl, isDbImageUrl, deleteDbImagesFor } from './_image-store.js';
+import { loadDailyNewsEditions, generateDailyNews } from './_daily-news.js';
 export const config = { runtime: 'edge' };
 
 const statuses = new Set(['available', 'reserved', 'sold']);
@@ -12,8 +13,8 @@ const cityLabels = {
   amsterdam: 'Amsterdam', utrecht: 'Utrecht', eindhoven: 'Eindhoven'
 };
 const funnelEvents = new Set([
-  'page_view', 'auth_request', 'auth_success', 'poster_generate',
-  'listing_publish', 'event_create', 'event_rsvp', 'inquiry_send', 'a2_practice', 'a2_ai_grade'
+  'page_view', 'auth_request', 'auth_success', 'poster_generate', 'study_poster',
+  'listing_publish', 'event_create', 'event_rsvp', 'inquiry_send', 'a2_practice', 'a2_ai_grade', 'news_read'
 ]);
 const reportTargets = new Set(['listing', 'event', 'message']);
 const reportReasons = new Set(['疑似诈骗或定金诱导', '虚假或违禁商品', '骚扰或不当言论', '活动信息失实', '其他问题']);
@@ -186,6 +187,10 @@ export default async function handler(request) {
         );
         return json({ events: result.rows.map(eventView) });
       }
+      if (action === 'dailyNews') {
+        const editions = await loadDailyNewsEditions(7);
+        return json({ editions });
+      }
       if (action === 'event') {
         const id = clipped(url.searchParams.get('id'), 60);
         const row = (await sql(`SELECT e.*,
@@ -205,7 +210,7 @@ export default async function handler(request) {
       }
       if (action === 'mine') {
         const recentCutoff = new Date(Date.now() - 14 * 86400000).toISOString();
-        const [listings, events, myEvents, unreadRow] = await Promise.all([
+        const [listings, events, myEvents, unreadRow, adminFlag] = await Promise.all([
           sql('SELECT * FROM delft_listings WHERE owner_id=? ORDER BY created_at DESC LIMIT 100', [user]),
           sql('SELECT id FROM delft_events WHERE host_id=? AND cancelled=0 ORDER BY starts_at DESC LIMIT 50', [user]),
           sql(`SELECT e.*,
@@ -218,12 +223,92 @@ export default async function handler(request) {
               AND e.starts_at > ?
             ORDER BY e.starts_at DESC LIMIT 50`, [user, user, user, user, recentCutoff]),
           sql('SELECT COUNT(*) AS n FROM delft_messages WHERE receiver_id=? AND read_at IS NULL', [user]),
+          isAdminUser(user),
         ]);
         return json({
           listings: listings.rows.map(listingView),
           hostedEventIds: events.rows.map(e => e.id),
           myEvents: myEvents.rows.map(eventView),
           unreadCount: Number(unreadRow.rows[0]?.n || 0),
+          isAdmin: adminFlag,
+        });
+      }
+      if (action === 'adminOverview') {
+        if (!(await isAdminUser(user))) return json({ error: '仅管理员可访问后台' }, 403);
+        const nowIso = new Date().toISOString();
+        const today = nowIso.slice(0, 10);
+        const sinceDay = new Date(Date.now() - 13 * 86400000).toISOString().slice(0, 10);
+        const activeCutoff = new Date(Date.now() - 14 * 86400000).toISOString();
+        const [
+          usersCount, listingsCount, eventsCount, openReportsCount, newsCount,
+          metricsRows, sourceRows, reportRows, feedbackRows, recentListings, recentEvents, bannedRows
+        ] = await Promise.all([
+          sql('SELECT COUNT(*) AS n FROM users'),
+          sql('SELECT COUNT(*) AS n FROM delft_listings WHERE updated_at>=?', [activeCutoff]),
+          sql('SELECT COUNT(*) AS n FROM delft_events WHERE cancelled=0 AND starts_at>?', [nowIso]),
+          sql("SELECT COUNT(*) AS n FROM delft_reports WHERE COALESCE(status,'open')='open'"),
+          sql('SELECT COUNT(*) AS n, MAX(day) AS latest FROM delft_daily_news'),
+          sql('SELECT day, event, hits FROM delft_metrics WHERE day>=? ORDER BY day DESC', [sinceDay]),
+          sql('SELECT day, source, event, hits FROM delft_sources WHERE day>=? ORDER BY day DESC', [sinceDay]),
+          sql(`SELECT r.id, r.reporter_id, r.target_type, r.target_id, r.reason, r.detail, r.created_at, COALESCE(r.status,'open') AS status,
+            l.title AS listing_title, l.owner_id AS listing_owner,
+            e.title AS event_title, e.host_id AS event_owner
+            FROM delft_reports r
+            LEFT JOIN delft_listings l ON r.target_type='listing' AND l.id=r.target_id
+            LEFT JOIN delft_events e ON r.target_type='event' AND e.id=r.target_id
+            ORDER BY CASE WHEN COALESCE(r.status,'open')='open' THEN 0 ELSE 1 END, r.created_at DESC LIMIT 30`),
+          sql('SELECT id, user_id, contact, category, content, page, created_at FROM delft_feedback ORDER BY created_at DESC LIMIT 30'),
+          sql('SELECT id, owner_id, seller_name, title, city, updated_at, items_json FROM delft_listings ORDER BY updated_at DESC LIMIT 15'),
+          sql('SELECT id, host_id, host_name, title, city, starts_at, cancelled FROM delft_events WHERE cancelled=0 AND starts_at>? ORDER BY starts_at ASC LIMIT 15', [nowIso]),
+          sql('SELECT user_id, email, reason, created_at FROM delft_banned_users ORDER BY created_at DESC LIMIT 20'),
+        ]);
+        let aiHitsToday = 0;
+        try {
+          const aiRow = (await sql('SELECT hits FROM delft_ai_quota WHERE id=?', [`${today}:global`])).rows[0];
+          aiHitsToday = Number(aiRow?.hits || 0);
+        } catch {}
+        return json({
+          totals: {
+            users: Number(usersCount.rows[0]?.n || 0),
+            activeListings: Number(listingsCount.rows[0]?.n || 0),
+            upcomingEvents: Number(eventsCount.rows[0]?.n || 0),
+            openReports: Number(openReportsCount.rows[0]?.n || 0),
+            newsEditions: Number(newsCount.rows[0]?.n || 0),
+            latestNewsDay: newsCount.rows[0]?.latest || null,
+            aiHitsToday,
+          },
+          metrics: metricsRows.rows.map(r => ({ day: r.day, event: r.event, hits: Number(r.hits || 0) })),
+          sources: sourceRows.rows.map(r => ({ day: r.day, source: r.source, event: r.event, hits: Number(r.hits || 0) })),
+          reports: reportRows.rows.map(r => ({
+            id: r.id,
+            targetType: r.target_type,
+            targetId: r.target_id,
+            reason: r.reason,
+            detail: r.detail,
+            status: r.status || 'open',
+            createdAt: r.created_at,
+            targetTitle: r.listing_title || r.event_title || '',
+            targetOwnerId: r.listing_owner || r.event_owner || '',
+          })),
+          feedback: feedbackRows.rows.map(f => ({
+            id: f.id,
+            category: f.category,
+            content: f.content,
+            contact: f.contact,
+            page: f.page,
+            createdAt: f.created_at,
+          })),
+          recentListings: recentListings.rows.map(l => {
+            let avail = 0;
+            try { avail = JSON.parse(l.items_json || '[]').filter(i => i.status === 'available').length; } catch {}
+            return { id: l.id, ownerId: l.owner_id, seller: l.seller_name, title: l.title, city: l.city || 'delft', updatedAt: l.updated_at, availableCount: avail };
+          }),
+          recentEvents: recentEvents.rows.map(e => ({
+            id: e.id, hostId: e.host_id, host: e.host_name, title: e.title, city: e.city || 'delft', startsAt: e.starts_at,
+          })),
+          bannedUsers: bannedRows.rows.map(b => ({
+            userId: b.user_id, email: b.email, reason: b.reason, createdAt: b.created_at,
+          })),
         });
       }
       if (action === 'attendees') {
@@ -361,10 +446,17 @@ export default async function handler(request) {
         if (!funnelEvents.has(ev)) return json({ error: '未知统计事件' }, 400);
         if (!(await checkPublicQuota(request, 'track', 300))) return json({ ok: true });
         const day = nowIso.slice(0, 10);
+        const rawSource = String(publicBody.source || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 32);
         await sql(
           'INSERT INTO delft_metrics(day,event,hits) VALUES(?,?,1) ON CONFLICT(day,event) DO UPDATE SET hits=hits+1',
           [day, ev]
         );
+        if (rawSource) {
+          await sql(
+            'INSERT INTO delft_sources(day,source,event,hits) VALUES(?,?,?,1) ON CONFLICT(day,source,event) DO UPDATE SET hits=hits+1',
+            [day, rawSource, ev]
+          );
+        }
         return json({ ok: true });
       }
       if (action === 'submitFeedback') {
@@ -386,8 +478,8 @@ export default async function handler(request) {
             subject: `【荷包反馈】${category}`,
             heading: `收到新的用户${category}`,
             lines: [content, contact ? `联系方式：${contact}` : '', page ? `所在页面：${page}` : ''],
-            ctaLabel: '打开荷包',
-            ctaPath: '/',
+            ctaLabel: '进入站长后台查看',
+            ctaPath: '/mine?view=admin',
           });
         }
         return json({ ok: true });
@@ -404,8 +496,8 @@ export default async function handler(request) {
           return json({ error: '今日举报提交次数过多，请稍后再试' }, 429);
         }
         await sql(
-          'INSERT INTO delft_reports(id,reporter_id,target_type,target_id,reason,detail,created_at) VALUES(?,?,?,?,?,?,?)',
-          [crypto.randomUUID(), user || 'guest', targetType, targetId, reason, detail, nowIso]
+          'INSERT INTO delft_reports(id,reporter_id,target_type,target_id,reason,detail,created_at,status) VALUES(?,?,?,?,?,?,?,?)',
+          [crypto.randomUUID(), user || 'guest', targetType, targetId, reason, detail, nowIso, 'open']
         );
         if (process.env.ADMIN_NOTIFY_EMAIL) {
           await sendTransactionalEmail({
@@ -413,8 +505,8 @@ export default async function handler(request) {
             subject: `【荷包举报】${targetType} · ${reason}`,
             heading: '收到新的社区举报',
             lines: [`对象类型：${targetType}`, `对象 ID：${targetId}`, `原因：${reason}`, detail ? `补充说明：${detail}` : ''],
-            ctaLabel: '查看站点',
-            ctaPath: targetType === 'listing' ? `/market?item=${encodeURIComponent(targetId)}` : '/events',
+            ctaLabel: '前往站长后台处理',
+            ctaPath: '/mine?view=admin',
           });
         }
         return json({ ok: true });
@@ -422,13 +514,97 @@ export default async function handler(request) {
     }
 
     if (!user) return json({ error: '发布、报名和私信需要先邮箱登录' }, 401);
+    if (action !== 'deleteAccount' && await isUserBanned(user)) {
+      return json({ error: '该账号因违反社区规则已被限制操作' }, 403);
+    }
 
     let body;
     try { body = await request.json(); } catch { return json({ error: '请求内容不是有效 JSON' }, 400); }
     if (!body || typeof body !== 'object' || Array.isArray(body)) return json({ error: '请求内容格式有误' }, 400);
     const now = new Date().toISOString();
+    if (Math.random() < 0.05) cleanupOldTempRows().catch(() => {});
+
+    if (action === 'adminModerate') {
+      if (!(await isAdminUser(user))) return json({ error: '仅管理员可执行审核操作' }, 403);
+      const op = String(body.op || '').trim();
+      if (op === 'deleteListing') {
+        const id = clipped(body.listingId, 60);
+        if (!id) return json({ error: '缺少 listingId' }, 400);
+        const photos = (await sql('SELECT items_json FROM delft_listings WHERE id=?', [id])).rows.map(r => r.items_json);
+        await sql('DELETE FROM delft_messages WHERE listing_id=?', [id]);
+        await sql('DELETE FROM delft_listings WHERE id=?', [id]);
+        await sql("UPDATE delft_reports SET status='resolved' WHERE target_type='listing' AND target_id=?", [id]);
+        await deleteDbImagesFor(photos).catch(error => console.error('admin delete listing images', error));
+        return json({ ok: true });
+      }
+      if (op === 'cancelEvent') {
+        const id = clipped(body.eventId, 60);
+        const reason = clipped(body.reason, 200) || '管理员已下架此活动';
+        const existing = (await sql('SELECT id, title, starts_at, place, cancelled FROM delft_events WHERE id=?', [id])).rows[0];
+        if (!existing) return json({ error: '活动不存在' }, 404);
+        if (!Number(existing.cancelled)) {
+          await sql('UPDATE delft_events SET cancelled=1, cancel_reason=?, updated_at=? WHERE id=?', [reason, now, id]);
+          await notifyEventAttendees(id, () => ({
+            subject: `【活动取消】「${existing.title}」已取消`,
+            heading: `活动「${existing.title}」已被管理员取消`,
+            lines: [`说明：${reason}`, `原定时间：${amsterdamTimeLabel(existing.starts_at)}`],
+            ctaLabel: '查看其他同城活动',
+            ctaPath: '/events',
+          }));
+        }
+        await sql("UPDATE delft_reports SET status='resolved' WHERE target_type='event' AND target_id=?", [id]);
+        return json({ ok: true });
+      }
+      if (op === 'resolveReport') {
+        const reportId = clipped(body.reportId, 60);
+        if (!reportId) return json({ error: '缺少 reportId' }, 400);
+        await sql("UPDATE delft_reports SET status='resolved' WHERE id=?", [reportId]);
+        return json({ ok: true });
+      }
+      if (op === 'banUser') {
+        const targetUserId = clipped(body.userId, 90);
+        const reason = clipped(body.reason, 200) || '违反社区安全规则';
+        if (!targetUserId || targetUserId === user) return json({ error: '无效的目标账号' }, 400);
+        const uRow = (await sql('SELECT verified_email FROM users WHERE id=?', [targetUserId])).rows[0];
+        const email = String(uRow?.verified_email || '').trim().toLowerCase();
+        await sql(
+          'INSERT INTO delft_banned_users(user_id,email,reason,created_at) VALUES(?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET email=excluded.email, reason=excluded.reason',
+          [targetUserId, email, reason, now]
+        );
+        const ownedPhotos = (await sql('SELECT items_json FROM delft_listings WHERE owner_id=?', [targetUserId])).rows.map(r => r.items_json);
+        await sql('DELETE FROM delft_messages WHERE listing_id IN (SELECT id FROM delft_listings WHERE owner_id=?)', [targetUserId]);
+        await sql('DELETE FROM delft_listings WHERE owner_id=?', [targetUserId]);
+        await deleteDbImagesFor(ownedPhotos).catch(() => {});
+        const activeHosted = (await sql('SELECT id, title, starts_at FROM delft_events WHERE host_id=? AND cancelled=0 AND starts_at>?', [targetUserId, now])).rows;
+        for (const ev of activeHosted) {
+          await sql('UPDATE delft_events SET cancelled=1, cancel_reason=?, updated_at=? WHERE id=?', ['发起人账号违规已被限制', now, ev.id]);
+          await notifyEventAttendees(ev.id, () => ({
+            subject: `【活动取消】「${ev.title}」已取消`,
+            heading: `活动「${ev.title}」已取消`,
+            lines: [`原因：发起人账号因违规已被限制`, `原定时间：${amsterdamTimeLabel(ev.starts_at)}`],
+            ctaLabel: '查看其他活动',
+            ctaPath: '/events',
+          }));
+        }
+        return json({ ok: true });
+      }
+      if (op === 'unbanUser') {
+        const targetUserId = clipped(body.userId, 90);
+        if (!targetUserId) return json({ error: '缺少 userId' }, 400);
+        await sql('DELETE FROM delft_banned_users WHERE user_id=?', [targetUserId]);
+        return json({ ok: true });
+      }
+      if (op === 'refreshDailyNews') {
+        const res = await generateDailyNews({ force: Boolean(body.force) });
+        return json({ ok: true, day: res.day, count: res.count, skipped: Boolean(res.skipped) });
+      }
+      return json({ error: '未知审核操作' }, 400);
+    }
 
     if (action === 'createListing') {
+      if (!(await checkPublicQuota(request, 'create_listing', 15))) {
+        return json({ error: '今日发布闲置次数过多，请明天再试' }, 429);
+      }
       const { city, seller, title, pickup, note, items } = listingFields(body);
       const active = await sql('SELECT COUNT(*) AS n FROM delft_listings WHERE owner_id=? AND updated_at>?', [user, new Date(Date.now() - 30 * 86400000).toISOString()]);
       if (Number(active.rows[0]?.n) >= 30) return json({ error: '最近发布数量过多' }, 429);
@@ -502,6 +678,9 @@ export default async function handler(request) {
       return json({ ok: true, updatedAt, item: { id: item.id, status: item.status, price: item.price } });
     }
     if (action === 'createEvent') {
+      if (!(await checkPublicQuota(request, 'create_event', 10))) {
+        return json({ error: '今日发布邀约次数过多，请明天再试' }, 429);
+      }
       const title = clipped(body.title, 75), host = clipped(body.host, 35), place = clipped(body.place, 100);
       const description = clipped(body.description, 450), contactHint = clipped(body.contactHint, 180);
       const date = new Date(body.startsAt);

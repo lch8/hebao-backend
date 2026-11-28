@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta name="theme-color" content="#f5f4ee" />
-  <title>荷包 · 在荷华人找搭子、逛闲置与荷兰语 A2 备考</title>
-  <meta name="description" content="面向在荷华人与留学生：同城 2–12 人小局与官方城市活动、发布在荷闲置、一键生成搬家清仓微信海报（扫码看实时在售状态）、荷兰语 A2 五科练习与模拟卷。" />
+  <title>荷包 · 在荷华人找搭子、逛闲置与荷兰语学习</title>
+  <meta name="description" content="面向在荷华人与留学生：同城 2–12 人小局与官方城市活动、多图在荷闲置与微信实时库存清仓海报、荷兰语 A2 五科 AI 写作批改与每日荷语新闻简报。" />
   <link rel="canonical" href="https://hebaogj.xyz/" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="荷包" />
-  <meta property="og:title" content="荷包 · 在荷华人找搭子、逛闲置与荷兰语 A2 备考" />
-  <meta property="og:description" content="同城小局与周末活动、在荷闲置发布与清仓海报（实时同步已出状态）、荷兰语 A2 模拟卷与错题复习。" />
+  <meta property="og:title" content="荷包 · 在荷华人找搭子、逛闲置与荷兰语学习" />
+  <meta property="og:description" content="同城小局与周末活动、多图在荷闲置与清仓海报、荷兰语 A2 五科模拟卷、AI 写作批改与每日荷语简报。" />
   <meta property="og:url" content="https://hebaogj.xyz/" />
   <meta property="og:image" content="https://hebaogj.xyz/delft/og-cover.jpg" />
   <meta name="twitter:card" content="summary_large_image" />
@@ -21,11 +21,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap" media="print" onload="this.media='all'" />
-  <link rel="stylesheet" href="/delft/styles.css?v=20261128c" />
-  <link rel="stylesheet" href="/delft/dutch.css?v=20261128c" />
-  <link rel="stylesheet" href="/delft/a2-prep.css?v=20261128c" />
-  <link rel="stylesheet" href="/delft/theme.css?v=20261128c" />
-  <script type="module" src="/delft/app.js?v=20261128c"></script>
+  <link rel="stylesheet" href="/delft/styles.css?v=20261128d" />
+  <link rel="stylesheet" href="/delft/dutch.css?v=20261128d" />
+  <link rel="stylesheet" href="/delft/a2-prep.css?v=20261128d" />
+  <link rel="stylesheet" href="/delft/theme.css?v=20261128d" />
+  <script type="module" src="/delft/app.js?v=20261128d"></script>
 </head>
 <body>
   <a class="skip-link" href="#workspace">跳到主要内容</a>
@@ -96,10 +96,10 @@
     <section id="panel-dutch" class="panel" aria-labelledby="dutchHeading">
       <div class="section-heading dutch-heading">
         <div>
-          <p class="section-kicker">DUO Inburgering · 全荷通用</p>
-          <h1 id="dutchHeading">荷兰语 A2 备考</h1>
+          <p class="section-kicker">DUO A2 备考 &amp; A2+/B1 每日简报 · 全荷通用</p>
+          <h1 id="dutchHeading">荷兰语学习</h1>
         </div>
-        <span class="dutch-level">五科专项 · 模拟卷 · 错题云同步</span>
+        <span class="dutch-level">五科模拟 · AI 写作批改 · 每日荷语简报</span>
       </div>
       <div id="dutchApp">
         <div class="skeleton-card" aria-hidden="true"><div class="skeleton-line short"></div><div class="skeleton-line tall"></div><div class="skeleton-line medium"></div></div>
@@ -202,10 +202,12 @@
         <button type="button" class="active" data-mine-view="listings" aria-pressed="true">我的闲置</button>
         <button type="button" data-mine-view="events" aria-pressed="false">我的邀约</button>
         <button type="button" data-mine-view="messages" aria-pressed="false">私信 <span id="inboxCountBadge" hidden></span></button>
+        <button type="button" id="mineAdminTab" data-mine-view="admin" aria-pressed="false" hidden>站长后台</button>
       </div>
       <div id="myListings" class="stack"></div>
       <div id="myEvents" class="stack" hidden></div>
       <div id="myMessages" class="stack" hidden></div>
+      <div id="myAdmin" class="stack" hidden></div>
       <details class="gdpr-box" id="accountDataBox" hidden>
         <summary>账号与个人数据管理（欧盟 GDPR）</summary>
         <p class="hint">你可以随时导出与当前邮箱关联的全部个人数据（JSON），或永久注销账号并清除全部已发布的闲置、邀约、私信及学习记录。</p>
@@ -226,7 +228,7 @@
     </footer>
   </main>
 
-  <div class="overlay" id="loginModal" hidden><div class="modal" role="dialog" aria-modal="true" aria-labelledby="loginHeading"><button type="button" class="modal-x" data-close="loginModal" aria-label="关闭登录窗口">✕</button><h2 id="loginHeading">邮箱验证码登录</h2><p>支持 Gmail、Outlook、学校邮箱（如 @tudelft.nl）及 QQ/163 邮箱；首次登录自动创建账号，用于接收私信与活动通知。</p><form id="loginForm"><label>邮箱<input id="authEmail" type="email" autocomplete="email" required placeholder="you@example.com" /></label><div class="field-grid otp-row"><label>验证码<input id="authCode" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="6 位数字" required /></label><button type="button" class="outline-btn" id="sendCode">获取验证码</button></div><p class="auth-status" id="authStatus" role="status"></p><button type="submit" class="primary-btn wide" id="verifyCode">登录并继续</button></form></div></div>
+  <div class="overlay" id="loginModal" hidden><div class="modal" role="dialog" aria-modal="true" aria-labelledby="loginHeading"><button type="button" class="modal-x" data-close="loginModal" aria-label="关闭登录窗口">✕</button><h2 id="loginHeading">邮箱验证码登录</h2><p>支持 Gmail、Outlook、学校邮箱（如 @tudelft.nl）及 QQ/163 邮箱；6 位验证码约 10 秒送达，免注册直接登录，用于接收私信与活动通知。</p><form id="loginForm"><label>邮箱<input id="authEmail" type="email" autocomplete="email" required placeholder="you@example.com" /></label><div class="field-grid otp-row"><label>验证码<input id="authCode" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="6 位数字" required /></label><button type="button" class="outline-btn" id="sendCode">获取验证码</button></div><p class="auth-status" id="authStatus" role="status"></p><button type="submit" class="primary-btn wide" id="verifyCode">登录并继续</button></form></div></div>
 
   <div class="overlay" id="detailModal" hidden><div class="modal large-modal" role="dialog" aria-modal="true" aria-labelledby="detailHeading"><button type="button" class="modal-x" data-close="detailModal" aria-label="关闭商品详情">✕</button><div id="detailContent"></div><div class="line-actions"><button type="button" class="text-btn" id="copyListingLink">复制链接</button><button type="button" class="text-btn danger" id="reportListingBtn">举报此内容</button></div><div class="inquiry-box"><label for="inquiryText">问问卖家</label><textarea id="inquiryText" maxlength="500" rows="2" placeholder="想要哪一件？什么时候方便自取？"></textarea><button class="primary-btn wide" type="button" id="sendInquiry">发送咨询（邮件通知卖家）</button><div id="inquirySentNote" class="inquiry-sent-note" role="status" hidden></div><p class="fineprint">发送后系统会即时发邮件提醒卖家；卖家回复时也会发邮件通知你，并在「我的 → 私信」查看。请坚持公共场所当面验货，切勿提前转账付定金。</p></div></div></div>
 

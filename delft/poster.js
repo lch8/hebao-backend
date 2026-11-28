@@ -143,3 +143,103 @@ export async function createEventPoster(event) {
   }
   return { canvas, url: shareUrl };
 }
+
+export async function createStudyPoster({
+  badge = '荷包 · 荷兰语备考打卡',
+  title = '荷兰语 A2 练习完成',
+  subtitle = '',
+  stat = '',
+  highlights = [],
+  footerHint = '扫码免费刷 DUO A2 模拟卷、AI 批改写作与每日荷语简报',
+  targetPath = '/dutch-a2?from=study_card',
+} = {}) {
+  const origin = resolveSiteOrigin();
+  const shareUrl = `${origin}${targetPath.startsWith('/') ? targetPath : `/${targetPath}`}`;
+  const hostLabel = new URL(origin).hostname;
+  const rows = (Array.isArray(highlights) ? highlights : []).filter(Boolean).slice(0, 5);
+  const qr = makeQr(shareUrl);
+  const cell = 4, margin = 4;
+  const size = (qr.getModuleCount() + margin * 2) * cell;
+  const contentEndY = 390 + (stat ? 130 : 0) + (rows.length ? (rows.length - 1) * 82 + 78 : 0);
+  const footerY = Math.max(820, contentEndY + 40);
+  const totalHeight = Math.max(1140, footerY + Math.max(size + 76, 260));
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 1000;
+  canvas.height = totalHeight;
+  await document.fonts.ready;
+  const ctx = canvas.getContext('2d');
+
+  // Warm paper base + forest header
+  ctx.fillStyle = '#f6f4ec';
+  ctx.fillRect(0, 0, 1000, totalHeight);
+  ctx.fillStyle = '#1f4e3d';
+  ctx.fillRect(0, 0, 1000, 340);
+
+  ctx.fillStyle = '#c8dece';
+  ctx.font = `600 24px ${font}`;
+  ctx.fillText(badge, 60, 74);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `700 46px ${font}`;
+  text(ctx, title, 60, 146, 880, 2, 60);
+
+  if (subtitle) {
+    ctx.fillStyle = '#dcebe0';
+    ctx.font = `500 26px ${font}`;
+    text(ctx, subtitle, 60, 276, 880, 1, 36);
+  }
+
+  // Highlight stat banner
+  let y = 390;
+  if (stat) {
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(60, y, 880, 102);
+    ctx.strokeStyle = '#d7e2d5';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(60, y, 880, 102);
+    ctx.fillStyle = '#1f4e3d';
+    ctx.font = `700 34px ${font}`;
+    text(ctx, stat, 92, y + 63, 816, 1, 40);
+    y += 130;
+  }
+
+  // Key highlights / vocab / breakdown rows
+  rows.forEach((line, idx) => {
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(60, y, 880, 68);
+    ctx.fillStyle = '#24684e';
+    ctx.fillRect(60, y, 8, 68);
+    ctx.fillStyle = '#213a2d';
+    ctx.font = `500 25px ${font}`;
+    text(ctx, line, 90, y + 43, 826, 1, 32);
+    y += idx < rows.length - 1 ? 82 : 78;
+  });
+
+  // Footer + QR
+  const qx = 940 - size, qy = footerY + 28;
+  ctx.strokeStyle = '#d8e1d7';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(60, footerY);
+  ctx.lineTo(940, footerY);
+  ctx.stroke();
+
+  ctx.fillStyle = '#1f4e3d';
+  ctx.font = `700 28px ${font}`;
+  ctx.fillText(`荷包 · ${hostLabel}`, 60, footerY + 62);
+  ctx.fillStyle = '#526c5e';
+  ctx.font = `500 22px ${font}`;
+  text(ctx, footerHint, 60, footerY + 108, qx - 90, 2, 34);
+  ctx.fillStyle = '#6f8275';
+  ctx.font = `500 18px ${font}`;
+  ctx.fillText('长按识别右侧二维码立即免费体验', 60, footerY + 194);
+
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(qx, qy, size, size);
+  ctx.fillStyle = '#213a2d';
+  for (let r = 0; r < qr.getModuleCount(); r++) for (let c = 0; c < qr.getModuleCount(); c++) {
+    if (qr.isDark(r, c)) ctx.fillRect(qx + (c + margin) * cell, qy + (r + margin) * cell, cell, cell);
+  }
+  return { canvas, url: shareUrl };
+}

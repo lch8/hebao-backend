@@ -6,7 +6,7 @@ export const BANK = {...A2_OBJECTIVE, ...A2_OUTPUT};
 export const MOCK_MINUTES = {read:10, listen:9, write:40, speak:8, knm:8};
 export const PREP_KEY = 'hebao_a2_prep_v1';
 export const productive = subject => subject === 'write' || subject === 'speak';
-const empty = () => ({version:1, forms:{}, official:{}, drills:{}, mistakes:{}, savedWords:[]});
+const empty = () => ({version:1, forms:{}, official:{}, drills:{}, mistakes:{}, savedWords:[], newsWords:[], newsRead:[]});
 const modes = ['a', 'b'];
 const officialResults = ['pending', 'met', 'review'];
 const integer = (n, max) => Number.isInteger(n) && n >= 0 && n <= max;
@@ -43,6 +43,14 @@ function mistakeValue(id, value) {
   const misses = Number.isInteger(value.misses) && value.misses > 0 ? Math.min(99, value.misses) : 1;
   const clearedAt = Number.isFinite(value.clearedAt) && value.clearedAt > 0 ? value.clearedAt : 0;
   return { subject: ref.subject, form: ref.form, type: ref.item.type, at: value.at, misses, clearedAt };
+}
+
+function cleanNewsWord(entry) {
+  if (!entry || typeof entry !== 'object') return null;
+  const nl = String(entry.nl || '').trim().slice(0, 60);
+  const zh = String(entry.zh || '').trim().slice(0, 60);
+  if (!nl || !zh) return null;
+  return { nl, zh, note: String(entry.note || '').trim().slice(0, 120) };
 }
 
 function normalize(data) {
@@ -83,6 +91,29 @@ function normalize(data) {
       }
     }
   }
+  if (Array.isArray(data.newsWords)) {
+    const seenNl = new Set();
+    for (const entry of data.newsWords) {
+      const item = cleanNewsWord(entry);
+      if (!item) continue;
+      const key = item.nl.toLowerCase();
+      if (!seenNl.has(key)) {
+        seenNl.add(key);
+        clean.newsWords.push(item);
+        if (clean.newsWords.length >= 200) break;
+      }
+    }
+  }
+  if (Array.isArray(data.newsRead)) {
+    const seenIds = new Set();
+    for (const id of data.newsRead) {
+      if (typeof id === 'string' && /^[a-z0-9-]{4,40}$/i.test(id) && !seenIds.has(id)) {
+        seenIds.add(id);
+        clean.newsRead.push(id);
+        if (clean.newsRead.length >= 120) break;
+      }
+    }
+  }
   return clean;
 }
 
@@ -116,6 +147,16 @@ export function mergePrep(localRaw, remoteRaw) {
     };
   }
   out.savedWords = [...new Set([...a.savedWords, ...b.savedWords])];
+  const seenNews = new Set();
+  for (const w of [...a.newsWords, ...b.newsWords]) {
+    const k = w.nl.toLowerCase();
+    if (!seenNews.has(k)) {
+      seenNews.add(k);
+      out.newsWords.push(w);
+      if (out.newsWords.length >= 200) break;
+    }
+  }
+  out.newsRead = [...new Set([...a.newsRead, ...b.newsRead])].slice(0, 120);
   return out;
 }
 
@@ -141,8 +182,9 @@ export function prepCounts(raw) {
   const mocksDone = Object.values(data.forms).filter(f => f?.first || f?.last).length;
   const officialDone = Object.keys(data.official).length;
   const mistakesCount = activeMistakes(data).length;
-  const savedWordsCount = data.savedWords.length;
-  return { drillsDone, drillsTotal, mocksDone, mocksTotal, officialDone, mistakesCount, savedWordsCount };
+  const savedWordsCount = data.savedWords.length + data.newsWords.length;
+  const newsReadCount = data.newsRead.length;
+  return { drillsDone, drillsTotal, mocksDone, mocksTotal, officialDone, mistakesCount, savedWordsCount, newsReadCount };
 }
 
 // Store outcomes, never typed answers or microphone data. Re-read before editing
@@ -227,6 +269,24 @@ export function openPrepLedger(storage) {
         else { data.savedWords.push(nl); saved = true; }
       });
       return saved;
+    },
+    toggleNewsWord(raw) {
+      const word = cleanNewsWord(raw);
+      if (!word) return false;
+      let saved = false;
+      update(data => {
+        const key = word.nl.toLowerCase();
+        const idx = data.newsWords.findIndex(w => w.nl.toLowerCase() === key);
+        if (idx >= 0) { data.newsWords.splice(idx, 1); saved = false; }
+        else { data.newsWords = [word, ...data.newsWords].slice(0, 200); saved = true; }
+      });
+      return saved;
+    },
+    markNewsRead(id) {
+      if (typeof id !== 'string' || !/^[a-z0-9-]{4,40}$/i.test(id)) return;
+      update(data => {
+        if (!data.newsRead.includes(id)) data.newsRead = [id, ...data.newsRead].slice(0, 120);
+      });
     },
     markOfficial(subject, url, result, timed) {
       if (!A2_GUIDE[subject]?.official.some(paper => paper.url === url) || !officialResults.includes(result)) return;

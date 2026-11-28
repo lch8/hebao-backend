@@ -31,5 +31,11 @@
     { "source": "/privacy/", "destination": "/api/share-page?__path=/privacy" },
     { "source": "/terms", "destination": "/api/share-page?__path=/terms" },
     { "source": "/terms/", "destination": "/api/share-page?__path=/terms" }
+  ],
+  "crons": [
+    {
+      "path": "/api/daily-news-cron",
+      "schedule": "0 6 * * *"
+    }
   ]
 }

@@ -1,5 +1,5 @@
 // api/verify-auth-code.js
-import { sql, ensureSchema, json } from './_delft-db.js';
+import { sql, ensureSchema, json, isUserBanned } from './_delft-db.js';
 export const config = { runtime: 'edge' };
 
 function b64url(obj) {
@@ -54,6 +54,10 @@ export default async function handler(req) {
 
     // Match case-insensitively so legacy mixed-case emails seamlessly reuse their existing account.
     const existing = (await sql('SELECT id, deal_count FROM users WHERE lower(verified_email) = ? LIMIT 1', [email])).rows[0];
+    if (await isUserBanned(existing ? String(existing.id) : '', email)) {
+      await sql('DELETE FROM verification_codes WHERE email = ?', [email]);
+      return json({ error: '该账号因违反社区规则已被限制登录，如有疑问请联系反馈' }, 403);
+    }
     let finalUserId;
     let isNewUser = true;
     let userDealCount = 0;

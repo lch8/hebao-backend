@@ -447,3 +447,119 @@ test('AI A2 writing grading validates inputs, sanitizes Gemini JSON, and honors 
   delete process.env.GEMINI_DAILY_LIMIT;
   mock.mockExternal(null);
 });
+
+test('admin console tracks channel attribution, enforces admin-only moderation, and bans abusive users across login and writes',async()=>{
+  process.env.ADMIN_NOTIFY_EMAIL='alice@tudelft.nl';
+  mock.db.prepare('INSERT OR REPLACE INTO users(id,verified_email,email_verified) VALUES(?,?,1)').run('alice','alice@tudelft.nl');
+  mock.db.prepare('INSERT OR REPLACE INTO users(id,verified_email,email_verified) VALUES(?,?,1)').run('spammer','spam@bad.test');
+
+  // Non-admin cannot view adminOverview or moderate
+  assert.equal((await ask('mine','GET',undefined,'spammer')).data.isAdmin,false);
+  assert.equal((await ask('adminOverview','GET',undefined,'spammer')).status,403);
+  assert.equal((await ask('adminModerate','POST',{op:'resolveReport',reportId:'x'},'spammer')).status,403);
+
+  // Admin gets isAdmin=true and sees channel attribution + reports
+  assert.equal((await ask('mine','GET',undefined,'alice')).data.isAdmin,true);
+  assert.equal((await ask('track','POST',{event:'page_view',source:'xhs_a2'},undefined)).status,200);
+  assert.equal((await ask('track','POST',{event:'news_read',source:'xhs_a2'},undefined)).status,200);
+
+  const spamListing=await ask('createListing','POST',draft({title:'低价代购广告',seller:'广告号'}),'spammer');
+  assert.equal(spamListing.status,200);
+  const spamId=spamListing.data.id;
+  assert.equal((await ask('reportContent','POST',{targetType:'listing',targetId:spamId,reason:'虚假或违禁商品',detail:'明显引流广告'},'alice')).status,200);
+
+  const overview=(await ask('adminOverview','GET',undefined,'alice')).data;
+  assert.ok(overview.sources.some(s=>s.source==='xhs_a2' && s.event==='news_read' && s.hits>=1));
+  const rep=overview.reports.find(r=>r.targetId===spamId);
+  assert.ok(rep && rep.status==='open' && rep.targetOwnerId==='spammer');
+
+  // Admin bans spammer -> removes spam listing and blocks future writes & OTP verification
+  assert.equal((await ask('adminModerate','POST',{op:'banUser',userId:'spammer',reason:'广告刷屏'},'alice')).status,200);
+  assert.equal((await ask('listing','GET',undefined,undefined,{id:spamId})).status,404);
+  assert.equal((await ask('createListing','POST',draft({title:'再发一条'}),'spammer')).status,403);
+
+  // Banned email also blocked at OTP verification
+  const futureIso=new Date(Date.now()+600000).toISOString();
+  mock.db.prepare('INSERT OR REPLACE INTO verification_codes(email,code,expires_at,created_at,attempts) VALUES(?,?,?,?,0)').run('spam@bad.test','123456',futureIso,new Date().toISOString());
+  const blockedLogin=await verifyAuthHandler(new Request('https://example.test/api/verify-auth-code',{
+    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:'spam@bad.test',code:'123456'})
+  }));
+  assert.equal(blockedLogin.status,403);
+
+  // Admin can unban cleanly
+  assert.equal((await ask('adminModerate','POST',{op:'unbanUser',userId:'spammer'},'alice')).status,200);
+  assert.equal((await ask('createListing','POST',draft({title:'解封后正常发布'}),'spammer')).status,200);
+
+  delete process.env.ADMIN_NOTIFY_EMAIL;
+});
+
+test('daily Dutch news serves starter fallback initially and cron securely ingests RSS + Gemini graded summaries',async()=>{
+  const {default: cronHandler} = await import('../api/daily-news-cron.js');
+  mock.db.prepare('DELETE FROM delft_daily_news').run();
+
+  // Public dailyNews returns starter edition before first cron run
+  const starter=(await ask('dailyNews')).data;
+  assert.equal(starter.editions.length,1);
+  assert.equal(starter.editions[0].isStarter,true);
+  assert.equal(starter.editions[0].items.length,3);
+
+  // Cron requires CRON_SECRET Bearer token
+  process.env.CRON_SECRET='super-cron-secret';
+  process.env.GEMINI_API_KEY='test-gemini-key';
+  const unauthCron=await cronHandler(new Request('https://example.test/api/daily-news-cron'));
+  assert.equal(unauthCron.status,401);
+
+  const sampleRss=`<?xml version="1.0" encoding="UTF-8"?><rss><channel>
+    <item><title><![CDATA[NS past dienstregeling in december aan]]></title><link>https://nos.nl/artikel/1001-ns-dienstregeling</link><description>Vanaf december rijden er extra treinen tussen Delft en Rotterdam.</description></item>
+    <item><title>Nieuwe regels voor huurtoeslag vanaf volgend jaar</title><link>https://www.rijksoverheid.nl/actueel/nieuws/huurtoeslag</link><description>Meer huurders kunnen volgend jaar huurtoeslag aanvragen.</description></item>
+  </channel></rss>`;
+
+  mock.mockExternal(async(url)=>{
+    if(url.startsWith('https://feeds.')){
+      return new Response(sampleRss,{status:200,headers:{'Content-Type':'application/xml'}});
+    }
+    if(url.startsWith('https://generativelanguage.googleapis.com/')){
+      return Response.json({candidates:[{content:{parts:[{text:JSON.stringify({
+        items:[
+          {
+            candidateIndex:0,
+            category:'交通出行',
+            level:'A2+',
+            titleNl:'Extra treinen tussen Delft en Rotterdam',
+            titleZh:'Delft 至鹿特丹 12 月起增开班次',
+            bodyNl:'Vanaf december laat de NS extra treinen rijden tussen Delft en Rotterdam. Voor studenten en forenzen wordt reizen in de spits daardoor makkelijker. Kijk voor vertrek in de reisplanner voor de nieuwe vertrektijden.',
+            summaryZh:'NS 将从 12 月起在 Delft 与鹿特丹之间增加列车班次，缓解高峰期通勤压力。',
+            vocab:[
+              {nl:'de dienstregeling',zh:'列车时刻表',note:'NS 每年 12 月调整'},
+              {nl:'de forens',zh:'通勤族',note:'复数 forenzen'}
+            ],
+            question:{
+              promptNl:'Waar rijden vanaf december extra treinen?',
+              options:['Tussen Delft en Rotterdam','Alleen in Groningen','Alleen op zondag'],
+              answer:0,
+              whyZh:'首句说明增开区间为 Delft 到 Rotterdam。'
+            }
+          }
+        ]
+      })}]}}]});
+    }
+    throw new Error('Unexpected URL '+url);
+  });
+
+  const okCron=await cronHandler(new Request('https://example.test/api/daily-news-cron',{
+    headers:{Authorization:'Bearer super-cron-secret'}
+  }));
+  assert.equal(okCron.status,200);
+  const cronData=await okCron.json();
+  assert.equal(cronData.ok,true);
+  assert.equal(cronData.count,1);
+
+  const live=(await ask('dailyNews')).data;
+  assert.equal(live.editions[0].isStarter,false);
+  assert.equal(live.editions[0].items[0].sourceUrl,'https://nos.nl/artikel/1001-ns-dienstregeling');
+  assert.equal(live.editions[0].items[0].level,'A2+');
+
+  delete process.env.CRON_SECRET;
+  delete process.env.GEMINI_API_KEY;
+  mock.mockExternal(null);
+});

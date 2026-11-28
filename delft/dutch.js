@@ -1,4 +1,5 @@
 import {mountExamPrep} from './a2-prep.js';
+import {mountDailyNews} from './a2-news.js';
 import {PREP_KEY, mergePrep, prepCounts} from './a2-progress.js';
 import {LESSONS,TASKS,QUIZ,SKILLS,SOURCES,CONTENT_CHECKED,EXAMS} from './dutch-content.js';
 import {freshStudy,loadStudy,saveStudy,mergeStudy,recordTask,completeLesson,dueTasks,recommendedLesson,targetWindow,dayKey,EXAM_STATUSES} from './dutch-store.js';
@@ -12,12 +13,19 @@ export function mountDutch(root, hooks = {}){
   const loaded=loadStudy(storage);
   let study=loaded.state,storageOK=loaded.available,view='prepare',session=null,quiz=null,quizTimer,recorder,stream,recordingUrl='',recordingTimeout,mediaRequest=0,resetPending=false,cloudSynced=false,syncTimer;
   const el=id=>root.querySelector(`#${id}`);
-  root.innerHTML=`<div class="study-cloud-bar" id="studyCloudBar"></div><nav class="study-nav view-switch" aria-label="荷语学习"><button type="button" data-study-view="prepare">分科备考</button><button type="button" data-study-view="today">生活场景与错题 <span id="studyReviewBadge" hidden></span></button><button type="button" data-study-view="exam">报考排期</button></nav><div id="a2ExamRoot"></div><div id="studyBody" hidden></div><button type="button" class="weekend-shortcut" id="dutchWeekendPromo" data-tab="events"><strong>背完一轮？去看看同城咖啡局或周末活动，找人线下喘口气</strong><span aria-hidden="true">↗</span></button><div class="study-foot"><span id="studySaveStatus" role="status" aria-live="polite"></span><details><summary>关于内容与学习记录</summary><p>专项练习和站内模拟卷由荷包编写，全荷通用。各科页面附 DUO 官方样卷和考试说明。</p><p>未登录时记录保存在当前浏览器；登录邮箱后自动云端备份进度与待复习错题。录音和作答正文仅在当前页面保留。</p><button type="button" class="text-btn danger" data-study-action="reset">清除本机学习记录</button></details></div>`;
+  root.innerHTML=`<div class="study-cloud-bar" id="studyCloudBar"></div><nav class="study-nav view-switch" aria-label="荷语学习"><button type="button" data-study-view="prepare">分科备考</button><button type="button" data-study-view="news">每日简报</button><button type="button" data-study-view="today">生活场景 <span id="studyReviewBadge" hidden></span></button><button type="button" data-study-view="exam">报考排期</button></nav><div id="a2ExamRoot"></div><div id="a2NewsRoot" hidden></div><div id="studyBody" hidden></div><button type="button" class="weekend-shortcut" id="dutchWeekendPromo" data-tab="events"><strong>背完一轮？去看看同城咖啡局或周末活动，找人线下喘口气</strong><span aria-hidden="true">↗</span></button><div class="study-foot"><span id="studySaveStatus" role="status" aria-live="polite"></span><details><summary>关于内容与学习记录</summary><p>专项练习和站内模拟卷由荷包编写，全荷通用；每日荷语简报基于荷兰公开新闻源（NOS / Rijksoverheid）原创改写为 A2+/B1 精读文本并附官方原文链接。</p><p>未登录时记录保存在当前浏览器；登录邮箱后自动云端备份进度、生词本与错题。录音和作答正文仅在当前页面保留。</p><button type="button" class="text-btn danger" data-study-action="reset">清除本机学习记录</button></details></div>`;
   const prep=mountExamPrep(el('a2ExamRoot'),storage,{
     onChange:()=>{renderCloudBar();saveStatus();pushCloudSoon();},
     onPractice:()=>hooks.onPractice?.(),
     onSessionChange:()=>updatePromoVisibility(),
     gradeWriting:payload=>hooks.gradeWriting?.(payload),
+    onSharePoster:spec=>hooks.onSharePoster?.(spec),
+  });
+  const news=mountDailyNews(el('a2NewsRoot'),storage,{
+    loadEditions:()=>hooks.loadDailyNews?.(),
+    onChange:()=>{renderCloudBar();saveStatus();pushCloudSoon();},
+    onNewsRead:()=>hooks.onNewsRead?.(),
+    onSharePoster:spec=>hooks.onSharePoster?.(spec),
   });
 
   function readLocalPrep(){
@@ -49,7 +57,7 @@ export function mountDutch(root, hooks = {}){
         storageOK=saveStudy(storage,study);
         const mergedPrep=mergePrep(readLocalPrep(),remote.prep);
         try{storage?.setItem(PREP_KEY,JSON.stringify(mergedPrep));}catch{}
-        if(view==='prepare')prep.open();else if(view==='today')renderToday();else if(view==='lessons')renderLessons();else if(view==='exam')renderExam();
+        if(view==='prepare')prep.open();else if(view==='news')news.refresh();else if(view==='today')renderToday();else if(view==='lessons')renderLessons();else if(view==='exam')renderExam();
       }
       await hooks.saveCloudProgress?.({study,prep:readLocalPrep()});
       cloudSynced=true;
@@ -64,21 +72,22 @@ export function mountDutch(root, hooks = {}){
     const totalMistakes=(p.mistakesCount||0)+sceneWrong;
     const badge=el('studyReviewBadge');
     if(badge){badge.hidden=!dueCount;badge.textContent=String(dueCount);}
-    const summary=`专项 ${p.drillsDone}/${p.drillsTotal} · 模拟卷 ${p.mocksDone}/${p.mocksTotal} · 场景 ${study.completed.length}/${LESSONS.length}`;
+    const summary=`专项 ${p.drillsDone}/${p.drillsTotal} · 模拟卷 ${p.mocksDone}/${p.mocksTotal} · 简报 ${p.newsReadCount||0} 篇`;
     const reviewBtn=totalMistakes?` · <button type="button" class="text-btn cloud-inline-btn" data-study-action="jump-review">${totalMistakes} 道错题待攻克 →</button>`:'';
     if(hooks.isSignedIn?.()){
       bar.innerHTML=`<span><strong>${cloudSynced?'已开启云端备份':'正在同步云端进度…'}</strong> · ${summary}${reviewBtn}</span>`;
       bar.classList.add('synced');
     }else{
       bar.classList.remove('synced');
-      const hasAny=p.drillsDone||p.mocksDone||p.officialDone||p.mistakesCount||p.savedWordsCount||study.completed.length||Object.keys(study.answers||{}).length;
-      bar.innerHTML=`<span><strong>${hasAny?summary:'保存学习进度与错题本'}</strong>${reviewBtn} · 登录邮箱跨手机/电脑同步，清微信缓存也不丢</span><button type="button" class="outline-btn" data-study-action="cloud-login">邮箱登录备份</button>`;
+      const hasAny=p.drillsDone||p.mocksDone||p.officialDone||p.mistakesCount||p.savedWordsCount||p.newsReadCount||study.completed.length||Object.keys(study.answers||{}).length;
+      bar.innerHTML=`<span><strong>${hasAny?summary:'保存学习进度、生词本与错题'}</strong>${reviewBtn} · 登录邮箱跨手机/电脑同步</span><button type="button" class="outline-btn" data-study-action="cloud-login">邮箱登录备份</button>`;
     }
   }
   function save(){storageOK=saveStudy(storage,study);saveStatus();renderCloudBar();pushCloudSoon();}
   function saveStatus(){el('studySaveStatus').textContent=hooks.isSignedIn?.()&&cloudSynced?'学习进度与错题已云端备份':storageOK?'进度保存在本机 · 登录可云端备份':'浏览器暂不能保存进度，建议登录备份';}
   function pauseMedia(){
     prep.pause();
+    news.pause();
     mediaRequest++;
     window.speechSynthesis?.cancel();
     if(recorder&&recorder.state!=='inactive')recorder.stop();
@@ -91,9 +100,12 @@ export function mountDutch(root, hooks = {}){
   function setView(next){
     pauseMedia();view=next;
     const prepare=view==='prepare';
+    const isNews=view==='news';
     el('a2ExamRoot').hidden=!prepare;
-    el('studyBody').hidden=prepare;
+    el('a2NewsRoot').hidden=!isNews;
+    el('studyBody').hidden=prepare||isNews;
     if(prepare)prep.open();else prep.hide();
+    if(isNews)news.open();
     const selected=['lessons','quiz'].includes(view)?'today':view;
     root.querySelectorAll('.study-nav [data-study-view]').forEach(button=>{const active=button.dataset.studyView===selected;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));});
     if(view==='today')renderToday();if(view==='lessons')renderLessons();if(view==='quiz')renderQuiz();if(view==='exam')renderExam();
@@ -288,5 +300,9 @@ export function mountDutch(root, hooks = {}){
   window.addEventListener('pagehide',releaseRecording);
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')pauseMedia();else if(quiz&&!quiz.finished)tickQuiz();});
   setView('prepare');syncCloud();
-  return {pauseMedia,syncCloud};
+  return {
+    pauseMedia,
+    syncCloud,
+    openView: next => { if (['prepare', 'news', 'today', 'exam'].includes(next)) setView(next); },
+  };
 }

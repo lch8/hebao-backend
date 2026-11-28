@@ -229,4 +229,17 @@ test('mistake notebook records missed and transcript-assisted items, clears on i
 
   assert.equal(l1.toggleWord(wordA), false);
   assert.deepEqual(l1.read().savedWords, []);
+
+  // Daily news vocab & read progress persist and merge cleanly across devices
+  assert.equal(l1.toggleNewsWord({nl: 'de spits', zh: '高峰时段', note: 'NS 高峰'}), true);
+  l1.markNewsRead('2026-11-28-1');
+  assert.equal(prepCounts(l1.read()).newsReadCount, 1);
+  assert.equal(prepCounts(l1.read()).savedWordsCount, 1);
+  l2.toggleNewsWord({nl: 'de huurtoeslag', zh: '租房补贴', note: ''});
+  l2.markNewsRead('2026-11-28-2');
+  const mergedNews = mergePrep(l1.read(), l2.read());
+  assert.equal(mergedNews.newsWords.length, 2);
+  assert.deepEqual(mergedNews.newsRead.sort(), ['2026-11-28-1', '2026-11-28-2']);
+  assert.equal(l1.toggleNewsWord({nl: 'DE SPITS', zh: '高峰时段'}), false);
+  assert.equal(l1.read().newsWords.length, 0);
 });

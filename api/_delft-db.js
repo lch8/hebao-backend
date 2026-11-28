@@ -99,8 +99,11 @@ export async function ensureSchema() {
       await sql(`CREATE TABLE IF NOT EXISTS delft_reports (
         id TEXT PRIMARY KEY, reporter_id TEXT NOT NULL, target_type TEXT NOT NULL,
         target_id TEXT NOT NULL, reason TEXT NOT NULL, detail TEXT NOT NULL,
-        created_at TEXT NOT NULL
+        created_at TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'open'
       )`);
+      const repCols = (await sql('PRAGMA table_info(delft_reports)')).rows;
+      await addColumnIfMissing('delft_reports', repCols, 'status', "TEXT NOT NULL DEFAULT 'open'");
+
       await sql(`CREATE TABLE IF NOT EXISTS delft_feedback (
         id TEXT PRIMARY KEY, user_id TEXT NOT NULL, contact TEXT NOT NULL,
         category TEXT NOT NULL, content TEXT NOT NULL, page TEXT NOT NULL,
@@ -117,6 +120,17 @@ export async function ensureSchema() {
         day TEXT NOT NULL, event TEXT NOT NULL, hits INTEGER NOT NULL DEFAULT 0,
         PRIMARY KEY(day,event)
       )`);
+      await sql(`CREATE TABLE IF NOT EXISTS delft_sources (
+        day TEXT NOT NULL, source TEXT NOT NULL, event TEXT NOT NULL,
+        hits INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(day,source,event)
+      )`);
+      await sql(`CREATE TABLE IF NOT EXISTS delft_banned_users (
+        user_id TEXT PRIMARY KEY, email TEXT NOT NULL DEFAULT '',
+        reason TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL
+      )`);
+      await sql(`CREATE TABLE IF NOT EXISTS delft_daily_news (
+        day TEXT PRIMARY KEY, items_json TEXT NOT NULL, created_at TEXT NOT NULL
+      )`);
       await sql(`CREATE TABLE IF NOT EXISTS delft_notify_log (
         dedupe_key TEXT PRIMARY KEY, sent_at TEXT NOT NULL
       )`);
@@ -126,6 +140,7 @@ export async function ensureSchema() {
       await sql('CREATE INDEX IF NOT EXISTS delft_messages_receiver ON delft_messages(receiver_id,created_at)');
       await sql('CREATE INDEX IF NOT EXISTS delft_messages_sender ON delft_messages(sender_id,created_at)');
       await sql('CREATE INDEX IF NOT EXISTS delft_event_msgs_idx ON delft_event_messages(event_id,created_at)');
+      await sql('CREATE INDEX IF NOT EXISTS delft_banned_email_idx ON delft_banned_users(email)');
     })();
   }
   try { await schemaPromise; } catch (error) { schemaPromise = null; throw error; }
@@ -143,3 +158,38 @@ export const authId = async (request) => {
   const user = await verifyJwt(token, process.env.JWT_SECRET);
   return typeof user==='string' && user.length>0 && user.length<=90 ? user : null;
 };
+
+export async function isAdminUser(userId) {
+  if (!userId) return false;
+  const admins = String(process.env.ADMIN_NOTIFY_EMAIL || '')
+    .split(',')
+    .map(s => s.trim().toLowerCase())
+    .filter(Boolean);
+  if (!admins.length) return false;
+  const row = (await sql('SELECT verified_email FROM users WHERE id=?', [userId])).rows[0];
+  const email = String(row?.verified_email || '').trim().toLowerCase();
+  return Boolean(email && admins.includes(email));
+}
+
+export async function isUserBanned(userId, email = '') {
+  const cleanEmail = String(email || '').trim().toLowerCase();
+  if (userId) {
+    const byId = (await sql('SELECT user_id FROM delft_banned_users WHERE user_id=? LIMIT 1', [userId])).rows[0];
+    if (byId) return true;
+  }
+  if (cleanEmail) {
+    const byEmail = (await sql('SELECT user_id FROM delft_banned_users WHERE email=? LIMIT 1', [cleanEmail])).rows[0];
+    if (byEmail) return true;
+  }
+  return false;
+}
+
+/** Probabilistic housekeeping to prevent expired OTP and notify logs from accumulating. */
+export async function cleanupOldTempRows() {
+  const nowIso = new Date().toISOString();
+  const weekAgoIso = new Date(Date.now() - 7 * 86400000).toISOString();
+  await Promise.allSettled([
+    sql('DELETE FROM verification_codes WHERE expires_at < ?', [nowIso]),
+    sql('DELETE FROM delft_notify_log WHERE sent_at < ?', [weekAgoIso]),
+  ]);
+}

@@ -1,6 +1,6 @@
 // Hebao frontend: zero framework bloat, GDPR-friendly first-party funnel, WeChat WebView ready.
 import { readDraft, writeDraft, deleteDraft } from './draft-store.js';
-import { createPoster, createEventPoster } from './poster.js';
+import { createPoster, createEventPoster, createStudyPoster } from './poster.js';
 import { downloadCalendarIcs } from './ics.js';
 import { marketProducts, itemPrice, favoriteKey } from './market-view.js';
 import {
@@ -42,7 +42,7 @@ const state = {
   publishedId: null, editingId: null, editVersion: null,
   dirty: false, activeTab: null, category: '', priceFilter: '', eventCategory: '', marketCity: 'all',
   favorites: loadFavorites(),
-  saving: false, unreadCount: 0,
+  saving: false, unreadCount: 0, isAdmin: false,
 };
 
 const itemCategories = ['家具', '自行车', '数码', '生活用品', '书籍', '其他'];
@@ -78,9 +78,38 @@ const rememberCity = city => {
   }
 };
 
+function resolveTrafficSource() {
+  try {
+    const params = new URLSearchParams(location.search);
+    const paramSrc = String(params.get('from') || params.get('utm_source') || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 32);
+    if (paramSrc) {
+      sessionStorage.setItem('hb_src', paramSrc);
+      return paramSrc;
+    }
+    const existing = sessionStorage.getItem('hb_src');
+    if (existing) return existing;
+    let derived = isWeChat ? 'wechat' : 'direct';
+    if (document.referrer) {
+      try {
+        const host = new URL(document.referrer).hostname.toLowerCase();
+        if (host && host !== location.hostname.toLowerCase()) {
+          if (host.includes('xiaohongshu') || host.includes('xhslink')) derived = 'xiaohongshu';
+          else if (host.includes('google.')) derived = 'google';
+          else if (host.includes('wechat') || host.includes('weixin')) derived = 'wechat';
+          else if (host.includes('reddit')) derived = 'reddit';
+          else derived = host.replace(/^www\./, '').replace(/[^a-z0-9_-]/g, '_').slice(0, 32) || 'referral';
+        }
+      } catch {}
+    }
+    sessionStorage.setItem('hb_src', derived);
+    return derived;
+  } catch { return ''; }
+}
+const trafficSource = resolveTrafficSource();
+
 function trackEvent(eventName) {
   try {
-    const payload = JSON.stringify({ event: eventName });
+    const payload = JSON.stringify({ event: eventName, ...(trafficSource ? { source: trafficSource } : {}) });
     if (navigator.sendBeacon) {
       const blob = new Blob([payload], { type: 'application/json' });
       if (navigator.sendBeacon('/api/delft?action=track', blob)) return;
@@ -323,7 +352,28 @@ async function tab(name, { updateUrl = true } = {}) {
             requestLogin: resume => requireAuth(resume),
             loadCloudProgress: async () => (await api('studyProgress')).progress,
             saveCloudProgress: async payload => api('saveStudyProgress', 'POST', payload),
+            loadDailyNews: async () => (await api('dailyNews', 'GET', null, false)).editions || [],
             onPractice: () => trackEvent('a2_practice'),
+            onNewsRead: () => trackEvent('news_read'),
+            onSharePoster: async spec => {
+              try {
+                const { canvas } = await createStudyPoster(spec);
+                trackEvent('study_poster');
+                $('posterHeading').textContent = '荷兰语学习打卡图';
+                $('eventShareText').value = spec.shareCopy || '';
+                $('eventShareText').hidden = true;
+                $('copyEventShare').textContent = '复制打卡文案';
+                $('copyEventShare').hidden = !spec.shareCopy;
+                await presentPosterModal(canvas, {
+                  fileName: spec.fileName || '荷包-荷兰语打卡图.jpg',
+                  altText: spec.title || '荷兰语学习打卡图',
+                  isListingPoster: false,
+                  hintText: '保存打卡图发小红书或微信群，和在荷考友一起坚持打卡。',
+                });
+              } catch (error) {
+                toast(error?.message || '打卡图生成失败，请重试');
+              }
+            },
             gradeWriting: async payload => {
               if (!(await ensureAuth())) return null;
               const resp = await fetch('/api/delft-ai', {
@@ -2070,6 +2120,7 @@ $('eventsList').addEventListener('click', async e => {
       trackEvent('poster_generate');
       $('eventShareText').value = `${ev.title}\n🕒 ${dateText(ev.startsAt)}（荷兰时间）\n📍 ${eventPlace(ev)}\n查看详情与报名：${url}`;
       $('eventShareText').hidden = true;
+      $('copyEventShare').textContent = '复制邀请文案';
       $('copyEventShare').hidden = false;
       $('posterHeading').textContent = '分享同行邀请';
       await presentPosterModal(canvas, {
@@ -2197,11 +2248,12 @@ $('createEventForm').addEventListener('submit', async e => {
   }
 });
 
-// ---- My inventory, RSVPs + buyer/seller messages ----
+// ---- My inventory, RSVPs, messages & admin console ----
 let mineView = 'listings';
 function renderMineView() {
-  for (const [view, id] of [['listings', 'myListings'], ['events', 'myEvents'], ['messages', 'myMessages']]) {
-    $(id).hidden = view !== mineView;
+  if (mineView === 'admin' && !state.isAdmin) mineView = 'listings';
+  for (const [view, id] of [['listings', 'myListings'], ['events', 'myEvents'], ['messages', 'myMessages'], ['admin', 'myAdmin']]) {
+    if ($(id)) $(id).hidden = view !== mineView;
   }
   $('mineSwitch').querySelectorAll('button').forEach(button => {
     const active = button.dataset.mineView === mineView;
@@ -2211,6 +2263,9 @@ function renderMineView() {
   if (mineView === 'messages' && state.unreadCount > 0 && token()) {
     api('markRead', 'POST', {}).then(res => updateUnreadBadges(res.unreadCount)).catch(() => {});
   }
+  if (mineView === 'admin' && state.isAdmin && token()) {
+    loadAdminOverview();
+  }
 }
 
 $('mineSwitch').addEventListener('click', e => {
@@ -2218,12 +2273,164 @@ $('mineSwitch').addEventListener('click', e => {
   if (button) { mineView = button.dataset.mineView; renderMineView(); }
 });
 
+async function loadAdminOverview() {
+  const host = $('myAdmin');
+  if (!host || !state.isAdmin || !token()) return;
+  host.innerHTML = '<div class="skeleton-card" aria-hidden="true"><div class="skeleton-line short"></div><div class="skeleton-line tall"></div><div class="skeleton-line medium"></div></div>';
+  try {
+    const data = await api('adminOverview');
+    const t = data.totals || {};
+
+    // Aggregate 14-day source attribution table
+    const bySource = new Map();
+    for (const row of data.sources || []) {
+      const s = bySource.get(row.source) || { source: row.source, pv: 0, auth: 0, sell: 0, learn: 0, msg: 0 };
+      if (row.event === 'page_view') s.pv += row.hits;
+      else if (row.event === 'auth_success') s.auth += row.hits;
+      else if (row.event === 'listing_publish' || row.event === 'event_create') s.sell += row.hits;
+      else if (row.event === 'a2_practice' || row.event === 'a2_ai_grade' || row.event === 'news_read') s.learn += row.hits;
+      else if (row.event === 'inquiry_send' || row.event === 'event_rsvp') s.msg += row.hits;
+      bySource.set(row.source, s);
+    }
+    const sourceRows = [...bySource.values()].sort((a, b) => (b.pv + b.auth * 3) - (a.pv + a.auth * 3));
+
+    // Aggregate 14-day daily funnel table
+    const byDay = new Map();
+    for (const row of data.metrics || []) {
+      const d = byDay.get(row.day) || { day: row.day, pv: 0, auth: 0, pub: 0, a2: 0, ai: 0, news: 0, poster: 0, msg: 0 };
+      if (row.event === 'page_view') d.pv += row.hits;
+      else if (row.event === 'auth_success') d.auth += row.hits;
+      else if (row.event === 'listing_publish') d.pub += row.hits;
+      else if (row.event === 'a2_practice') d.a2 += row.hits;
+      else if (row.event === 'a2_ai_grade') d.ai += row.hits;
+      else if (row.event === 'news_read') d.news += row.hits;
+      else if (row.event === 'poster_generate' || row.event === 'study_poster') d.poster += row.hits;
+      else if (row.event === 'inquiry_send') d.msg += row.hits;
+      byDay.set(row.day, d);
+    }
+    const dayRows = [...byDay.values()].sort((a, b) => b.day.localeCompare(a.day));
+
+    host.innerHTML = `
+      <div class="paper-card admin-card">
+        <div class="admin-head-bar">
+          <div><h2>站点运行总览</h2><p class="hint">每日简报最新期：${esc(t.latestNewsDay || '尚未生成（当前展示样刊）')}</p></div>
+          <div class="admin-row-actions">
+            <button type="button" class="outline-btn" data-admin-op="refreshDailyNews">拉取/刷新今日荷语简报</button>
+            <button type="button" class="text-btn" data-admin-reload>刷新数据</button>
+          </div>
+        </div>
+        <div class="admin-kpis">
+          <div class="admin-kpi"><span>注册用户</span><strong>${t.users ?? 0}</strong></div>
+          <div class="admin-kpi"><span>14天在售清单</span><strong>${t.activeListings ?? 0}</strong></div>
+          <div class="admin-kpi"><span>进行中邀约</span><strong>${t.upcomingEvents ?? 0}</strong></div>
+          <div class="admin-kpi ${t.openReports ? 'warn' : ''}"><span>待处理举报</span><strong>${t.openReports ?? 0}</strong></div>
+          <div class="admin-kpi"><span>今日 AI 调用</span><strong>${t.aiHitsToday ?? 0}</strong></div>
+          <div class="admin-kpi"><span>荷语简报期数</span><strong>${t.newsEditions ?? 0}</strong></div>
+        </div>
+      </div>
+
+      <div class="paper-card admin-card">
+        <h2>近 14 天渠道来源归因（?from= / ?utm_source=）</h2>
+        ${sourceRows.length ? `<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>渠道来源</th><th>访问</th><th>登录</th><th>发布</th><th>荷语学习</th><th>互动</th></tr></thead><tbody>${sourceRows.map(s => `<tr><td><strong>${esc(s.source)}</strong></td><td>${s.pv}</td><td>${s.auth}</td><td>${s.sell}</td><td>${s.learn}</td><td>${s.msg}</td></tr>`).join('')}</tbody></table></div>` : '<p class="hint">暂无带渠道参数的访问数据。拉新时可附带 ?from=xhs / ?from=delft_wx 追踪各群转化。</p>'}
+      </div>
+
+      <div class="paper-card admin-card">
+        <h2>近 14 天每日核心漏斗</h2>
+        ${dayRows.length ? `<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>日期</th><th>访问</th><th>登录</th><th>发闲置</th><th>A2练题</th><th>AI批改</th><th>简报</th><th>海报/战报</th><th>私信</th></tr></thead><tbody>${dayRows.map(d => `<tr><td>${esc(d.day)}</td><td>${d.pv}</td><td>${d.auth}</td><td>${d.pub}</td><td>${d.a2}</td><td>${d.ai}</td><td>${d.news}</td><td>${d.poster}</td><td>${d.msg}</td></tr>`).join('')}</tbody></table></div>` : '<p class="hint">暂无统计数据</p>'}
+      </div>
+
+      <div class="paper-card admin-card">
+        <h2>社区举报处理（${(data.reports || []).length}）</h2>
+        ${(data.reports || []).length ? data.reports.map(r => `<div class="admin-report ${r.status === 'resolved' ? 'resolved' : ''}">
+          <div class="event-top"><span class="pill ${r.status === 'resolved' ? 'gray' : ''}">${r.status === 'resolved' ? '已处理' : '待处理'} · ${esc(r.targetType)}</span><span class="hint">${esc(dateText(r.createdAt))}</span></div>
+          <p><strong>${esc(r.reason)}</strong>${r.targetTitle ? ` · 对象：「${esc(r.targetTitle)}」` : ` · ID: ${esc(r.targetId)}`}</p>
+          ${r.detail ? `<p class="hint preserve-lines">${esc(r.detail)}</p>` : ''}
+          <div class="admin-row-actions">
+            ${r.targetType === 'listing' ? `<a class="text-btn" href="/market?item=${encodeURIComponent(r.targetId)}" target="_blank" rel="noopener">查看 ↗</a><button type="button" class="outline-btn danger" data-admin-op="deleteListing" data-target-id="${esc(r.targetId)}">下架闲置</button>` : ''}
+            ${r.targetType === 'event' ? `<button type="button" class="outline-btn danger" data-admin-op="cancelEvent" data-target-id="${esc(r.targetId)}">取消活动</button>` : ''}
+            ${r.targetOwnerId ? `<button type="button" class="text-btn danger" data-admin-op="banUser" data-target-id="${esc(r.targetOwnerId)}">封禁发布者</button>` : ''}
+            ${r.status !== 'resolved' ? `<button type="button" class="text-btn" data-admin-op="resolveReport" data-target-id="${esc(r.id)}">标记已处理</button>` : ''}
+          </div>
+        </div>`).join('') : '<p class="hint">当前没有社区举报，社区很干净。</p>'}
+      </div>
+
+      <div class="paper-card admin-card">
+        <h2>最近发布巡检（闲置 ${(data.recentListings || []).length} · 邀约 ${(data.recentEvents || []).length}）</h2>
+        <div class="stack">${(data.recentListings || []).map(l => `<div class="my-item"><span class="my-item-name"><a href="/market?item=${encodeURIComponent(l.id)}" target="_blank" rel="noopener">${esc(l.title)} ↗</a><small class="hint">${esc(cities[l.city] || l.city)} · ${esc(l.seller)} · ${l.availableCount}件在售</small></span><div class="admin-row-actions"><button type="button" class="text-btn danger" data-admin-op="deleteListing" data-target-id="${esc(l.id)}">下架</button><button type="button" class="text-btn danger" data-admin-op="banUser" data-target-id="${esc(l.ownerId)}">封号</button></div></div>`).join('')}${(data.recentEvents || []).map(ev => `<div class="my-item"><span class="my-item-name"><strong>[邀约] ${esc(ev.title)}</strong><small class="hint">${esc(cities[ev.city] || ev.city)} · ${esc(ev.host)} · ${esc(dateText(ev.startsAt))}</small></span><div class="admin-row-actions"><button type="button" class="text-btn danger" data-admin-op="cancelEvent" data-target-id="${esc(ev.id)}">取消</button><button type="button" class="text-btn danger" data-admin-op="banUser" data-target-id="${esc(ev.hostId)}">封号</button></div></div>`).join('')}</div>
+      </div>
+
+      <div class="paper-card admin-card">
+        <h2>用户反馈与建议（${(data.feedback || []).length}）</h2>
+        ${(data.feedback || []).length ? data.feedback.map(f => `<div class="admin-report">
+          <div class="event-top"><span class="pill">${esc(f.category)}</span><span class="hint">${esc(dateText(f.createdAt))}${f.page ? ` · ${esc(f.page)}` : ''}</span></div>
+          <p class="preserve-lines">${esc(f.content)}</p>
+          ${f.contact ? `<p class="hint">联系：${esc(f.contact)}</p>` : ''}
+        </div>`).join('') : '<p class="hint">还没有收到用户反馈。</p>'}
+      </div>
+
+      ${(data.bannedUsers || []).length ? `<div class="paper-card admin-card"><h2>已封禁账号（${data.bannedUsers.length}）</h2>${data.bannedUsers.map(b => `<div class="my-item"><span>${esc(b.email || b.userId)} <small class="hint">${esc(b.reason)}</small></span><button type="button" class="outline-btn" data-admin-op="unbanUser" data-target-id="${esc(b.userId)}">解除封禁</button></div>`).join('')}</div>` : ''}
+    `;
+  } catch (error) {
+    host.innerHTML = `<div class="empty-state error-state"><h3>${esc(error.message)}</h3><button type="button" class="outline-btn" data-admin-reload>重试</button></div>`;
+  }
+}
+
+$('myAdmin')?.addEventListener('click', async e => {
+  if (e.target.closest('[data-admin-reload]')) { loadAdminOverview(); return; }
+  const btn = e.target.closest('[data-admin-op]');
+  if (!btn) return;
+  const op = btn.dataset.adminOp;
+  const targetId = btn.dataset.targetId || '';
+  if (op === 'refreshDailyNews') {
+    setBusy(btn, true, '拉取生成中…');
+    try {
+      const res = await api('adminModerate', 'POST', { op: 'refreshDailyNews', force: true });
+      toast(`每日荷语简报已更新（${res.day} · 共 ${res.count} 条）`);
+      loadAdminOverview();
+    } catch (error) { toast(error.message); }
+    finally { setBusy(btn, false); }
+    return;
+  }
+  if (op === 'resolveReport') {
+    try { await api('adminModerate', 'POST', { op: 'resolveReport', reportId: targetId }); toast('已标记处理'); loadAdminOverview(); }
+    catch (error) { toast(error.message); }
+    return;
+  }
+  if (op === 'deleteListing') {
+    const ok = await askDialog({ title: '下架该闲置清单？', message: '将立即删除该清单、关联私信与图片，并关闭相关举报。', confirmText: '确认下架', danger: true });
+    if (!ok) return;
+    try { await api('adminModerate', 'POST', { op: 'deleteListing', listingId: targetId }); toast('已下架违规闲置'); loadAdminOverview(); }
+    catch (error) { toast(error.message); }
+    return;
+  }
+  if (op === 'cancelEvent') {
+    const reason = await askDialog({ title: '下架并取消该活动？', message: '取消后系统会自动发邮件通知已报名成员。', inputLabel: '说明原因', inputValue: '活动信息不符合社区规范，已由管理员取消', confirmText: '确认取消', danger: true });
+    if (reason === null) return;
+    try { await api('adminModerate', 'POST', { op: 'cancelEvent', eventId: targetId, reason }); toast('活动已取消并通知报名者'); loadAdminOverview(); }
+    catch (error) { toast(error.message); }
+    return;
+  }
+  if (op === 'banUser') {
+    const reason = await askDialog({ title: '封禁该账号并清理其全部内容？', message: '该用户将被禁止登录与发帖，且其所有闲置与待开始活动将被立即下架。', inputLabel: '封禁原因', inputValue: '发布违规广告或疑似诈骗内容', confirmText: '确认封禁', danger: true });
+    if (reason === null) return;
+    try { await api('adminModerate', 'POST', { op: 'banUser', userId: targetId, reason }); toast('账号已封禁，关联内容已清理'); loadAdminOverview(); }
+    catch (error) { toast(error.message); }
+    return;
+  }
+  if (op === 'unbanUser') {
+    try { await api('adminModerate', 'POST', { op: 'unbanUser', userId: targetId }); toast('已解除封禁'); loadAdminOverview(); }
+    catch (error) { toast(error.message); }
+  }
+});
+
 const mineError = '<div class="empty-state error-state"><h2>暂时没能加载</h2><p>请检查网络后重试。</p><button type="button" class="outline-btn" data-retry-mine>重新加载</button></div>';
 async function loadMine() {
   refreshLoginUI();
   if (!token()) {
     state.myListings = [];
-    for (const id of ['myListings', 'myEvents', 'myMessages']) $(id).innerHTML = '';
+    state.isAdmin = false;
+    if ($('mineAdminTab')) $('mineAdminTab').hidden = true;
+    for (const id of ['myListings', 'myEvents', 'myMessages', 'myAdmin']) { if ($(id)) $(id).innerHTML = ''; }
     return;
   }
   const session = token();
@@ -2233,6 +2440,8 @@ async function loadMine() {
   if (mine.status === 'fulfilled') {
     state.myListings = mine.value.listings || [];
     state.myEvents = mine.value.myEvents || [];
+    state.isAdmin = Boolean(mine.value.isAdmin);
+    if ($('mineAdminTab')) $('mineAdminTab').hidden = !state.isAdmin;
     updateUnreadBadges(mine.value.unreadCount);
     const renderMyListing = l => `<div class="my-listing"><h2>${esc(l.title)}</h2><p class="hint">${esc(cities[l.city || 'delft'] || 'Delft')} · ${esc(l.pickup)}</p>
       ${l.items.map(item => `<div class="my-item"><span class="my-item-name">${esc(item.name)}${itemGalleryUrls(item).length > 1 ? `<small class="my-photo-tag">${itemGalleryUrls(item).length} 图</small>` : ''}</span><div class="my-item-controls"><label class="my-price-wrap" title="修改价格，留空为待议，回车或失焦自动保存"><span>€</span><input class="my-price-input" type="number" min="0" max="10000" step="0.01" value="${item.price == null ? '' : esc(item.price)}" data-price-listing="${esc(l.id)}" data-price-item="${esc(item.id)}" data-orig-price="${item.price == null ? '' : esc(item.price)}" placeholder="待议" aria-label="${esc(item.name)}的价格（欧元）" /></label><select data-listing-id="${esc(l.id)}" data-item-id="${esc(item.id)}" aria-label="${esc(item.name)}的状态">${Object.entries(statusNames).map(([value, label]) => `<option value="${value}" ${item.status === value ? 'selected' : ''}>${label}</option>`).join('')}</select></div></div>`).join('')}
@@ -2597,7 +2806,7 @@ async function applyRoute() {
   const name = pageFromLocation(location);
   const prefCity = savedCity();
 
-  if (name === 'mine' && ['listings', 'events', 'messages'].includes(query.get('view'))) {
+  if (name === 'mine' && ['listings', 'events', 'messages', 'admin'].includes(query.get('view'))) {
     mineView = query.get('view');
   }
   if (name === 'market') {
@@ -2622,6 +2831,10 @@ async function applyRoute() {
   if (!item && !$('detailModal').hidden) hideModal('detailModal', { updateUrl: false });
   await tab(name, { updateUrl: false });
   if (location.href !== current || state.activeTab !== name) return;
+
+  if (name === 'dutch' && ['prepare', 'news', 'today', 'exam'].includes(query.get('view'))) {
+    dutchView?.openView?.(query.get('view'));
+  }
 
   const legal = legalModalFromLocation(location);
   if (legal) showModal(legal === 'privacy' ? 'privacyModal' : 'termsModal');
@@ -2660,7 +2873,7 @@ document.addEventListener('visibilitychange', () => {
 });
 
 $('copyEventShare').addEventListener('click', () => {
-  copyTextWithFallback($('eventShareText').value, '同行邀请文案已复制，打开微信粘贴即可');
+  copyTextWithFallback($('eventShareText').value, '配套文案已复制，打开微信或小红书粘贴即可');
 });
 
 // Topbar elevation only after the page has scrolled, so the first screen stays calm.

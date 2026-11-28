@@ -352,4 +352,17 @@ test('marketProducts filters free items, price ceilings, and buyer favorites wit
   assert.match(html, /id="posterAvailableOnly"/);
   assert.match(html, /id="lightboxPrev"/);
   assert.match(html, /id="lightboxNext"/);
+  assert.match(html, /id="mineAdminTab"/);
+  assert.match(html, /id="myAdmin"/);
+
+  const newsMeta = await resolveShareMeta({
+    pathname: '/dutch-a2',
+    searchParams: new URLSearchParams('view=news'),
+    origin: 'https://hebaogj.xyz',
+  });
+  assert.match(newsMeta.title, /每日荷语新闻简报/);
+  assert.equal(newsMeta.url, 'https://hebaogj.xyz/dutch-a2?view=news');
+
+  const vercel = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'));
+  assert.ok(vercel.crons?.some(c => c.path === '/api/daily-news-cron'));
 });

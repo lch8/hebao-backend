@@ -152,15 +152,23 @@ export async function resolveShareMeta({
   if (cleanPath === '/market' || cleanPath === '/sell') {
     return {
       title: '在荷闲置与搬家清仓海报工具 · 荷包',
-      description: '一键生成微信清仓海报，售出后网页改状态，扫码实时同步库存；14 天在售确认，咨询邮件直达。',
+      description: '单件多图发布、价格与收藏筛选、一键生成微信实时库存清仓海报；14 天在售确认，咨询邮件直达。',
       url: `${cleanOrigin}${cleanPath}`,
       image: defaultImage,
     };
   }
   if (cleanPath === '/dutch-a2' || cleanPath === '/dutch') {
+    if (searchParams.get('view') === 'news') {
+      return {
+        title: '每日荷语新闻简报（A2+/B1 精读）· 荷包',
+        description: '每日精选 3 条荷兰本地生活、交通与政策资讯，AI 改写为地道 A2+/B1 荷语短文，配语音朗读、实用生词本与理解自测。',
+        url: `${cleanOrigin}/dutch-a2?view=news`,
+        image: defaultImage,
+      };
+    }
     return {
-      title: '荷兰语 A2 备考 · DUO 五科练习与模拟卷 · 荷包',
-      description: '全荷通用：阅读、听力、写作、口语与 KNM 专项练习、限时模拟卷及错题云端同步。',
+      title: '荷兰语 A2 备考与每日荷语简报 · 荷包',
+      description: '全荷通用：DUO 五科专项与模拟卷、写作 AI 按评分要点批改、全科错题本、高频词闪卡，以及每日 A2+/B1 荷兰新闻精读。',
       url: `${cleanOrigin}/dutch-a2`,
       image: defaultImage,
     };
@@ -183,8 +191,8 @@ export async function resolveShareMeta({
   }
 
   return {
-    title: '荷包 · 在荷华人找搭子、逛闲置与荷兰语 A2 备考',
-    description: '2–12 人同城小局与官方城市活动、一键生成搬家清仓微信海报（扫码看实时在售状态）、荷兰语 A2 五科模拟卷。',
+    title: '荷包 · 在荷华人找搭子、逛闲置与荷兰语学习',
+    description: '2–12 人同城小局与官方城市活动、多图在荷闲置与微信实时库存清仓海报、荷兰语 A2 五科 AI 批改与每日荷语简报。',
     url: `${cleanOrigin}${cleanPath === '/' ? '/' : cleanPath}`,
     image: defaultImage,
   };
