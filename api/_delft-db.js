@@ -71,13 +71,21 @@ export async function ensureSchema() {
         place TEXT NOT NULL, description TEXT NOT NULL, capacity INTEGER NOT NULL,
         cancelled INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL,
         city TEXT NOT NULL DEFAULT 'delft', contact_hint TEXT NOT NULL DEFAULT '',
-        cancel_reason TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL DEFAULT ''
+        cancel_reason TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL DEFAULT '',
+        mode TEXT NOT NULL DEFAULT 'offline',
+        schedule_type TEXT NOT NULL DEFAULT 'fixed',
+        schedule_note TEXT NOT NULL DEFAULT '',
+        tags_json TEXT NOT NULL DEFAULT '[]'
       )`);
       const eventCols = (await sql('PRAGMA table_info(delft_events)')).rows;
       await addColumnIfMissing('delft_events', eventCols, 'city', "TEXT NOT NULL DEFAULT 'delft'");
       await addColumnIfMissing('delft_events', eventCols, 'contact_hint', "TEXT NOT NULL DEFAULT ''");
       await addColumnIfMissing('delft_events', eventCols, 'cancel_reason', "TEXT NOT NULL DEFAULT ''");
       await addColumnIfMissing('delft_events', eventCols, 'updated_at', "TEXT NOT NULL DEFAULT ''");
+      await addColumnIfMissing('delft_events', eventCols, 'mode', "TEXT NOT NULL DEFAULT 'offline'");
+      await addColumnIfMissing('delft_events', eventCols, 'schedule_type', "TEXT NOT NULL DEFAULT 'fixed'");
+      await addColumnIfMissing('delft_events', eventCols, 'schedule_note', "TEXT NOT NULL DEFAULT ''");
+      await addColumnIfMissing('delft_events', eventCols, 'tags_json', "TEXT NOT NULL DEFAULT '[]'");
 
       await sql(`CREATE TABLE IF NOT EXISTS delft_rsvps (
         event_id TEXT NOT NULL, user_id TEXT NOT NULL, nickname TEXT NOT NULL,

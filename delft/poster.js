@@ -140,25 +140,31 @@ export async function createPoster({ city = 'delft', title, pickup, seller, item
 export async function createEventPoster(event) {
   const shareUrl = eventShareLink(event.id);
   const hostLabel = new URL(resolveSiteOrigin()).hostname;
+  const isOnline = event.mode === 'online' || event.city === 'online';
+  const isFlex = event.scheduleType === 'flexible';
   const canvas = document.createElement('canvas'); canvas.width = 1000; canvas.height = 1100;
   await document.fonts.ready; const ctx = canvas.getContext('2d');
   ctx.fillStyle = '#F8F7F4'; ctx.fillRect(0, 0, 1000, 1100);
   drawDelftHeader(ctx, 1000, 332);
-  ctx.fillStyle = '#F1D99B'; ctx.font = `600 24px ${font}`; ctx.fillText('荷包 · 同城邀约邀请卡', 64, 84);
+  ctx.fillStyle = '#F1D99B'; ctx.font = `600 24px ${font}`;
+  ctx.fillText(isOnline ? '荷包 · 全荷线上找搭子' : '荷包 · 同城找搭子邀请卡', 64, 84);
   ctx.fillStyle = '#FFFFFF'; ctx.font = `700 48px ${serif}`; text(ctx, event.title, 64, 158, 872, 3, 64);
-  const date = new Intl.DateTimeFormat('zh-CN', { timeZone: 'Europe/Amsterdam', month: 'long', day: 'numeric', weekday: 'long', hour: '2-digit', minute: '2-digit' }).format(new Date(event.startsAt));
+  const dateLine = isFlex
+    ? `灵活约伴 · ${event.scheduleNote || '时间可商量'}`
+    : `${new Intl.DateTimeFormat('zh-CN', { timeZone: 'Europe/Amsterdam', month: 'long', day: 'numeric', weekday: 'long', hour: '2-digit', minute: '2-digit' }).format(new Date(event.startsAt))}（荷兰时间）`;
   ctx.fillStyle = '#FFFFFF'; ctx.fillRect(60, 378, 880, 166);
   ctx.strokeStyle = '#DCE4F0'; ctx.lineWidth = 1.5; ctx.strokeRect(60, 378, 880, 166);
-  ctx.fillStyle = '#1C4B8F'; ctx.fillRect(60, 378, 8, 166);
-  ctx.fillStyle = '#111E33'; ctx.font = `700 31px ${font}`; text(ctx, date + '（荷兰时间）', 92, 438, 824, 2, 42);
+  ctx.fillStyle = isOnline ? '#0E7490' : '#1C4B8F'; ctx.fillRect(60, 378, 8, 166);
+  ctx.fillStyle = '#111E33'; ctx.font = `700 31px ${font}`; text(ctx, dateLine, 92, 438, 824, 2, 42);
   ctx.fillStyle = '#334560'; ctx.font = `500 28px ${font}`; text(ctx, eventPlace(event), 92, 504, 824, 2, 40);
-  ctx.fillStyle = '#1C4B8F'; ctx.font = `600 26px ${font}`; text(ctx, `${event.host} 发起 · 当前 ${event.count}/${event.capacity} 人`, 64, 608, 872);
+  const tagsSuffix = Array.isArray(event.tags) && event.tags.length ? ` · ${event.tags.slice(0, 3).join(' / ')}` : '';
+  ctx.fillStyle = '#1C4B8F'; ctx.font = `600 26px ${font}`; text(ctx, `${event.host} 发起 · 当前 ${event.count}/${event.capacity} 人${tagsSuffix}`, 64, 608, 872);
   ctx.fillStyle = '#4B5E78'; ctx.font = `500 24px ${font}`; text(ctx, eventPosterNote(event), 64, 668, 872, 3, 40);
   const qr = makeQr(shareUrl), cell = 4, margin = 4, size = (qr.getModuleCount() + 8) * cell, qx = 940 - size, qy = 848;
   ctx.strokeStyle = '#D9E1EE'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(60, 818); ctx.lineTo(940, 818); ctx.stroke();
-  ctx.fillStyle = '#14386E'; ctx.font = `700 28px ${serif}`; ctx.fillText('长按识别二维码报名同行', 60, 885);
+  ctx.fillStyle = '#14386E'; ctx.font = `700 28px ${serif}`; ctx.fillText(isOnline ? '长按识别二维码加入组队' : '长按识别二维码报名同行', 60, 885);
   ctx.fillStyle = '#334560'; ctx.font = `600 22px ${font}`; ctx.fillText(`荷包 · ${hostLabel}`, 60, 934);
-  ctx.fillStyle = '#617087'; ctx.font = `500 18px ${font}`; ctx.fillText('实时人数、集合联络与活动动态以网页为准', 60, 978);
+  ctx.fillStyle = '#617087'; ctx.font = `500 18px ${font}`; ctx.fillText('实时人数、联络方式与动态以网页为准', 60, 978);
   ctx.fillStyle = '#FFFFFF'; ctx.fillRect(qx, qy, size, size);
   ctx.strokeStyle = '#DCE4F0'; ctx.strokeRect(qx, qy, size, size);
   ctx.fillStyle = '#10284D';

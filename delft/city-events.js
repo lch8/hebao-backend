@@ -175,8 +175,50 @@ export function cityEventDraft(event) {
 
 // Add the city only when the venue does not already contain it.
 export function eventPlace(event, includeCity = true) {
-  const place = String(event.place || '').trim(), city = cities[event.city || 'delft'] || '';
+  const place = String(event.place || '').trim();
+  if (event.mode === 'online' || event.city === 'online') {
+    if (!place) return includeCity ? '全荷线上' : '线上';
+    return /线上/.test(place) ? place : `${includeCity ? '全荷线上' : '线上'} · ${place}`;
+  }
+  const city = cities[event.city || 'delft'] || '';
   return includeCity && city && !place.toLocaleLowerCase().includes(city.toLocaleLowerCase()) ? `${city} · ${place}` : place;
+}
+
+export function eventScheduleText(event, formatDate) {
+  if (event?.scheduleType === 'flexible') {
+    return event.scheduleNote ? `灵活约伴 · ${event.scheduleNote}` : '灵活约伴 · 时间可商量';
+  }
+  return typeof formatDate === 'function' ? formatDate(event.startsAt) : String(event?.startsAt || '');
+}
+
+export function filterCommunityBuddies(events = [], { mode = 'all', period = 'fortnight', city = 'zuid-holland', category = '', now = new Date() } = {}) {
+  const day = dayNumber(amsterdamInput(now)), saturday = weekendStart(day);
+  const filtered = events.filter(event => {
+    if (Date.parse(event.startsAt) <= now.getTime()) return false;
+    const isOnline = event.mode === 'online' || event.city === 'online';
+    if (mode === 'online' && !isOnline) return false;
+    if (mode === 'offline' && (isOnline || !matchesCityScope(event.city || 'delft', city))) return false;
+    if (mode === 'all' && !isOnline && !matchesCityScope(event.city || 'delft', city)) return false;
+    if (category && event.category !== category) return false;
+
+    const isFlex = event.scheduleType === 'flexible';
+    if (period === 'flexible') return isFlex;
+    if (period === 'fixed') return !isFlex;
+    if (isFlex) {
+      if (period === 'weekend') return /周末|周六|周日|随时/i.test(event.scheduleNote || '');
+      return true;
+    }
+    const eventDay = dayNumber(amsterdamInput(event.startsAt));
+    if (period === 'weekend') return eventDay >= saturday && eventDay <= saturday + 1;
+    if (period === 'fortnight') return eventDay >= day && eventDay < day + 14;
+    return true;
+  });
+  return filtered.sort((a, b) => {
+    const aFlex = a.scheduleType === 'flexible' ? 1 : 0;
+    const bFlex = b.scheduleType === 'flexible' ? 1 : 0;
+    if (aFlex !== bFlex) return aFlex - bFlex;
+    return Date.parse(a.startsAt) - Date.parse(b.startsAt);
+  });
 }
 
 export function eventPosterNote(event) {

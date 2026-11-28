@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {cityEvents, upcomingCityEvents, amsterdamInput, amsterdamInstant, cityEventDraft, citySelection, discoveryFilters, weekendLabel} from '../delft/city-events.js';
+import {cityEvents, upcomingCityEvents, filterCommunityBuddies, eventPlace, eventScheduleText, amsterdamInput, amsterdamInstant, cityEventDraft, citySelection, discoveryFilters, weekendLabel} from '../delft/city-events.js';
 import {activityCard, activityDetailContent} from '../delft/activity-view.js';
 import {posterLayout, makeQr} from '../delft/poster.js';
 import {DEFAULT_SITE_ORIGIN, PUBLIC_SITE_URL, resolveSiteOrigin, posterDestination, activityLink, pageFromQuery, pageFromLocation, legalModalFromLocation} from '../delft/site-config.js';
@@ -11,12 +11,12 @@ import {resolveShareMeta, renderShareHtml} from '../api/share-page.js';
 
 test('the homepage and clean channel paths route accurately while preserving /delft/ compatibility', () => {
   const page = query => pageFromQuery(new URLSearchParams(query));
-  assert.equal(page(''), 'events');
-  assert.equal(page('utm_source=wechat&source=poster'), 'events');
-  assert.equal(page('tab=unknown'), 'events');
+  assert.equal(page(''), 'dutch');
+  assert.equal(page('utm_source=wechat&source=poster'), 'dutch');
+  assert.equal(page('tab=unknown'), 'dutch');
   for (const tab of ['dutch','events','market','mine','sell']) assert.equal(page('tab='+tab), tab);
 
-  assert.equal(pageFromLocation({pathname:'/', search:''}), 'events');
+  assert.equal(pageFromLocation({pathname:'/', search:''}), 'dutch');
   assert.equal(pageFromLocation({pathname:'/events', search:''}), 'events');
   assert.equal(pageFromLocation({pathname:'/market', search:''}), 'market');
   assert.equal(pageFromLocation({pathname:'/dutch-a2', search:''}), 'dutch');
@@ -30,8 +30,9 @@ test('the homepage and clean channel paths route accurately while preserving /de
 test('the first paint and the primary navigation match the homepage route', () => {
   const html = readFileSync(new URL('../delft/index.html',import.meta.url),'utf8');
   const nav = html.match(/<nav class="tabs"[^>]*>([\s\S]*?)<\/nav>/)[1];
-  assert.deepEqual([...nav.matchAll(/data-tab="([^"]+)"/g)].map(match=>match[1]), ['events','dutch','market','mine']);
+  assert.deepEqual([...nav.matchAll(/data-tab="([^"]+)"/g)].map(match=>match[1]), ['dutch','events','market','mine']);
   const home = pageFromQuery(new URLSearchParams());
+  assert.equal(home, 'dutch');
   assert.match(nav,new RegExp('class="tab active" data-tab="'+home+'"[^>]*aria-pressed="true"'));
   assert.deepEqual([...html.matchAll(/<section id="panel-([^"]+)" class="panel active"/g)].map(match=>match[1]),[home]);
 });
@@ -40,10 +41,11 @@ test('market, official activities, group invitations and event filters can still
   const page = query => pageFromQuery(new URLSearchParams(query));
   assert.equal(page('item=listing-id&product=bike'), 'market');
   assert.equal(page('tab=dutch&item=listing-id&activity=city-id'), 'market');
-  assert.equal(page('activity=city-id'), 'events');
+  assert.equal(page('activity=city-id'), 'dutch');
   assert.equal(page('event=group-id'), 'events');
-  assert.equal(page('city=rotterdam&period=fortnight'), 'events');
+  assert.equal(pageFromLocation({pathname:'/events', search:'?city=rotterdam&period=fortnight'}), 'events');
   assert.equal(page('source=community'), 'events');
+  assert.equal(page('mode=online'), 'events');
   assert.equal(page('tab=dutch&city=delft'), 'dutch');
 });
 
@@ -448,4 +450,50 @@ test('marketProducts filters free items, price ceilings, and buyer favorites wit
   assert.ok(vercel.crons?.some(c => c.path === '/api/daily-news-cron'));
   assert.ok(vercel.rewrites?.some(r => r.source === '/news'));
   assert.ok(vercel.headers?.some(h => h.headers?.some(x => x.key === 'Strict-Transport-Security')));
+});
+
+test('upgraded buddy plaza supports online/offline modes, flexible schedules, and all-NL online visibility', async () => {
+  const html = readFileSync(new URL('../delft/index.html', import.meta.url), 'utf8');
+  assert.match(html, /id="dutchBuddyShortcut"/);
+  assert.match(html, /id="buddyModeSwitch"/);
+  assert.match(html, /id="eventModeSwitch"/);
+  assert.match(html, /id="eventScheduleSwitch"/);
+  assert.match(html, /data-buddy-template="dutch"/);
+
+  const now = new Date('2026-11-28T10:00:00Z');
+  const pool = [
+    { id: 'on-flex', mode: 'online', city: 'online', scheduleType: 'flexible', scheduleNote: '每周二晚 20:00', category: '荷语学习', startsAt: '2026-12-25T10:00:00Z', place: 'Discord' },
+    { id: 'on-fixed', mode: 'online', city: 'online', scheduleType: 'fixed', scheduleNote: '', category: '游戏开黑', startsAt: '2026-11-28T20:00:00Z', place: 'Steam 语音' },
+    { id: 'off-delft', mode: 'offline', city: 'delft', scheduleType: 'fixed', scheduleNote: '', category: '桌游', startsAt: '2026-11-29T14:00:00Z', place: 'Delft Station' },
+    { id: 'off-ams', mode: 'offline', city: 'amsterdam', scheduleType: 'fixed', scheduleNote: '', category: '咖啡', startsAt: '2026-11-29T15:00:00Z', place: 'Dam' },
+  ];
+
+  // In 'all' mode for South Holland, all online buddies appear alongside Delft offline buddies (Amsterdam stays filtered out)
+  const allZH = filterCommunityBuddies(pool, { mode: 'all', period: 'fortnight', city: 'zuid-holland', now });
+  assert.deepEqual(allZH.map(e => e.id), ['on-fixed', 'off-delft', 'on-flex']);
+
+  // In 'online' mode, city filter is ignored and only online buddies appear
+  const onlyOnline = filterCommunityBuddies(pool, { mode: 'online', period: 'all', city: 'eindhoven', now });
+  assert.deepEqual(onlyOnline.map(e => e.id), ['on-fixed', 'on-flex']);
+
+  // In 'offline' mode, online buddies are excluded
+  const onlyOffline = filterCommunityBuddies(pool, { mode: 'offline', period: 'fortnight', city: 'zuid-holland', now });
+  assert.deepEqual(onlyOffline.map(e => e.id), ['off-delft']);
+
+  // Flexible period filter isolates flexible buddies
+  const onlyFlex = filterCommunityBuddies(pool, { mode: 'all', period: 'flexible', city: 'all', now });
+  assert.deepEqual(onlyFlex.map(e => e.id), ['on-flex']);
+
+  assert.equal(eventPlace(pool[0], true), '全荷线上 · Discord');
+  assert.equal(eventPlace(pool[0], false), '线上 · Discord');
+  assert.equal(eventScheduleText(pool[0]), '灵活约伴 · 每周二晚 20:00');
+
+  const onlineOg = await resolveShareMeta({
+    pathname: '/events',
+    searchParams: new URLSearchParams('event=on-flex'),
+    origin: 'https://hebaogj.xyz',
+    getEvent: async () => ({ ...pool[0], title: '荷语 A2 口语互练', host: '阿宁', count: 2, capacity: 4, cancelled: false }),
+  });
+  assert.match(onlineOg.title, /【线上】荷语 A2 口语互练/);
+  assert.match(onlineOg.description, /灵活约伴 · 每周二晚 20:00/);
 });

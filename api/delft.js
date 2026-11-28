@@ -5,10 +5,14 @@ import { loadDailyNewsEditions, generateDailyNews, ensureTodayDailyNews } from '
 export const config = { runtime: 'edge' };
 
 const statuses = new Set(['available', 'reserved', 'sold']);
-const categories = new Set(['桌游', '散步', '运动', '咖啡', '其他']);
+const categories = new Set(['荷语学习', '自习求职', '游戏开黑', '桌游', '运动', '咖啡', '约饭', '散步', '结伴出游', '其他']);
+const eventModes = new Set(['offline', 'online']);
+const scheduleTypes = new Set(['fixed', 'flexible']);
+const validBuddyTags = new Set(['新手友好', 'AA制', '免费', '女生友好', '荷语A2', '长期搭子', '带麦开黑', '安静自律']);
 const itemCategories = new Set(['家具', '自行车', '数码', '生活用品', '书籍', '其他']);
 const validCities = new Set(['delft', 'den-haag', 'rotterdam', 'amsterdam', 'utrecht', 'eindhoven']);
 const cityLabels = {
+  online: '全荷线上',
   delft: 'Delft', 'den-haag': 'Den Haag', rotterdam: 'Rotterdam',
   amsterdam: 'Amsterdam', utrecht: 'Utrecht', eindhoven: 'Eindhoven'
 };
@@ -66,6 +70,34 @@ const amsterdamTimeLabel = iso => {
   } catch { return String(iso || ''); }
 };
 
+const eventScheduleLabel = ev => ev.schedule_type === 'flexible'
+  ? `灵活约伴 · ${ev.schedule_note || '时间可商量'}`
+  : `${amsterdamTimeLabel(ev.starts_at)}（荷兰时间）`;
+
+const eventLocationLabel = ev => ev.mode === 'online' || ev.city === 'online'
+  ? `全荷线上 · ${ev.place}`
+  : `${cityLabels[ev.city] || ev.city || 'Delft'} · ${ev.place}`;
+
+const normalizeBuddyTags = raw => {
+  if (!Array.isArray(raw)) return [];
+  const out = [];
+  const seen = new Set();
+  for (const tag of raw) {
+    const clean = clipped(tag, 20);
+    if (validBuddyTags.has(clean) && !seen.has(clean)) {
+      seen.add(clean);
+      out.push(clean);
+      if (out.length >= 3) break;
+    }
+  }
+  return out;
+};
+
+const parseBuddyTags = raw => {
+  try { return normalizeBuddyTags(JSON.parse(raw || '[]')); }
+  catch { return []; }
+};
+
 const parseItems = (source) => {
   if (!Array.isArray(source) || !source.length || source.length > 12) throw new InputError('请提供 1–12 件商品');
   const ids = new Set();
@@ -111,8 +143,14 @@ const eventView = row => {
   const joined = Boolean(Number(row.mine || 0));
   const hostIsMe = Boolean(Number(row.host_is_me || 0));
   const canSeePrivate = joined || hostIsMe;
+  const mode = row.mode === 'online' || row.city === 'online' ? 'online' : 'offline';
+  const scheduleType = row.schedule_type === 'flexible' ? 'flexible' : 'fixed';
   return {
-    city: row.city || 'delft',
+    city: mode === 'online' ? 'online' : (row.city || 'delft'),
+    mode,
+    scheduleType,
+    scheduleNote: row.schedule_note || '',
+    tags: parseBuddyTags(row.tags_json),
     id: row.id,
     host: row.host_name,
     title: row.title,
@@ -682,24 +720,39 @@ export default async function handler(request) {
       if (!(await checkPublicQuota(request, 'create_event', 10))) {
         return json({ error: '今日发布邀约次数过多，请明天再试' }, 429);
       }
+      const mode = body.mode === 'online' || body.city === 'online' ? 'online' : 'offline';
+      const scheduleType = body.scheduleType === 'flexible' ? 'flexible' : 'fixed';
       const title = clipped(body.title, 75), host = clipped(body.host, 35), place = clipped(body.place, 100);
       const description = clipped(body.description, 450), contactHint = clipped(body.contactHint, 180);
-      const date = new Date(body.startsAt);
+      const scheduleNote = scheduleType === 'flexible' ? clipped(body.scheduleNote, 80) : '';
+      const tags = normalizeBuddyTags(body.tags);
       const capacity = Number(body.capacity);
-      const city = body.city || 'delft';
-      if (!validCities.has(city)) return json({ error: '请选择活动城市' }, 400);
-      if (!title || !host || !place || !Number.isFinite(date.getTime()) ||
-        date.getTime() < Date.now() + 3600000 || date.getTime() > Date.now() + 60 * 86400000 ||
+      const city = mode === 'online' ? 'online' : (body.city || 'delft');
+      if (mode === 'offline' && !validCities.has(city)) return json({ error: '请选择活动城市' }, 400);
+      let date;
+      if (scheduleType === 'flexible') {
+        const validDays = Math.min(60, Math.max(7, Math.round(Number(body.validDays) || 30)));
+        date = new Date(Date.now() + validDays * 86400000);
+        if (!scheduleNote || scheduleNote.length < 2) {
+          return json({ error: '请填写约定频率或时间说明（如：每周二晚 20:00 / 周末随时约）' }, 400);
+        }
+      } else {
+        date = new Date(body.startsAt);
+        if (!Number.isFinite(date.getTime()) || date.getTime() < Date.now() + 3600000 || date.getTime() > Date.now() + 60 * 86400000) {
+          return json({ error: '请选择有效的集合时间（至少提前 1 小时，60 天以内）' }, 400);
+        }
+      }
+      if (!title || !host || !place ||
         !Number.isInteger(capacity) || capacity < 2 || capacity > 12 || !categories.has(body.category)) {
-        return json({ error: '请填写有效活动信息（至少提前1小时，2–12人）' }, 400);
+        return json({ error: '请填写有效搭子信息（2–12 人，含类别与方式/地点）' }, 400);
       }
       const count = await sql('SELECT COUNT(*) AS n FROM delft_events WHERE host_id=? AND created_at>?', [user, new Date(Date.now() - 30 * 86400000).toISOString()]);
       if (Number(count.rows[0]?.n) >= 8) return json({ error: '30天内创建活动已达上限' }, 429);
       const id = crypto.randomUUID();
       await sql(`INSERT INTO delft_events
-        (id,host_id,host_name,title,category,starts_at,place,description,capacity,created_at,city,contact_hint,updated_at)
-        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-        [id, user, host, title, body.category, date.toISOString(), place, description, capacity, now, city, contactHint, now]
+        (id,host_id,host_name,title,category,starts_at,place,description,capacity,created_at,city,contact_hint,updated_at,mode,schedule_type,schedule_note,tags_json)
+        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        [id, user, host, title, body.category, date.toISOString(), place, description, capacity, now, city, contactHint, now, mode, scheduleType, scheduleNote, JSON.stringify(tags)]
       );
       return json({ ok: true, id });
     }
@@ -712,34 +765,53 @@ export default async function handler(request) {
       if (!existing) return json({ error: '活动不存在' }, 404);
       if (existing.host_id !== user) return json({ error: '仅发起人可修改邀约安排' }, 403);
       if (Number(existing.cancelled)) return json({ error: '已取消的活动不可修改' }, 400);
+      const scheduleType = existing.schedule_type === 'flexible' ? 'flexible' : 'fixed';
       const place = clipped(body.place ?? existing.place, 100);
       const description = clipped(body.description ?? existing.description, 450);
       const contactHint = clipped(body.contactHint ?? existing.contact_hint, 180);
-      const date = body.startsAt ? new Date(body.startsAt) : new Date(existing.starts_at);
+      const scheduleNote = scheduleType === 'flexible'
+        ? clipped(body.scheduleNote ?? existing.schedule_note, 80)
+        : (existing.schedule_note || '');
+      const tags = body.tags !== undefined ? normalizeBuddyTags(body.tags) : parseBuddyTags(existing.tags_json);
+      let date;
+      if (scheduleType === 'flexible') {
+        if (!scheduleNote || scheduleNote.length < 2) return json({ error: '请填写时间说明' }, 400);
+        if (body.validDays != null) {
+          const validDays = Math.min(60, Math.max(7, Math.round(Number(body.validDays) || 30)));
+          date = new Date(Date.now() + validDays * 86400000);
+        } else {
+          date = new Date(existing.starts_at);
+        }
+      } else {
+        date = body.startsAt ? new Date(body.startsAt) : new Date(existing.starts_at);
+        if (!Number.isFinite(date.getTime()) || date.getTime() < Date.now() + 900000 || date.getTime() > Date.now() + 60 * 86400000) {
+          return json({ error: '请检查修改后的时间（须在未来 15 分钟至 60 天内）' }, 400);
+        }
+      }
       const capacity = body.capacity != null ? Number(body.capacity) : Number(existing.capacity);
       const minCap = Math.max(2, Number(existing.rsvp_count || 0) + 1);
-      if (!place || !Number.isFinite(date.getTime()) || date.getTime() < Date.now() + 900000 ||
-        date.getTime() > Date.now() + 60 * 86400000 || !Number.isInteger(capacity) || capacity < minCap || capacity > 12) {
+      if (!place || !Number.isInteger(capacity) || capacity < minCap || capacity > 12) {
         return json({ error: `请检查修改后的时间、集合地点或人数上限（当前至少 ${minCap} 人）` }, 400);
       }
       const nextStarts = date.toISOString();
       await sql(
-        'UPDATE delft_events SET starts_at=?, place=?, description=?, contact_hint=?, capacity=?, updated_at=? WHERE id=? AND host_id=?',
-        [nextStarts, place, description, contactHint, capacity, now, id, user]
+        'UPDATE delft_events SET starts_at=?, place=?, description=?, contact_hint=?, capacity=?, schedule_note=?, tags_json=?, updated_at=? WHERE id=? AND host_id=?',
+        [nextStarts, place, description, contactHint, capacity, scheduleNote, JSON.stringify(tags), now, id, user]
       );
-      const scheduleChanged = nextStarts !== existing.starts_at || place !== existing.place || contactHint !== (existing.contact_hint || '');
+      const scheduleChanged = nextStarts !== existing.starts_at || place !== existing.place || scheduleNote !== (existing.schedule_note || '') || contactHint !== (existing.contact_hint || '');
       if (scheduleChanged && Number(existing.rsvp_count) > 0) {
+        const updatedView = { ...existing, starts_at: nextStarts, place, schedule_note: scheduleNote };
         await notifyEventAttendees(id, () => ({
-          dedupeKey: `ev-update:${id}:${nextStarts}:${place}`,
+          dedupeKey: `ev-update:${id}:${nextStarts}:${place}:${scheduleNote}`,
           cooldownMs: 60000,
-          subject: `【活动变更】「${existing.title}」集合安排已更新`,
-          heading: `你报名的活动「${existing.title}」更新了集合信息`,
+          subject: `【活动变更】「${existing.title}」安排已更新`,
+          heading: `你报名的搭子邀约「${existing.title}」更新了安排`,
           lines: [
-            `最新时间：${amsterdamTimeLabel(nextStarts)}（荷兰时间）`,
-            `最新集合地点：${cityLabels[existing.city] || existing.city} · ${place}`,
+            `最新时间：${eventScheduleLabel(updatedView)}`,
+            `最新方式/地点：${eventLocationLabel(updatedView)}`,
             contactHint ? `集合联络说明：${contactHint}` : '',
           ],
-          ctaLabel: '查看最新活动安排',
+          ctaLabel: '查看最新安排',
           ctaPath: `/events?event=${encodeURIComponent(id)}`,
         }));
       }
@@ -757,7 +829,7 @@ export default async function handler(request) {
       );
       if (!result.affected) return json({ error: '活动已满、已报名或不可报名' }, 409);
       const ev = (await sql(
-        `SELECT e.host_id, e.title, e.starts_at, e.place, e.capacity, e.contact_hint,
+        `SELECT e.host_id, e.title, e.starts_at, e.place, e.city, e.mode, e.schedule_type, e.schedule_note, e.capacity, e.contact_hint,
           (SELECT COUNT(*) FROM delft_rsvps r WHERE r.event_id=e.id) AS rsvp_count
          FROM delft_events e WHERE e.id=?`, [id]
       )).rows[0];
@@ -766,14 +838,14 @@ export default async function handler(request) {
           toUserId: ev.host_id,
           dedupeKey: `rsvp:${id}:${user}`,
           cooldownMs: 300000,
-          subject: `新报名提醒：${nickname} 报名了「${ev.title}」`,
-          heading: `${nickname} 刚刚报名了你的同城邀约`,
+          subject: `新报名提醒：${nickname} 加入了「${ev.title}」`,
+          heading: `${nickname} 刚刚加入了你的搭子邀约`,
           lines: [
-            `活动：${ev.title}`,
+            `搭子：${ev.title}`,
             `当前人数：${Number(ev.rsvp_count || 0) + 1} / ${ev.capacity} 人`,
-            `时间与地点：${amsterdamTimeLabel(ev.starts_at)} · ${ev.place}`,
+            `时间与方式：${eventScheduleLabel(ev)} · ${eventLocationLabel(ev)}`,
           ],
-          ctaLabel: '查看报名名单与活动沟通',
+          ctaLabel: '查看报名名单与沟通过程',
           ctaPath: `/events?event=${encodeURIComponent(id)}`,
         });
       }
@@ -782,7 +854,7 @@ export default async function handler(request) {
     if (action === 'cancelRsvp') {
       const eventId = clipped(body.eventId, 60);
       const prior = (await sql(
-        `SELECT r.nickname, e.id, e.host_id, e.title, e.starts_at, e.place, e.capacity, e.cancelled
+        `SELECT r.nickname, e.id, e.host_id, e.title, e.starts_at, e.place, e.city, e.mode, e.schedule_type, e.schedule_note, e.capacity, e.cancelled
          FROM delft_rsvps r JOIN delft_events e ON e.id=r.event_id
          WHERE r.event_id=? AND r.user_id=?`, [eventId, user]
       )).rows[0];
@@ -797,9 +869,9 @@ export default async function handler(request) {
           heading: `${prior.nickname} 取消了「${prior.title}」的报名`,
           lines: [
             `当前人数：${Number(rem?.n || 0) + 1} / ${prior.capacity} 人（空位已重新开放）`,
-            `时间与地点：${amsterdamTimeLabel(prior.starts_at)} · ${prior.place}`,
+            `时间与方式：${eventScheduleLabel(prior)} · ${eventLocationLabel(prior)}`,
           ],
-          ctaLabel: '查看最新报名与活动沟通',
+          ctaLabel: '查看最新报名与沟通',
           ctaPath: `/events?event=${encodeURIComponent(eventId)}`,
         });
       }
@@ -808,18 +880,18 @@ export default async function handler(request) {
     if (action === 'cancelEvent') {
       const id = clipped(body.eventId, 60);
       const reason = clipped(body.reason, 180);
-      const ev = (await sql('SELECT title, starts_at, place, host_name FROM delft_events WHERE id=? AND host_id=? AND cancelled=0', [id, user])).rows[0];
+      const ev = (await sql('SELECT title, starts_at, place, city, mode, schedule_type, schedule_note, host_name FROM delft_events WHERE id=? AND host_id=? AND cancelled=0', [id, user])).rows[0];
       const res = await sql('UPDATE delft_events SET cancelled=1, cancel_reason=?, updated_at=? WHERE id=? AND host_id=? AND cancelled=0', [reason, now, id, user]);
       if (res.affected && ev) {
         await notifyEventAttendees(id, () => ({
-          subject: `【活动取消】「${ev.title}」已取消`,
-          heading: `很抱歉，你报名的活动「${ev.title}」已被发起人取消`,
+          subject: `【搭子取消】「${ev.title}」已取消`,
+          heading: `很抱歉，你报名的搭子邀约「${ev.title}」已被发起人取消`,
           lines: [
-            `原定时间：${amsterdamTimeLabel(ev.starts_at)}`,
-            `原定地点：${ev.place}`,
-            reason ? `取消说明：${reason}` : '发起人临时取消了本次活动，请勿前往集合地点。',
+            `原定时间：${eventScheduleLabel(ev)}`,
+            `原定方式/地点：${eventLocationLabel(ev)}`,
+            reason ? `取消说明：${reason}` : '发起人临时取消了本次邀约。',
           ],
-          ctaLabel: '看看其他同城活动',
+          ctaLabel: '看看其他线上与同城搭子',
           ctaPath: '/events',
         }));
       }

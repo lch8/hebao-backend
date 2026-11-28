@@ -6,7 +6,7 @@ import { marketProducts, itemPrice, favoriteKey } from './market-view.js';
 import {
   cities, cityLabels, cityEvents, CITY_EVENTS_CHECKED, CITY_AGENDA_URL,
   upcomingCityEvents, amsterdamInput, amsterdamInstant, cityEventDraft,
-  eventPlace, discoveryFilters, citySelection, weekendLabel
+  eventPlace, eventScheduleText, filterCommunityBuddies, discoveryFilters, citySelection, weekendLabel
 } from './city-events.js';
 import { escapeHtml as esc, activityCard, activityDetailContent } from './activity-view.js';
 import {
@@ -40,7 +40,7 @@ const state = {
   currentListing: null, currentProduct: null, currentEvent: null, coordEvent: null,
   editingEventId: null, reportTarget: null,
   publishedId: null, editingId: null, editVersion: null,
-  dirty: false, activeTab: null, category: '', priceFilter: '', eventCategory: '', marketCity: 'all',
+  dirty: false, activeTab: null, category: '', priceFilter: '', eventCategory: '', buddyMode: 'all', eventTags: [], marketCity: 'all',
   favorites: loadFavorites(),
   saving: false, unreadCount: 0, isAdmin: false,
 };
@@ -220,7 +220,7 @@ function hideModal(id, { updateUrl = true } = {}) {
   if ((id === 'privacyModal' || id === 'termsModal') && updateUrl) {
     const clean = location.pathname.replace(/\/+$/, '');
     if (clean === '/privacy' || clean === '/terms') {
-      history.replaceState(null, '', tabPath(state.activeTab || 'events'));
+      history.replaceState(null, '', tabPath(state.activeTab || 'dutch'));
     }
   }
 }
@@ -352,7 +352,14 @@ async function tab(name, { updateUrl = true } = {}) {
             requestLogin: resume => requireAuth(resume),
             loadCloudProgress: async () => (await api('studyProgress')).progress,
             saveCloudProgress: async payload => api('saveStudyProgress', 'POST', payload),
-            loadDailyNews: async () => (await api('dailyNews', 'GET', null, false)).editions || [],
+            loadDailyNews: async () => {
+              const editions = (await api('dailyNews', 'GET', null, false)).editions || [];
+              const first = editions[0]?.items?.[0];
+              if (first?.titleZh && $('eventsNewsHeadline')) {
+                $('eventsNewsHeadline').textContent = `今日精读：${first.titleZh}`;
+              }
+              return editions;
+            },
             onPractice: () => trackEvent('a2_practice'),
             onNewsRead: () => trackEvent('news_read'),
             onCopyText: (text, msg) => copyTextWithFallback(text, msg),
@@ -373,7 +380,7 @@ async function tab(name, { updateUrl = true } = {}) {
                 renderCityEvents();
                 if (!feedReady) loadCityFeed();
               } else if (mode === 'feed' && state.activeTab === 'dutch' && new URLSearchParams(location.search).get('view') === 'city') {
-                history.replaceState(history.state, '', '/news');
+                history.replaceState(history.state, '', '/');
               }
             },
             onSharePoster: async spec => {
@@ -431,7 +438,7 @@ document.addEventListener('click', e => {
   const brand = e.target.closest('[data-brand-home]');
   if (brand && e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) {
     e.preventDefault();
-    tab('events');
+    tab('dutch').then(() => dutchView?.openView?.('news'));
     return;
   }
   const nav = e.target.closest('[data-tab]');
@@ -1691,7 +1698,7 @@ let selectedCity = 'zuid-holland', cityPeriod = 'fortnight', eventSource = 'comm
 let cityFeedCity = 'zuid-holland', cityFeedPeriod = 'fortnight';
 let feedEvents = cityEvents, feedUpdated = CITY_EVENTS_CHECKED, feedFailed = false, feedReady = false, feedRequest = 0;
 let eventsRequest = 0, eventDraftTouched = false, eventsFailed = false, eventsReady = false;
-const periodNames = { weekend: '本周末', fortnight: '未来两周', all: '近期' };
+const periodNames = { weekend: '本周末', fortnight: '近期 & 长期', flexible: '长期可约', all: '全部' };
 
 async function loadCityFeed() {
   const request = ++feedRequest;
@@ -1716,7 +1723,7 @@ async function loadCityFeed() {
   renderCityEvents();
 }
 
-function discoveryUrl({ city = selectedCity, period = cityPeriod, source = 'community', activity = '' } = {}) {
+function discoveryUrl({ city = selectedCity, period = cityPeriod, source = 'community', mode = state.buddyMode, activity = '' } = {}) {
   const url = new URL(source === 'city' || activity ? '/news' : '/events', location.origin);
   if (activity) {
     url.searchParams.set('activity', activity);
@@ -1730,13 +1737,20 @@ function discoveryUrl({ city = selectedCity, period = cityPeriod, source = 'comm
     url.searchParams.set('period', period);
     return url;
   }
-  url.searchParams.set('city', city);
+  if (mode && mode !== 'all') url.searchParams.set('mode', mode);
+  if (mode !== 'online') url.searchParams.set('city', city);
   url.searchParams.set('period', period);
   return url;
 }
 
 function syncDiscoveryControls() {
   if ($('citySelect')) $('citySelect').value = selectedCity;
+  if ($('buddyCityWrap')) $('buddyCityWrap').hidden = state.buddyMode === 'online';
+  for (const button of $('buddyModeSwitch')?.querySelectorAll('[data-buddy-mode]') || []) {
+    const active = button.dataset.buddyMode === state.buddyMode;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
+  }
   for (const button of $('cityEventFilters')?.querySelectorAll('button') || []) {
     const active = button.dataset.period === cityPeriod;
     button.classList.toggle('active', active);
@@ -1759,7 +1773,7 @@ function syncCityFeedControls() {
 }
 
 function changeDiscovery(updates) {
-  if (updates.city) rememberCity(updates.city);
+  if (updates.city && updates.city !== 'online') rememberCity(updates.city);
   if (updates.source === 'city') {
     cityFeedCity = updates.city || cityFeedCity;
     cityFeedPeriod = updates.period || cityFeedPeriod;
@@ -1770,10 +1784,11 @@ function changeDiscovery(updates) {
     renderCityEvents();
     return;
   }
+  if (updates.mode) state.buddyMode = updates.mode;
   selectedCity = updates.city || selectedCity;
   cityPeriod = updates.period || cityPeriod;
   eventSource = 'community';
-  const url = discoveryUrl({ city: selectedCity, period: cityPeriod, source: 'community' });
+  const url = discoveryUrl({ city: selectedCity, period: cityPeriod, source: 'community', mode: state.buddyMode });
   if (url.href !== location.href) history.pushState(null, '', url);
   syncDiscoveryControls();
   renderEvents();
@@ -1811,7 +1826,7 @@ function renderCityEvents() {
   }
   const { local, nearby, inPeriod } = citySelection(feedEvents, cityFeedPeriod, now, cityFeedCity);
   dutchView?.setCityCount?.(local.length);
-  const cityName = cityLabels[cityFeedCity] || '全部荷兰城市', scope = periodNames[cityFeedPeriod];
+  const cityName = cityLabels[cityFeedCity] || '全部荷兰城市', scope = periodNames[cityFeedPeriod] || '未来两周';
   const multiCity = cityFeedCity === 'all' || cityFeedCity === 'zuid-holland';
   const dates = cityFeedPeriod === 'weekend' ? `<span class="list-dates">${esc(weekendLabel(now))}</span>` : '';
   const status = feedFailed ? '<p class="feed-status" role="status">更新暂不可用，当前显示上次载入的活动。 <button type="button" class="text-btn" data-retry-feed>重试</button></p>' : '';
@@ -1832,6 +1847,10 @@ function renderCityEvents() {
   $('cityEvents').innerHTML = status + empty + suggestions;
 }
 
+$('buddyModeSwitch')?.addEventListener('click', e => {
+  const button = e.target.closest('[data-buddy-mode]');
+  if (button) changeDiscovery({ mode: button.dataset.buddyMode });
+});
 $('cityEventFilters')?.addEventListener('click', e => {
   const button = e.target.closest('[data-period]');
   if (button) changeDiscovery({ period: button.dataset.period });
@@ -1852,11 +1871,21 @@ $('cityPeriodFilters')?.addEventListener('click', e => {
 });
 
 $('panel-events').addEventListener('click', e => {
+  const tpl = e.target.closest('[data-buddy-template]');
+  if (tpl && buddyTemplates[tpl.dataset.buddyTemplate]) {
+    openEventForm(null, buddyTemplates[tpl.dataset.buddyTemplate]);
+    return;
+  }
   const link = e.target.closest('a');
   if (link?.matches('[data-discovery-link]')) {
     e.preventDefault();
     const params = new URL(link.href).searchParams;
-    changeDiscovery({ city: params.get('city') || selectedCity, period: params.get('period') || cityPeriod, source: 'community' });
+    changeDiscovery({
+      city: params.get('city') || selectedCity,
+      period: params.get('period') || cityPeriod,
+      mode: params.get('mode') || state.buddyMode,
+      source: 'community',
+    });
     return;
   }
   if (e.target.closest('[data-clear-event-cat]')) {
@@ -1867,10 +1896,10 @@ $('panel-events').addEventListener('click', e => {
   }
   if (e.target.closest('[data-open-city-info]')) {
     tab('dutch', { updateUrl: false }).then(() => {
-      const url = discoveryUrl({ city: selectedCity, period: cityPeriod, source: 'city' });
+      const url = discoveryUrl({ city: selectedCity, period: cityPeriod === 'flexible' ? 'fortnight' : cityPeriod, source: 'city' });
       if (url.href !== location.href) history.pushState(null, '', url);
       cityFeedCity = selectedCity;
-      cityFeedPeriod = cityPeriod;
+      cityFeedPeriod = cityPeriod === 'flexible' ? 'fortnight' : cityPeriod;
       dutchView?.openView?.('city');
     });
   }
@@ -1960,26 +1989,151 @@ $('nativeActivityShare').addEventListener('click', async () => {
   catch (error) { if (error.name !== 'AbortError') { selectActivityLink(); $('activityShareStatus').textContent = '可复制上方链接分享。'; } }
 });
 
-const meetupIdeas = {
-  walk: { title: '周末老城散步聊聊天', category: '散步' },
-  coffee: { title: '找人喝杯咖啡 / 练口语', category: '咖啡' },
+const buddyTemplates = {
+  dutch: {
+    mode: 'online', scheduleType: 'flexible', category: '荷语学习',
+    title: '荷语 A2/B1 口语互练 & 每日新闻共读搭子',
+    scheduleNote: '每周二/四晚 20:00（可商量）', place: '微信语音 / Zoom',
+    capacity: 4, tags: ['荷语A2', '长期搭子', '新手友好'],
+  },
+  study: {
+    mode: 'online', scheduleType: 'flexible', category: '自习求职',
+    title: '晚间线上静音自习 / 论文求职互相监督',
+    scheduleNote: '工作日晚上 19:30–22:00', place: '腾讯会议 / Discord',
+    capacity: 6, tags: ['安静自律', '长期搭子', '免费'],
+  },
+  game: {
+    mode: 'online', scheduleType: 'flexible', category: '游戏开黑',
+    title: '欧服游戏语音开黑搭子（LOL / Valorant / Steam）',
+    scheduleNote: '晚间或周末随时组队', place: 'Discord 语音',
+    capacity: 5, tags: ['带麦开黑', '新手友好'],
+  },
+  boardgame: {
+    mode: 'offline', scheduleType: 'fixed', category: '桌游',
+    title: '周末下午轻松桌游局（阿瓦隆 / 璀璨宝石）',
+    place: '', capacity: 6, tags: ['新手友好', 'AA制'],
+  },
+  coffee: {
+    mode: 'offline', scheduleType: 'fixed', category: '咖啡',
+    title: '周末喝杯咖啡聊生活 / 顺便练口语',
+    place: '', capacity: 4, tags: ['新手友好', 'AA制'],
+  },
+  sport: {
+    mode: 'offline', scheduleType: 'fixed', category: '运动',
+    title: '周末一起打羽毛球 / 慢跑徒步',
+    place: '', capacity: 4, tags: ['新手友好', 'AA制'],
+  },
 };
+
+const meetupIdeas = {
+  walk: { mode: 'offline', scheduleType: 'fixed', title: '周末老城散步聊聊天', category: '散步', tags: ['新手友好', '免费'] },
+  coffee: buddyTemplates.coffee,
+  online: buddyTemplates.dutch,
+};
+
+function syncEventFormMode(mode = 'offline') {
+  const form = $('createEventForm');
+  if (!form) return;
+  const isOnline = mode === 'online';
+  form.elements.mode.value = isOnline ? 'online' : 'offline';
+  for (const btn of $('eventModeSwitch')?.querySelectorAll('[data-form-mode]') || []) {
+    const active = btn.dataset.formMode === form.elements.mode.value;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-pressed', String(active));
+  }
+  if ($('eventCityRow')) $('eventCityRow').hidden = isOnline;
+  if ($('onlinePlatformChips')) $('onlinePlatformChips').hidden = !isOnline;
+  if ($('eventPlaceLabel')) $('eventPlaceLabel').textContent = isOnline ? '线上方式 / 平台' : '公共集合地点';
+  form.elements.place.placeholder = isOnline ? '例如：微信语音 / Discord / 腾讯会议 / Steam 联机' : '例如：Delft 火车站正门星巴克门口';
+  if ($('eventContactLabel')) $('eventContactLabel').textContent = isOnline ? '房间入口 / 微信' : '集合联络暗号';
+  form.elements.contactHint.placeholder = isOnline ? '例如：微信号 / Discord 群链接 / 会议号' : '例如：微信号 xxx（备注桌游）/ 穿深绿冲锋衣在门口等';
+  if ($('eventRulesText')) {
+    $('eventRulesText').textContent = isOnline
+      ? '我已满 18 岁，同意文明友善线上交流，不涉资金交易与骚扰，变动及时更新通知。'
+      : '我已满 18 岁，同意在公共场所文明安全组织活动，变动及时更新通知。';
+  }
+}
+
+function syncEventFormSchedule(scheduleType = 'fixed') {
+  const form = $('createEventForm');
+  if (!form) return;
+  const isFlex = scheduleType === 'flexible';
+  form.elements.scheduleType.value = isFlex ? 'flexible' : 'fixed';
+  for (const btn of $('eventScheduleSwitch')?.querySelectorAll('[data-form-schedule]') || []) {
+    const active = btn.dataset.formSchedule === form.elements.scheduleType.value;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-pressed', String(active));
+  }
+  if ($('fixedScheduleRow')) $('fixedScheduleRow').hidden = isFlex;
+  if ($('flexScheduleRow')) $('flexScheduleRow').hidden = !isFlex;
+  form.elements.startsAt.required = !isFlex;
+  form.elements.scheduleNote.required = isFlex;
+}
+
+function syncEventFormTags(tags = []) {
+  state.eventTags = [...new Set(Array.isArray(tags) ? tags : [])].slice(0, 3);
+  for (const btn of $('eventTagsPicker')?.querySelectorAll('[data-buddy-tag]') || []) {
+    const active = state.eventTags.includes(btn.dataset.buddyTag);
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-pressed', String(active));
+  }
+}
+
+$('eventModeSwitch')?.addEventListener('click', e => {
+  if (state.editingEventId) return;
+  const btn = e.target.closest('[data-form-mode]');
+  if (!btn) return;
+  syncEventFormMode(btn.dataset.formMode);
+  eventDraftTouched = true;
+});
+$('eventScheduleSwitch')?.addEventListener('click', e => {
+  if (state.editingEventId) return;
+  const btn = e.target.closest('[data-form-schedule]');
+  if (!btn) return;
+  syncEventFormSchedule(btn.dataset.formSchedule);
+  eventDraftTouched = true;
+});
+$('onlinePlatformChips')?.addEventListener('click', e => {
+  const btn = e.target.closest('[data-platform-pick]');
+  if (!btn) return;
+  $('createEventForm').elements.place.value = btn.dataset.platformPick;
+  eventDraftTouched = true;
+});
+$('eventTagsPicker')?.addEventListener('click', e => {
+  const btn = e.target.closest('[data-buddy-tag]');
+  if (!btn) return;
+  const tag = btn.dataset.buddyTag;
+  if (state.eventTags.includes(tag)) {
+    syncEventFormTags(state.eventTags.filter(t => t !== tag));
+  } else {
+    if (state.eventTags.length >= 3) { toast('最多选择 3 个氛围标签'); return; }
+    syncEventFormTags([...state.eventTags, tag]);
+  }
+  eventDraftTouched = true;
+});
 
 async function openEventForm(officialEvent = null, idea = null, existingUserEvent = null) {
   const form = $('createEventForm');
   state.editingEventId = existingUserEvent ? existingUserEvent.id : null;
-  $('createEventHeading').textContent = existingUserEvent ? '修改邀约集合安排' : '发个邀约';
-  $('submitEventBtn').textContent = existingUserEvent ? '保存修改并邮件通知报名者' : '发布邀约';
+  $('createEventHeading').textContent = existingUserEvent ? '修改搭子安排' : '发个搭子';
+  $('submitEventBtn').textContent = existingUserEvent ? '保存修改并邮件通知成员' : '发布搭子';
   $('eventRulesCheckline').hidden = Boolean(existingUserEvent);
+  if ($('eventModeSwitchRow')) $('eventModeSwitchRow').hidden = Boolean(existingUserEvent);
   form.elements.rules.required = !existingUserEvent;
 
   if (existingUserEvent) {
     form.reset();
+    const isOnline = existingUserEvent.mode === 'online' || existingUserEvent.city === 'online';
+    const isFlex = existingUserEvent.scheduleType === 'flexible';
+    syncEventFormMode(isOnline ? 'online' : 'offline');
+    syncEventFormSchedule(isFlex ? 'flexible' : 'fixed');
+    syncEventFormTags(existingUserEvent.tags || []);
     form.elements.title.value = existingUserEvent.title;
     form.elements.title.readOnly = true;
-    form.elements.startsAt.value = amsterdamInput(existingUserEvent.startsAt);
+    if (isFlex) form.elements.scheduleNote.value = existingUserEvent.scheduleNote || '';
+    else form.elements.startsAt.value = amsterdamInput(existingUserEvent.startsAt);
     form.elements.capacity.value = String(existingUserEvent.capacity);
-    form.elements.city.value = existingUserEvent.city || 'delft';
+    if (!isOnline) form.elements.city.value = existingUserEvent.city || 'delft';
     form.elements.city.disabled = true;
     form.elements.place.value = existingUserEvent.place;
     form.elements.host.value = existingUserEvent.host;
@@ -1989,7 +2143,7 @@ async function openEventForm(officialEvent = null, idea = null, existingUserEven
     form.elements.contactHint.value = existingUserEvent.contactHint || '';
     form.elements.description.value = existingUserEvent.description || '';
     $('sourceEventNote').hidden = false;
-    $('sourceEventNote').textContent = '修改集合时间、地点或联络方式后，系统会自动向所有已报名成员发送邮件提醒。';
+    $('sourceEventNote').textContent = '修改时间、方式/地点或联络暗号后，系统会自动向所有已报名成员发送邮件提醒。';
     showModal('createEventBox');
     form.elements.place.focus({ preventScroll: true });
     return;
@@ -2003,25 +2157,38 @@ async function openEventForm(officialEvent = null, idea = null, existingUserEven
   if ((officialEvent || idea) && eventDraftTouched) {
     const ok = await askDialog({
       title: '替换正在填写的草稿？',
-      message: '套用新活动模板会覆盖你刚才在表单里填写的邀约内容。',
+      message: '套用新搭子模板会覆盖你刚才在表单里填写的内容。',
       confirmText: '替换草稿',
     });
     if (!ok) return;
   }
   if (idea) {
     form.reset();
-    form.elements.title.value = idea.title;
-    form.elements.category.value = idea.category;
+    syncEventFormMode(idea.mode || 'offline');
+    syncEventFormSchedule(idea.scheduleType || 'fixed');
+    syncEventFormTags(idea.tags || []);
+    if (idea.title) form.elements.title.value = idea.title;
+    if (idea.category) form.elements.category.value = idea.category;
+    if (idea.place) form.elements.place.value = idea.place;
+    if (idea.scheduleNote) form.elements.scheduleNote.value = idea.scheduleNote;
+    if (idea.capacity) form.elements.capacity.value = String(idea.capacity);
     $('sourceEventNote').hidden = true;
+    eventDraftTouched = true;
+  } else if (!officialEvent && !eventDraftTouched) {
+    syncEventFormMode(state.buddyMode === 'online' ? 'online' : 'offline');
+    syncEventFormSchedule(state.buddyMode === 'online' ? 'flexible' : 'fixed');
+    syncEventFormTags([]);
   }
   if (!officialEvent && (!eventDraftTouched || idea)) {
     form.elements.city.value = Object.hasOwn(cities, selectedCity) ? selectedCity : 'delft';
   }
-  if (idea) eventDraftTouched = true;
   if (officialEvent) {
     const draft = cityEventDraft(officialEvent);
     form.reset();
-    Object.entries(draft).forEach(([key, value]) => { form.elements[key].value = value; });
+    syncEventFormMode('offline');
+    syncEventFormSchedule('fixed');
+    syncEventFormTags(['新手友好']);
+    Object.entries(draft).forEach(([key, value]) => { if (form.elements[key]) form.elements[key].value = value; });
     $('sourceEventNote').hidden = false;
     $('sourceEventNote').innerHTML = `可自由修改集合时间与碰头地点。 <a href="${esc(officialEvent.sourceUrl)}" target="_blank" rel="noopener noreferrer">查看官方票务与安排 ↗</a>`;
     eventDraftTouched = true;
@@ -2061,9 +2228,48 @@ function nextWeekendIso(dayOffset, hour) {
 function buildDemoEvents() {
   return [
     {
+      id: 'demo-online-dutch',
+      isDemo: true,
+      mode: 'online',
+      city: 'online',
+      scheduleType: 'flexible',
+      scheduleNote: '每周二/四晚 20:30（40分钟）',
+      category: '荷语学习',
+      title: '荷语 A2/B1 口语互练 & 每日新闻共读搭子',
+      startsAt: new Date(Date.now() + 25 * 86400000).toISOString(),
+      place: '微信语音 / Zoom',
+      host: '阿宁（示范）',
+      count: 4,
+      capacity: 4,
+      tags: ['荷语A2', '长期搭子', '新手友好'],
+      hasContactHint: true,
+      description: '示范搭子：挑当天荷语新闻互相读一段再自由聊生活，全荷均可加入。有真实网友发布后自动隐藏。',
+    },
+    {
+      id: 'demo-online-game',
+      isDemo: true,
+      mode: 'online',
+      city: 'online',
+      scheduleType: 'fixed',
+      scheduleNote: '',
+      category: '游戏开黑',
+      title: '周六晚欧服 Valorant / 英雄联盟娱乐开黑',
+      startsAt: nextWeekendIso(0, 21),
+      place: 'Discord 语音',
+      host: '小周（示范）',
+      count: 5,
+      capacity: 5,
+      tags: ['带麦开黑', '新手友好'],
+      hasContactHint: true,
+      description: '示范搭子：下班/周末轻松娱乐局不压力队友，支持全荷线上连麦。满员仅作版面展示，无法报名。',
+    },
+    {
       id: 'demo-delft-boardgame',
       isDemo: true,
+      mode: 'offline',
       city: 'delft',
+      scheduleType: 'fixed',
+      scheduleNote: '',
       category: '桌游',
       title: '周六下午 Delft 阿瓦隆 & 璀璨宝石桌游局',
       startsAt: nextWeekendIso(0, 14),
@@ -2071,31 +2277,47 @@ function buildDemoEvents() {
       host: '小林（示范）',
       count: 6,
       capacity: 6,
+      tags: ['新手友好', 'AA制'],
       hasContactHint: true,
-      description: '示范活动：展示报名后解锁集合联络暗号与行前留言的效果。有真实网友发布邀约后，此示范卡片会自动隐藏。',
+      description: '示范搭子：报名后解锁联络暗号与行前留言。有真实网友发布邀约后，此示范卡片会自动隐藏。',
     },
     {
       id: 'demo-haag-coffee',
       isDemo: true,
+      mode: 'offline',
       city: 'den-haag',
+      scheduleType: 'fixed',
+      scheduleNote: '',
       category: '咖啡',
-      title: '周日海牙运河咖啡 + 荷语 A2 口语聊天局',
+      title: '周日海牙运河咖啡 + 生活/求职聊天局',
       startsAt: nextWeekendIso(1, 15),
       place: 'Den Haag Centraal 附近咖啡馆',
-      host: '阿宁（示范）',
+      host: '小陈（示范）',
       count: 4,
       capacity: 4,
+      tags: ['新手友好', 'AA制'],
       hasContactHint: true,
-      description: '示范活动：约三五好友喝咖啡聊生活或顺便练练荷语口语，满员仅作版面展示，无法报名。',
+      description: '示范搭子：约三五好友喝咖啡聊生活或交流求职租房经验，满员仅作版面展示，无法报名。',
     },
   ];
+}
+
+function seatSlotsHtml(count, capacity) {
+  const cap = Math.max(2, Math.min(12, Number(capacity) || 4));
+  const filled = Math.max(1, Math.min(cap, Number(count) || 1));
+  if (cap > 8) {
+    const pct = Math.min(100, Math.round((filled / cap) * 100));
+    return `<div class="event-capacity" aria-hidden="true"><i style="width:${pct}%"></i></div>`;
+  }
+  const dots = Array.from({ length: cap }, (_, i) => `<i class="seat-dot ${i < filled ? 'filled' : 'open'}"></i>`).join('');
+  return `<div class="seat-slots" aria-hidden="true">${dots}</div>`;
 }
 
 function renderEvents() {
   $('meetupHelp').hidden = true;
   if (eventsFailed) {
     if ($('communityCountNote')) $('communityCountNote').textContent = '';
-    $('eventsList').innerHTML = '<div class="invites-empty"><h2>邀约暂时没能加载</h2><button type="button" class="text-btn" data-retry-events>重新加载邀约</button></div>';
+    $('eventsList').innerHTML = '<div class="invites-empty"><h2>搭子列表暂时没能加载</h2><button type="button" class="text-btn" data-retry-events>重新加载</button></div>';
     return;
   }
   if (!eventsReady) {
@@ -2104,68 +2326,109 @@ function renderEvents() {
     return;
   }
   const now = new Date();
-  const inScope = upcomingCityEvents(state.events, cityPeriod, now, selectedCity);
+  const inScope = filterCommunityBuddies(state.events, {
+    mode: state.buddyMode,
+    period: cityPeriod,
+    city: selectedCity,
+    category: '',
+    now,
+  });
   const events = state.eventCategory ? inScope.filter(ev => ev.category === state.eventCategory) : inScope;
-  const showCity = selectedCity === 'all' || selectedCity === 'zuid-holland';
-  if ($('communityCountNote')) $('communityCountNote').textContent = inScope.length ? `${inScope.length} 场邀约` : '';
+  const showCity = selectedCity === 'all' || selectedCity === 'zuid-holland' || state.buddyMode === 'all';
+  if ($('communityCountNote')) $('communityCountNote').textContent = inScope.length ? `${inScope.length} 个搭子` : '';
 
   const metaIcon = {
     time: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
+    repeat: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 2l4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>',
     place: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11Z"/><circle cx="12" cy="10" r="2.3"/></svg>',
+    online: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>',
     host: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>',
+  };
+
+  const renderCard = ev => {
+    const isOnline = ev.mode === 'online' || ev.city === 'online';
+    const isFlex = ev.scheduleType === 'flexible';
+    const modeBadge = isOnline
+      ? '<span class="pill mode-online"><i class="live-dot" aria-hidden="true"></i>线上 · 全荷</span>'
+      : `<span class="pill mode-offline">线下 · ${esc(cities[ev.city] || 'Delft')}</span>`;
+    const flexBadge = isFlex ? '<span class="pill mode-flex">长期</span>' : '';
+    const statusBadge = ev.isDemo
+      ? `<span class="pill gray">已满员 · 示范（${ev.count}/${ev.capacity}）</span>`
+      : `<span class="pill ${ev.count >= ev.capacity ? 'gray' : 'seat-open'}">${ev.count >= ev.capacity ? '已满员' : `差 ${ev.capacity - ev.count} 人（${ev.count}/${ev.capacity}）`}</span>`;
+    const tagsHtml = Array.isArray(ev.tags) && ev.tags.length
+      ? `<div class="buddy-tags">${ev.tags.slice(0, 3).map(t => `<span class="buddy-tag">${esc(t)}</span>`).join('')}</div>`
+      : '';
+    const timeDisplay = eventScheduleText(ev, dateText);
+    const placeDisplay = eventPlace(ev, isOnline ? false : showCity);
+
+    return `<article class="event-card ${isOnline ? 'is-online' : 'is-offline'} ${ev.isDemo ? 'is-demo-card' : ''}">
+      <div class="event-top">
+        <div class="event-badges">${modeBadge}<span class="pill">${esc(ev.category)}</span>${flexBadge}</div>
+        ${statusBadge}
+      </div>
+      <h2>${esc(ev.title)}</h2>
+      ${seatSlotsHtml(ev.count, ev.capacity)}
+      <div class="event-meta">
+        <span>${isFlex ? metaIcon.repeat : metaIcon.time}${esc(timeDisplay)}</span>
+        <span>${isOnline ? metaIcon.online : metaIcon.place}${esc(placeDisplay)}</span>
+        <span>${metaIcon.host}${esc(ev.host)}${ev.isDemo ? '' : ' 发起'}</span>
+      </div>
+      ${tagsHtml}
+      ${ev.description ? `<p class="buddy-desc">${esc(ev.description)}</p>` : ''}
+      ${ev.isDemo
+        ? `<div class="event-footer">
+            <button type="button" class="text-btn" data-clone-demo-event="${esc(ev.id)}">发个同款搭子 ＋</button>
+            <button type="button" class="outline-btn" disabled>已满员（示范）</button>
+          </div>`
+        : `<div class="event-footer">
+            <div class="line-actions" style="margin:0;gap:12px">
+              <button type="button" class="text-btn" data-share-event="${esc(ev.id)}">生成邀请卡</button>
+              ${ev.joined || ev.hostIsMe ? `<button type="button" class="text-btn" data-coord-event="${esc(ev.id)}">${isOnline ? '组队沟通' : '集合沟通'}${ev.messageCount ? ` (${ev.messageCount})` : ''}</button>` : `<button type="button" class="text-btn" data-report-event="${esc(ev.id)}" data-report-title="${esc(ev.title)}">举报</button>`}
+            </div>
+            <button type="button" class="${ev.joined ? 'outline-btn' : 'primary-btn'}" data-event="${esc(ev.id)}" ${ev.hostIsMe || (!ev.joined && ev.count >= ev.capacity) ? 'disabled' : ''}>${ev.hostIsMe ? '我发起的' : ev.joined ? '取消报名' : ev.count >= ev.capacity ? '已满员' : isOnline ? '加入组队' : '报名参加'}</button>
+          </div>
+          ${ev.hostIsMe ? `<div class="event-footer"><button class="text-btn" type="button" data-attendees="${esc(ev.id)}">成员名单 (${ev.count - 1})</button><button class="text-btn" type="button" data-edit-event="${esc(ev.id)}">修改安排</button><button class="text-btn danger" type="button" data-cancel-event="${esc(ev.id)}">取消邀约</button></div>` : ''}`}
+    </article>`;
   };
 
   if (!events.length) {
     if (state.eventCategory && inScope.length) {
-      $('eventsList').innerHTML = `<div class="invites-empty"><div><h2>当前范围没有「${esc(state.eventCategory)}」类邀约</h2><p>还有 ${inScope.length} 场其他类别的同城邀约正在找人，或者你也可以直接发一个。</p></div><div class="invite-options"><button type="button" class="outline-btn" data-clear-event-cat>查看全部类别 (${inScope.length})</button><button type="button" class="primary-btn" id="emptyCreateCatBtn">＋ 发个${esc(state.eventCategory)}邀约</button></div></div>`;
-      $('emptyCreateCatBtn')?.addEventListener('click', () => openEventForm(null, { title: '', category: state.eventCategory }));
+      $('eventsList').innerHTML = `<div class="invites-empty"><div><h2>当前暂无「${esc(state.eventCategory)}」类搭子</h2><p>还有 ${inScope.length} 个其他类别的搭子正在招人，或者直接发一个。</p></div><div class="invite-options"><button type="button" class="outline-btn" data-clear-event-cat>查看全部类别 (${inScope.length})</button><button type="button" class="primary-btn" id="emptyCreateCatBtn">＋ 发个${esc(state.eventCategory)}搭子</button></div></div>`;
+      $('emptyCreateCatBtn')?.addEventListener('click', () => openEventForm(null, {
+        mode: state.buddyMode === 'online' || ['荷语学习', '自习求职', '游戏开黑'].includes(state.eventCategory) ? 'online' : 'offline',
+        scheduleType: ['荷语学习', '自习求职', '游戏开黑'].includes(state.eventCategory) ? 'flexible' : 'fixed',
+        category: state.eventCategory,
+      }));
       return;
     }
-    const scope = cityLabels[selectedCity] || '当前范围', alternatives = [];
-    if (cityPeriod !== 'all' && upcomingCityEvents(state.events, 'all', now, selectedCity).length) {
-      alternatives.push(filterLink('看其他日期的邀约', { period: 'all', source: 'community' }));
+    const alternatives = [];
+    if (state.buddyMode !== 'all' && filterCommunityBuddies(state.events, { mode: 'all', period: 'all', city: selectedCity, now }).length) {
+      alternatives.push(filterLink('看全部线上+线下搭子', { mode: 'all', period: 'all', source: 'community' }));
     }
-    if (selectedCity !== 'zuid-holland' && upcomingCityEvents(state.events, 'all', now, 'zuid-holland').length) {
-      alternatives.push(filterLink('看南荷兰省邀约', { city: 'zuid-holland', period: 'all', source: 'community' }));
-    } else if (selectedCity !== 'all' && upcomingCityEvents(state.events, cityPeriod, now, 'all').length) {
-      alternatives.push(filterLink('看全部荷兰城市邀约', { city: 'all', source: 'community' }));
+    if (cityPeriod !== 'all' && filterCommunityBuddies(state.events, { mode: state.buddyMode, period: 'all', city: selectedCity, now }).length) {
+      alternatives.push(filterLink('看全部日期的搭子', { period: 'all', mode: state.buddyMode, source: 'community' }));
+    }
+    if (state.buddyMode !== 'online' && selectedCity !== 'all' && filterCommunityBuddies(state.events, { mode: state.buddyMode, period: 'all', city: 'all', now }).length) {
+      alternatives.push(filterLink('看全部荷兰城市', { city: 'all', period: 'all', mode: state.buddyMode, source: 'community' }));
     }
     if (!alternatives.length && !state.eventCategory) {
-      const demos = buildDemoEvents();
-      $('eventsList').innerHTML = demos.map(ev => `<article class="event-card is-demo-card">
-        <div class="event-top"><span class="pill">${esc(ev.category)}</span><span class="pill gray">已满员 · 示范（${ev.count}/${ev.capacity}）</span></div>
-        <h2>${esc(ev.title)}</h2>
-        <div class="event-capacity" aria-hidden="true"><i style="width:100%"></i></div>
-        <div class="event-meta"><span>${metaIcon.time}${esc(dateText(ev.startsAt))}</span><span>${metaIcon.place}${esc(eventPlace(ev, true))}</span><span>${metaIcon.host}${esc(ev.host)}</span></div>
-        <details class="event-description"><summary>说明</summary><p class="preserve-lines">${esc(ev.description)}</p></details>
-        <div class="event-footer">
-          <button type="button" class="text-btn" data-clone-demo-event="${esc(ev.id)}">发个同款邀约 ＋</button>
-          <button type="button" class="outline-btn" disabled>已满员（示范）</button>
-        </div>
-      </article>`).join('');
+      const allDemos = buildDemoEvents();
+      const demos = state.buddyMode === 'online'
+        ? allDemos.filter(d => d.mode === 'online')
+        : state.buddyMode === 'offline'
+          ? allDemos.filter(d => d.mode === 'offline')
+          : allDemos.slice(0, 3);
+      $('eventsList').innerHTML = demos.map(renderCard).join('');
       return;
     }
-    const prompts = '<button type="button" class="outline-btn" data-create-event="walk">约人散步</button><button type="button" class="outline-btn" data-create-event="coffee">约杯咖啡</button><button type="button" class="text-btn" data-open-city-info>去逛周末城市活动 →</button>';
-    $('eventsList').innerHTML = `<div class="invites-empty"><div><h2>${esc(scope)} · ${periodNames[cityPeriod]}暂无网友邀约</h2><p>${alternatives.length ? '可切换范围，或去「荷语资讯」挑一场城市活动约伴。' : '发个小局找同城伙伴，或去「荷语资讯」逛逛周末活动。'}</p></div><div class="invite-options">${alternatives.length ? alternatives.join('') : prompts}</div></div>`;
+    const scopeLabel = state.buddyMode === 'online' ? '全荷线上' : (cityLabels[selectedCity] || '当前范围');
+    const prompts = '<button type="button" class="outline-btn" data-buddy-template="dutch">发荷语口语搭子</button><button type="button" class="outline-btn" data-buddy-template="game">发游戏开黑搭子</button><button type="button" class="text-btn" data-open-city-info>去逛周末城市活动 →</button>';
+    $('eventsList').innerHTML = `<div class="invites-empty"><div><h2>${esc(scopeLabel)} · ${esc(periodNames[cityPeriod] || '近期')}暂无搭子</h2><p>${alternatives.length ? '可切换模式或城市范围查看，也可以 10 秒发起一个。' : '发个线上或同城搭子，或者去「荷语资讯」逛逛周末活动。'}</p></div><div class="invite-options">${alternatives.length ? alternatives.join('') : prompts}</div></div>`;
     return;
   }
 
   $('meetupHelp').hidden = false;
-  $('eventsList').innerHTML = events.map(ev => `<article class="event-card">
-    <div class="event-top"><span class="pill">${esc(ev.category)}</span><span class="pill ${ev.count >= ev.capacity ? 'gray' : ''}">${ev.count >= ev.capacity ? '已满员' : `差 ${ev.capacity - ev.count} 人（${ev.count}/${ev.capacity}）`}</span></div>
-    <h2>${esc(ev.title)}</h2>
-    <div class="event-capacity" aria-hidden="true"><i style="width:${Math.min(100, Math.round((ev.count / Math.max(1, ev.capacity)) * 100))}%"></i></div>
-    <div class="event-meta"><span>${metaIcon.time}${esc(dateText(ev.startsAt))}</span><span>${metaIcon.place}${esc(eventPlace(ev, showCity))}</span><span>${metaIcon.host}${esc(ev.host)} 发起</span></div>
-    ${ev.description ? `<details class="event-description"><summary>活动说明</summary><p class="preserve-lines">${esc(ev.description)}</p></details>` : ''}
-    <div class="event-footer">
-      <div class="line-actions" style="margin:0;gap:12px">
-        <button type="button" class="text-btn" data-share-event="${esc(ev.id)}">生成邀请卡</button>
-        ${ev.joined || ev.hostIsMe ? `<button type="button" class="text-btn" data-coord-event="${esc(ev.id)}">集合沟通${ev.messageCount ? ` (${ev.messageCount})` : ''}</button>` : `<button type="button" class="text-btn" data-report-event="${esc(ev.id)}" data-report-title="${esc(ev.title)}">举报</button>`}
-      </div>
-      <button type="button" class="${ev.joined ? 'outline-btn' : 'primary-btn'}" data-event="${esc(ev.id)}" ${ev.hostIsMe || (!ev.joined && ev.count >= ev.capacity) ? 'disabled' : ''}>${ev.hostIsMe ? '我发起的' : ev.joined ? '取消报名' : ev.count >= ev.capacity ? '已满员' : '报名参加'}</button>
-    </div>
-    ${ev.hostIsMe ? `<div class="event-footer"><button class="text-btn" type="button" data-attendees="${esc(ev.id)}">报名名单 (${ev.count - 1})</button><button class="text-btn" type="button" data-edit-event="${esc(ev.id)}">修改安排</button><button class="text-btn danger" type="button" data-cancel-event="${esc(ev.id)}">取消活动</button></div>` : ''}
-  </article>`).join('');
+  $('eventsList').innerHTML = events.map(renderCard).join('');
 }
 
 function beginRsvp(id) {
@@ -2185,19 +2448,21 @@ async function openEventCoord(eventOrId) {
     if (!ev) ev = (await api('event', 'GET', null, true, { id })).event;
     const coord = await api('eventMessages', 'GET', null, true, { eventId: id });
     state.coordEvent = { ...ev, contactHint: coord.contactHint || '' };
+    const isOnline = ev.mode === 'online' || ev.city === 'online';
+    const isFlex = ev.scheduleType === 'flexible';
     $('coordHeading').textContent = ev.title;
-    $('coordMeta').textContent = `${dateText(ev.startsAt)}（荷兰时间） · ${eventPlace(ev, true)}${coord.cancelled ? ' · 【已取消】' : ''}`;
-    $('coordCalendarBtn').hidden = Boolean(coord.cancelled);
+    $('coordMeta').textContent = `${eventScheduleText(ev, dateText)}${isFlex ? '' : '（荷兰时间）'} · ${eventPlace(ev, true)}${coord.cancelled ? ' · 【已取消】' : ''}`;
+    $('coordCalendarBtn').hidden = Boolean(coord.cancelled || isFlex);
     const contactBox = $('coordContactBox');
     if (coord.cancelled) {
       contactBox.hidden = false;
-      contactBox.innerHTML = `<strong>本次活动已取消</strong><span>${esc(coord.cancelReason || '发起人已取消本次活动，请勿前往集合地点。')}</span>`;
+      contactBox.innerHTML = `<strong>本次邀约已取消</strong><span>${esc(coord.cancelReason || '发起人已取消本次邀约。')}</span>`;
     } else if (coord.contactHint) {
       contactBox.hidden = false;
-      contactBox.innerHTML = `<strong>发起人预留的集合联络方式（仅报名成员可见）</strong><span class="preserve-lines">${esc(coord.contactHint)}</span>`;
+      contactBox.innerHTML = `<strong>${isOnline ? '发起人预留的线上联络 / 房间入口（仅报名成员可见）' : '发起人预留的集合联络方式（仅报名成员可见）'}</strong><span class="preserve-lines">${esc(coord.contactHint)}</span>`;
     } else {
       contactBox.hidden = false;
-      contactBox.innerHTML = `<strong>集合方式</strong><span>请按上方时间地点碰头，也可在下方行前留言区直接联系发起人和同行伙伴。</span>`;
+      contactBox.innerHTML = `<strong>${isOnline ? '组队沟通' : '集合方式'}</strong><span>${isOnline ? '可在下方留言区交换微信号、Discord 或约定上线时间。' : '请按上方时间地点碰头，也可在下方留言区直接联系发起人和同行伙伴。'}</span>`;
     }
     const attendeesBox = $('coordAttendeesBox');
     if (Array.isArray(coord.attendees)) {
@@ -2210,7 +2475,7 @@ async function openEventCoord(eventOrId) {
     const hostTools = $('coordHostTools');
     if (ev.hostIsMe && !coord.cancelled) {
       hostTools.hidden = false;
-      hostTools.innerHTML = `<button type="button" class="outline-btn" id="coordEditBtn">修改时间/地点/联络暗号</button><button type="button" class="text-btn danger" id="coordCancelBtn">取消活动并邮件通知</button>`;
+      hostTools.innerHTML = `<button type="button" class="outline-btn" id="coordEditBtn">修改时间/方式/联络暗号</button><button type="button" class="text-btn danger" id="coordCancelBtn">取消并邮件通知</button>`;
       $('coordEditBtn').onclick = () => { hideModal('eventCoordModal'); openEventForm(null, null, { ...ev, contactHint: coord.contactHint }); };
       $('coordCancelBtn').onclick = () => promptCancelEvent(ev.id);
     } else {
@@ -2227,7 +2492,7 @@ async function openEventCoord(eventOrId) {
 
 $('coordCalendarBtn').addEventListener('click', () => {
   const ev = state.coordEvent;
-  if (!ev) return;
+  if (!ev || ev.scheduleType === 'flexible') return;
   downloadCalendarIcs({
     uid: `meetup-${ev.id}`,
     title: ev.title,
@@ -2246,7 +2511,7 @@ $('coordCalendarBtn').addEventListener('click', () => {
 function renderCoordMessages(messages) {
   const box = $('coordMessages');
   if (!messages.length) {
-    box.innerHTML = '<p class="coord-empty">还没有行前留言。到了集合点、临时晚到几分钟或天气变化，都可以在这里说一声。</p>';
+    box.innerHTML = '<p class="coord-empty">还没有留言。约定细节、交换联系方式或临时调整时间，都可以在这里说一声。</p>';
     return;
   }
   box.innerHTML = messages.map(m => `<div class="message-bubble ${m.fromMe ? 'mine' : ''}"><strong>${esc(m.nickname)}${m.isHost ? '（发起人）' : ''}</strong> · ${esc(dateText(m.createdAt))}<div class="preserve-lines">${esc(m.content)}</div></div>`).join('');
@@ -2277,19 +2542,19 @@ $('coordReplyForm').addEventListener('submit', async e => {
 async function promptCancelEvent(eventId) {
   if (!requireAuth()) return;
   const reason = await askDialog({
-    title: '取消这场活动？',
-    message: '取消后系统会自动向所有已报名成员发送邮件通知，请勿再前往集合点。',
+    title: '取消这场邀约？',
+    message: '取消后系统会自动向所有已报名成员发送邮件通知。',
     inputLabel: '取消原因（会附在通知邮件中）',
-    inputPlaceholder: '例如：暴雨改下周 / 临时有事抱歉',
-    inputValue: '因天气或临时安排调整取消，抱歉！',
-    confirmText: '确认取消活动',
+    inputPlaceholder: '例如：临时改期下周 / 人数凑齐另约',
+    inputValue: '因临时安排调整取消，抱歉！',
+    confirmText: '确认取消',
     danger: true,
   });
   if (reason === null) return;
   try {
     await api('cancelEvent', 'POST', { eventId, reason });
     hideModal('eventCoordModal');
-    toast('活动已取消，已邮件通知报名成员');
+    toast('邀约已取消，已邮件通知报名成员');
     loadEvents();
     if (state.activeTab === 'mine') loadMine();
   } catch (error) {
@@ -2301,7 +2566,18 @@ $('eventsList').addEventListener('click', async e => {
   const cloneDemo = e.target.closest('[data-clone-demo-event]');
   if (cloneDemo) {
     const demo = buildDemoEvents().find(x => x.id === cloneDemo.dataset.cloneDemoEvent);
-    if (demo) openEventForm(null, { title: demo.title.replace(/^周[六日]下午\s*|^周[六日]\s*/, '周末'), category: demo.category });
+    if (demo) {
+      openEventForm(null, {
+        mode: demo.mode,
+        scheduleType: demo.scheduleType,
+        scheduleNote: demo.scheduleNote,
+        title: demo.title.replace(/^周[六日](下午|晚)\s*|^周[六日]\s*/, '周末'),
+        category: demo.category,
+        place: demo.mode === 'online' ? demo.place : '',
+        capacity: demo.capacity,
+        tags: demo.tags,
+      });
+    }
     return;
   }
   const share = e.target.closest('[data-share-event]');
@@ -2311,14 +2587,16 @@ $('eventsList').addEventListener('click', async e => {
     try {
       const { canvas, url } = await createEventPoster(ev);
       trackEvent('poster_generate');
-      $('eventShareText').value = `${ev.title}\n🕒 ${dateText(ev.startsAt)}（荷兰时间）\n📍 ${eventPlace(ev)}\n查看详情与报名：${url}`;
+      const isOnline = ev.mode === 'online' || ev.city === 'online';
+      const isFlex = ev.scheduleType === 'flexible';
+      $('eventShareText').value = `${isOnline ? '【线上找搭子】' : ''}${ev.title}\n🕒 ${eventScheduleText(ev, dateText)}${isFlex ? '' : '（荷兰时间）'}\n${isOnline ? '💻' : '📍'} ${eventPlace(ev)}\n查看详情与加入：${url}`;
       $('eventShareText').hidden = true;
       $('copyEventShare').textContent = '复制邀请文案';
       $('copyEventShare').hidden = false;
-      $('posterHeading').textContent = '分享同行邀请';
+      $('posterHeading').textContent = '分享搭子邀请卡';
       await presentPosterModal(canvas, {
-        fileName: '荷包-同行邀请.jpg',
-        altText: '同行邀请海报与报名二维码',
+        fileName: '荷包-找搭子邀请.jpg',
+        altText: '搭子邀请海报与报名二维码',
         isListingPoster: false,
         hintText: '保存海报图片或点「复制邀请文案」，发到微信群即可约伴。',
       });
@@ -2338,7 +2616,7 @@ $('eventsList').addEventListener('click', async e => {
   }
   const reportBtn = e.target.closest('[data-report-event]');
   if (reportBtn) {
-    openReportModal({ targetType: 'event', targetId: reportBtn.dataset.reportEvent, label: `同城邀约「${reportBtn.dataset.reportTitle || ''}」` });
+    openReportModal({ targetType: 'event', targetId: reportBtn.dataset.reportEvent, label: `搭子邀约「${reportBtn.dataset.reportTitle || ''}」` });
     return;
   }
   const cancel = e.target.closest('[data-cancel-event]');
@@ -2374,7 +2652,7 @@ $('confirmRsvp').addEventListener('click', async () => {
     localStorage.setItem('delft_nickname', name);
     trackEvent('event_rsvp');
     hideModal('rsvpModal');
-    toast('报名成功！已解锁集合联络说明与行前沟通');
+    toast('加入成功！已解锁联络方式与组队沟通');
     await loadEvents();
     openEventCoord(targetId);
   } catch (error) {
@@ -2384,56 +2662,81 @@ $('confirmRsvp').addEventListener('click', async () => {
   }
 });
 
-$('openCreateEvent').addEventListener('click', () => openEventForm());
+$('openCreateEvent')?.addEventListener('click', () => openEventForm());
+$('openCreateOnline')?.addEventListener('click', () => openEventForm(null, {
+  mode: 'online', scheduleType: 'flexible', category: '荷语学习', place: '微信语音 / Discord', capacity: 4, tags: ['新手友好', '长期搭子'],
+}));
 $('createEventForm').addEventListener('input', () => { if (!state.editingEventId) eventDraftTouched = true; });
 $('closeCreateEvent').addEventListener('click', () => hideModal('createEventBox'));
 $('createEventForm').addEventListener('submit', async e => {
   e.preventDefault();
   if (!requireAuth(() => $('createEventForm').requestSubmit())) return;
   const form = e.target;
-  let startsAt;
-  try { startsAt = amsterdamInstant(form.elements.startsAt.value); }
-  catch (error) { toast(error.message); return; }
+  const mode = form.elements.mode.value === 'online' ? 'online' : 'offline';
+  const scheduleType = form.elements.scheduleType.value === 'flexible' ? 'flexible' : 'fixed';
+  let startsAtIso = '';
+  if (scheduleType === 'fixed') {
+    try { startsAtIso = amsterdamInstant(form.elements.startsAt.value).toISOString(); }
+    catch (error) { toast(error.message); return; }
+  } else if (!form.elements.scheduleNote.value.trim() || form.elements.scheduleNote.value.trim().length < 2) {
+    toast('请填写约定频率或时间说明');
+    form.elements.scheduleNote.focus();
+    return;
+  }
   const button = $('submitEventBtn');
   setBusy(button, true, state.editingEventId ? '保存中…' : '发布中…');
   try {
     if (state.editingEventId) {
       await api('updateEvent', 'POST', {
         eventId: state.editingEventId,
-        startsAt: startsAt.toISOString(),
+        ...(scheduleType === 'fixed' ? { startsAt: startsAtIso } : { scheduleNote: form.elements.scheduleNote.value, validDays: Number(form.elements.validDays.value || 30) }),
         capacity: Number(form.elements.capacity.value),
         place: form.elements.place.value,
         contactHint: form.elements.contactHint.value,
         description: form.elements.description.value,
+        tags: state.eventTags,
       });
       hideModal('createEventBox');
-      toast('活动安排已更新，已发邮件提醒报名成员');
+      toast('搭子安排已更新，已发邮件提醒报名成员');
       loadEvents();
       if (state.activeTab === 'mine') loadMine();
       return;
     }
-    const cityVal = form.elements.city.value;
+    const cityVal = mode === 'online' ? 'online' : form.elements.city.value;
     const hostVal = form.elements.host.value;
     await api('createEvent', 'POST', {
+      mode,
+      scheduleType,
+      scheduleNote: scheduleType === 'flexible' ? form.elements.scheduleNote.value : '',
+      validDays: scheduleType === 'flexible' ? Number(form.elements.validDays.value || 30) : undefined,
       city: cityVal,
       title: form.elements.title.value,
       host: hostVal,
       category: form.elements.category.value,
-      startsAt: startsAt.toISOString(),
+      startsAt: startsAtIso,
       capacity: Number(form.elements.capacity.value),
       place: form.elements.place.value,
       contactHint: form.elements.contactHint.value,
       description: form.elements.description.value,
+      tags: state.eventTags,
     });
     trackEvent('event_create');
     localStorage.setItem('delft_nickname', hostVal);
     hideModal('createEventBox');
     form.reset();
+    syncEventFormMode('offline');
+    syncEventFormSchedule('fixed');
+    syncEventFormTags([]);
     eventDraftTouched = false;
     $('sourceEventNote').hidden = true;
-    toast('邀约已发布！可点「生成邀请卡」发到微信群');
+    toast('搭子已发布！可点「生成邀请卡」发到微信群');
     if (state.activeTab !== 'events') await tab('events', { updateUrl: false });
-    changeDiscovery({ source: 'community', city: cityVal, period: 'all' });
+    changeDiscovery({
+      source: 'community',
+      mode: mode === 'online' ? 'online' : 'all',
+      city: mode === 'online' ? selectedCity : cityVal,
+      period: 'all',
+    });
     loadEvents();
   } catch (error) {
     toast(error.message);
@@ -2661,20 +2964,27 @@ async function loadMine() {
       $('myListings').innerHTML = '<div class="empty-state"><h2>还没有发布闲置</h2><p>拍张照 1 分钟就能发布；卖出后在这里改状态，多件还能生成微信群海报。</p><button class="primary-btn" type="button" data-tab="sell">＋ 发布闲置</button></div>';
     }
 
-    $('myEvents').innerHTML = state.myEvents.length ? state.myEvents.map(event => `<div class="my-event">
+    $('myEvents').innerHTML = state.myEvents.length ? state.myEvents.map(event => {
+      const isOnline = event.mode === 'online' || event.city === 'online';
+      return `<div class="my-event">
       <div class="event-top">
-        <span class="pill ${event.cancelled ? 'cancelled' : ''}">${event.cancelled ? '已取消' : event.hostIsMe ? '我发起的' : '已报名'}</span>
+        <div class="event-badges">
+          <span class="pill ${event.cancelled ? 'cancelled' : ''}">${event.cancelled ? '已取消' : event.hostIsMe ? '我发起的' : '已报名'}</span>
+          ${isOnline ? '<span class="pill mode-online">线上</span>' : ''}
+          ${event.scheduleType === 'flexible' ? '<span class="pill mode-flex">长期</span>' : ''}
+        </div>
         <span class="hint">${event.count}/${event.capacity} 人</span>
       </div>
       <h2>${esc(event.title)}</h2>
-      <p>${esc(dateText(event.startsAt))} · ${esc(eventPlace(event, true))}</p>
+      <p>${esc(eventScheduleText(event, dateText))} · ${esc(eventPlace(event, true))}</p>
       ${event.cancelled && event.cancelReason ? `<p class="hint">取消说明：${esc(event.cancelReason)}</p>` : ''}
       <div class="inventory-actions" style="margin-top:12px">
-        <button type="button" class="outline-btn" data-open-my-coord="${esc(event.id)}">查看集合联络与留言${event.messageCount ? ` (${event.messageCount})` : ''}</button>
-        ${!event.cancelled ? `<a href="/events?event=${encodeURIComponent(event.id)}">活动主页 ↗</a>` : ''}
+        <button type="button" class="outline-btn" data-open-my-coord="${esc(event.id)}">查看联络方式与留言${event.messageCount ? ` (${event.messageCount})` : ''}</button>
+        ${!event.cancelled ? `<a href="/events?event=${encodeURIComponent(event.id)}">搭子详情 ↗</a>` : ''}
       </div>
-    </div>`).join('')
-      : '<div class="empty-state"><h2>还没有参加邀约</h2><p>报名或发起同城小局后，集合联络方式与行前留言会显示在这里。</p><button type="button" class="outline-btn" data-tab="events">去找搭子</button></div>';
+    </div>`;
+    }).join('')
+      : '<div class="empty-state"><h2>还没有参加邀约</h2><p>加入或发起线上组队、同城小局后，联络方式与组队留言会显示在这里。</p><button type="button" class="outline-btn" data-tab="events">去找搭子</button></div>';
   } else {
     $('myListings').innerHTML = mineError;
     $('myEvents').innerHTML = mineError;
@@ -3031,7 +3341,11 @@ async function applyRoute() {
   if (!query.has('city') && !event && !query.get('activity') && prefCity) {
     filters.city = prefCity;
   }
-  selectedCity = filters.city; cityPeriod = filters.period; eventSource = 'community';
+  const qMode = query.get('mode');
+  state.buddyMode = event ? 'all' : (['all', 'online', 'offline'].includes(qMode) ? qMode : 'all');
+  selectedCity = filters.city;
+  cityPeriod = query.get('period') === 'flexible' ? 'flexible' : filters.period;
+  eventSource = 'community';
   cityFeedCity = filters.city; cityFeedPeriod = filters.period;
   const routeActivity = item || event ? '' : query.get('activity') || '';
   activeActivity = routeActivity;
@@ -3074,10 +3388,10 @@ async function applyRoute() {
         if (single?.cancelled) {
           toast(`活动「${single.title}」已取消${single.cancelReason ? '：' + single.cancelReason : ''}`);
         } else {
-          toast('这场邀约已经结束，看看其他近期活动吧');
+          toast('这场邀约已经结束，看看其他近期搭子吧');
         }
       } catch {
-        toast('这条邀约已结束或取消，可以看看其他邀约');
+        toast('这条邀约已结束或取消，可以看看其他搭子');
       }
     }
   }
@@ -3098,18 +3412,13 @@ $('copyEventShare').addEventListener('click', () => {
   copyTextWithFallback($('eventShareText').value, '配套文案已复制，打开微信或小红书粘贴即可');
 });
 
+$('dutchBuddyShortcut')?.addEventListener('click', () => tab('events'));
+
 $('eventsNewsShortcut')?.addEventListener('click', async () => {
   await tab('dutch', { updateUrl: false });
-  if (location.pathname !== '/news') history.pushState(null, '', '/news');
+  if (location.pathname !== '/') history.pushState(null, '', '/');
   dutchView?.openView?.('news');
 });
-
-api('dailyNews', 'GET', null, false).then(res => {
-  const first = res?.editions?.[0]?.items?.[0];
-  if (first?.titleZh && $('eventsNewsHeadline')) {
-    $('eventsNewsHeadline').textContent = `今日精读：${first.titleZh}`;
-  }
-}).catch(() => {});
 
 // Topbar elevation only after the page has scrolled, so the first screen stays calm.
 let scrollTick = false;

@@ -3,18 +3,18 @@
 export const DEFAULT_SITE_ORIGIN = 'https://hebaogj.xyz';
 export const PUBLIC_SITE_URL = `${DEFAULT_SITE_ORIGIN}/`;
 
-export const SITE_TABS = ['events', 'dutch', 'market', 'mine', 'sell'];
+export const SITE_TABS = ['dutch', 'events', 'market', 'mine', 'sell'];
 
 export const TAB_PATHS = {
+  dutch: '/',
   events: '/events',
-  dutch: '/dutch-a2',
   market: '/market',
   mine: '/mine',
   sell: '/sell',
 };
 
 const PATH_TO_TAB = {
-  '/': 'events',
+  '/': 'dutch',
   '/events': 'events',
   '/events/': 'events',
   '/dutch-a2': 'dutch',
@@ -43,26 +43,31 @@ export function resolveSiteOrigin(loc = globalThis.location) {
 }
 
 export function tabPath(tab) {
-  return TAB_PATHS[tab] || '/events';
+  return TAB_PATHS[tab] || '/';
 }
 
 export function pageFromQuery(params) {
   if (params.get('item')) return 'market';
-  if (params.get('event') || params.get('activity')) return 'events';
+  if (params.get('event')) return 'events';
+  if (params.get('activity')) return 'dutch';
   const tab = params.get('tab');
   if (SITE_TABS.includes(tab)) return tab;
-  return 'events';
+  if (params.get('source') === 'community' || ['online', 'offline'].includes(params.get('mode'))) return 'events';
+  return 'dutch';
 }
 
 export function pageFromLocation({ pathname = '/', search = '' } = {}) {
   const params = search instanceof URLSearchParams ? search : new URLSearchParams(search);
   if (params.get('item')) return 'market';
-  if (params.get('event') || params.get('activity')) return 'events';
+  if (params.get('event')) return 'events';
+  if (params.get('activity')) return 'dutch';
   const explicitTab = params.get('tab');
   if (SITE_TABS.includes(explicitTab)) return explicitTab;
   const clean = String(pathname || '/').replace(/\/+$/, '') || '/';
+  if (clean !== '/' && PATH_TO_TAB[clean]) return PATH_TO_TAB[clean];
+  if (params.get('source') === 'community' || ['online', 'offline'].includes(params.get('mode'))) return 'events';
   if (PATH_TO_TAB[clean]) return PATH_TO_TAB[clean];
-  return 'events';
+  return 'dutch';
 }
 
 export function legalModalFromLocation({ pathname = '', search = '' } = {}) {

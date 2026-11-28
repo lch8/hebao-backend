@@ -220,6 +220,40 @@ test('event RSVP, private contactHint unlock, coordination messages, schedule up
   assert.equal(bobMine.myEvents[0].cancelled,true);
   assert.equal(bobMine.myEvents[0].cancelReason,'暴雨改下周');
 
+  // Online + flexible buddy with tags: creates without city/startsAt, sanitizes tags, supports update & RSVP
+  const onlineEv = await ask('createEvent', 'POST', {
+    mode: 'online',
+    scheduleType: 'flexible',
+    scheduleNote: '每周二/四晚 20:00 练口语',
+    validDays: 30,
+    title: '荷语 A2 口语互练搭子',
+    host: '小李',
+    category: '荷语学习',
+    place: '微信语音 / Zoom',
+    capacity: 4,
+    tags: ['荷语A2', '长期搭子', '新手友好', '非法标签', 'AA制'],
+    contactHint: '微信号 dutch_a2_buddy',
+  }, 'alice');
+  assert.equal(onlineEv.status, 200);
+  const onlineList = (await ask('events')).data.events;
+  const createdOnline = onlineList.find(x => x.id === onlineEv.data.id);
+  assert.ok(createdOnline);
+  assert.equal(createdOnline.mode, 'online');
+  assert.equal(createdOnline.city, 'online');
+  assert.equal(createdOnline.scheduleType, 'flexible');
+  assert.equal(createdOnline.scheduleNote, '每周二/四晚 20:00 练口语');
+  assert.deepEqual(createdOnline.tags, ['荷语A2', '长期搭子', '新手友好']);
+  assert.equal((await ask('rsvp', 'POST', { eventId: onlineEv.data.id, nickname: '小张' }, 'bob')).status, 200);
+  assert.equal((await ask('updateEvent', 'POST', {
+    eventId: onlineEv.data.id,
+    scheduleNote: '每周三晚 20:30',
+    tags: ['荷语A2', '女生友好'],
+  }, 'alice')).status, 200);
+  const updatedOnline = (await ask('event', 'GET', undefined, 'bob', { id: onlineEv.data.id })).data.event;
+  assert.equal(updatedOnline.scheduleNote, '每周三晚 20:30');
+  assert.deepEqual(updatedOnline.tags, ['荷语A2', '女生友好']);
+  assert.equal((await ask('cancelEvent', 'POST', { eventId: onlineEv.data.id, reason: '测试结束' }, 'alice')).status, 200);
+
   delete process.env.RESEND_API_KEY;
   mock.mockExternal(null);
 });

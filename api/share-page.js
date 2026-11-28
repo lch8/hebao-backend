@@ -119,13 +119,17 @@ export async function resolveShareMeta({
   if (eventId && getEvent) {
     const ev = await getEvent(eventId).catch(() => null);
     if (ev) {
-      const cityName = cities[ev.city || 'delft'] || 'Delft';
+      const isOnline = ev.mode === 'online' || ev.city === 'online';
+      const cityName = isOnline ? '全荷线上' : (cities[ev.city || 'delft'] || 'Delft');
       const url = new URL('/events', cleanOrigin);
       url.searchParams.set('event', eventId);
       const statusTag = ev.cancelled ? '【已取消】' : `${ev.count}/${ev.capacity} 人`;
+      const timeLabel = ev.scheduleType === 'flexible'
+        ? `灵活约伴 · ${ev.scheduleNote || '时间可商量'}`
+        : `${formatAmsterdam(ev.startsAt)}（荷兰时间）`;
       return {
-        title: `${ev.cancelled ? '【已取消】' : ''}${ev.title} · ${cityName} 同城约伴 · 荷包`,
-        description: `${formatAmsterdam(ev.startsAt)}（荷兰时间）· ${cityName} ${ev.place} · ${ev.host} 发起（${statusTag}）`,
+        title: `${ev.cancelled ? '【已取消】' : ''}${isOnline ? '【线上】' : ''}${ev.title} · ${isOnline ? '全荷找搭子' : `${cityName} 同城约伴`} · 荷包`,
+        description: `${timeLabel} · ${cityName} ${ev.place} · ${ev.host} 发起（${statusTag}）`,
         url: url.href,
         image: defaultImage,
       };
@@ -206,6 +210,14 @@ export async function resolveShareMeta({
       image: defaultImage,
     };
   }
+  if (cleanPath === '/events') {
+    return {
+      title: '在荷线上与线下找搭子 · 荷包',
+      description: '全荷线上组队（荷语口语互练、线上自习、游戏开黑）与同城线下小局（桌游、咖啡、运动、约饭），支持长期灵活约伴。',
+      url: `${cleanOrigin}/events`,
+      image: defaultImage,
+    };
+  }
   if (cleanPath === '/privacy') {
     return {
       title: '隐私政策（GDPR 合规声明）· 荷包',
@@ -216,16 +228,16 @@ export async function resolveShareMeta({
   }
   if (cleanPath === '/terms') {
     return {
-      title: '使用条款与线下安全须知 · 荷包',
-      description: '在荷二手闲置当面验货防骗指南与同城邀约安全准则。',
+      title: '使用条款与安全须知 · 荷包',
+      description: '在荷二手闲置当面验货防骗指南与线上线下找搭子安全准则。',
       url: `${cleanOrigin}/terms`,
       image: defaultImage,
     };
   }
 
   return {
-    title: '荷包 · 在荷华人找搭子、逛闲置与荷兰语学习',
-    description: '2–12 人同城小局与官方城市活动、多图在荷闲置与微信实时库存清仓海报、荷兰语 A2 五科 AI 批改与每日荷语简报。',
+    title: '荷包 · 每日荷语资讯、A2 备考、在荷找搭子与逛闲置',
+    description: '每日荷兰本地新闻精读（难词词注/译文翻转）与六城活动、DUO A2 五科模拟卷与 AI 写作批改、全荷线上线下找搭子及二手闲置清仓。',
     url: `${cleanOrigin}${cleanPath === '/' ? '/' : cleanPath}`,
     image: defaultImage,
   };
@@ -248,14 +260,18 @@ async function queryListingFromDb(id) {
 async function queryEventFromDb(id) {
   if (!process.env.TURSO_DATABASE_URL || !process.env.TURSO_AUTH_TOKEN) return null;
   const row = (await sql(
-    `SELECT e.id, e.city, e.host_name, e.title, e.starts_at, e.place, e.capacity, e.cancelled,
+    `SELECT e.*,
       (SELECT COUNT(*) FROM delft_rsvps r WHERE r.event_id=e.id) AS rsvp_count
      FROM delft_events e WHERE e.id=?`, [id.slice(0, 60)]
   )).rows[0];
   if (!row) return null;
+  const mode = row.mode === 'online' || row.city === 'online' ? 'online' : 'offline';
   return {
     id: row.id,
-    city: row.city || 'delft',
+    city: mode === 'online' ? 'online' : (row.city || 'delft'),
+    mode,
+    scheduleType: row.schedule_type === 'flexible' ? 'flexible' : 'fixed',
+    scheduleNote: row.schedule_note || '',
     host: row.host_name,
     title: row.title,
     startsAt: row.starts_at,
