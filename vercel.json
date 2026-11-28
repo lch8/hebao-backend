@@ -11,7 +11,20 @@
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" },
         { "key": "Permissions-Policy", "value": "camera=(), geolocation=(), payment=(), microphone=(self)" }
+      ]
+    },
+    {
+      "source": "/delft/a2-audio/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=604800, stale-while-revalidate=86400" }
+      ]
+    },
+    {
+      "source": "/delft/(.*)\\.(webp|png|jpg|svg|ico)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=604800, stale-while-revalidate=86400" }
       ]
     }
   ],
@@ -23,6 +36,10 @@
     { "source": "/market/", "destination": "/api/share-page?__path=/market" },
     { "source": "/dutch-a2", "destination": "/api/share-page?__path=/dutch-a2" },
     { "source": "/dutch-a2/", "destination": "/api/share-page?__path=/dutch-a2" },
+    { "source": "/dutch", "destination": "/api/share-page?__path=/dutch" },
+    { "source": "/dutch/", "destination": "/api/share-page?__path=/dutch" },
+    { "source": "/news", "destination": "/api/share-page?__path=/news" },
+    { "source": "/news/", "destination": "/api/share-page?__path=/news" },
     { "source": "/mine", "destination": "/api/share-page?__path=/mine" },
     { "source": "/mine/", "destination": "/api/share-page?__path=/mine" },
     { "source": "/sell", "destination": "/api/share-page?__path=/sell" },

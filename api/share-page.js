@@ -81,7 +81,7 @@ export async function resolveShareMeta({
   feedEvents = cityEvents,
 }) {
   const cleanOrigin = String(origin || DEFAULT_SITE_ORIGIN).replace(/\/+$/, '');
-  const defaultImage = `${cleanOrigin}/delft/og-cover.jpg`;
+  const defaultImage = `${cleanOrigin}/delft/og-cover.jpg?v=20261128e`;
   const itemId = searchParams.get('item');
   const productId = searchParams.get('product');
   const eventId = searchParams.get('event');
@@ -154,6 +154,14 @@ export async function resolveShareMeta({
       title: '在荷闲置与搬家清仓海报工具 · 荷包',
       description: '单件多图发布、价格与收藏筛选、一键生成微信实时库存清仓海报；14 天在售确认，咨询邮件直达。',
       url: `${cleanOrigin}${cleanPath}`,
+      image: defaultImage,
+    };
+  }
+  if (cleanPath === '/news') {
+    return {
+      title: '每日荷语新闻简报（A2+/B1 精读）· 荷包',
+      description: '每日精选 3 条荷兰本地生活、交通与政策资讯，AI 改写为地道 A2+/B1 荷语短文，配语音朗读、实用生词本与理解自测。',
+      url: `${cleanOrigin}/news`,
       image: defaultImage,
     };
   }

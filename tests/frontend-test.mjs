@@ -354,6 +354,12 @@ test('marketProducts filters free items, price ceilings, and buyer favorites wit
   assert.match(html, /id="lightboxNext"/);
   assert.match(html, /id="mineAdminTab"/);
   assert.match(html, /id="myAdmin"/);
+  assert.match(html, /id="eventsNewsShortcut"/);
+  assert.match(html, /og-cover\.jpg\?v=20261128e/);
+  assert.match(html, /application\/ld\+json/);
+
+  assert.equal(pageFromLocation({ pathname: '/news', search: '' }), 'dutch');
+  assert.equal(pageFromLocation({ pathname: '/dutch/', search: '' }), 'dutch');
 
   const newsMeta = await resolveShareMeta({
     pathname: '/dutch-a2',
@@ -362,7 +368,21 @@ test('marketProducts filters free items, price ceilings, and buyer favorites wit
   });
   assert.match(newsMeta.title, /每日荷语新闻简报/);
   assert.equal(newsMeta.url, 'https://hebaogj.xyz/dutch-a2?view=news');
+  assert.match(newsMeta.image, /og-cover\.jpg\?v=20261128e/);
+
+  const shortNewsMeta = await resolveShareMeta({
+    pathname: '/news',
+    searchParams: new URLSearchParams(''),
+    origin: 'https://hebaogj.xyz',
+  });
+  assert.match(shortNewsMeta.title, /每日荷语新闻简报/);
+  assert.equal(shortNewsMeta.url, 'https://hebaogj.xyz/news');
+
+  const sitemap = readFileSync(new URL('../sitemap.xml', import.meta.url), 'utf8');
+  assert.match(sitemap, /https:\/\/hebaogj\.xyz\/news/);
 
   const vercel = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'));
   assert.ok(vercel.crons?.some(c => c.path === '/api/daily-news-cron'));
+  assert.ok(vercel.rewrites?.some(r => r.source === '/news'));
+  assert.ok(vercel.headers?.some(h => h.headers?.some(x => x.key === 'Strict-Transport-Security')));
 });

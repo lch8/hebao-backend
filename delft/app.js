@@ -355,6 +355,7 @@ async function tab(name, { updateUrl = true } = {}) {
             loadDailyNews: async () => (await api('dailyNews', 'GET', null, false)).editions || [],
             onPractice: () => trackEvent('a2_practice'),
             onNewsRead: () => trackEvent('news_read'),
+            onCopyText: (text, msg) => copyTextWithFallback(text, msg),
             onSharePoster: async spec => {
               try {
                 const { canvas } = await createStudyPoster(spec);
@@ -1379,6 +1380,53 @@ const priceLabel = item => {
   return price === null ? '价格待议' : price === 0 ? '免费赠送' : `€${price}`;
 };
 
+const DEMO_LISTINGS = [
+  {
+    id: 'demo-delft-bike',
+    isDemo: true,
+    city: 'delft',
+    seller: '阿明（示范）',
+    title: 'Gazelle 城市通勤自行车（含双锁与车灯）',
+    pickup: 'TU Delft 图书馆旁',
+    note: '示范清单：展示多图与自取信息排版，真实卖家发布后此卡片会自动隐藏。',
+    updatedAt: new Date().toISOString(),
+    items: [
+      {
+        id: 'demo-bike-1',
+        name: 'Gazelle 城市通勤车（带 ABUS 链条锁）',
+        price: 115,
+        category: '自行车',
+        condition: '刹车与车灯完好 · 含原装后锁与链条锁',
+        photo: '/delft/demo-bike.webp',
+        photos: ['/delft/demo-bike.webp'],
+        status: 'reserved',
+      },
+    ],
+  },
+  {
+    id: 'demo-delft-desk',
+    isDemo: true,
+    city: 'delft',
+    seller: '小林（示范）',
+    title: 'Delft 毕业清仓 · 简约书桌与台灯',
+    pickup: 'Delft 火车站附近',
+    note: '示范清单：单件与多件均可一键生成微信实时库存清仓海报。',
+    updatedAt: new Date().toISOString(),
+    items: [
+      {
+        id: 'demo-desk-1',
+        name: '宜家简约白色书桌 + 暖光台灯',
+        price: 45,
+        category: '家具',
+        condition: '九成新稳固 · 桌面无划痕，可帮拆桌腿',
+        photo: '/delft/demo-desk.webp',
+        photos: ['/delft/demo-desk.webp'],
+        status: 'reserved',
+      },
+    ],
+  },
+];
+
 function renderMarket() {
   const sortMode = $('marketSort').value;
   const pf = state.priceFilter;
@@ -1395,19 +1443,32 @@ function renderMarket() {
   const root = $('marketGrid');
   const hasNegotiable = products.some(p => p.price === null);
   const filterTag = pf === 'free' ? ' · 免费赠送' : pf === '20' ? ' · ≤ €20' : pf === '50' ? ' · ≤ €50' : pf === 'fav' ? ' · 我的收藏' : '';
-  $('marketSummary').textContent = `${products.length} 件在售闲置${filterTag}${sortMode === 'price' && hasNegotiable ? ' · 待议商品已排在最后' : ''}`;
   const showCityTag = !state.marketCity || state.marketCity === 'all' || state.marketCity === 'zuid-holland';
   const hasFilter = Boolean(state.category || state.priceFilter || $('marketSearch').value.trim() || (state.marketCity && state.marketCity !== 'all'));
 
   if (!products.length) {
     if (pf === 'fav' && state.favorites.size === 0) {
+      $('marketSummary').textContent = '0 件在售闲置 · 我的收藏';
       root.innerHTML = `<div class="empty-state"><h2>还没有收藏的商品</h2><p>浏览闲置时点卡片右上角 ☆ 即可收藏，方便对比价格和自取地点。</p><button type="button" class="outline-btn" data-clear-market>回到全部闲置</button></div>`;
       return;
     }
+    if (!hasFilter && state.listings.length === 0) {
+      $('marketSummary').textContent = '首批在荷闲置陆续上架中 · 以下为示范效果（点开可预览）';
+      root.innerHTML = DEMO_LISTINGS.map(l => {
+        const item = l.items[0];
+        const cityTag = cities[l.city] || 'Delft';
+        return `<article class="listing-card is-demo-card" role="button" tabindex="0" data-listing="${esc(l.id)}" data-product="${esc(item.id)}" aria-label="示范闲置：${esc(item.name)}，${esc(priceLabel(item))}">
+          <div class="listing-media"><img loading="lazy" class="listing-photo" src="${esc(item.photo)}" alt="${esc(item.name)}" /><span class="demo-corner-badge">已预订 · 示范</span></div>
+          <div class="listing-details"><div class="product-price">${esc(priceLabel(item))}</div><h2>${esc(item.name)}</h2><p class="product-condition">${esc(item.condition)}</p><div class="listing-bottom"><span><b class="city-badge">${esc(cityTag)}</b>${esc(l.pickup)}</span><span>${esc(l.seller)}</span></div></div></article>`;
+      }).join('') + `<div class="demo-cta-card"><span class="pill">首批闲置征集中</span><h3>有用不上的好物？1 分钟发布</h3><p>支持单件最多 4 图上传，搬家清仓还能一键生成带实时库存二维码的微信群海报。</p><button type="button" class="primary-btn" data-tab="sell">＋ 发布第一件真实闲置</button></div>`;
+      return;
+    }
+    $('marketSummary').textContent = `0 件在售闲置${filterTag}`;
     root.innerHTML = `<div class="empty-state"><h2>${hasFilter ? '没有找到匹配的在售闲置' : '这一带闲置正在陆续上架'}</h2><p>${hasFilter ? '试试切换「全部城市」、清除价格或分类筛选，或换个关键词。' : '有用不上的东西？拍张照 1 分钟就能发布，搬家清仓还能一键生成微信群海报。'}</p>${hasFilter ? '<button type="button" class="outline-btn" data-clear-market>查看全部在荷闲置</button>' : '<button type="button" class="primary-btn" data-tab="sell">＋ 发布闲置</button>'}</div>`;
     return;
   }
 
+  $('marketSummary').textContent = `${products.length} 件在售闲置${filterTag}${sortMode === 'price' && hasNegotiable ? ' · 待议商品已排在最后' : ''}`;
   root.innerHTML = products.map(({ listing: l, item, price }) => {
     const cityTag = cities[l.city || 'delft'] || 'Delft';
     const gallery = itemGalleryUrls(item);
@@ -1491,18 +1552,27 @@ $('lightboxPrev')?.addEventListener('click', () => stepLightbox(-1));
 $('lightboxNext')?.addEventListener('click', () => stepLightbox(1));
 
 async function openListing(id, { itemId = null, updateUrl = true } = {}) {
-  let listing;
-  try { listing = (await api('listing', 'GET', null, false, { id })).listing; }
-  catch (error) { toast(error.message); return; }
+  const demo = DEMO_LISTINGS.find(d => d.id === id);
+  let listing = demo || null;
+  if (!listing) {
+    try { listing = (await api('listing', 'GET', null, false, { id })).listing; }
+    catch (error) { toast(error.message); return; }
+  }
   state.currentListing = listing;
   state.currentProduct = itemId;
+  const isDemo = Boolean(listing.isDemo);
   const cityTag = cities[listing.city || 'delft'] || 'Delft';
   const selected = listing.items.find(item => item.id === itemId);
   const items = selected ? [selected, ...listing.items.filter(item => item.id !== itemId)] : listing.items;
   $('inquirySentNote').hidden = true;
   $('inquirySentNote').innerHTML = '';
+  const detailModalEl = $('detailModal');
+  const inquiryBox = detailModalEl.querySelector('.inquiry-box');
+  const actionRow = detailModalEl.querySelector('.line-actions');
+  if (inquiryBox) inquiryBox.hidden = isDemo;
+  if (actionRow) actionRow.hidden = isDemo;
   $('copyListingLink').textContent = selected ? '复制此商品链接' : '复制清单链接';
-  $('detailContent').innerHTML = `<h2 id="detailHeading">${esc(listing.title)}</h2><p class="hint">${esc(listing.seller)} · 自取：${esc(cityTag)} · ${esc(listing.pickup)}</p>${listing.note ? `<p class="preserve-lines hint">${esc(listing.note)}</p>` : ''}<p class="hint">${listing.stale ? '超过 14 天未确认，请先发消息询问卖家是否仍在售' : '卖家最近确认：' + esc(dateText(listing.updatedAt))}</p>
+  $('detailContent').innerHTML = `<h2 id="detailHeading">${esc(listing.title)}</h2><p class="hint">${esc(listing.seller)} · 自取：${esc(cityTag)} · ${esc(listing.pickup)}</p>${listing.note ? `<p class="preserve-lines hint">${esc(listing.note)}</p>` : ''}${isDemo ? '' : `<p class="hint">${listing.stale ? '超过 14 天未确认，请先发消息询问卖家是否仍在售' : '卖家最近确认：' + esc(dateText(listing.updatedAt))}</p>`}
     ${items.map(item => {
       const gallery = itemGalleryUrls(item);
       const cover = gallery[0] || '';
@@ -1510,11 +1580,12 @@ async function openListing(id, { itemId = null, updateUrl = true } = {}) {
       const isFav = state.favorites.has(fKey);
       return `<div class="detail-item ${item.id === itemId ? 'selected' : ''} ${item.status === 'sold' ? 'sold' : ''}">
         <div class="detail-gallery">${cover ? `<button type="button" class="detail-photo-zoom" data-zoom-item="${esc(item.id)}" data-zoom-index="0" aria-label="点击放大查看「${esc(item.name)}」照片"><img src="${esc(cover)}" alt="${esc(item.name)}" /><span class="zoom-badge" aria-hidden="true">${gallery.length > 1 ? `1/${gallery.length} 放大` : '放大'}</span></button>` : '<div class="item-thumb image-fallback" aria-hidden="true">＋</div>'}${gallery.length > 1 ? `<div class="detail-thumbs">${gallery.map((url, idx) => `<button type="button" class="detail-thumb-btn" data-zoom-item="${esc(item.id)}" data-zoom-index="${idx}" aria-label="查看第 ${idx + 1} 张照片"><img src="${esc(url)}" alt="${esc(item.name)} 照片 ${idx + 1}" /></button>`).join('')}</div>` : ''}</div>
-        <div><h3>${esc(item.name)}</h3><strong class="detail-price">${esc(priceLabel(item))}</strong>${item.condition ? `<p class="preserve-lines">${esc(item.condition)}</p>` : ''}<div class="detail-item-actions">${item.status === 'available' ? `<button type="button" class="text-btn" data-inquire="${esc(item.name)}">问问这件商品</button>` : ''}<button type="button" class="text-btn detail-fav-btn ${isFav ? 'active' : ''}" data-toggle-fav="${esc(fKey)}" aria-pressed="${isFav}">${isFav ? '★ 已收藏' : '☆ 收藏'}</button></div></div><span class="pill ${item.status === 'sold' ? 'gray' : ''}">${item.id === itemId ? '当前查看 · ' : ''}${statusNames[item.status] || '在售'}</span></div>`;
-    }).join('')}`;
-  $('inquiryText').value = selected?.status === 'available' ? `你好，请问「${selected.name}」还在吗？什么时候方便在 ${cityTag} 自取？` : '';
+        <div><h3>${esc(item.name)}</h3><strong class="detail-price">${esc(priceLabel(item))}</strong>${item.condition ? `<p class="preserve-lines">${esc(item.condition)}</p>` : ''}${isDemo ? '' : `<div class="detail-item-actions">${item.status === 'available' ? `<button type="button" class="text-btn" data-inquire="${esc(item.name)}">问问这件商品</button>` : ''}<button type="button" class="text-btn detail-fav-btn ${isFav ? 'active' : ''}" data-toggle-fav="${esc(fKey)}" aria-pressed="${isFav}">${isFav ? '★ 已收藏' : '☆ 收藏'}</button></div>`}</div><span class="pill ${item.status === 'sold' || isDemo ? 'gray' : ''}">${isDemo ? '已预订 · 示范' : `${item.id === itemId ? '当前查看 · ' : ''}${statusNames[item.status] || '在售'}`}</span></div>`;
+    }).join('')}
+    ${isDemo ? `<div class="demo-preview-banner"><div><strong>这是一份社区示范清单（不可私信）</strong><p>真实闲置上架后，此示范卡片会自动隐藏。你有闲置要出？1 分钟即可免费发布并生成微信清仓海报。</p></div><button type="button" class="primary-btn" data-demo-sell>＋ 发布我的闲置</button></div>` : ''}`;
+  $('inquiryText').value = !isDemo && selected?.status === 'available' ? `你好，请问「${selected.name}」还在吗？什么时候方便在 ${cityTag} 自取？` : '';
   document.title = `${selected ? selected.name + ' · ' : ''}${listing.title} · 荷包`;
-  if (updateUrl) {
+  if (updateUrl && !isDemo) {
     const url = new URL('/market', location.origin);
     url.searchParams.set('item', id);
     if (itemId) url.searchParams.set('product', itemId);
@@ -1524,6 +1595,11 @@ async function openListing(id, { itemId = null, updateUrl = true } = {}) {
 }
 
 $('detailContent').addEventListener('click', e => {
+  if (e.target.closest('[data-demo-sell]')) {
+    hideModal('detailModal', { updateUrl: false });
+    tab('sell');
+    return;
+  }
   const favBtn = e.target.closest('[data-toggle-fav]');
   if (favBtn) {
     const added = toggleFavorite(favBtn.dataset.toggleFav);
@@ -1920,6 +1996,48 @@ async function loadEvents() {
   }
 }
 
+function nextWeekendIso(dayOffset, hour) {
+  const d = new Date();
+  const dow = d.getDay();
+  const daysToSat = (6 - dow + 7) % 7 || 7;
+  const target = new Date(d.getTime() + (daysToSat + dayOffset) * 86400000);
+  target.setHours(hour, 0, 0, 0);
+  return target.toISOString();
+}
+
+function buildDemoEvents() {
+  return [
+    {
+      id: 'demo-delft-boardgame',
+      isDemo: true,
+      city: 'delft',
+      category: '桌游',
+      title: '周六下午 Delft 阿瓦隆 & 璀璨宝石桌游局',
+      startsAt: nextWeekendIso(0, 14),
+      place: 'Delft 火车站星巴克门口集合',
+      host: '小林（示范）',
+      count: 6,
+      capacity: 6,
+      hasContactHint: true,
+      description: '示范活动：展示报名后解锁集合联络暗号与行前留言的效果。有真实网友发布邀约后，此示范卡片会自动隐藏。',
+    },
+    {
+      id: 'demo-haag-coffee',
+      isDemo: true,
+      city: 'den-haag',
+      category: '咖啡',
+      title: '周日海牙运河咖啡 + 荷语 A2 口语聊天局',
+      startsAt: nextWeekendIso(1, 15),
+      place: 'Den Haag Centraal 附近咖啡馆',
+      host: '阿宁（示范）',
+      count: 4,
+      capacity: 4,
+      hasContactHint: true,
+      description: '示范活动：约三五好友喝咖啡聊生活或顺便练练荷语口语，满员仅作版面展示，无法报名。',
+    },
+  ];
+}
+
 function renderEvents() {
   $('meetupHelp').hidden = true;
   if (eventsFailed) {
@@ -1938,6 +2056,12 @@ function renderEvents() {
   const showCity = selectedCity === 'all' || selectedCity === 'zuid-holland';
   $('communityCount').textContent = String(inScope.length);
 
+  const metaIcon = {
+    time: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
+    place: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11Z"/><circle cx="12" cy="10" r="2.3"/></svg>',
+    host: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>',
+  };
+
   if (!events.length) {
     if (state.eventCategory && inScope.length) {
       $('eventsList').innerHTML = `<div class="invites-empty"><div><h2>当前范围没有「${esc(state.eventCategory)}」类邀约</h2><p>还有 ${inScope.length} 场其他类别的同城邀约正在找人，或者你也可以直接发一个。</p></div><div class="invite-options"><button type="button" class="outline-btn" data-clear-event-cat>查看全部类别 (${inScope.length})</button><button type="button" class="primary-btn" id="emptyCreateCatBtn">＋ 发个${esc(state.eventCategory)}邀约</button></div></div>`;
@@ -1953,17 +2077,27 @@ function renderEvents() {
     } else if (selectedCity !== 'all' && upcomingCityEvents(state.events, cityPeriod, now, 'all').length) {
       alternatives.push(filterLink('看全部荷兰城市邀约', { city: 'all', source: 'community' }));
     }
+    if (!alternatives.length && !state.eventCategory) {
+      const demos = buildDemoEvents();
+      $('eventsList').innerHTML = demos.map(ev => `<article class="event-card is-demo-card">
+        <div class="event-top"><span class="pill">${esc(ev.category)}</span><span class="pill gray">已满员 · 示范（${ev.count}/${ev.capacity}）</span></div>
+        <h2>${esc(ev.title)}</h2>
+        <div class="event-capacity" aria-hidden="true"><i style="width:100%"></i></div>
+        <div class="event-meta"><span>${metaIcon.time}${esc(dateText(ev.startsAt))}（荷兰时间）</span><span>${metaIcon.place}${esc(eventPlace(ev, true))}</span><span>${metaIcon.host}${esc(ev.host)} · 报名可见联络暗号</span></div>
+        <details class="event-description"><summary>示范说明</summary><p class="preserve-lines">${esc(ev.description)}</p></details>
+        <div class="event-footer">
+          <button type="button" class="text-btn" data-clone-demo-event="${esc(ev.id)}">发个同款邀约 ＋</button>
+          <button type="button" class="outline-btn" disabled>已满员（示范）</button>
+        </div>
+      </article>`).join('');
+      return;
+    }
     const prompts = '<button type="button" class="outline-btn" data-create-event="walk">约人散步</button><button type="button" class="outline-btn" data-create-event="coffee">约杯咖啡</button>';
     $('eventsList').innerHTML = `<div class="invites-empty"><div><h2>${esc(scope)} · ${periodNames[cityPeriod]}暂无网友邀约</h2><p>${alternatives.length ? '可以切换范围查看已有邀约，或直接挑下方官方活动约伴。' : '下方已为你整理核对过的本地城市活动，点「约人一起去」即可一键成局。'}</p></div><div class="invite-options">${alternatives.length ? alternatives.join('') : prompts}</div></div>`;
     return;
   }
 
   $('meetupHelp').hidden = false;
-  const metaIcon = {
-    time: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
-    place: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11Z"/><circle cx="12" cy="10" r="2.3"/></svg>',
-    host: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>',
-  };
   $('eventsList').innerHTML = events.map(ev => `<article class="event-card">
     <div class="event-top"><span class="pill">${esc(ev.category)}</span><span class="pill ${ev.count >= ev.capacity ? 'gray' : ''}">${ev.count >= ev.capacity ? '已满员' : `差 ${ev.capacity - ev.count} 人（${ev.count}/${ev.capacity}）`}</span></div>
     <h2>${esc(ev.title)}</h2>
@@ -2111,6 +2245,12 @@ async function promptCancelEvent(eventId) {
 }
 
 $('eventsList').addEventListener('click', async e => {
+  const cloneDemo = e.target.closest('[data-clone-demo-event]');
+  if (cloneDemo) {
+    const demo = buildDemoEvents().find(x => x.id === cloneDemo.dataset.cloneDemoEvent);
+    if (demo) openEventForm(null, { title: demo.title.replace(/^周[六日]下午\s*|^周[六日]\s*/, '周末'), category: demo.category });
+    return;
+  }
   const share = e.target.closest('[data-share-event]');
   if (share) {
     const ev = state.events.find(x => x.id === share.dataset.shareEvent);
@@ -2310,10 +2450,20 @@ async function loadAdminOverview() {
     }
     const dayRows = [...byDay.values()].sort((a, b) => b.day.localeCompare(a.day));
 
+    const latestOfficialIso = (feedEvents || [])
+      .map(e => e.startsAt)
+      .filter(Boolean)
+      .sort()
+      .slice(-1)[0] || '';
+    const officialDaysLeft = latestOfficialIso ? Math.ceil((Date.parse(latestOfficialIso) - Date.now()) / 86400000) : 0;
+    const officialNote = latestOfficialIso
+      ? ` · 城市活动已排至 ${latestOfficialIso.slice(0, 10)}${officialDaysLeft <= 21 ? '（临近到期，建议更新 events-feed.json）' : ''}`
+      : '';
+
     host.innerHTML = `
       <div class="paper-card admin-card">
         <div class="admin-head-bar">
-          <div><h2>站点运行总览</h2><p class="hint">每日简报最新期：${esc(t.latestNewsDay || '尚未生成（当前展示样刊）')}</p></div>
+          <div><h2>站点运行总览</h2><p class="hint">每日简报最新期：${esc(t.latestNewsDay || '尚未生成（当前展示样刊）')}${esc(officialNote)}</p></div>
           <div class="admin-row-actions">
             <button type="button" class="outline-btn" data-admin-op="refreshDailyNews">拉取/刷新今日荷语简报</button>
             <button type="button" class="text-btn" data-admin-reload>刷新数据</button>
@@ -2832,8 +2982,9 @@ async function applyRoute() {
   await tab(name, { updateUrl: false });
   if (location.href !== current || state.activeTab !== name) return;
 
-  if (name === 'dutch' && ['prepare', 'news', 'today', 'exam'].includes(query.get('view'))) {
-    dutchView?.openView?.(query.get('view'));
+  const cleanPath = location.pathname.replace(/\/+$/, '') || '/';
+  if (name === 'dutch' && (cleanPath === '/news' || ['prepare', 'news', 'today', 'exam'].includes(query.get('view')))) {
+    dutchView?.openView?.(cleanPath === '/news' ? 'news' : query.get('view'));
   }
 
   const legal = legalModalFromLocation(location);
@@ -2875,6 +3026,19 @@ document.addEventListener('visibilitychange', () => {
 $('copyEventShare').addEventListener('click', () => {
   copyTextWithFallback($('eventShareText').value, '配套文案已复制，打开微信或小红书粘贴即可');
 });
+
+$('eventsNewsShortcut')?.addEventListener('click', async () => {
+  await tab('dutch', { updateUrl: false });
+  if (location.pathname !== '/news') history.pushState(null, '', '/news');
+  dutchView?.openView?.('news');
+});
+
+api('dailyNews', 'GET', null, false).then(res => {
+  const first = res?.editions?.[0]?.items?.[0];
+  if (first?.titleZh && $('eventsNewsHeadline')) {
+    $('eventsNewsHeadline').textContent = `今日精读：${first.titleZh}（点此看 A2+/B1 荷语原文与朗读）`;
+  }
+}).catch(() => {});
 
 // Topbar elevation only after the page has scrolled, so the first screen stays calm.
 let scrollTick = false;

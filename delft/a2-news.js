@@ -59,7 +59,11 @@ export function mountDailyNews(root, storage, hooks = {}) {
     if (!words.length) {
       return `<div class="empty-state"><h3>新闻生词本还是空的</h3><p>阅读每日简报时，点击词汇右侧的「☆」即可收藏到这里，登录邮箱自动跨设备同步。</p><button type="button" class="outline-btn" data-news-mode="feed">回到今日简报</button></div>`;
     }
-    return `<dl class="a2-words news-vocab-list">${words.map(w => `<div>
+    return `<div class="news-edition-bar">
+      <span>共收藏 ${words.length} 个实用荷语表达</span>
+      <button type="button" class="outline-btn" data-news-copy-vocab>复制生词清单</button>
+    </div>
+    <dl class="a2-words news-vocab-list">${words.map(w => `<div>
       <dt lang="nl">${esc(w.nl)}</dt>
       <dd><strong>${esc(w.zh)}</strong>${w.note ? `<p>${esc(w.note)}</p>` : ''}</dd>
       <div class="word-row-actions">
@@ -147,7 +151,10 @@ export function mountDailyNews(root, storage, hooks = {}) {
     return `${dateChips}${starterBanner}
       <div class="news-edition-bar">
         <span>本期刊共 ${edition.items.length} 条 · 已精读 ${readInEdition}/${edition.items.length} 条</span>
-        <button type="button" class="outline-btn" data-news-poster>生成今日荷语打卡图</button>
+        <div class="news-edition-actions">
+          <button type="button" class="text-btn" data-news-copy-link>复制简报链接</button>
+          <button type="button" class="outline-btn" data-news-poster>生成今日荷语打卡图</button>
+        </div>
       </div>
       <p id="newsSpeakStatus" class="a2-meta" role="status"></p>
       <div class="news-list">${cards}</div>`;
@@ -206,6 +213,20 @@ export function mountDailyNews(root, storage, hooks = {}) {
       render();
       return;
     }
+    if (e.target.closest('[data-news-copy-vocab]')) {
+      const words = ledger.read().newsWords || [];
+      if (!words.length) return;
+      const text = words.map(w => `${w.nl}\t${w.zh}${w.note ? `（${w.note}）` : ''}`).join('\n');
+      hooks.onCopyText?.(text, `已复制 ${words.length} 个荷语生词，可直接粘贴到笔记或 Anki`);
+      return;
+    }
+    if (e.target.closest('[data-news-copy-link]')) {
+      const edition = currentEdition();
+      const headline = edition?.items?.[0]?.titleZh ? `「${edition.items[0].titleZh}」` : '';
+      const text = `🇳🇱 每日荷语简报（A2+/B1 精读）${headline}\nhttps://hebaogj.xyz/news?from=news_share`;
+      hooks.onCopyText?.(text, '简报分享链接已复制，发到微信群自带蓝陶预览卡片');
+      return;
+    }
     const optBtn = e.target.closest('[data-news-quiz]');
     if (optBtn) {
       const itemId = optBtn.dataset.newsQuiz;
@@ -240,9 +261,9 @@ export function mountDailyNews(root, storage, hooks = {}) {
           ...sampleVocab.map(v => `✦ ${v}`),
         ].slice(0, 5),
         footerHint: '扫码免费看每日荷语简报、刷 DUO A2 模拟卷与 AI 写作批改',
-        targetPath: '/dutch-a2?view=news&from=news_card',
+        targetPath: '/news?from=news_card',
         fileName: `荷包-每日荷语简报-${edition.day}.jpg`,
-        shareCopy: `🇳🇱 今日荷语精读打卡（${edition.day}）\n${edition.items.map(it => `• ${it.titleZh}`).join('\n')}\n\n免费每日荷语简报 + A2 AI 写作批改：https://hebaogj.xyz/dutch-a2?view=news&from=news_card`,
+        shareCopy: `🇳🇱 今日荷语精读打卡（${edition.day}）\n${edition.items.map(it => `• ${it.titleZh}`).join('\n')}\n\n免费每日荷语简报 + A2 AI 写作批改：https://hebaogj.xyz/news?from=news_card`,
       });
     }
   });

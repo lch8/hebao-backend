@@ -26,6 +26,7 @@ export function mountDutch(root, hooks = {}){
     onChange:()=>{renderCloudBar();saveStatus();pushCloudSoon();},
     onNewsRead:()=>hooks.onNewsRead?.(),
     onSharePoster:spec=>hooks.onSharePoster?.(spec),
+    onCopyText:(text,msg)=>hooks.onCopyText?.(text,msg),
   });
 
   function readLocalPrep(){
