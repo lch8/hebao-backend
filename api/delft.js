@@ -222,15 +222,22 @@ export default async function handler(request) {
            FROM delft_events e WHERE e.id=?`, [user, eventId]
         )).rows[0];
         if (!ev) return json({ error: '邀约不存在' }, 404);
-        if (ev.host_id !== user && !Number(ev.mine)) return json({ error: '仅已报名成员和组织者可查看活动沟通' }, 403);
-        const msgs = await sql(
-          'SELECT id, user_id, nickname, is_host, content, created_at FROM delft_event_messages WHERE event_id=? ORDER BY created_at ASC LIMIT 120',
-          [eventId]
-        );
+        const isHost = ev.host_id === user;
+        if (!isHost && !Number(ev.mine)) return json({ error: '仅已报名成员和组织者可查看活动沟通' }, 403);
+        const [msgs, rsvps] = await Promise.all([
+          sql(
+            'SELECT id, user_id, nickname, is_host, content, created_at FROM delft_event_messages WHERE event_id=? ORDER BY created_at ASC LIMIT 120',
+            [eventId]
+          ),
+          isHost
+            ? sql('SELECT nickname, created_at FROM delft_rsvps WHERE event_id=? ORDER BY created_at', [eventId])
+            : Promise.resolve({ rows: [] }),
+        ]);
         return json({
           contactHint: ev.contact_hint || '',
           cancelled: Boolean(Number(ev.cancelled || 0)),
           cancelReason: ev.cancel_reason || '',
+          ...(isHost ? { attendees: rsvps.rows.map(x => ({ nickname: x.nickname, createdAt: x.created_at })) } : {}),
           messages: msgs.rows.map(m => ({
             id: m.id,
             nickname: m.nickname,
@@ -242,19 +249,40 @@ export default async function handler(request) {
         });
       }
       if (action === 'messages') {
+        const maskBuyer = (otherId, email) => {
+          const clean = String(email || '').trim().toLowerCase();
+          const at = clean.indexOf('@');
+          if (at > 0 && at < clean.length - 1) {
+            const local = clean.slice(0, at);
+            const domain = clean.slice(at + 1);
+            const prefix = local.length <= 2 ? `${local[0]}*` : `${local.slice(0, 2)}***`;
+            return `买家 ${prefix}@${domain}`;
+          }
+          return `买家 #${String(otherId || '').slice(0, 4)}`;
+        };
         const results = await sql(`SELECT m.id, m.listing_id, m.sender_id, m.receiver_id, m.content, m.created_at, m.read_at,
-          l.title AS listing_title FROM delft_messages m JOIN delft_listings l ON l.id=m.listing_id
-          WHERE m.sender_id=? OR m.receiver_id=? ORDER BY m.created_at DESC LIMIT 100`, [user, user]);
-        const messages = results.rows.map(m => ({
-          id: m.id,
-          listingId: m.listing_id,
-          listingTitle: m.listing_title,
-          fromMe: m.sender_id === user,
-          otherId: m.sender_id === user ? m.receiver_id : m.sender_id,
-          content: m.content,
-          createdAt: m.created_at,
-          unread: m.receiver_id === user && !m.read_at,
-        }));
+          l.title AS listing_title, l.owner_id, l.seller_name, u.verified_email AS other_email
+          FROM delft_messages m
+          JOIN delft_listings l ON l.id=m.listing_id
+          LEFT JOIN users u ON u.id=(CASE WHEN m.sender_id=? THEN m.receiver_id ELSE m.sender_id END)
+          WHERE m.sender_id=? OR m.receiver_id=? ORDER BY m.created_at DESC LIMIT 100`, [user, user, user]);
+        const messages = results.rows.map(m => {
+          const otherId = m.sender_id === user ? m.receiver_id : m.sender_id;
+          const otherLabel = otherId === m.owner_id
+            ? `卖家 ${m.seller_name || ''}`.trim()
+            : maskBuyer(otherId, m.other_email);
+          return {
+            id: m.id,
+            listingId: m.listing_id,
+            listingTitle: m.listing_title,
+            fromMe: m.sender_id === user,
+            otherId,
+            otherLabel,
+            content: m.content,
+            createdAt: m.created_at,
+            unread: m.receiver_id === user && !m.read_at,
+          };
+        });
         return json({
           messages,
           unreadCount: messages.filter(m => m.unread).length,
@@ -536,7 +564,29 @@ export default async function handler(request) {
       return json({ ok: true, contactHint: ev?.contact_hint || '' });
     }
     if (action === 'cancelRsvp') {
-      await sql('DELETE FROM delft_rsvps WHERE event_id=? AND user_id=?', [clipped(body.eventId, 60), user]);
+      const eventId = clipped(body.eventId, 60);
+      const prior = (await sql(
+        `SELECT r.nickname, e.id, e.host_id, e.title, e.starts_at, e.place, e.capacity, e.cancelled
+         FROM delft_rsvps r JOIN delft_events e ON e.id=r.event_id
+         WHERE r.event_id=? AND r.user_id=?`, [eventId, user]
+      )).rows[0];
+      const deleted = await sql('DELETE FROM delft_rsvps WHERE event_id=? AND user_id=?', [eventId, user]);
+      if (deleted.affected && prior && !Number(prior.cancelled) && Date.parse(prior.starts_at) > Date.now()) {
+        const rem = (await sql('SELECT COUNT(*) AS n FROM delft_rsvps WHERE event_id=?', [eventId])).rows[0];
+        await sendTransactionalEmail({
+          toUserId: prior.host_id,
+          dedupeKey: `cancel-rsvp:${eventId}:${user}`,
+          cooldownMs: 300000,
+          subject: `报名变动：${prior.nickname} 取消了「${prior.title}」报名`,
+          heading: `${prior.nickname} 取消了「${prior.title}」的报名`,
+          lines: [
+            `当前人数：${Number(rem?.n || 0) + 1} / ${prior.capacity} 人（空位已重新开放）`,
+            `时间与地点：${amsterdamTimeLabel(prior.starts_at)} · ${prior.place}`,
+          ],
+          ctaLabel: '查看最新报名与活动沟通',
+          ctaPath: `/events?event=${encodeURIComponent(eventId)}`,
+        });
+      }
       return json({ ok: true });
     }
     if (action === 'cancelEvent') {

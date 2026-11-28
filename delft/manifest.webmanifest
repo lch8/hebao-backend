@@ -1,0 +1,24 @@
+{
+  "name": "荷包 · 在荷同城、闲置与荷兰语 A2",
+  "short_name": "荷包",
+  "description": "面向在荷华人与留学生：同城 2–12 人小局与城市活动、在荷闲置与清仓海报、荷兰语 A2 五科备考。",
+  "start_url": "/events",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f5f4ee",
+  "theme_color": "#f5f4ee",
+  "lang": "zh-CN",
+  "icons": [
+    {
+      "src": "/delft/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/delft/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

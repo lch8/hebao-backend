@@ -163,3 +163,22 @@ test('invalid saved data, blocked storage, and a reset leave the module usable',
   assert.equal(blocked.read().forms['knm/b'].first.correct,3);
   blocked.reset();assert.deepEqual(blocked.read().forms,{});
 });
+
+test('drill completions record best scores and prepCounts summarizes drills and mocks', async () => {
+  const {prepCounts} = await import('../delft/a2-progress.js');
+  const storage = memoryStorage(), ledger = openPrepLedger(storage);
+  ledger.recordDrill('read', 'notice', {attempted:2, correct:2});
+  ledger.recordDrill('read', 'notice', {attempted:2, correct:1});
+  ledger.recordDrill('read', 'unknown-type', {attempted:2, correct:2});
+  ledger.start('read', 'a', 't1');
+  ledger.finish('read', 'a', 't1', {attempted:6, correct:5});
+  const saved = ledger.read();
+  assert.equal(saved.drills['read/notice'].correct, 1);
+  assert.equal(saved.drills['read/notice'].best, 2);
+  assert.equal(saved.drills['read/unknown-type'], undefined);
+  const counts = prepCounts(saved);
+  assert.equal(counts.drillsDone, 1);
+  assert.equal(counts.drillsTotal, 15);
+  assert.equal(counts.mocksDone, 1);
+  assert.equal(counts.mocksTotal, 10);
+});

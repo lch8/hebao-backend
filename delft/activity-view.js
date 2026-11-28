@@ -63,6 +63,7 @@ function activityDetails(event, started) {
     ${event.description || event.summary ? `<p class="activity-description">${esc(event.description || event.summary)}</p>` : ''}
     <div class="activity-buttons"><a class="primary-btn" href="${esc(event.sourceUrl)}" target="_blank" rel="noopener noreferrer">查看官方详情 ↗</a>
       ${started ? '' : `<button class="outline-btn" type="button" data-city-meetup="${esc(event.id)}">约人一起去</button>`}
+      ${started ? '' : `<button class="outline-btn" type="button" data-calendar-activity="${esc(event.id)}">加入日历</button>`}
       <button class="text-btn" type="button" data-share-activity="${esc(event.id)}">分享给朋友</button>
     </div>
     <p class="source-byline">${esc(event.sourceName)} · ${esc(event.checkedOn)} 核对</p>

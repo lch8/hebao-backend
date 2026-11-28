@@ -82,9 +82,10 @@ export function eventShareLink(id, loc) {
   return url.href;
 }
 
-export function listingShareLink(id, loc) {
+export function listingShareLink(id, loc, productId = '') {
   const url = new URL('/market', resolveSiteOrigin(loc));
   url.searchParams.set('item', id);
+  if (productId) url.searchParams.set('product', productId);
   return url.href;
 }
 

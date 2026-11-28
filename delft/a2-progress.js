@@ -6,7 +6,7 @@ export const BANK = {...A2_OBJECTIVE, ...A2_OUTPUT};
 export const MOCK_MINUTES = {read:10, listen:9, write:40, speak:8, knm:8};
 export const PREP_KEY = 'hebao_a2_prep_v1';
 export const productive = subject => subject === 'write' || subject === 'speak';
-const empty = () => ({version:1, forms:{}, official:{}});
+const empty = () => ({version:1, forms:{}, official:{}, drills:{}});
 const modes = ['a', 'b'];
 const officialResults = ['pending', 'met', 'review'];
 const integer = (n, max) => Number.isInteger(n) && n >= 0 && n <= max;
@@ -16,6 +16,14 @@ function summaryValue(value, subject, form) {
   const total = BANK[subject][form].length;
   if (!integer(value.attempted,total) || !integer(value.correct,value.attempted)) return null;
   return {at:value.at, attempted:value.attempted, correct:value.correct};
+}
+
+function drillValue(value, subject, type) {
+  if (!value || !Number.isFinite(value.at)) return null;
+  const total = BANK[subject].practice.filter(q => q.type === type).length;
+  if (!total || !integer(value.attempted, total) || !integer(value.correct, value.attempted)) return null;
+  const best = integer(value.best, total) ? Math.max(value.correct, value.best) : value.correct;
+  return {at:value.at, attempted:value.attempted, correct:value.correct, best, total};
 }
 
 function normalize(data) {
@@ -35,6 +43,11 @@ function normalize(data) {
         clean.official[url] = {result:entry.result, timed:entry.timed === true, at:entry.at};
       }
     }
+    for (const t of guide.types) {
+      const key = subject + '/' + t.id;
+      const drill = drillValue(data.drills?.[key], subject, t.id);
+      if (drill) clean.drills[key] = drill;
+    }
   }
   return clean;
 }
@@ -52,7 +65,24 @@ export function mergePrep(localRaw, remoteRaw) {
     const oa = a.official[url], ob = b.official[url];
     out.official[url] = oa && ob ? (oa.at >= ob.at ? oa : ob) : (oa || ob);
   }
+  for (const key of new Set([...Object.keys(a.drills), ...Object.keys(b.drills)])) {
+    const da = a.drills[key], db = b.drills[key];
+    if (!da || !db) { out.drills[key] = da || db; continue; }
+    const latest = da.at >= db.at ? da : db;
+    out.drills[key] = { ...latest, best: Math.max(da.best, db.best) };
+  }
   return out;
+}
+
+export function prepCounts(raw) {
+  const data = normalize(raw);
+  const subjects = Object.keys(A2_GUIDE);
+  const drillsTotal = subjects.reduce((sum, s) => sum + A2_GUIDE[s].types.length, 0);
+  const drillsDone = Object.keys(data.drills).length;
+  const mocksTotal = subjects.length * modes.length;
+  const mocksDone = Object.values(data.forms).filter(f => f?.first || f?.last).length;
+  const officialDone = Object.keys(data.official).length;
+  return { drillsDone, drillsTotal, mocksDone, mocksTotal, officialDone };
 }
 
 // Store outcomes, never typed answers or microphone data. Re-read before editing
@@ -92,6 +122,15 @@ export function openPrepLedger(storage) {
         if (!entry) return;
         entry.last = result;
         if (entry.token === token && !entry.first) entry.first = result;
+      });
+    },
+    recordDrill(subject, type, stats) {
+      if (!A2_GUIDE[subject]?.types.some(t => t.id === type)) return;
+      update(data => {
+        const key = subject + '/' + type;
+        const prev = data.drills[key];
+        const next = drillValue({...stats, best:Math.max(prev?.best || 0, stats?.correct || 0), at:Date.now()}, subject, type);
+        if (next) data.drills[key] = next;
       });
     },
     markOfficial(subject, url, result, timed) {

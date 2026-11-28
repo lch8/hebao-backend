@@ -139,11 +139,15 @@ test('private messages isolate buyers, track unread counts, and send throttled R
 
   assert.equal((await ask('unread','GET',undefined,'alice')).data.unreadCount,2);
   assert.equal((await ask('messages','GET',undefined,'mallory')).data.messages.length,0);
-  assert.equal((await ask('messages','GET',undefined,'alice')).data.messages.length,2);
+  const aliceInbox=(await ask('messages','GET',undefined,'alice')).data.messages;
+  assert.equal(aliceInbox.length,2);
+  assert.equal(aliceInbox[0].otherLabel,'买家 bo***@gmail.com');
   assert.equal((await ask('markRead','POST',{listingId,otherId:'bob'},'alice')).data.unreadCount,0);
 
   assert.equal((await ask('sendMessage','POST',{listingId,receiverId:'mallory',content:'伪造回复'},'alice')).status,403);
   assert.equal((await ask('sendMessage','POST',{listingId,receiverId:'bob',content:'好的，今晚七点见'},'alice')).status,200);
+  const bobInbox=(await ask('messages','GET',undefined,'bob')).data.messages;
+  assert.equal(bobInbox[0].otherLabel,'卖家 小李');
   assert.equal(sentEmails.length,2);
   assert.equal(sentEmails[1].to,'bob@gmail.com');
 
@@ -181,11 +185,22 @@ test('event RSVP, private contactHint unlock, coordination messages, schedule up
   assert.equal((await ask('rsvp','POST',{eventId,nickname:'小王'},'charlie')).status,409);
   assert.equal((await ask('rsvp','POST',{eventId,nickname:'小李'},'alice')).status,409);
 
-  // Participant & host can exchange coordination messages
+  // Participant & host can exchange coordination messages; host gets inline attendees
   assert.equal((await ask('sendEventMessage','POST',{eventId,content:'我会带阿瓦隆桌游'},'bob')).status,200);
   const coord=(await ask('eventMessages','GET',undefined,'alice',{eventId})).data;
   assert.equal(coord.messages.length,1);
   assert.equal(coord.messages[0].content,'我会带阿瓦隆桌游');
+  assert.deepEqual(coord.attendees.map(a=>a.nickname),['小张']);
+  const guestCoord=(await ask('eventMessages','GET',undefined,'bob',{eventId})).data;
+  assert.equal('attendees' in guestCoord,false);
+
+  // Cancelling RSVP notifies host and reopens capacity, then re-RSVP succeeds
+  const beforeCancelRsvp=sentEmails.length;
+  assert.equal((await ask('cancelRsvp','POST',{eventId},'bob')).status,200);
+  assert.equal(sentEmails.length,beforeCancelRsvp+1);
+  assert.equal(sentEmails.at(-1).to,'alice@tudelft.nl');
+  assert.ok(sentEmails.at(-1).subject.includes('取消了'));
+  assert.equal((await ask('rsvp','POST',{eventId,nickname:'小张'},'bob')).status,200);
 
   // Host updates venue -> notifies RSVPed attendee bob@gmail.com
   const countBeforeUpdate=sentEmails.length;
@@ -245,7 +260,7 @@ test('AI endpoint requires JWT auth and enforces daily budget circuit breaker',a
   mock.mockExternal(null);
 });
 
-test('OTP email normalizes case, enforces 55s cooldown, and locks out 5 wrong code attempts',async()=>{
+test('OTP email normalizes case, enforces 55s cooldown, locks out 5 wrong attempts, and issues 30-day server-UUID JWT',async()=>{
   process.env.RESEND_API_KEY='re_test_key';
   let lastMail=null;
   mock.mockExternal(async(url,init)=>{
@@ -269,14 +284,29 @@ test('OTP email normalizes case, enforces 55s cooldown, and locks out 5 wrong co
   // 5 wrong guesses destroy the OTP
   for(let i=0;i<4;i++){
     const bad=await verifyAuthHandler(new Request('https://example.test/api/verify-auth-code',{
-      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:'student@tudelft.nl',code:'000000',userId:'u-stu'})
+      method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:'student@tudelft.nl',code:'000000',userId:'admin'})
     }));
     assert.equal(bad.status,400);
   }
   const locked=await verifyAuthHandler(new Request('https://example.test/api/verify-auth-code',{
-    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:'student@tudelft.nl',code:'000000',userId:'u-stu'})
+    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:'student@tudelft.nl',code:'000000',userId:'admin'})
   }));
   assert.equal(locked.status,429);
+
+  // Fresh OTP succeeds, ignores spoofed client userId, and sets 30-day exp
+  await sendAuthHandler(new Request('https://example.test/api/send-auth-email',{
+    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:'newcomer@tudelft.nl'})
+  }));
+  const realCode=lastMail.subject.match(/(\d{6})/)[1];
+  const verified=await verifyAuthHandler(new Request('https://example.test/api/verify-auth-code',{
+    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:'newcomer@tudelft.nl',code:realCode,userId:'admin'})
+  }));
+  assert.equal(verified.status,200);
+  const vData=await verified.json();
+  assert.notEqual(vData.userId,'admin');
+  assert.match(vData.userId,/^[0-9a-f-]{36}$/);
+  const jwtPayload=JSON.parse(Buffer.from(vData.token.split('.')[1],'base64url').toString());
+  assert.ok(jwtPayload.exp - jwtPayload.iat >= 29 * 86400);
 
   delete process.env.RESEND_API_KEY;
   mock.mockExternal(null);

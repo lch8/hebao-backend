@@ -1,5 +1,5 @@
 // api/send-auth-email.js
-import { sql, json } from './_delft-db.js';
+import { sql, ensureSchema, json } from './_delft-db.js';
 export const config = { runtime: 'edge' };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -24,21 +24,7 @@ export default async function handler(req) {
       return json({ error: '请输入有效的邮箱地址' }, 400);
     }
 
-    await sql(`CREATE TABLE IF NOT EXISTS verification_codes (
-      email TEXT PRIMARY KEY,
-      code TEXT NOT NULL,
-      expires_at TEXT NOT NULL,
-      created_at TEXT,
-      attempts INTEGER DEFAULT 0
-    )`);
-    const cols = (await sql('PRAGMA table_info(verification_codes)')).rows;
-    if (!cols.some(c => c.name === 'created_at')) {
-      try { await sql('ALTER TABLE verification_codes ADD COLUMN created_at TEXT'); } catch {}
-    }
-    if (!cols.some(c => c.name === 'attempts')) {
-      try { await sql('ALTER TABLE verification_codes ADD COLUMN attempts INTEGER DEFAULT 0'); } catch {}
-    }
-    await sql('CREATE TABLE IF NOT EXISTS auth_rate_limits (id TEXT PRIMARY KEY, hits INTEGER NOT NULL)');
+    await ensureSchema();
 
     // 1. 55-second resend cooldown per email
     const existing = (await sql('SELECT created_at FROM verification_codes WHERE email=?', [email])).rows[0];
@@ -105,6 +91,7 @@ export default async function handler(req) {
         Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
         'Content-Type': 'application/json',
       },
+      signal: AbortSignal.timeout(8000),
       body: JSON.stringify({
         from,
         to: email,
@@ -114,19 +101,15 @@ export default async function handler(req) {
       }),
     });
 
-    const mailData = await mailRes.json().catch(() => ({}));
     if (!mailRes.ok) {
-      throw new Error(`邮件发送被拒绝: ${mailData.message || JSON.stringify(mailData)}`);
+      const mailData = await mailRes.json().catch(() => ({}));
+      console.error('send-auth-email resend error:', mailRes.status, mailData);
+      return json({ error: '邮件服务暂时繁忙，请稍后重试或检查邮箱拼写' }, 502);
     }
 
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-    });
+    return json({ success: true });
   } catch (e) {
-    return new Response(JSON.stringify({ error: e.message || '验证码发送失败' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-    });
+    console.error('send-auth-email:', e);
+    return json({ error: '验证码发送失败，请稍后重试' }, 500);
   }
 }

@@ -12,6 +12,7 @@ export async function sql(statement, params = []) {
   const response = await fetch(`${url}/v2/pipeline`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    signal: AbortSignal.timeout(8000),
     body: JSON.stringify({ requests: [
       { type: 'execute', stmt: { sql: statement, args: params.map(toArg) } },
       { type: 'close' }
@@ -41,6 +42,20 @@ export async function ensureSchema() {
         id TEXT PRIMARY KEY, verified_email TEXT,
         email_verified INTEGER DEFAULT 0, deal_count INTEGER DEFAULT 0
       )`);
+      const userCols = (await sql('PRAGMA table_info(users)')).rows;
+      await addColumnIfMissing('users', userCols, 'deal_count', 'INTEGER DEFAULT 0');
+
+      await sql(`CREATE TABLE IF NOT EXISTS verification_codes (
+        email TEXT PRIMARY KEY,
+        code TEXT NOT NULL,
+        expires_at TEXT NOT NULL,
+        created_at TEXT,
+        attempts INTEGER DEFAULT 0
+      )`);
+      const otpCols = (await sql('PRAGMA table_info(verification_codes)')).rows;
+      await addColumnIfMissing('verification_codes', otpCols, 'created_at', 'TEXT');
+      await addColumnIfMissing('verification_codes', otpCols, 'attempts', 'INTEGER DEFAULT 0');
+      await sql('CREATE TABLE IF NOT EXISTS auth_rate_limits (id TEXT PRIMARY KEY, hits INTEGER NOT NULL)');
       await sql(`CREATE TABLE IF NOT EXISTS delft_listings (
         id TEXT PRIMARY KEY, owner_id TEXT NOT NULL, seller_name TEXT NOT NULL,
         title TEXT NOT NULL, pickup TEXT NOT NULL, note TEXT NOT NULL,

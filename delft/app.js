@@ -1,6 +1,7 @@
 // Hebao frontend: zero framework bloat, GDPR-friendly first-party funnel, WeChat WebView ready.
 import { readDraft, writeDraft, deleteDraft } from './draft-store.js';
 import { createPoster, createEventPoster } from './poster.js';
+import { downloadCalendarIcs } from './ics.js';
 import { marketProducts, itemPrice } from './market-view.js';
 import {
   cities, cityLabels, cityEvents, CITY_EVENTS_CHECKED, CITY_AGENDA_URL,
@@ -9,7 +10,7 @@ import {
 } from './city-events.js';
 import { escapeHtml as esc, activityCard, activityDetailContent } from './activity-view.js';
 import {
-  activityLink, listingShareLink, pageFromLocation, legalModalFromLocation,
+  activityLink, eventShareLink, listingShareLink, pageFromLocation, legalModalFromLocation,
   tabPath, SITE_TABS
 } from './site-config.js';
 
@@ -21,7 +22,7 @@ const state = {
   currentListing: null, currentProduct: null, currentEvent: null, coordEvent: null,
   editingEventId: null, reportTarget: null,
   publishedId: null, editingId: null, editVersion: null,
-  dirty: false, activeTab: null, category: '', marketCity: 'all',
+  dirty: false, activeTab: null, category: '', eventCategory: '', marketCity: 'all',
   saving: false, unreadCount: 0,
 };
 
@@ -31,6 +32,15 @@ const siteTitle = document.title;
 const uuid = () => crypto.randomUUID();
 const token = () => localStorage.getItem('hebao_token') || '';
 const nickname = () => localStorage.getItem('delft_nickname') || localStorage.getItem('hp_name') || '';
+const savedCity = () => {
+  const c = localStorage.getItem('hebao_city') || '';
+  return c === 'all' || c === 'zuid-holland' || Object.hasOwn(cities, c) ? c : '';
+};
+const rememberCity = city => {
+  if (city === 'all' || city === 'zuid-holland' || Object.hasOwn(cities, city)) {
+    try { localStorage.setItem('hebao_city', city); } catch {}
+  }
+};
 
 function trackEvent(eventName) {
   try {
@@ -99,12 +109,14 @@ const modalFocus = new Map();
 let modalLayer = 1000;
 let dutchView, dutchLoading;
 
+let dialogResolver = null, dialogHasInput = false;
+
 function showModal(id) {
   modalFocus.set(id, document.activeElement);
   $(id).hidden = false;
   $(id).style.zIndex = ++modalLayer;
   document.body.style.overflow = 'hidden';
-  $(id).querySelector('input,textarea,select,button')?.focus();
+  $(id).querySelector('input:not([hidden]),textarea:not([hidden]),select:not([hidden]),button:not(.modal-x)')?.focus();
 }
 
 function hideModal(id, { updateUrl = true } = {}) {
@@ -115,6 +127,11 @@ function hideModal(id, { updateUrl = true } = {}) {
   modalFocus.get(id)?.focus?.();
   if (id === 'loginModal') resumeAfterLogin = null;
   if (id === 'createEventBox') state.editingEventId = null;
+  if (id === 'actionDialogModal' && dialogResolver) {
+    const resolve = dialogResolver;
+    dialogResolver = null;
+    resolve(dialogHasInput ? null : false);
+  }
   if (id === 'detailModal' && updateUrl && new URL(location.href).searchParams.has('item')) {
     if (history.state?.listingModal) history.back();
     else {
@@ -129,6 +146,53 @@ function hideModal(id, { updateUrl = true } = {}) {
     }
   }
 }
+
+function askDialog({
+  title = '请确认',
+  message = '',
+  confirmText = '确认',
+  cancelText = '取消',
+  danger = false,
+  inputLabel = '',
+  inputPlaceholder = '',
+  inputValue = '',
+} = {}) {
+  if (dialogResolver) {
+    const prev = dialogResolver;
+    dialogResolver = null;
+    prev(dialogHasInput ? null : false);
+  }
+  dialogHasInput = Boolean(inputLabel);
+  $('dialogHeading').textContent = title;
+  $('dialogMessage').textContent = message;
+  $('dialogConfirmBtn').textContent = confirmText;
+  $('dialogCancelBtn').textContent = cancelText;
+  $('dialogConfirmBtn').classList.toggle('danger-solid', Boolean(danger));
+  $('dialogInputWrap').hidden = !dialogHasInput;
+  if (dialogHasInput) {
+    $('dialogInputLabel').textContent = inputLabel;
+    $('dialogInput').placeholder = inputPlaceholder;
+    $('dialogInput').value = inputValue;
+  } else {
+    $('dialogInput').value = '';
+  }
+  return new Promise(resolve => {
+    dialogResolver = resolve;
+    showModal('actionDialogModal');
+    if (dialogHasInput) $('dialogInput').focus();
+    else $('dialogConfirmBtn').focus();
+  });
+}
+
+$('dialogCancelBtn').addEventListener('click', () => hideModal('actionDialogModal'));
+$('dialogForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const resolve = dialogResolver;
+  const val = dialogHasInput ? $('dialogInput').value : true;
+  dialogResolver = null;
+  hideModal('actionDialogModal');
+  resolve?.(val);
+});
 
 function renderSkeletonEvents() {
   return `<div class="skeleton-card" aria-hidden="true"><div class="skeleton-line short"></div><div class="skeleton-line tall"></div><div class="skeleton-line medium"></div><div class="skeleton-line short"></div></div>
@@ -269,26 +333,37 @@ document.addEventListener('keydown', e => {
 // ---- User sign-in (compatible with existing email OTP and JWT). ----
 function refreshLoginUI() {
   const signedIn = Boolean(token());
-  $('loginTrigger').textContent = signedIn ? '我的账号' : '登录';
+  const email = localStorage.getItem('hebao_email') || '';
+  const shortLabel = nickname() || (email ? email.split('@')[0] : '已登录');
+  const triggerBtn = $('loginTrigger');
+  triggerBtn.classList.toggle('signed-in', signedIn);
+  triggerBtn.textContent = signedIn ? shortLabel : '登录';
   const profile = $('profileArea');
   profile.classList.toggle('signed-in', signedIn);
   $('mineSwitch').hidden = !signedIn;
-  $('refreshMine').hidden = !signedIn;
   $('accountDataBox').hidden = !signedIn;
   updateWeChatBanner();
   if (!signedIn) updateUnreadBadges(0);
   if (signedIn) {
-    const emailHint = localStorage.getItem('hebao_email') ? `（${esc(localStorage.getItem('hebao_email'))}）` : '';
-    const initial = esc((nickname() || localStorage.getItem('hebao_email') || '荷').trim().charAt(0).toUpperCase());
+    const emailHint = email ? `（${esc(email)}）` : '';
+    const initial = esc((nickname() || email || '荷').trim().charAt(0).toUpperCase());
     profile.innerHTML = `<span class="profile-avatar" aria-hidden="true">${initial}</span><p><strong>${esc(nickname() || '你好')}</strong> ${emailHint} <span class="hint">· 新私信与活动变动会自动发邮件提醒</span></p><button id="logout" class="text-btn" type="button">退出登录</button>`;
   } else {
     profile.innerHTML = `<img class="profile-art" src="/delft/mine-hello.webp" alt="" width="278" height="280" loading="lazy" /><div class="profile-copy"><h2>把自己的事，放在一处</h2><p>邮箱验证码登录，无需密码，首次登录自动创建账号。</p><ul class="profile-perks"><li><strong>闲置管理</strong>改价、标记已售</li><li><strong>买家私信</strong>咨询即时邮件提醒</li><li><strong>邀约报名</strong>解锁集合联络方式</li><li><strong>荷语错题</strong>云端备份不丢失</li></ul><button id="mineLogin" class="primary-btn" type="button">邮箱登录</button></div>`;
   }
   const trigger = $('mineLogin');
   if (trigger) trigger.onclick = openLogin;
-  $('logout')?.addEventListener('click', () => {
+  $('logout')?.addEventListener('click', async () => {
     if (state.saving) { toast('正在保存商品，请稍后退出'); return; }
-    if (state.photos.length && state.dirty && !confirm('当前有未发布的闲置草稿，退出登录会清除本机草稿，是否继续？')) return;
+    if (state.photos.length && state.dirty) {
+      const ok = await askDialog({
+        title: '退出登录？',
+        message: '当前有未发布的闲置草稿，退出登录会清除本机草稿。',
+        confirmText: '退出登录',
+        danger: true,
+      });
+      if (!ok) return;
+    }
     ['hebao_token', 'hebao_logged_in', 'hebao_email'].forEach(k => localStorage.removeItem(k));
     resetDraft();
     refreshLoginUI();
@@ -435,6 +510,17 @@ async function restoreOrSyncCloudDraft() {
 function renderDraftMode() {
   $('editBanner').hidden = !state.editingId;
   $('btnPublish').textContent = state.editingId ? '保存修改' : '发布到集市';
+  $('newDraft').hidden = !state.photos.length && !state.editingId;
+  $('newDraft').textContent = state.editingId ? '退出编辑' : '清空草稿';
+  const isPublishedClean = Boolean(state.publishedId && !state.dirty);
+  const shareBox = $('wechatShareDisclosure');
+  if (shareBox) {
+    shareBox.open = isPublishedClean;
+    $('shareDisclosureTag').textContent = isPublishedClean ? '二维码已绑定实时库存' : '可选 · 发布后解锁实时库存二维码';
+    $('shareDisclosureHint').textContent = isPublishedClean
+      ? '生成海报图片或复制文案发到微信群，群友扫码即可看实时在售与已售状态。'
+      : '建议先点上方「发布到集市」：生成的海报二维码会自动指向实时在售状态。';
+  }
 }
 
 function persistDraft() {
@@ -453,6 +539,7 @@ function markDraftChanged() {
   state.dirty = true;
   draftRevision++;
   $('shareResult').hidden = true;
+  renderDraftMode();
   renderListPreview();
   $('draftStatus').textContent = '保存中…';
   $('sellValidation').hidden = true;
@@ -476,8 +563,18 @@ function resetDraft() {
   if (token()) api('deleteCloudDraft', 'POST', {}).catch(() => {});
 }
 
-$('newDraft').addEventListener('click', () => {
-  if (state.photos.length && !confirm('新建会清除当前草稿（已发布的闲置不受影响），是否继续？')) return;
+$('newDraft').addEventListener('click', async () => {
+  if (state.photos.length || state.editingId) {
+    const ok = await askDialog({
+      title: state.editingId ? '退出编辑并新建？' : '清空当前草稿？',
+      message: state.editingId
+        ? '退出编辑后将回到空白发布页（已发布的闲置清单本身不受影响）。'
+        : '清空后当前未发布的照片与文字将被移除。',
+      confirmText: state.editingId ? '退出编辑' : '清空草稿',
+      danger: !state.editingId,
+    });
+    if (!ok) return;
+  }
   resetDraft();
 });
 
@@ -896,7 +993,12 @@ $('btnPublish').addEventListener('click', async () => {
     if (failures.length) {
       renderItems();
       const reason = failures[0].error.message;
-      const proceed = confirm(`${failures.length} 张照片上传失败（${reason}）。\n\n点「确定」先发布，这些商品暂时不显示照片；之后在「我的 → 编辑」保存时会自动重新上传。\n点「取消」留在本页，稍后再试。`);
+      const proceed = await askDialog({
+        title: `${failures.length} 张照片暂时未能上传`,
+        message: `原因：${reason}。\n\n可以先发布商品文字信息（未成功的照片保存在草稿中，之后点「保存修改」会自动重传），或留在本页稍后重试。`,
+        confirmText: '先不带失败照片发布',
+        cancelText: '留在本页稍后再试',
+      });
       if (!proceed) { toast('照片已保留在草稿中，稍后可再次点击发布'); return; }
     }
     button.textContent = '保存清单…';
@@ -917,7 +1019,7 @@ $('btnPublish').addEventListener('click', async () => {
     const shareLink = listingShareLink(published.id);
     const localHref = `/market?item=${encodeURIComponent(published.id)}`;
     $('shareResult').hidden = false;
-    $('shareResult').innerHTML = `<strong>${wasEditing ? '修改已保存' : '已发布到集市！'}</strong>${failures.length ? `（${failures.length} 张照片未上传，可稍后再点「保存修改」重试）` : ''}<br>买家咨询会邮件通知你。想发微信群，可以点下方「生成微信海报」或「复制群文案」，二维码会指向实时在售状态。<div class="result-actions"><a class="text-btn" href="${esc(localHref)}" target="_blank" rel="noopener">查看发布页 ↗</a><button type="button" class="text-btn" data-copy-share="${esc(shareLink)}">复制链接</button><button type="button" class="text-btn" data-tab="mine">去「我的」管理</button></div>`;
+    $('shareResult').innerHTML = `<strong>${wasEditing ? '修改已保存' : '已发布到集市！'}</strong>${failures.length ? `（${failures.length} 张照片未上传，可稍后再点「保存修改」重试）` : ''}<br>买家咨询会邮件通知你。现在可以直接点下方「生成微信海报」或「复制群文案」，二维码已绑定实时在售状态。<div class="result-actions"><a class="text-btn" href="${esc(localHref)}" target="_blank" rel="noopener">查看发布页 ↗</a><button type="button" class="text-btn" data-copy-share="${esc(shareLink)}">复制链接</button><button type="button" class="text-btn" data-tab="mine">去「我的」管理</button></div>`;
     localStorage.setItem('delft_nickname', seller);
     toast(wasEditing ? '修改已保存' : '发布成功！买家发消息会邮件通知你');
     if (state.activeTab === 'market' || state.listings.length) loadListings();
@@ -966,6 +1068,7 @@ $('marketCategories').addEventListener('click', e => {
 
 $('marketCity').addEventListener('change', () => {
   state.marketCity = $('marketCity').value;
+  rememberCity(state.marketCity);
   updateMarketHeading();
   const url = new URL('/market', location.origin);
   if (state.marketCity !== 'all') url.searchParams.set('city', state.marketCity);
@@ -1034,9 +1137,25 @@ $('marketGrid').addEventListener('keydown', e => {
     openListing(e.target.dataset.listing, { itemId: e.target.dataset.product });
   }
 });
+$('marketGrid').addEventListener('error', e => {
+  if (!e.target.matches('img.listing-photo')) return;
+  const fallback = document.createElement('div');
+  fallback.className = 'listing-photo image-fallback';
+  fallback.setAttribute('aria-hidden', 'true');
+  fallback.innerHTML = '<svg viewBox="0 0 80 80"><path d="m15 22 25-12 25 12v35L40 70 15 57Z M15 22l25 13 25-13 M40 35v35 M28 16l25 13v15"/></svg>';
+  e.target.replaceWith(fallback);
+}, true);
+$('detailContent').addEventListener('error', e => {
+  const btn = e.target.matches('img') && e.target.closest('.detail-photo-zoom');
+  if (!btn) return;
+  const fallback = document.createElement('div');
+  fallback.className = 'item-thumb image-fallback';
+  fallback.setAttribute('aria-hidden', 'true');
+  fallback.textContent = '＋';
+  btn.replaceWith(fallback);
+}, true);
 $('marketSort').addEventListener('change', renderMarket);
 $('marketSearch').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(loadListings, 250); });
-$('refreshMarket').addEventListener('click', loadListings);
 
 async function openListing(id, { itemId = null, updateUrl = true } = {}) {
   let listing;
@@ -1047,8 +1166,11 @@ async function openListing(id, { itemId = null, updateUrl = true } = {}) {
   const cityTag = cities[listing.city || 'delft'] || 'Delft';
   const selected = listing.items.find(item => item.id === itemId);
   const items = selected ? [selected, ...listing.items.filter(item => item.id !== itemId)] : listing.items;
+  $('inquirySentNote').hidden = true;
+  $('inquirySentNote').innerHTML = '';
+  $('copyListingLink').textContent = selected ? '复制此商品链接' : '复制清单链接';
   $('detailContent').innerHTML = `<h2 id="detailHeading">${esc(listing.title)}</h2><p class="hint">${esc(listing.seller)} · 自取：${esc(cityTag)} · ${esc(listing.pickup)}</p>${listing.note ? `<p class="preserve-lines hint">${esc(listing.note)}</p>` : ''}<p class="hint">${listing.stale ? '超过 14 天未确认，请先发消息询问卖家是否仍在售' : '卖家最近确认：' + esc(dateText(listing.updatedAt))}</p>
-    ${items.map(item => `<div class="detail-item ${item.id === itemId ? 'selected' : ''} ${item.status === 'sold' ? 'sold' : ''}">${item.photo ? `<img src="${esc(item.photo)}" alt="${esc(item.name)}" />` : '<div class="item-thumb image-fallback" aria-hidden="true">＋</div>'}
+    ${items.map(item => `<div class="detail-item ${item.id === itemId ? 'selected' : ''} ${item.status === 'sold' ? 'sold' : ''}">${item.photo ? `<button type="button" class="detail-photo-zoom" data-zoom-photo="${esc(item.photo)}" data-zoom-caption="${esc(item.name)} · ${esc(priceLabel(item))}" aria-label="点击放大查看「${esc(item.name)}」照片"><img src="${esc(item.photo)}" alt="${esc(item.name)}" /><span class="zoom-badge" aria-hidden="true">放大</span></button>` : '<div class="item-thumb image-fallback" aria-hidden="true">＋</div>'}
       <div><h3>${esc(item.name)}</h3><strong class="detail-price">${esc(priceLabel(item))}</strong>${item.condition ? `<p class="preserve-lines">${esc(item.condition)}</p>` : ''}${item.status === 'available' ? `<button type="button" class="text-btn" data-inquire="${esc(item.name)}">问问这件商品</button>` : ''}</div><span class="pill ${item.status === 'sold' ? 'gray' : ''}">${item.id === itemId ? '当前查看 · ' : ''}${statusNames[item.status] || '在售'}</span></div>`).join('')}`;
   $('inquiryText').value = selected?.status === 'available' ? `你好，请问「${selected.name}」还在吗？什么时候方便在 ${cityTag} 自取？` : '';
   document.title = `${selected ? selected.name + ' · ' : ''}${listing.title} · 荷包`;
@@ -1062,17 +1184,26 @@ async function openListing(id, { itemId = null, updateUrl = true } = {}) {
 }
 
 $('detailContent').addEventListener('click', e => {
+  const zoom = e.target.closest('[data-zoom-photo]');
+  if (zoom) {
+    $('lightboxImage').src = zoom.dataset.zoomPhoto;
+    $('lightboxImage').alt = zoom.dataset.zoomCaption || '商品照片';
+    $('lightboxCaption').textContent = zoom.dataset.zoomCaption || '';
+    showModal('photoLightboxModal');
+    return;
+  }
   const button = e.target.closest('[data-inquire]');
   if (!button) return;
+  $('inquirySentNote').hidden = true;
   $('inquiryText').value = `你好，请问「${button.dataset.inquire}」还在吗？什么时候方便自取？`;
   $('inquiryText').focus();
 });
 $('copyListingLink').addEventListener('click', () => {
   if (!state.currentListing) return;
-  copyTextWithFallback(listingShareLink(state.currentListing.id), '链接已复制（发到微信自带预览卡片）');
-});
-$('refreshListingDetail').addEventListener('click', () => {
-  if (state.currentListing) openListing(state.currentListing.id, { itemId: state.currentProduct, updateUrl: false });
+  copyTextWithFallback(
+    listingShareLink(state.currentListing.id, undefined, state.currentProduct || ''),
+    '链接已复制（发到微信自带预览卡片）'
+  );
 });
 $('reportListingBtn').addEventListener('click', () => {
   if (!state.currentListing) return;
@@ -1087,8 +1218,15 @@ $('sendInquiry').addEventListener('click', async () => {
   try {
     await api('sendMessage', 'POST', { listingId: state.currentListing.id, content });
     trackEvent('inquiry_send');
-    toast('已发送并邮件通知卖家！卖家回复时也会发邮件提醒你');
-    hideModal('detailModal');
+    $('inquiryText').value = '';
+    $('inquirySentNote').hidden = false;
+    $('inquirySentNote').innerHTML = `<span><strong>✓ 已发送并邮件通知卖家</strong> · 卖家回复时也会邮件提醒你</span><button type="button" class="text-btn" id="gotoSentInbox">去「我的 → 私信」查看 →</button>`;
+    $('gotoSentInbox').onclick = () => {
+      hideModal('detailModal');
+      mineView = 'messages';
+      tab('mine');
+    };
+    toast('已发送并邮件通知卖家！');
   } catch (error) {
     toast(error.message);
   } finally {
@@ -1147,12 +1285,21 @@ function syncDiscoveryControls() {
       button.setAttribute('aria-pressed', String(active));
     }
   }
+  const catGroup = $('eventCategoryFilters');
+  if (catGroup) {
+    catGroup.hidden = eventSource !== 'community';
+    for (const button of catGroup.querySelectorAll('button')) {
+      const active = button.dataset.eventCat === state.eventCategory;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', String(active));
+    }
+  }
   $('communitySection').hidden = eventSource !== 'community';
   $('citySection').classList.toggle('companion-picks', eventSource === 'community');
-  $('refreshEvents').hidden = eventSource !== 'community';
 }
 
 function changeDiscovery(updates) {
+  if (updates.city) rememberCity(updates.city);
   const url = discoveryUrl(updates);
   if (url.href !== location.href) history.pushState(null, '', url);
   const filters = discoveryFilters(url.searchParams);
@@ -1201,7 +1348,7 @@ function renderCityEvents() {
   $('cityCount').textContent = String(local.length);
 
   if (eventSource === 'community') {
-    let picks = local, context = `${cityName} · ${scope}官方核对活动`, more = { source: 'city' };
+    let picks = local, context = `${cityName} · ${scope}场馆与市政公开日历`, more = { source: 'city' };
     if (!picks.length && nearby.length) {
       picks = nearby; context = `周边城市 · ${scope}`; more = { source: 'city', city: 'all' };
     } else if (!picks.length && cityPeriod !== 'all') {
@@ -1213,8 +1360,8 @@ function renderCityEvents() {
       return;
     }
     $('cityEvents').innerHTML = status +
-      `<div class="companion-picks-head"><div><h2>官方精选活动 · 可直接约人同行</h2><p>${esc(context)}</p></div>${filterLink(`全部 ${local.length || picks.length} 场活动`, more)}</div>` +
-      pickList(picks.slice(0, 3), multiCity || more.city === 'all');
+      `<div class="companion-picks-box"><div class="companion-picks-head"><div><span class="picks-eyebrow">出游灵感 · 官方城市日历</span><h2>挑一场本地活动，一键发起同行小局</h2><p>${esc(context)}</p></div>${filterLink(`切到「城市活动」看全部 ${local.length || picks.length} 场`, more)}</div>` +
+      pickList(picks.slice(0, 3), multiCity || more.city === 'all') + '</div>';
     return;
   }
 
@@ -1241,6 +1388,13 @@ $('eventSourceSwitch').addEventListener('click', e => {
 $('cityEventFilters').addEventListener('click', e => {
   const button = e.target.closest('[data-period]');
   if (button) changeDiscovery({ period: button.dataset.period });
+});
+$('eventCategoryFilters')?.addEventListener('click', e => {
+  const button = e.target.closest('[data-event-cat]');
+  if (!button) return;
+  state.eventCategory = button.dataset.eventCat;
+  syncDiscoveryControls();
+  renderEvents();
 });
 $('citySelect').addEventListener('change', () => changeDiscovery({ city: $('citySelect').value }));
 $('panel-events').addEventListener('error', e => {
@@ -1270,7 +1424,30 @@ $('panel-events').addEventListener('click', e => {
     $('citySelect').focus({ preventScroll: true });
     return;
   }
+  if (e.target.closest('[data-clear-event-cat]')) {
+    state.eventCategory = '';
+    syncDiscoveryControls();
+    renderEvents();
+    return;
+  }
   if (e.target.closest('[data-retry-feed]')) { loadCityFeed(); return; }
+  const calBtn = e.target.closest('[data-calendar-activity]');
+  if (calBtn) {
+    const actEv = feedEvents.find(ev => ev.id === calBtn.dataset.calendarActivity);
+    if (actEv) {
+      downloadCalendarIcs({
+        uid: `city-${actEv.id}`,
+        title: actEv.title,
+        startsAt: actEv.startsAt,
+        endsAt: actEv.endsAt,
+        location: eventPlace(actEv, true),
+        description: `${actEv.price || actEv.fee || ''}\n官方详情：${actEv.sourceUrl}`.trim(),
+        url: activityLink(actEv.id),
+      }, `荷包-${actEv.id}.ics`);
+      toast('已生成日历文件 (.ics)，打开即可加入手机日历');
+    }
+    return;
+  }
   const button = e.target.closest('[data-share-activity],[data-city-meetup]');
   if (!button) return;
   const event = feedEvents.find(ev => ev.id === (button.dataset.shareActivity || button.dataset.cityMeetup));
@@ -1309,7 +1486,7 @@ const meetupIdeas = {
   coffee: { title: '找人喝杯咖啡 / 练口语', category: '咖啡' },
 };
 
-function openEventForm(officialEvent = null, idea = null, existingUserEvent = null) {
+async function openEventForm(officialEvent = null, idea = null, existingUserEvent = null) {
   const form = $('createEventForm');
   state.editingEventId = existingUserEvent ? existingUserEvent.id : null;
   $('createEventHeading').textContent = existingUserEvent ? '修改邀约集合安排' : '发个邀约';
@@ -1344,7 +1521,14 @@ function openEventForm(officialEvent = null, idea = null, existingUserEvent = nu
   form.elements.host.readOnly = false;
   form.elements.category.disabled = false;
 
-  if ((officialEvent || idea) && eventDraftTouched && !confirm('替换正在填写的邀约草稿？')) return;
+  if ((officialEvent || idea) && eventDraftTouched) {
+    const ok = await askDialog({
+      title: '替换正在填写的草稿？',
+      message: '套用新活动模板会覆盖你刚才在表单里填写的邀约内容。',
+      confirmText: '替换草稿',
+    });
+    if (!ok) return;
+  }
   if (idea) {
     form.reset();
     form.elements.title.value = idea.title;
@@ -1399,11 +1583,17 @@ function renderEvents() {
     return;
   }
   const now = new Date();
-  const events = upcomingCityEvents(state.events, cityPeriod, now, selectedCity);
+  const inScope = upcomingCityEvents(state.events, cityPeriod, now, selectedCity);
+  const events = state.eventCategory ? inScope.filter(ev => ev.category === state.eventCategory) : inScope;
   const showCity = selectedCity === 'all' || selectedCity === 'zuid-holland';
-  $('communityCount').textContent = String(events.length);
+  $('communityCount').textContent = String(inScope.length);
 
   if (!events.length) {
+    if (state.eventCategory && inScope.length) {
+      $('eventsList').innerHTML = `<div class="invites-empty"><div><h2>当前范围没有「${esc(state.eventCategory)}」类邀约</h2><p>还有 ${inScope.length} 场其他类别的同城邀约正在找人，或者你也可以直接发一个。</p></div><div class="invite-options"><button type="button" class="outline-btn" data-clear-event-cat>查看全部类别 (${inScope.length})</button><button type="button" class="primary-btn" id="emptyCreateCatBtn">＋ 发个${esc(state.eventCategory)}邀约</button></div></div>`;
+      $('emptyCreateCatBtn')?.addEventListener('click', () => openEventForm(null, { title: '', category: state.eventCategory }));
+      return;
+    }
     const scope = cityLabels[selectedCity] || '当前范围', alternatives = [];
     if (cityPeriod !== 'all' && upcomingCityEvents(state.events, 'all', now, selectedCity).length) {
       alternatives.push(filterLink('看其他日期的邀约', { period: 'all', source: 'community' }));
@@ -1457,9 +1647,10 @@ async function openEventCoord(eventOrId) {
   try {
     if (!ev) ev = (await api('event', 'GET', null, true, { id })).event;
     const coord = await api('eventMessages', 'GET', null, true, { eventId: id });
-    state.coordEvent = ev;
+    state.coordEvent = { ...ev, contactHint: coord.contactHint || '' };
     $('coordHeading').textContent = ev.title;
     $('coordMeta').textContent = `${dateText(ev.startsAt)}（荷兰时间） · ${eventPlace(ev, true)}${coord.cancelled ? ' · 【已取消】' : ''}`;
+    $('coordCalendarBtn').hidden = Boolean(coord.cancelled);
     const contactBox = $('coordContactBox');
     if (coord.cancelled) {
       contactBox.hidden = false;
@@ -1470,6 +1661,14 @@ async function openEventCoord(eventOrId) {
     } else {
       contactBox.hidden = false;
       contactBox.innerHTML = `<strong>集合方式</strong><span>请按上方时间地点碰头，也可在下方行前留言区直接联系发起人和同行伙伴。</span>`;
+    }
+    const attendeesBox = $('coordAttendeesBox');
+    if (Array.isArray(coord.attendees)) {
+      attendeesBox.hidden = false;
+      attendeesBox.innerHTML = `<strong>已报名成员（${coord.attendees.length} / ${Math.max(0, ev.capacity - 1)} 位名额）</strong><div class="attendee-pills">${coord.attendees.length ? coord.attendees.map(a => `<span class="pill">${esc(a.nickname)}</span>`).join('') : '<span class="hint">暂时还没有人报名，可生成邀请卡发到群里约伴</span>'}</div>`;
+    } else {
+      attendeesBox.hidden = true;
+      attendeesBox.innerHTML = '';
     }
     const hostTools = $('coordHostTools');
     if (ev.hostIsMe && !coord.cancelled) {
@@ -1488,6 +1687,24 @@ async function openEventCoord(eventOrId) {
     toast(error.message);
   }
 }
+
+$('coordCalendarBtn').addEventListener('click', () => {
+  const ev = state.coordEvent;
+  if (!ev) return;
+  downloadCalendarIcs({
+    uid: `meetup-${ev.id}`,
+    title: ev.title,
+    startsAt: ev.startsAt,
+    location: eventPlace(ev, true),
+    description: [
+      `发起人：${ev.host}`,
+      ev.contactHint ? `集合联络：${ev.contactHint}` : '',
+      ev.description || '',
+    ].filter(Boolean).join('\n'),
+    url: eventShareLink(ev.id),
+  }, `荷包邀约-${ev.title.slice(0, 20)}.ics`);
+  toast('已生成日历文件 (.ics)，打开即可加入手机日历');
+});
 
 function renderCoordMessages(messages) {
   const box = $('coordMessages');
@@ -1522,7 +1739,15 @@ $('coordReplyForm').addEventListener('submit', async e => {
 
 async function promptCancelEvent(eventId) {
   if (!requireAuth()) return;
-  const reason = prompt('如需取消活动，可填写简短原因（系统会自动发邮件通知所有已报名成员）：', '因天气或临时安排调整取消，抱歉！');
+  const reason = await askDialog({
+    title: '取消这场活动？',
+    message: '取消后系统会自动向所有已报名成员发送邮件通知，请勿再前往集合点。',
+    inputLabel: '取消原因（会附在通知邮件中）',
+    inputPlaceholder: '例如：暴雨改下周 / 临时有事抱歉',
+    inputValue: '因天气或临时安排调整取消，抱歉！',
+    confirmText: '确认取消活动',
+    danger: true,
+  });
   if (reason === null) return;
   try {
     await api('cancelEvent', 'POST', { eventId, reason });
@@ -1556,8 +1781,11 @@ $('eventsList').addEventListener('click', async e => {
     } catch (error) { toast(error.message); }
     return;
   }
-  const coordBtn = e.target.closest('[data-coord-event]');
-  if (coordBtn) { openEventCoord(coordBtn.dataset.coordEvent); return; }
+  const coordBtn = e.target.closest('[data-coord-event],[data-attendees]');
+  if (coordBtn) {
+    openEventCoord(coordBtn.dataset.coordEvent || coordBtn.dataset.attendees);
+    return;
+  }
   const editBtn = e.target.closest('[data-edit-event]');
   if (editBtn) {
     const ev = state.events.find(x => x.id === editBtn.dataset.editEvent);
@@ -1571,21 +1799,19 @@ $('eventsList').addEventListener('click', async e => {
   }
   const cancel = e.target.closest('[data-cancel-event]');
   if (cancel) { promptCancelEvent(cancel.dataset.cancelEvent); return; }
-  const attendees = e.target.closest('[data-attendees]');
-  if (attendees) {
-    if (!requireAuth()) return;
-    try {
-      const data = await api('attendees', 'GET', null, true, { id: attendees.dataset.attendees });
-      alert(data.attendees.length ? `已报名成员（${data.attendees.length} 人）：\n${data.attendees.map(x => '• ' + x.nickname).join('\n')}` : '暂时还没有人报名，先生成邀请卡发到群里吧！');
-    } catch (error) { toast(error.message); }
-    return;
-  }
   const button = e.target.closest('[data-event]');
   if (!button) return;
   const event = state.events.find(ev => ev.id === button.dataset.event);
   if (!event) return;
   if (event.joined) {
-    if (!requireAuth() || !confirm('确定取消报名吗？取消后空位将释放给其他人。')) return;
+    if (!requireAuth()) return;
+    const ok = await askDialog({
+      title: '取消报名？',
+      message: `取消「${event.title}」的报名后，空位将重新开放，并邮件告知发起人。`,
+      confirmText: '确认取消报名',
+      danger: true,
+    });
+    if (!ok) return;
     try { await api('cancelRsvp', 'POST', { eventId: event.id }); toast('已取消报名'); loadEvents(); }
     catch (error) { toast(error.message); }
     return;
@@ -1615,7 +1841,6 @@ $('confirmRsvp').addEventListener('click', async () => {
 });
 
 $('openCreateEvent').addEventListener('click', () => openEventForm());
-$('refreshEvents').addEventListener('click', loadEvents);
 $('createEventForm').addEventListener('input', () => { if (!state.editingEventId) eventDraftTouched = true; });
 $('closeCreateEvent').addEventListener('click', () => hideModal('createEventBox'));
 $('createEventForm').addEventListener('submit', async e => {
@@ -1693,7 +1918,7 @@ $('mineSwitch').addEventListener('click', e => {
   if (button) { mineView = button.dataset.mineView; renderMineView(); }
 });
 
-const mineError = '<div class="empty-state error-state"><h2>暂时没能加载</h2><p>请用右上角的刷新按钮重试。</p></div>';
+const mineError = '<div class="empty-state error-state"><h2>暂时没能加载</h2><p>请检查网络后重试。</p><button type="button" class="outline-btn" data-retry-mine>重新加载</button></div>';
 async function loadMine() {
   refreshLoginUI();
   if (!token()) {
@@ -1743,12 +1968,13 @@ async function loadMine() {
     }
     $('myMessages').innerHTML = threads.size ? [...threads.values()].map(thread => {
       const latest = thread[0];
+      const peer = latest.otherLabel || '对方';
       const hasUnread = thread.some(m => m.unread);
       const ordered = [...thread].reverse();
       return `<div class="thread" data-thread-listing="${esc(latest.listingId)}" data-thread-user="${esc(latest.otherId)}">
-        <div class="event-top"><h2>${esc(latest.listingTitle)}${hasUnread ? '<span class="pill unread-pill">新消息</span>' : ''}</h2><button type="button" class="text-btn danger" data-report-thread="${esc(latest.id)}" data-report-title="${esc(latest.listingTitle)}">举报</button></div>
-        ${ordered.map(m => `<div class="message-bubble ${m.fromMe ? 'mine' : ''}"><strong>${m.fromMe ? '我' : '对方'}</strong> · ${esc(dateText(m.createdAt))}<div class="preserve-lines">${esc(m.content)}</div></div>`).join('')}
-        <form class="message-reply"><input name="message" maxlength="500" required aria-label="回复消息" placeholder="回复消息（系统会发邮件提醒对方）…" /><button type="submit" class="outline-btn">发送</button></form></div>`;
+        <div class="event-top"><div class="thread-title-group"><h2><button type="button" class="thread-listing-btn" data-open-thread-listing="${esc(latest.listingId)}">${esc(latest.listingTitle)} ↗</button>${hasUnread ? '<span class="pill unread-pill">新消息</span>' : ''}</h2><span class="pill gray">${esc(peer)}</span></div><button type="button" class="text-btn danger" data-report-thread="${esc(latest.id)}" data-report-title="${esc(latest.listingTitle)}">举报</button></div>
+        ${ordered.map(m => `<div class="message-bubble ${m.fromMe ? 'mine' : ''}"><strong>${m.fromMe ? '我' : esc(m.otherLabel || peer)}</strong> · ${esc(dateText(m.createdAt))}<div class="preserve-lines">${esc(m.content)}</div></div>`).join('')}
+        <form class="message-reply"><input name="message" maxlength="500" required aria-label="回复 ${esc(peer)}" placeholder="回复 ${esc(peer)}（系统会发邮件提醒）…" /><button type="submit" class="outline-btn">发送</button></form></div>`;
     }).join('')
       : '<div class="empty-state"><h2>还没有私信</h2><p>买家咨询或你的问询记录会显示在这里，并同步发送到你的邮箱。</p><button type="button" class="outline-btn" data-tab="market">逛逛闲置</button></div>';
   } else {
@@ -1756,6 +1982,10 @@ async function loadMine() {
   }
   renderMineView();
 }
+
+$('panel-mine').addEventListener('click', e => {
+  if (e.target.closest('[data-retry-mine]')) loadMine();
+});
 
 $('myEvents').addEventListener('click', e => {
   const coord = e.target.closest('[data-open-my-coord]');
@@ -1765,7 +1995,14 @@ $('myEvents').addEventListener('click', e => {
 $('myListings').addEventListener('click', async e => {
   const edit = e.target.closest('[data-edit-listing]');
   if (edit) {
-    if (state.photos.length && state.dirty && !confirm('编辑这份闲置会替换当前未保存的草稿，是否继续？')) return;
+    if (state.photos.length && state.dirty) {
+      const ok = await askDialog({
+        title: '替换未保存的草稿？',
+        message: '打开编辑这份闲置会替换你当前尚未发布的草稿。',
+        confirmText: '继续编辑',
+      });
+      if (!ok) return;
+    }
     try {
       const listing = (await api('listing', 'GET', null, true, { id: edit.dataset.editListing })).listing;
       state.photos = listing.items.map(item => ({ ...item, price: item.price == null ? '' : item.price, dataUrl: '' }));
@@ -1790,7 +2027,14 @@ $('myListings').addEventListener('click', async e => {
     return;
   }
   const id = e.target.closest('[data-delete-listing]')?.dataset.deleteListing;
-  if (!id || !confirm('确认永久删除这份闲置及相关私信？')) return;
+  if (!id) return;
+  const ok = await askDialog({
+    title: '永久删除这份闲置？',
+    message: '删除后该闲置清单、分享链接及关联私信将永久移除，无法恢复。',
+    confirmText: '永久删除',
+    danger: true,
+  });
+  if (!ok) return;
   try { await api('deleteListing', 'POST', { listingId: id }); if (state.editingId === id) resetDraft(); toast('已删除'); loadMine(); }
   catch (error) { toast(error.message); }
 });
@@ -1815,9 +2059,12 @@ $('myListings').addEventListener('change', async e => {
   }
 });
 
-$('refreshMine').addEventListener('click', loadMine);
-
 $('myMessages').addEventListener('click', e => {
+  const openBtn = e.target.closest('[data-open-thread-listing]');
+  if (openBtn) {
+    openListing(openBtn.dataset.openThreadListing, { updateUrl: false });
+    return;
+  }
   const rep = e.target.closest('[data-report-thread]');
   if (rep) openReportModal({ targetType: 'message', targetId: rep.dataset.reportThread, label: `私信对话「${rep.dataset.reportTitle || ''}」` });
 });
@@ -1924,9 +2171,16 @@ $('exportDataBtn').addEventListener('click', async () => {
 
 $('deleteAccountBtn').addEventListener('click', async () => {
   if (!requireAuth()) return;
-  const typed = prompt('警告：注销账号将立即永久删除你的全部闲置清单、邀约、私信记录及荷语云端进度，无法恢复。\n请输入大写 DELETE 确认删除：');
+  const typed = await askDialog({
+    title: '永久注销账号并删除数据',
+    message: '警告：注销账号将立即永久删除你的全部闲置清单、邀约、私信记录及荷语云端进度，无法恢复。',
+    inputLabel: '请输入大写 DELETE 确认删除：',
+    inputPlaceholder: 'DELETE',
+    confirmText: '永久注销并删除',
+    danger: true,
+  });
   if (typed !== 'DELETE') {
-    if (typed !== null) toast('未输入 DELETE，已取消注销操作');
+    if (typed !== null) toast('未输入大写 DELETE，已取消注销操作');
     return;
   }
   const btn = $('deleteAccountBtn');
@@ -1985,6 +2239,7 @@ async function applyRoute() {
   if (!$('activityShare').hidden) hideModal('activityShare');
   const item = query.get('item'), event = query.get('event');
   const name = pageFromLocation(location);
+  const prefCity = savedCity();
 
   if (name === 'mine' && ['listings', 'events', 'messages'].includes(query.get('view'))) {
     mineView = query.get('view');
@@ -1993,12 +2248,18 @@ async function applyRoute() {
     const qCity = query.get('city');
     if (qCity && (qCity === 'all' || qCity === 'zuid-holland' || Object.hasOwn(cities, qCity))) {
       state.marketCity = qCity;
-      $('marketCity').value = qCity;
+      rememberCity(qCity);
+    } else if (!qCity && prefCity) {
+      state.marketCity = prefCity;
     }
+    $('marketCity').value = state.marketCity;
     updateMarketHeading();
   }
 
   const filters = discoveryFilters(query);
+  if (!query.has('city') && !event && !query.get('activity') && prefCity) {
+    filters.city = prefCity;
+  }
   selectedCity = filters.city; cityPeriod = filters.period; eventSource = filters.source;
   activeActivity = item || event ? '' : query.get('activity') || '';
   syncDiscoveryControls();

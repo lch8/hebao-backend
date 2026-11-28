@@ -1,5 +1,5 @@
 import {mountExamPrep} from './a2-prep.js';
-import {PREP_KEY, mergePrep} from './a2-progress.js';
+import {PREP_KEY, mergePrep, prepCounts} from './a2-progress.js';
 import {LESSONS,TASKS,QUIZ,SKILLS,SOURCES,CONTENT_CHECKED,EXAMS} from './dutch-content.js';
 import {freshStudy,loadStudy,saveStudy,mergeStudy,recordTask,completeLesson,dueTasks,recommendedLesson,targetWindow,dayKey,EXAM_STATUSES} from './dutch-store.js';
 
@@ -12,11 +12,21 @@ export function mountDutch(root, hooks = {}){
   const loaded=loadStudy(storage);
   let study=loaded.state,storageOK=loaded.available,view='prepare',session=null,quiz=null,quizTimer,recorder,stream,recordingUrl='',recordingTimeout,mediaRequest=0,resetPending=false,cloudSynced=false,syncTimer;
   const el=id=>root.querySelector(`#${id}`);
-  root.innerHTML=`<div class="study-cloud-bar" id="studyCloudBar"></div><nav class="study-nav" aria-label="荷语学习"><button type="button" data-study-view="prepare">分科备考</button><button type="button" data-study-view="today">场景复习</button><button type="button" data-study-view="exam">考试安排</button></nav><div id="a2ExamRoot"></div><div id="studyBody" hidden></div><button type="button" class="weekend-shortcut" data-tab="events"><strong>背完一轮？去看看同城咖啡局或周末活动，找人线下喘口气</strong><span aria-hidden="true">↗</span></button><div class="study-foot"><span id="studySaveStatus" role="status" aria-live="polite"></span><details><summary>关于内容与学习记录</summary><p>专项练习和站内模拟卷由荷包编写，全荷通用。各科页面附 DUO 官方样卷和考试说明。</p><p>未登录时记录保存在当前浏览器；登录邮箱后自动云端备份进度与待复习错题。录音和作答正文仅在当前页面保留。</p><button type="button" class="text-btn" data-study-action="reset">清除本机学习记录</button></details></div>`;
-  const prep=mountExamPrep(el('a2ExamRoot'),storage);
+  root.innerHTML=`<div class="study-cloud-bar" id="studyCloudBar"></div><nav class="study-nav view-switch" aria-label="荷语学习"><button type="button" data-study-view="prepare">分科备考</button><button type="button" data-study-view="today">生活场景与错题 <span id="studyReviewBadge" hidden></span></button><button type="button" data-study-view="exam">报考排期</button></nav><div id="a2ExamRoot"></div><div id="studyBody" hidden></div><button type="button" class="weekend-shortcut" id="dutchWeekendPromo" data-tab="events"><strong>背完一轮？去看看同城咖啡局或周末活动，找人线下喘口气</strong><span aria-hidden="true">↗</span></button><div class="study-foot"><span id="studySaveStatus" role="status" aria-live="polite"></span><details><summary>关于内容与学习记录</summary><p>专项练习和站内模拟卷由荷包编写，全荷通用。各科页面附 DUO 官方样卷和考试说明。</p><p>未登录时记录保存在当前浏览器；登录邮箱后自动云端备份进度与待复习错题。录音和作答正文仅在当前页面保留。</p><button type="button" class="text-btn danger" data-study-action="reset">清除本机学习记录</button></details></div>`;
+  const prep=mountExamPrep(el('a2ExamRoot'),storage,{
+    onChange:()=>{renderCloudBar();saveStatus();pushCloudSoon();},
+    onPractice:()=>hooks.onPractice?.(),
+    onSessionChange:()=>updatePromoVisibility(),
+  });
 
   function readLocalPrep(){
     try{return JSON.parse(storage?.getItem(PREP_KEY)||'null');}catch{return null;}
+  }
+  function updatePromoVisibility(){
+    const promo=el('dutchWeekendPromo');
+    if(!promo)return;
+    const busy=(view==='prepare'&&prep.inSession())||view==='practice'||(view==='quiz'&&quiz&&!quiz.finished);
+    promo.hidden=busy;
   }
   function pushCloudSoon(){
     if(!hooks.isSignedIn?.())return;
@@ -47,13 +57,20 @@ export function mountDutch(root, hooks = {}){
   }
   function renderCloudBar(){
     const bar=el('studyCloudBar');if(!bar)return;
+    const p=prepCounts(readLocalPrep());
+    const dueCount=dueTasks(study).length;
     const wrongCount=Object.values(study.answers||{}).filter(a=>a?.needsReview).length;
+    const badge=el('studyReviewBadge');
+    if(badge){badge.hidden=!dueCount;badge.textContent=String(dueCount);}
+    const summary=`专项 ${p.drillsDone}/${p.drillsTotal} · 模拟卷 ${p.mocksDone}/${p.mocksTotal} · 场景 ${study.completed.length}/${LESSONS.length}`;
+    const reviewBtn=wrongCount?` · <button type="button" class="text-btn cloud-inline-btn" data-study-action="jump-review">${wrongCount} 道错题待复习 →</button>`:'';
     if(hooks.isSignedIn?.()){
-      bar.innerHTML=`<span><strong>${cloudSynced?'已开启云端备份':'正在同步云端进度…'}</strong> · 已完成 ${study.completed.length} 节场景${wrongCount?`，${wrongCount} 道待复习错题`:''}</span>`;
+      bar.innerHTML=`<span><strong>${cloudSynced?'已开启云端备份':'正在同步云端进度…'}</strong> · ${summary}${reviewBtn}</span>`;
       bar.classList.add('synced');
     }else{
       bar.classList.remove('synced');
-      bar.innerHTML=`<span><strong>保存学习进度与错题本</strong> · 登录邮箱后跨手机/电脑同步，清理微信缓存也不丢失</span><button type="button" class="outline-btn" data-study-action="cloud-login">邮箱登录备份</button>`;
+      const hasAny=p.drillsDone||p.mocksDone||p.officialDone||study.completed.length||Object.keys(study.answers||{}).length;
+      bar.innerHTML=`<span><strong>${hasAny?summary:'保存学习进度与错题本'}</strong>${reviewBtn} · 登录邮箱跨手机/电脑同步，清微信缓存也不丢</span><button type="button" class="outline-btn" data-study-action="cloud-login">邮箱登录备份</button>`;
     }
   }
   function save(){storageOK=saveStudy(storage,study);saveStatus();renderCloudBar();pushCloudSoon();}
@@ -78,17 +95,17 @@ export function mountDutch(root, hooks = {}){
     const selected=['lessons','quiz'].includes(view)?'today':view;
     root.querySelectorAll('.study-nav [data-study-view]').forEach(button=>{const active=button.dataset.studyView===selected;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));});
     if(view==='today')renderToday();if(view==='lessons')renderLessons();if(view==='quiz')renderQuiz();if(view==='exam')renderExam();
-    renderCloudBar();saveStatus();
+    renderCloudBar();saveStatus();updatePromoVisibility();
   }
   function renderToday(){
     const next=recommendedLesson(study)||LESSONS[0],review=dueTasks(study),completed=study.completed.length;
     const current=session&&session.index<session.tasks.length?session:null;
     const currentLesson=current&&LESSONS.find(lesson=>lesson.id===current.lessonId);
-    el('studyBody').innerHTML=`<div class="study-home"><article class="study-hero"><div class="study-eyebrow">${current?'继续上次的小练习':'今天，练会一件小事'}</div><h2>${esc(current?(currentLesson?.title||'复习容易忘的表达'):next.title)}</h2><p>${esc(currentLesson?.subtitle||next.subtitle)}</p><div class="study-phrase" lang="nl">${esc(currentLesson?.phrase||next.phrase)}</div><div class="study-task-path">${(current?.tasks||next.tasks).map((task,index)=>`<span><i>${index+1}</i>${SKILLS[task.skill]}</span>`).join('<b aria-hidden="true">→</b>')}</div><button class="primary-btn" type="button" ${current?'data-study-action="resume"':`data-study-lesson="${next.id}"`}>${current?'继续练习':'开始今天的练习'} <span aria-hidden="true">→</span></button><span class="study-small">每节 3 个小练习 · 约 10–15 分钟</span></article><aside class="study-overview" aria-label="学习进度"><div class="study-overview-head"><span>已经走过</span><strong>${completed}<small> / ${LESSONS.length} 个场景</small></strong></div><div class="study-meter" role="progressbar" aria-label="场景完成进度" aria-valuenow="${completed}" aria-valuemin="0" aria-valuemax="${LESSONS.length}"><span style="width:${completed/LESSONS.length*100}%"></span></div><p>完成一节，就多会一件生活里的小事。</p><div class="study-skill-counts">${Object.entries(SKILLS).map(([id,name])=>`<span>${name}<strong>${TASKS.filter(task=>task.skill===id&&study.answers[task.id]).length}</strong><small>题</small></span>`).join('')}</div>${review.length?`<button class="outline-btn wide" type="button" data-study-action="review">复习 ${review.length} 道错题与易忘题</button>`:'<button class="outline-btn wide" type="button" data-study-action="short">今天只练 1 题</button>'}<button class="text-btn" type="button" data-study-view="exam">先看看自己需要考什么 ↗</button></aside></div><div class="study-scene-heading"><h2>把熟悉的生活，变成练习</h2><button class="text-btn" type="button" data-study-view="lessons">全部 ${LESSONS.length} 个场景 →</button></div><div class="study-scene-grid">${LESSONS.slice(0,3).map(lessonCard).join('')}</div><button class="text-btn" type="button" data-study-view="quiz">阅读与社会知识 · 6 题复习</button>`;
+    el('studyBody').innerHTML=`<div class="study-home"><article class="study-hero"><div class="study-eyebrow">${current?'继续上次的小练习':'今天，练会一件小事'}</div><h2>${esc(current?(currentLesson?.title||'复习容易忘的表达'):next.title)}</h2><p>${esc(currentLesson?.subtitle||next.subtitle)}</p><div class="study-phrase" lang="nl">${esc(currentLesson?.phrase||next.phrase)}</div><div class="study-task-path">${(current?.tasks||next.tasks).map((task,index)=>`<span><i>${index+1}</i>${SKILLS[task.skill]}</span>`).join('<b aria-hidden="true">→</b>')}</div><button class="primary-btn" type="button" ${current?'data-study-action="resume"':`data-study-lesson="${next.id}"`}>${current?'继续练习':'开始今天的练习'} <span aria-hidden="true">→</span></button><span class="study-small">每节 3 个小练习 · 约 10–15 分钟</span></article><aside class="study-overview" aria-label="学习进度"><div class="study-overview-head"><span>生活场景进度</span><strong>${completed}<small> / ${LESSONS.length} 个场景</small></strong></div><div class="study-meter" role="progressbar" aria-label="场景完成进度" aria-valuenow="${completed}" aria-valuemin="0" aria-valuemax="${LESSONS.length}"><span style="width:${completed/LESSONS.length*100}%"></span></div><p>把日常办事场景串成读、听、写、说的连贯练习。</p><div class="study-skill-counts">${Object.entries(SKILLS).map(([id,name])=>`<span>${name}<strong>${TASKS.filter(task=>task.skill===id&&study.answers[task.id]).length}</strong><small>题</small></span>`).join('')}</div>${review.length?`<button class="primary-btn wide" type="button" data-study-action="review">复习 ${review.length} 道到期与错题 →</button>`:'<button class="outline-btn wide" type="button" data-study-action="short">今天只练 1 题</button>'}<button class="text-btn" type="button" data-study-view="quiz">日常阅读 + KNM 6 题快测 →</button></aside></div><div class="study-scene-heading"><h2>把熟悉的生活，变成练习</h2><button class="text-btn" type="button" data-study-view="lessons">全部 ${LESSONS.length} 个场景 →</button></div><div class="study-scene-grid">${LESSONS.slice(0,3).map(lessonCard).join('')}</div>`;
   }
   function lessonCard(lesson){
     const completed=study.completed.includes(lesson.id),index=LESSONS.indexOf(lesson)+1;
-    return `<button type="button" class="study-scene" data-study-lesson="${lesson.id}"><span class="study-scene-number">${String(index).padStart(2,'0')}${completed?' · 已完成':''}</span><strong>${esc(lesson.title)}</strong><span class="study-scene-copy">${esc(lesson.subtitle)}</span><span class="study-skill-tags">${skillTags(lesson.tasks)}</span><span class="study-scene-arrow" aria-hidden="true">↗</span></button>`;
+    return `<button type="button" class="study-scene" data-study-lesson="${lesson.id}"><span class="study-scene-number">${String(index).padStart(2,'0')}${completed?' · ✓ 已完成':''}</span><strong>${esc(lesson.title)}</strong><span class="study-scene-copy">${esc(lesson.subtitle)}</span><span class="study-skill-tags">${skillTags(lesson.tasks)}</span><span class="study-scene-arrow" aria-hidden="true">↗</span></button>`;
   }
   function renderLessons(){
     el('studyBody').innerHTML=`<div class="study-page-heading"><h2>从你用得上的场景开始</h2><p>每节三小步，把理解和表达连起来。</p></div><div class="study-scene-grid">${LESSONS.map(lessonCard).join('')}</div>`;
@@ -99,12 +116,12 @@ export function mountDutch(root, hooks = {}){
   function scrollPractice(){root.querySelector('.study-practice,.study-finish')?.scrollIntoView({block:'start',behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}
   function currentTask(){return session?.tasks[session.index];}
   function practiceTop(){
-    return `<div class="study-practice-top"><button class="text-btn" type="button" data-study-action="home">← 今日练习</button><span>${session.index+1} / ${session.tasks.length} <span class="study-dot">·</span> ${SKILLS[currentTask().skill]}</span></div><div class="study-meter study-session-meter" role="progressbar" aria-label="本轮练习进度" aria-valuenow="${session.index}" aria-valuemin="0" aria-valuemax="${session.tasks.length}"><span style="width:${session.index/session.tasks.length*100}%"></span></div>`;
+    return `<div class="study-practice-top"><button class="text-btn" type="button" data-study-action="home">← 返回场景</button><span>${session.index+1} / ${session.tasks.length} <span class="study-dot">·</span> ${SKILLS[currentTask().skill]}</span></div><div class="study-meter study-session-meter" role="progressbar" aria-label="本轮练习进度" aria-valuenow="${session.index}" aria-valuemin="0" aria-valuemax="${session.tasks.length}"><span style="width:${session.index/session.tasks.length*100}%"></span></div>`;
   }
   function renderTask(){
     if(!session)return;
     if(session.index>=session.tasks.length){renderSessionResult();return;}
-    const task=currentTask();view='practice';
+    const task=currentTask();view='practice';updatePromoVisibility();
     const output=task.kind==='output';
     el('studyBody').innerHTML=`<div class="study-practice">${practiceTop()}<div class="study-task-label">${output?'自己表达一次':task.skill==='knm'?'生活里的社会知识':task.skill==='listen'?'先听，再抓住重点':'读懂一条生活消息'}<span>本站自编</span></div>${task.skill==='listen'?`<div class="study-listen"><button class="soft-btn" type="button" data-study-action="listen">▶ 播放荷兰语</button><span>设备荷兰语语音 · 可重听</span><p id="studyAudioStatus" role="status" aria-live="polite"></p><button class="text-btn" type="button" data-study-action="transcript">查看原文</button><p id="studyTranscript" lang="nl" hidden>${esc(task.text)}</p></div>`:task.text?`<div class="study-message" lang="nl">${esc(task.text)}</div>`:''}<h2 class="study-question" lang="nl">${esc(task.prompt)}</h2>${output?renderOutput(task):renderChoices(task)}<p id="studyTaskNotice" class="study-task-notice" role="status" aria-live="polite"></p><div id="studyFeedback" class="study-feedback" role="status" aria-live="polite" hidden></div></div>`;
     if(session.checked)renderSavedFeedback();
@@ -142,8 +159,9 @@ export function mountDutch(root, hooks = {}){
   }
   function renderSessionResult(){
     if(!session.done){if(session.lessonId)study=completeLesson(study,session.lessonId);session.done=true;save();hooks.onPractice?.();}
+    view='today-result';updatePromoVisibility();
     const total=session.tasks.length,objective=session.results.filter(result=>!result.selfRated),self=session.results.filter(result=>result.selfRated),independent=objective.filter(result=>result.independent).length;
-    el('studyBody').innerHTML=`<div class="study-finish"><span class="study-finish-mark" aria-hidden="true">✓</span><p class="study-eyebrow">这一步，完成了</p><h2>${session.lessonId?esc(LESSONS.find(lesson=>lesson.id===session.lessonId).title):'给记忆加深了一点印象。'}</h2><p>完成 ${total} 个小练习${objective.length?`，其中 ${independent} 道选择题独立答对`:''}${self.length?`；${self.length} 道表达题已自查`:''}。</p><p class="study-small">需要再练的内容会回到错题复习中；${hooks.isSignedIn?.()?'已同步到你的邮箱账号。':'登录邮箱可把进度和错题备份到云端。'}</p><div class="study-question-actions"><button class="primary-btn" type="button" data-study-action="finish">今天先到这里</button>${!hooks.isSignedIn?.()?'<button class="outline-btn" type="button" data-study-action="cloud-login">登录保存进度</button>':''}<button class="text-btn" type="button" data-study-view="lessons">再选一个场景 →</button></div></div>`;
+    el('studyBody').innerHTML=`<div class="study-finish"><span class="study-finish-mark" aria-hidden="true">✓</span><p class="study-eyebrow">这一步，完成了</p><h2>${session.lessonId?esc(LESSONS.find(lesson=>lesson.id===session.lessonId).title):'给记忆加深了一点印象。'}</h2><p>完成 ${total} 个小练习${objective.length?`，其中 ${independent} 道选择题独立答对`:''}${self.length?`；${self.length} 道表达题已自查`:''}。</p><p class="study-small">需要再练的内容会回到错题复习中；${hooks.isSignedIn?.()?'已同步到你的邮箱账号。':'登录邮箱可把进度和错题备份到云端。'}</p><div class="study-question-actions"><button class="primary-btn" type="button" data-study-action="finish">返回场景列表</button>${!hooks.isSignedIn?.()?'<button class="outline-btn" type="button" data-study-action="cloud-login">登录保存进度</button>':''}<button class="text-btn" type="button" data-study-view="lessons">再选一个场景 →</button></div></div>`;
   }
   async function listen(){
     const task=currentTask(),synth=window.speechSynthesis;
@@ -176,12 +194,13 @@ export function mountDutch(root, hooks = {}){
     }catch{stream?.getTracks().forEach(track=>track.stop());stream=null;if(button.isConnected){button.disabled=false;el('studyRecordStatus').textContent='未能开启麦克风。你仍可开口练习，再对照示例自查。';}}
   }
   function renderQuiz(){
+    updatePromoVisibility();
     if(quiz?.finished){renderQuizResult();return;}
     if(quiz){renderQuizTask();return;}
     const last=study.quizHistory.at(-1);
-    el('studyBody').innerHTML=`<div class="study-page-heading"><h2>关掉提示，独立试一次。</h2><p>阅读 + KNM · 6 道本站自编题 · 10 分钟</p></div><div class="study-quiz-intro"><h3>这一轮，检验自己能否找准信息。</h3><ul><li>作答时不展示中文与答案，提交后统一解析。</li><li>这里是专项小测；完整考试形式请做 DUO 官方练习。</li><li>题组固定，再次练习会遇到相同题目。</li></ul><button class="primary-btn" type="button" data-study-action="start-quiz">开始 6 题自测 →</button>${last?`<p class="study-small">上次练习：${last.day} · ${last.correct} / 6 题答对</p>`:''}</div><div class="study-resource-line"><span>口语、听力、写作及完整练习</span>${sourceLink('practice')}</div>`;
+    el('studyBody').innerHTML=`<div class="study-page-heading"><h2>关掉提示，独立试一次。</h2><p>日常阅读 + KNM · 6 道本站自编题 · 10 分钟</p></div><div class="study-quiz-intro"><h3>这一轮，检验自己能否快速找准信息。</h3><ul><li>作答时不展示中文与答案，提交后统一解析。</li><li>这里是生活综合快测；分科专项与 A/B 模拟卷请切到「分科备考」。</li><li>题组固定，再次练习会遇到相同题目。</li></ul><button class="primary-btn" type="button" data-study-action="start-quiz">开始 6 题快测 →</button>${last?`<p class="study-small">上次练习：${last.day} · ${last.correct} / 6 题答对</p>`:''}</div><div class="study-resource-line"><span>口语、听力、写作及完整练习</span>${sourceLink('practice')}</div>`;
   }
-  function startQuiz(){quiz={index:0,answers:{},expires:Date.now()+600000,finished:false};clearInterval(quizTimer);quizTimer=setInterval(tickQuiz,1000);renderQuizTask();}
+  function startQuiz(){quiz={index:0,answers:{},expires:Date.now()+600000,finished:false};clearInterval(quizTimer);quizTimer=setInterval(tickQuiz,1000);updatePromoVisibility();renderQuizTask();}
   function tickQuiz(){
     if(!quiz||quiz.finished)return;
     const left=Math.max(0,Math.ceil((quiz.expires-Date.now())/1000));
@@ -196,10 +215,11 @@ export function mountDutch(root, hooks = {}){
     if(!quiz||quiz.finished)return;quiz.finished=true;clearInterval(quizTimer);
     quiz.correct=QUIZ.filter(task=>quiz.answers[task.id]===task.answer).length;
     study.quizHistory=[...study.quizHistory,{day:dayKey(),correct:quiz.correct}].slice(-5);save();hooks.onPractice?.();
+    updatePromoVisibility();
     if(view==='quiz')renderQuizResult();
   }
   function renderQuizResult(){
-    el('studyBody').innerHTML=`<div class="study-page-heading"><p class="study-eyebrow">本轮自测完成</p><h2>答对了 ${quiz.correct} / ${QUIZ.length} 题。</h2><p>这是本站练习结果。接下来回看依据，再用 DUO 官方练习熟悉考试。</p></div><div class="study-quiz-results">${QUIZ.map((task,index)=>`<details><summary><span>${quiz.answers[task.id]===task.answer?'✓':'待复习'} · 第 ${index+1} 题</span><span>${SKILLS[task.skill]}</span></summary><p lang="nl">${esc(task.text)} ${esc(task.prompt)}</p><p>你的答案：<span lang="nl">${esc(task.options[quiz.answers[task.id]]||'未作答')}</span></p><p>参考答案：<span lang="nl">${esc(task.options[task.answer])}</span></p><p>${esc(task.explanation)}</p>${task.source?sourceLink(task.source):''}</details>`).join('')}</div><div class="study-question-actions"><button class="primary-btn" type="button" data-study-action="close-quiz">回到练习</button>${sourceLink('practice')}</div>`;
+    el('studyBody').innerHTML=`<div class="study-page-heading"><p class="study-eyebrow">本轮快测完成</p><h2>答对了 ${quiz.correct} / ${QUIZ.length} 题。</h2><p>这是本站练习结果。接下来回看依据，或去「分科备考」做各科模拟卷。</p></div><div class="study-quiz-results">${QUIZ.map((task,index)=>`<details><summary><span>${quiz.answers[task.id]===task.answer?'✓':'待复习'} · 第 ${index+1} 题</span><span>${SKILLS[task.skill]}</span></summary><p lang="nl">${esc(task.text)} ${esc(task.prompt)}</p><p>你的答案：<span lang="nl">${esc(task.options[quiz.answers[task.id]]||'未作答')}</span></p><p>参考答案：<span lang="nl">${esc(task.options[task.answer])}</span></p><p>${esc(task.explanation)}</p>${task.source?sourceLink(task.source):''}</details>`).join('')}</div><div class="study-question-actions"><button class="primary-btn" type="button" data-study-action="close-quiz">回到场景练习</button>${sourceLink('practice')}</div>`;
   }
   function targetNotice(){
     const target=targetWindow(study.targetDate);
@@ -224,6 +244,13 @@ export function mountDutch(root, hooks = {}){
     if(button.dataset.studyLesson){const lesson=LESSONS.find(lesson=>lesson.id===button.dataset.studyLesson);if(lesson)startSession(lesson.tasks,lesson.id);return;}
     const action=button.dataset.studyAction;
     if(action==='cloud-login'){hooks.requestLogin?.(()=>syncCloud());return;}
+    if(action==='jump-review'){
+      const due=dueTasks(study);
+      setView('today');
+      const wrong=TASKS.filter(t=>study.answers[t.id]?.needsReview).slice(0,3);
+      if(due.length||wrong.length)startSession(due.length?due:wrong);
+      return;
+    }
     if(action==='home')setView('today');
     if(action==='resume')renderTask();
     if(action==='short')startSession(dueTasks(study,new Date(),1).length?dueTasks(study,new Date(),1):[(recommendedLesson(study)||LESSONS[0]).tasks[0]]);

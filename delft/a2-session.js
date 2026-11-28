@@ -8,13 +8,81 @@ const nl = text => `<span lang="nl">${esc(text)}</span>`;
 const clock = seconds => Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');
 const typeName = (subject,type) => GUIDE[subject].types.find(t=>t.id===type).label;
 
-export function createExamSession(root, ledger, hooks) {
-  let run=null, timer=null, epoch=0, recording=null;
+const SESSION_DRAFT_KEY = 'hebao_a2_session_v1';
+
+export function createExamSession(root, ledger, hooks, storage) {
+  let run=null, timer=null, epoch=0, recording=null, saveDraftTimer=null;
   const by = id => root.querySelector('#'+id);
   const current = () => run.items[run.index];
   const entry = () => run.answers[current().id] ||= {};
   const mock = () => run.form !== 'practice';
   const left = () => Math.max(0, Math.ceil((run.deadline-Date.now())/1000));
+
+  function clearRunDraft() {
+    clearTimeout(saveDraftTimer);
+    try { storage?.setItem(SESSION_DRAFT_KEY, ''); } catch {}
+  }
+  function saveRunDraft() {
+    if (!storage || !run || run.finished) return;
+    try {
+      const cleanAnswers = {};
+      for (const [qid, val] of Object.entries(run.answers || {})) {
+        if (!val || typeof val !== 'object') continue;
+        const { clip: _clip, ...rest } = val;
+        cleanAnswers[qid] = rest;
+      }
+      storage.setItem(SESSION_DRAFT_KEY, JSON.stringify({
+        version: 1,
+        subject: run.subject,
+        form: run.form,
+        type: run.type || null,
+        token: run.token,
+        index: run.index,
+        answers: cleanAnswers,
+        began: run.began,
+        deadline: run.deadline,
+        fresh: Boolean(run.fresh),
+      }));
+    } catch {}
+  }
+  function saveRunDraftSoon() {
+    clearTimeout(saveDraftTimer);
+    saveDraftTimer = setTimeout(saveRunDraft, 250);
+  }
+  function restoreRunDraft() {
+    if (!storage) return;
+    try {
+      const raw = storage.getItem(SESSION_DRAFT_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      if (saved?.version !== 1 || !Object.hasOwn(GUIDE, saved.subject)) { clearRunDraft(); return; }
+      const isPractice = saved.form === 'practice';
+      if (!isPractice && !['a', 'b'].includes(saved.form)) { clearRunDraft(); return; }
+      if (isPractice && !GUIDE[saved.subject].types.some(t => t.id === saved.type)) { clearRunDraft(); return; }
+      const now = Date.now();
+      if (!isPractice && (!Number.isFinite(saved.deadline) || saved.deadline <= now)) { clearRunDraft(); return; }
+      if (isPractice && (!Number.isFinite(saved.began) || now - saved.began > 86400000)) { clearRunDraft(); return; }
+      const pool = BANK[saved.subject][saved.form];
+      const items = isPractice ? pool.filter(item => item.type === saved.type) : pool;
+      if (!items.length) { clearRunDraft(); return; }
+      const index = Math.min(items.length - 1, Math.max(0, Number(saved.index) || 0));
+      run = {
+        subject: saved.subject,
+        form: saved.form,
+        type: saved.type,
+        token: String(saved.token || ''),
+        items,
+        index,
+        answers: saved.answers && typeof saved.answers === 'object' ? saved.answers : {},
+        began: Number(saved.began) || now,
+        deadline: Number(saved.deadline) || (now + MOCK_MINUTES[saved.subject] * 60000),
+        finished: false,
+        fresh: Boolean(saved.fresh),
+        title: isPractice ? typeName(saved.subject, saved.type) : '模拟 ' + saved.form.toUpperCase() + ' 卷',
+      };
+      if (!isPractice) timer = setInterval(tick, 500);
+    } catch { clearRunDraft(); }
+  }
 
   function stopMic() {
     epoch++;
@@ -32,7 +100,7 @@ export function createExamSession(root, ledger, hooks) {
     root.querySelectorAll('audio').forEach(audio=>audio.pause());
   }
   function clear() {
-    pauseMedia(); clearInterval(timer);
+    pauseMedia(); clearInterval(timer); clearRunDraft();
     for(const e of Object.values(run?.answers||{})) if(e.clip) URL.revokeObjectURL(e.clip);
     run=null;
   }
@@ -46,6 +114,7 @@ export function createExamSession(root, ledger, hooks) {
     run={subject,form,type,token,items,index:0,answers:{},began,deadline:began+MOCK_MINUTES[subject]*60000,finished:false,
       fresh:!practice&&ledger.start(subject,form,token),title:practice?typeName(subject,type):'模拟 '+form.toUpperCase()+' 卷'};
     if(!practice) timer=setInterval(tick,500);
+    saveRunDraft();
     render();
   }
   function tick() {
@@ -112,32 +181,34 @@ export function createExamSession(root, ledger, hooks) {
       const session=run, audioElement=by('a2Audio');
       audioElement.addEventListener('ended',()=>{
         if(run!==session||run.finished||current()!==item||!audioElement.isConnected||tick())return;
-        r.heard=true;by('a2AudioState').textContent='已听完，可作答。';refreshControls();
+        r.heard=true;saveRunDraft();by('a2AudioState').textContent='已听完，可作答。';refreshControls();
       });
       audioElement.addEventListener('error',()=>{
         if(!audioElement.isConnected)return;
         by('a2AudioState').textContent=mock()?'录音暂时无法播放，可重试或跳过。本题未作听力作答。':'录音暂时无法播放，可重试或展开原文练习。';
       });
       by('a2Transcript')?.addEventListener('toggle',event=>{
-        if(event.target.open&&!run?.finished&&run===session&&current()===item&&event.target.isConnected){r.transcript=true;refreshControls();}
+        if(event.target.open&&!run?.finished&&run===session&&current()===item&&event.target.isConnected){r.transcript=true;saveRunDraft();refreshControls();}
       });
     }
     refreshControls();
   }
-  function changeItem(index) {pauseMedia();run.index=index;render();root.scrollIntoView({block:'start'});}
+  function changeItem(index) {pauseMedia();run.index=index;saveRunDraft();render();root.scrollIntoView({block:'start'});}
   function advance(skip=false) {
     if(!run||run.finished||tick())return;
     const item=current(),r=entry();
     if(!skip&&!attempted(run.subject,item,r))return;
-    if(!skip&&!mock()&&!r.locked){r.locked=true;render();return;}
+    if(!skip&&!mock()&&!r.locked){r.locked=true;saveRunDraft();render();return;}
     if(run.index+1<run.items.length)changeItem(run.index+1);
     else finish(false);
   }
   function finish(expired) {
     if(!run||run.finished)return;
-    pauseMedia();clearInterval(timer);run.finished=true;run.expired=expired;
+    pauseMedia();clearInterval(timer);clearRunDraft();run.finished=true;run.expired=expired;
     run.stats=summarize(run.subject,run.items,run.answers);
     if(mock())ledger.finish(run.subject,run.form,run.token,run.stats);
+    else if(run.type)ledger.recordDrill(run.subject,run.type,run.stats);
+    hooks.onFinish?.(run);
     if(hooks.isVisible())renderResult();
   }
   function resultItem(item,i) {
@@ -150,17 +221,43 @@ export function createExamSession(root, ledger, hooks) {
       ${mine?`<p>你的作答</p><p class="a2-model" lang="nl">${esc(mine)}</p>`:''}
       ${r.clip?`<audio controls src="${esc(r.clip)}" aria-label="回听第 ${i+1} 题"></audio>`:''}${explanation(item,r)}</details>`;
   }
+  function resultActions(data, weakest) {
+    const {subject,stats}=run, output=productive(subject), zh=GUIDE[subject].zh;
+    if(!mock()) {
+      const nextUnpracticed=GUIDE[subject].types.find(t=>t.id!==run.type&&!data.drills?.[subject+'/'+t.id]);
+      const missed=!output&&stats.correct<stats.total;
+      if(missed) {
+        return `<button class="primary-btn" type="button" data-a2-act="practice-type" data-type="${esc(run.type)}">再练一次「${esc(run.title)}」</button>${nextUnpracticed?`<button class="outline-btn" type="button" data-a2-act="practice-type" data-type="${esc(nextUnpracticed.id)}">下一题型：${esc(nextUnpracticed.label)} →</button>${act('leave','返回'+zh+'备考','text-btn')}`:act('leave','返回'+zh+'备考')}`;
+      }
+      if(nextUnpracticed) {
+        return `<button class="primary-btn" type="button" data-a2-act="practice-type" data-type="${esc(nextUnpracticed.id)}">继续练：${esc(nextUnpracticed.label)} →</button>${act('leave','返回'+zh+'备考')}`;
+      }
+      const nextForm=['a','b'].find(f=>!data.forms[subject+'/'+f]?.first);
+      if(nextForm) {
+        return `<button class="primary-btn" type="button" data-a2-act="start-mock" data-form="${nextForm}">专项已全通 · 开始 ${nextForm.toUpperCase()} 卷限时自测 →</button>${act('leave','返回'+zh+'备考')}`;
+      }
+      return `${act('leave','返回'+zh+'备考','primary-btn')}${act('subject','查看 DUO 官方样卷')}`;
+    }
+    const otherForm=run.form==='a'?'b':'a', otherDone=Boolean(data.forms[subject+'/'+otherForm]?.first);
+    if(weakest) {
+      return `<button class="primary-btn" type="button" data-a2-act="practice-type" data-type="${esc(weakest)}">补强薄弱题型：${esc(typeName(subject,weakest))} →</button>${!otherDone?`<button class="outline-btn" type="button" data-a2-act="start-mock" data-form="${otherForm}">挑战 ${otherForm.toUpperCase()} 卷</button>`:act('subject','查看 DUO 官方样卷')}${act('leave','返回'+zh+'备考','text-btn')}`;
+    }
+    if(!otherDone) {
+      return `<button class="primary-btn" type="button" data-a2-act="start-mock" data-form="${otherForm}">挑战 ${otherForm.toUpperCase()} 卷确认稳定度 →</button>${act('subject','查看 DUO 官方样卷')}${act('leave','返回'+zh+'备考','text-btn')}`;
+    }
+    return `${act('subject','前往 DUO 官方整套样卷 →','primary-btn')}${act('leave','返回'+zh+'备考')}`;
+  }
   function renderResult() {
-    const {subject,stats}=run,output=productive(subject),signal=readiness(subject,ledger.read());
+    const {subject,stats}=run,output=productive(subject),data=ledger.read(),signal=readiness(subject,data);
     const groups=Object.entries(stats.byType);
     const weakest=groups.filter(([,g])=>(output?g.attempted:g.correct)<g.total).sort(([,a],[,b])=>(output?a.attempted:a.correct)/a.total-(output?b.attempted:b.correct)/b.total)[0]?.[0];
     const split=groups.map(([type,g])=>`<li><span>${esc(typeName(subject,type))}</span><strong>${output?g.attempted:g.correct} / ${g.total} ${output?'已作答':'独立答对'}${g.attempted<g.total?' · '+(g.total-g.attempted)+' 未答':''}</strong></li>`).join('');
     root.innerHTML=`<div class="a2-content a2-task"><p class="a2-meta">${GUIDE[subject].zh} · ${esc(run.title)}${mock()?' · '+(run.fresh?'首次作答':'复做') : ''}${run.expired?' · 时间已到':''}</p>
       <h2>${output?'完成 '+stats.attempted+' / '+stats.total+' 项表达任务':'独立答对 '+stats.correct+' / '+stats.total+' 题'}</h2>
-      <p>${output?'逐题对照内容要点。词汇、语法和口语清晰度请另行复核。':(stats.total-stats.attempted)+' 题未作答。展开题目可查看答案依据。'}</p>
+      <p>${output?'逐题对照内容要点。词汇、语法和口语清晰度请另行复核。':(stats.total===stats.attempted?'全部题目已作答。':(stats.total-stats.attempted)+' 题未作答。')+'展开题目可查看答案依据。'}</p>
       <ul class="a2-breakdown">${split}</ul>
       ${mock()?`<div class="a2-assess-note"><h3>${esc(signal.title)}</h3><p>${esc(signal.detail)}</p>${!run.fresh?'<p>本次为复做，备考建议保留初见卷表现。</p>':''}</div>`:''}
-      <div class="a2-actions">${act('subject','做 DUO 官方样卷','primary-btn')}${weakest?`<button class="outline-btn" type="button" data-a2-act="practice-type" data-type="${weakest}">练习${esc(typeName(subject,weakest))}</button>`:''}</div>
+      <div class="a2-actions">${resultActions(data,weakest)}</div>
       <h3 class="a2-review-title">逐题解析</h3>${run.items.map(resultItem).join('')}</div>`;
   }
   async function record() {
@@ -203,7 +300,7 @@ export function createExamSession(root, ledger, hooks) {
     if(!run||run.finished||tick())return;
     const field=event.target.dataset.a2Field;
     if(field!==undefined&&!entry().locked){
-      const r=entry();r.text||=[];r.text[Number(field)]=event.target.value;refreshControls();
+      const r=entry();r.text||=[];r.text[Number(field)]=event.target.value;saveRunDraftSoon();refreshControls();
     }
   });
   root.addEventListener('change',event=>{
@@ -211,12 +308,13 @@ export function createExamSession(root, ledger, hooks) {
     const input=event.target;
     if(input.dataset.a2Rubric!==undefined){
       const id=input.dataset.qid,r=run.answers[id]||={};
-      r.checks||=[];r.checks[Number(input.dataset.a2Rubric)]=input.checked;return;
+      r.checks||=[];r.checks[Number(input.dataset.a2Rubric)]=input.checked;saveRunDraft();return;
     }
     if(run.finished||tick())return;
     const r=entry();if(r.locked)return;
     if(input.name==='a2Choice')r.choice=Number(input.value);
     if(input.id==='a2Spoken')r.spoken=input.checked;
+    saveRunDraft();
     refreshControls();
   });
   root.addEventListener('click',event=>{
@@ -232,8 +330,10 @@ export function createExamSession(root, ledger, hooks) {
     if(a==='submit-now'){
       by('a2TaskNotice').innerHTML='交卷后可以查看解析。未作答题目会标出。 '+act('submit-confirm','确认现在交卷');
     }
-    if(a==='leave'||a==='subject'){pauseMedia();hooks.subjectHome(run.subject,a==='subject');}
+    if(a==='leave'||a==='subject'){pauseMedia();saveRunDraft();hooks.subjectHome(run.subject,a==='subject');}
     if(a==='practice-type'&&run.finished)hooks.drill(run.subject,b.dataset.type);
+    if(a==='start-mock'&&run.finished)hooks.mock(run.subject,b.dataset.form);
   });
+  restoreRunDraft();
   return {current:()=>run,start,render,pauseMedia,clear};
 }

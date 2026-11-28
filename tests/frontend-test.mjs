@@ -281,8 +281,48 @@ test('A2 cloud sync merges local pre-login answers and mock papers without losin
   const l1 = openPrepLedger({getItem:k=>s1.get(k), setItem:(k,v)=>s1.set(k,v)});
   const l2 = openPrepLedger({getItem:k=>s2.get(k), setItem:(k,v)=>s2.set(k,v)});
   l1.start('read','a','tok-a'); l1.finish('read','a','tok-a',{attempted:6,correct:5});
+  l1.recordDrill('read','notice',{attempted:2,correct:1});
   l2.start('listen','b','tok-b'); l2.finish('listen','b','tok-b',{attempted:6,correct:4});
+  l2.recordDrill('read','notice',{attempted:2,correct:2});
   const mp = mergePrep(l1.read(), l2.read());
   assert.equal(mp.forms['read/a'].first.correct, 5);
   assert.equal(mp.forms['listen/b'].first.correct, 4);
+  assert.equal(mp.drills['read/notice'].best, 2);
+});
+
+test('calendar .ics export, product share links, and SEO/PWA assets are valid and clutter-free', async () => {
+  const {buildCalendarIcs} = await import('../delft/ics.js');
+  const {listingShareLink} = await import('../delft/site-config.js');
+
+  const ics = buildCalendarIcs({
+    uid: 'ev-123',
+    title: '周六桌游, 阿瓦隆; 狼人杀',
+    startsAt: '2026-11-28T14:00:00+01:00',
+    location: 'Delft, TU Library',
+    description: '带伞\n迟到群里说',
+    url: 'https://hebaogj.xyz/events?event=ev-123',
+    now: new Date('2026-11-28T10:00:00Z'),
+  });
+  assert.match(ics, /BEGIN:VCALENDAR\r\n/);
+  assert.match(ics, /DTSTART:20261128T130000Z\r\n/);
+  assert.match(ics, /DTEND:20261128T150000Z\r\n/);
+  assert.match(ics, /SUMMARY:周六桌游\\, 阿瓦隆\\; 狼人杀\r\n/);
+  assert.match(ics, /DESCRIPTION:带伞\\n迟到群里说\r\n/);
+
+  assert.equal(listingShareLink('list-9'), 'https://hebaogj.xyz/market?item=list-9');
+  assert.equal(listingShareLink('list-9', undefined, 'chair-2'), 'https://hebaogj.xyz/market?item=list-9&product=chair-2');
+
+  const html = readFileSync(new URL('../delft/index.html', import.meta.url), 'utf8');
+  assert.doesNotMatch(html, /class="poster-tool-card"/);
+  assert.doesNotMatch(html, /id="refresh(Market|Events|Mine|ListingDetail)"/);
+  assert.match(html, /rel="manifest" href="\/delft\/manifest\.webmanifest"/);
+  assert.match(html, /id="photoLightboxModal"/);
+  assert.match(html, /id="actionDialogModal"/);
+
+  const manifest = JSON.parse(readFileSync(new URL('../delft/manifest.webmanifest', import.meta.url), 'utf8'));
+  assert.equal(manifest.short_name, '荷包');
+  const robots = readFileSync(new URL('../robots.txt', import.meta.url), 'utf8');
+  assert.match(robots, /Sitemap: https:\/\/hebaogj\.xyz\/sitemap\.xml/);
+  const sitemap = readFileSync(new URL('../sitemap.xml', import.meta.url), 'utf8');
+  assert.match(sitemap, /https:\/\/hebaogj\.xyz\/dutch-a2/);
 });
