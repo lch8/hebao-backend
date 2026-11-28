@@ -24,16 +24,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,500&family=Noto+Serif+SC:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'" />
-  <link rel="stylesheet" href="/delft/styles.css?v=20261128k" />
-  <link rel="stylesheet" href="/delft/dutch.css?v=20261128k" />
-  <link rel="stylesheet" href="/delft/a2-prep.css?v=20261128k" />
-  <link rel="stylesheet" href="/delft/theme.css?v=20261128k" />
-  <script type="module" src="/delft/app.js?v=20261128k"></script>
+  <link rel="stylesheet" href="/delft/styles.css?v=20261128l" />
+  <link rel="stylesheet" href="/delft/dutch.css?v=20261128l" />
+  <link rel="stylesheet" href="/delft/a2-prep.css?v=20261128l" />
+  <link rel="stylesheet" href="/delft/theme.css?v=20261128l" />
+  <script type="module" src="/delft/app.js?v=20261128l"></script>
 </head>
 <body>
   <a class="skip-link" href="#workspace">跳到主要内容</a>
   <header class="topbar">
-    <a class="brand" href="/" data-brand-home aria-label="荷包首页"><span class="brand-icon">荷</span><strong>荷包</strong><span class="brand-city">荷语资讯 · 找搭子 · 闲置</span></a>
+    <a class="brand" href="/" data-brand-home aria-label="荷包首页"><span class="brand-icon">荷</span><strong>荷包</strong><span class="brand-city">在荷生活</span></a>
     <nav class="tabs" aria-label="主要功能">
       <button type="button" class="tab active" data-tab="dutch" aria-controls="panel-dutch" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v15M12 6C9 3 5 3 2 4v15c3-1 7-1 10 2M12 6c3-3 7-3 10-2v15c-3-1-7-1-10 2"/></svg><span>荷语资讯</span></button>
       <button type="button" class="tab" data-tab="events" aria-controls="panel-events" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.4"/><path d="M2 20v-1a7 7 0 0 1 14 0v1M16 5a3.4 3.4 0 0 1 0 6.5M18 14a6 6 0 0 1 4 5.5"/></svg><span>找搭子</span></button>
@@ -46,17 +46,13 @@
   <main class="shell" id="workspace">
     <section id="panel-dutch" class="panel active" aria-labelledby="dutchHeading">
       <div id="dutchBrowse">
-        <div class="section-heading dutch-heading">
-          <div>
-            <h1 id="dutchHeading">荷语资讯</h1>
-          </div>
-        </div>
+        <h1 id="dutchHeading" class="sr-only">荷语资讯</h1>
         <div id="dutchApp">
           <div class="skeleton-card" aria-hidden="true"><div class="skeleton-line short"></div><div class="skeleton-line tall"></div><div class="skeleton-line medium"></div></div>
         </div>
         <div id="cityInfoSection" class="city-info-section" hidden>
-          <div class="event-tools">
-            <label class="city-selector"><span class="city-selector-label">城市</span> <select id="cityFeedSelect">
+          <div class="event-tools filter-select-row">
+            <label class="city-selector"><span class="sr-only">选择城市</span> <select id="cityFeedSelect">
               <option value="zuid-holland">南荷兰省（Delft·海牙·鹿特丹）</option>
               <option value="delft">Delft</option>
               <option value="den-haag">Den Haag</option>
@@ -66,11 +62,11 @@
               <option value="eindhoven">Eindhoven</option>
               <option value="all">全部荷兰城市</option>
             </select></label>
-            <div class="category-filters" id="cityPeriodFilters" role="group" aria-label="活动日期筛选">
-              <button class="category-chip" type="button" data-city-period="weekend" aria-pressed="false">本周末</button>
-              <button class="category-chip active" type="button" data-city-period="fortnight" aria-pressed="true">未来两周</button>
-              <button class="category-chip" type="button" data-city-period="all" aria-pressed="false">全部日期</button>
-            </div>
+            <label class="city-selector period-selector"><span class="sr-only">选择活动日期</span> <select id="cityFeedPeriodSelect">
+              <option value="weekend">本周末</option>
+              <option value="fortnight" selected>未来两周</option>
+              <option value="all">全部日期</option>
+            </select></label>
             <span class="event-checked" id="cityCheckedNote"></span>
           </div>
           <div id="cityEvents"></div>
@@ -78,7 +74,7 @@
         <button type="button" class="weekend-shortcut news-promo-shortcut buddy-bridge-shortcut" id="dutchBuddyShortcut">
           <div class="news-promo-copy">
             <span class="news-promo-eyebrow">找搭子 · 全荷线上与同城组队</span>
-            <strong>找人练荷语口语、晚间线上自习、游戏开黑或周末线下小局</strong>
+            <strong>荷语口语互练、线上自习、游戏开黑或周末线下小局</strong>
           </div>
           <span aria-hidden="true">↗</span>
         </button>
@@ -91,7 +87,7 @@
         <div class="companion-hero">
           <div class="companion-intro">
             <h1 id="eventsHeading">找搭子</h1>
-            <p>线上组队 · 线下同城，支持定时局与长期灵活约伴</p>
+            <p>线上组队 · 线下同城，定时与长期灵活约伴</p>
             <div class="companion-hero-actions">
               <button class="primary-btn" type="button" id="openCreateEvent">发个搭子 <span aria-hidden="true">＋</span></button>
               <button class="hero-ghost-btn" type="button" id="openCreateOnline">组线上搭子</button>
@@ -102,12 +98,12 @@
 
         <div class="buddy-quick-strip" role="group" aria-label="热门搭子一键发起">
           <span class="buddy-quick-label">一键发起</span>
-          <button type="button" class="buddy-quick-pill" data-buddy-template="dutch">荷语口语互练</button>
-          <button type="button" class="buddy-quick-pill" data-buddy-template="study">晚间线上自习</button>
-          <button type="button" class="buddy-quick-pill" data-buddy-template="game">游戏语音开黑</button>
-          <button type="button" class="buddy-quick-pill" data-buddy-template="boardgame">周末同城桌游</button>
-          <button type="button" class="buddy-quick-pill" data-buddy-template="coffee">咖啡 / 约饭</button>
-          <button type="button" class="buddy-quick-pill" data-buddy-template="sport">运动 / 出游</button>
+          <button type="button" class="buddy-quick-pill" data-buddy-template="dutch">荷语口语</button>
+          <button type="button" class="buddy-quick-pill" data-buddy-template="study">线上自习</button>
+          <button type="button" class="buddy-quick-pill" data-buddy-template="game">游戏开黑</button>
+          <button type="button" class="buddy-quick-pill" data-buddy-template="boardgame">周末桌游</button>
+          <button type="button" class="buddy-quick-pill" data-buddy-template="coffee">咖啡约饭</button>
+          <button type="button" class="buddy-quick-pill" data-buddy-template="sport">运动出游</button>
         </div>
 
         <div class="buddy-filter-bar">
@@ -116,8 +112,8 @@
             <button type="button" data-buddy-mode="online" aria-pressed="false">线上组队</button>
             <button type="button" data-buddy-mode="offline" aria-pressed="false">线下同城</button>
           </div>
-          <div class="event-tools buddy-tools">
-            <label class="city-selector" id="buddyCityWrap"><span class="city-selector-label">城市</span> <select id="citySelect">
+          <div class="event-tools buddy-tools filter-select-row">
+            <label class="city-selector" id="buddyCityWrap"><span class="sr-only">选择城市范围</span> <select id="citySelect">
               <option value="zuid-holland">南荷兰省（Delft·海牙·鹿特丹）</option>
               <option value="delft">Delft</option>
               <option value="den-haag">Den Haag</option>
@@ -127,18 +123,18 @@
               <option value="eindhoven">Eindhoven</option>
               <option value="all">全部荷兰城市</option>
             </select></label>
-            <div class="category-filters" id="cityEventFilters" role="group" aria-label="时间筛选">
-              <button class="category-chip active" type="button" data-period="fortnight" aria-pressed="true">近期 & 长期</button>
-              <button class="category-chip" type="button" data-period="weekend" aria-pressed="false">本周末</button>
-              <button class="category-chip" type="button" data-period="flexible" aria-pressed="false">仅看长期</button>
-              <button class="category-chip" type="button" data-period="all" aria-pressed="false">全部</button>
-            </div>
+            <label class="city-selector period-selector"><span class="sr-only">选择时间范围</span> <select id="buddyPeriodSelect">
+              <option value="fortnight" selected>近期 &amp; 长期</option>
+              <option value="weekend">本周末</option>
+              <option value="flexible">仅看长期</option>
+              <option value="all">全部时间</option>
+            </select></label>
             <span class="event-checked" id="communityCountNote"></span>
           </div>
         </div>
 
         <div class="category-filters event-category-filters" id="eventCategoryFilters" role="group" aria-label="搭子类别筛选">
-          <button class="category-chip active" type="button" data-event-cat="" aria-pressed="true">全部类别</button>
+          <button class="category-chip active" type="button" data-event-cat="" aria-pressed="true">全部</button>
           <button class="category-chip" type="button" data-event-cat="荷语学习" aria-pressed="false">荷语学习</button>
           <button class="category-chip" type="button" data-event-cat="游戏开黑" aria-pressed="false">游戏开黑</button>
           <button class="category-chip" type="button" data-event-cat="自习求职" aria-pressed="false">自习求职</button>
@@ -169,7 +165,7 @@
     </section>
 
     <section id="panel-market" class="panel" aria-labelledby="marketHeading">
-      <div class="section-heading">
+      <div class="section-heading market-heading">
         <div>
           <h1 id="marketHeading">在荷闲置</h1>
         </div>
@@ -192,11 +188,11 @@
       </div>
       <div class="category-filters" id="marketCategories" role="group" aria-label="商品分类"></div>
       <div class="category-filters quick-price-filters" id="marketQuickFilters" role="group" aria-label="价格与收藏筛选">
-        <button class="category-chip active" type="button" data-price-filter="" aria-pressed="true">全部价格</button>
-        <button class="category-chip" type="button" data-price-filter="free" aria-pressed="false">免费赠送 €0</button>
+        <button class="category-chip active" type="button" data-price-filter="" aria-pressed="true">不限价</button>
+        <button class="category-chip" type="button" data-price-filter="free" aria-pressed="false">免费 €0</button>
         <button class="category-chip" type="button" data-price-filter="20" aria-pressed="false">≤ €20</button>
         <button class="category-chip" type="button" data-price-filter="50" aria-pressed="false">≤ €50</button>
-        <button class="category-chip" type="button" data-price-filter="fav" aria-pressed="false">★ 我的收藏 <span id="favCountBadge" hidden></span></button>
+        <button class="category-chip" type="button" data-price-filter="fav" aria-pressed="false">★ 收藏 <span id="favCountBadge" hidden></span></button>
       </div>
       <div class="result-line"><p id="marketSummary" role="status" aria-live="polite"></p><span>14 天内在售</span></div>
       <div class="cards-grid" id="marketGrid" aria-live="polite">
@@ -256,7 +252,7 @@
     </section>
 
     <section id="panel-mine" class="panel" aria-labelledby="mineHeading">
-      <div class="section-heading"><div><h1 id="mineHeading">我的</h1></div></div>
+      <h1 id="mineHeading" class="sr-only">我的</h1>
       <div id="profileArea" class="profile-area"></div>
       <div class="view-switch" id="mineSwitch" role="group" aria-label="我的内容" hidden>
         <button type="button" class="active" data-mine-view="listings" aria-pressed="true">我的闲置</button>

@@ -236,16 +236,24 @@ export function mountDailyNews(root, storage, hooks = {}) {
 
     const savedSet = new Set((data.newsWords || []).map(w => w.nl.toLowerCase()));
     const readSet = new Set(data.newsRead || []);
+    const readInEdition = edition.items.filter(it => readSet.has(it.id)).length;
 
-    const dateChips = editions.length > 1
-      ? `<div class="category-filters news-day-chips" role="group" aria-label="选择简报日期">${editions.map((ed, idx) =>
-          `<button type="button" class="category-chip ${ed.day === edition.day ? 'active' : ''}" data-news-day="${esc(ed.day)}" aria-pressed="${ed.day === edition.day}">${esc(dayLabel(ed.day, idx))}</button>`
+    const leftMeta = editions.length > 1
+      ? `<div class="news-day-pills" role="group" aria-label="选择简报日期">${editions.map((ed, idx) =>
+          `<button type="button" class="news-day-pill ${ed.day === edition.day ? 'active' : ''}" data-news-day="${esc(ed.day)}" aria-pressed="${ed.day === edition.day}">${esc(dayLabel(ed.day, idx))}</button>`
         ).join('')}</div>`
-      : '';
+      : (edition.isStarter
+          ? `<span class="news-starter-tag">样刊 · 早 7:00 更新</span>`
+          : `<span class="news-date-stamp">${esc(dayLabel(edition.day, 0))}</span>`);
 
-    const starterBanner = edition.isStarter
-      ? `<div class="news-starter-note"><strong>入门样刊</strong> · 每日早 7:00 自动更新 NOS / NU.nl 最新资讯</div>`
-      : '';
+    const utilityLine = `<div class="news-utility-line">
+      <div class="news-utility-left">${leftMeta}</div>
+      <div class="news-utility-right">
+        <span class="news-read-count">已读 ${readInEdition}/${edition.items.length}</span>
+        <button type="button" class="news-util-btn" data-news-copy-link>分享</button>
+        <button type="button" class="news-util-btn primary" data-news-poster>打卡图</button>
+      </div>
+    </div>`;
 
     const cards = edition.items.map((item, idx) => {
       const isRead = readSet.has(item.id);
@@ -331,7 +339,7 @@ export function mountDailyNews(root, storage, hooks = {}) {
       </article>`;
     }).join('');
 
-    return `${dateChips}${starterBanner}
+    return `${utilityLine}
       <p id="newsSpeakStatus" class="a2-meta" role="status" hidden></p>
       <div class="news-list">${cards}</div>`;
   }
@@ -339,25 +347,12 @@ export function mountDailyNews(root, storage, hooks = {}) {
   function render() {
     const data = ledger.read();
     const vocabCount = (data.newsWords || []).length;
-    const edition = currentEdition();
-    const readSet = new Set(data.newsRead || []);
-    const readInEdition = edition?.items ? edition.items.filter(it => readSet.has(it.id)).length : 0;
-    const feedActions = viewMode === 'feed' && edition?.items?.length
-      ? `<div class="news-edition-actions">
-          <span class="news-read-count">已读 ${readInEdition}/${edition.items.length}</span>
-          <button type="button" class="text-btn" data-news-copy-link>分享</button>
-          <button type="button" class="outline-btn news-poster-btn" data-news-poster>打卡图</button>
-        </div>`
-      : '';
     root.innerHTML = `<div class="a2-content news-shell">
-      <div class="news-toolbar">
-        <div class="word-mode-switch" role="group" aria-label="资讯内容切换">
-          <button type="button" class="${viewMode === 'feed' ? 'active' : ''}" data-news-mode="feed" aria-pressed="${viewMode === 'feed'}">今日新闻</button>
-          <button type="button" class="${viewMode === 'city' ? 'active' : ''}" data-news-mode="city" aria-pressed="${viewMode === 'city'}">城市活动${cityCount ? ` (${cityCount})` : ''}</button>
-          <button type="button" class="${viewMode === 'vocab' ? 'active' : ''}" data-news-mode="vocab" aria-pressed="${viewMode === 'vocab'}">★ 新闻生词 (${vocabCount})</button>
-        </div>
-        ${feedActions}
-      </div>
+      <nav class="view-switch news-subtabs" role="tablist" aria-label="资讯内容切换">
+        <button type="button" class="${viewMode === 'feed' ? 'active' : ''}" data-news-mode="feed" role="tab" aria-selected="${viewMode === 'feed'}" aria-pressed="${viewMode === 'feed'}">今日新闻</button>
+        <button type="button" class="${viewMode === 'city' ? 'active' : ''}" data-news-mode="city" role="tab" aria-selected="${viewMode === 'city'}" aria-pressed="${viewMode === 'city'}">城市活动${cityCount ? ` <span>${cityCount}</span>` : ''}</button>
+        <button type="button" class="${viewMode === 'vocab' ? 'active' : ''}" data-news-mode="vocab" role="tab" aria-selected="${viewMode === 'vocab'}" aria-pressed="${viewMode === 'vocab'}">★ 生词${vocabCount ? ` <span>${vocabCount}</span>` : ''}</button>
+      </nav>
       ${viewMode === 'city' ? '' : viewMode === 'vocab' ? renderVocabView(data) : renderFeedView(data)}
     </div>`;
   }

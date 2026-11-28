@@ -13,7 +13,7 @@ export function mountDutch(root, hooks = {}){
   const loaded=loadStudy(storage);
   let study=loaded.state,storageOK=loaded.available,view='news',lastA2View='prepare',session=null,quiz=null,quizTimer,recorder,stream,recordingUrl='',recordingTimeout,mediaRequest=0,resetPending=false,cloudSynced=false,syncTimer;
   const el=id=>root.querySelector(`#${id}`);
-  root.innerHTML=`<div class="dutch-pillars" role="tablist" aria-label="荷语资讯板块"><button type="button" class="dutch-pillar active" data-dutch-pillar="news" role="tab" aria-selected="true" aria-pressed="true"><strong>荷兰资讯</strong><span>每日荷语新闻 · 城市活动</span></button><button type="button" class="dutch-pillar" data-dutch-pillar="a2" role="tab" aria-selected="false" aria-pressed="false"><strong>荷兰语 A2 备考</strong><span>DUO 五科专项 · AI 批改</span></button></div><div class="study-cloud-bar" id="studyCloudBar"></div><nav class="study-nav view-switch" id="a2SubNav" hidden aria-label="荷兰语 A2 备考"><button type="button" data-study-view="prepare">分科备考</button><button type="button" data-study-view="today">生活场景 <span id="studyReviewBadge" hidden></span></button><button type="button" data-study-view="exam">报考排期</button></nav><div id="a2NewsRoot"></div><div id="a2ExamRoot" hidden></div><div id="studyBody" hidden></div><div class="study-foot" id="studyFoot"><span id="studySaveStatus" role="status" aria-live="polite"></span><details><summary>内容与数据说明</summary><p>每日荷语新闻基于 NOS / NU.nl / Rijksoverheid 公开新闻原创改写并附原文链接；A2 专项与模拟卷由荷包编写，全荷通用。登录邮箱自动云端备份进度、生词本与错题。</p><button type="button" class="text-btn danger" data-study-action="reset">清除本机学习记录</button></details></div>`;
+  root.innerHTML=`<div class="dutch-pillars" role="tablist" aria-label="荷语资讯板块"><button type="button" class="dutch-pillar active" data-dutch-pillar="news" role="tab" aria-selected="true" aria-pressed="true">荷兰资讯</button><button type="button" class="dutch-pillar" data-dutch-pillar="a2" role="tab" aria-selected="false" aria-pressed="false">A2 备考</button></div><div class="study-cloud-bar" id="studyCloudBar" hidden></div><nav class="study-nav view-switch" id="a2SubNav" hidden aria-label="荷兰语 A2 备考"><button type="button" data-study-view="prepare">分科备考</button><button type="button" data-study-view="today">生活场景 <span id="studyReviewBadge" hidden></span></button><button type="button" data-study-view="exam">报考排期</button></nav><div id="a2NewsRoot"></div><div id="a2ExamRoot" hidden></div><div id="studyBody" hidden></div><div class="study-foot" id="studyFoot"><span id="studySaveStatus" role="status" aria-live="polite"></span><details><summary>内容与数据说明</summary><p>每日荷语新闻基于 NOS / NU.nl / Rijksoverheid 公开新闻原创改写并附原文链接；A2 专项与模拟卷由荷包编写，全荷通用。登录邮箱自动云端备份进度、生词本与错题。</p><button type="button" class="text-btn danger" data-study-action="reset">清除本机学习记录</button></details></div>`;
   const prep=mountExamPrep(el('a2ExamRoot'),storage,{
     onChange:()=>{renderCloudBar();saveStatus();pushCloudSoon();},
     onPractice:()=>hooks.onPractice?.(),
@@ -36,9 +36,8 @@ export function mountDutch(root, hooks = {}){
     try{return JSON.parse(storage?.getItem(PREP_KEY)||'null');}catch{return null;}
   }
   function syncStudyChrome(){
-    const hideStudy=view==='news'&&news.getMode()==='city';
-    const bar=el('studyCloudBar');if(bar)bar.hidden=hideStudy;
-    const foot=el('studyFoot');if(foot)foot.hidden=hideStudy;
+    const hideFoot=view==='news'&&news.getMode()==='city';
+    const foot=el('studyFoot');if(foot)foot.hidden=hideFoot;
   }
   function pushCloudSoon(){
     if(!hooks.isSignedIn?.())return;
@@ -70,36 +69,31 @@ export function mountDutch(root, hooks = {}){
   function renderCloudBar(){
     const bar=el('studyCloudBar');if(!bar)return;
     syncStudyChrome();
-    const localPrep=readLocalPrep();
-    const p=prepCounts(localPrep);
     const isNews=view==='news';
+    // Keep News screen uncluttered: read count & saved vocab live right in the sub-tabs & utility strip.
     if(isNews){
-      const newsWordsCount=(localPrep?.newsWords||[]).length;
-      const summary=`已精读 ${p.newsReadCount||0} 篇简报 · ★ 新闻生词 ${newsWordsCount} 个`;
-      if(hooks.isSignedIn?.()){
-        bar.innerHTML=`<span>${summary}</span><span class="cloud-tag">${cloudSynced?'已同步':'同步中…'}</span>`;
-        bar.classList.add('synced');
-      }else{
-        bar.classList.remove('synced');
-        const hasAny=(p.newsReadCount||0)>0||newsWordsCount>0;
-        bar.innerHTML=`<span>${hasAny?summary:'登录同步生词与阅读记录'}</span><button type="button" class="text-btn cloud-inline-btn" data-study-action="cloud-login">邮箱登录 →</button>`;
-      }
+      bar.hidden=true;
       return;
     }
+    const localPrep=readLocalPrep();
+    const p=prepCounts(localPrep);
     const dueCount=dueTasks(study).length;
     const sceneWrong=Object.values(study.answers||{}).filter(a=>a?.needsReview).length;
     const totalMistakes=(p.mistakesCount||0)+sceneWrong;
     const badge=el('studyReviewBadge');
     if(badge){badge.hidden=!dueCount;badge.textContent=String(dueCount);}
+    const hasProgress=Boolean(p.drillsDone||p.mocksDone||p.officialDone||totalMistakes);
     const summary=`专项 ${p.drillsDone}/${p.drillsTotal} · 模拟卷 ${p.mocksDone}/${p.mocksTotal}`;
     const reviewBtn=totalMistakes?` · <button type="button" class="text-btn cloud-inline-btn" data-study-action="jump-review">${totalMistakes} 道错题 →</button>`:'';
     if(hooks.isSignedIn?.()){
+      if(!hasProgress){bar.hidden=true;return;}
+      bar.hidden=false;
       bar.innerHTML=`<span>${summary}${reviewBtn}</span><span class="cloud-tag">${cloudSynced?'已同步':'同步中…'}</span>`;
       bar.classList.add('synced');
     }else{
+      bar.hidden=false;
       bar.classList.remove('synced');
-      const hasAny=p.drillsDone||p.mocksDone||p.officialDone||p.mistakesCount||p.savedWordsCount||study.completed.length||Object.keys(study.answers||{}).length;
-      bar.innerHTML=`<span>${hasAny?summary:'登录同步进度、词库与错题'}${reviewBtn}</span><button type="button" class="text-btn cloud-inline-btn" data-study-action="cloud-login">邮箱登录 →</button>`;
+      bar.innerHTML=`<span>${hasProgress?summary:'登录同步进度与错题'}${reviewBtn}</span><button type="button" class="text-btn cloud-inline-btn" data-study-action="cloud-login">邮箱登录 →</button>`;
     }
   }
   function save(){storageOK=saveStudy(storage,study);saveStatus();renderCloudBar();pushCloudSoon();}

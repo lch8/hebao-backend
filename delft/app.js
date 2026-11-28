@@ -379,7 +379,7 @@ async function tab(name, { updateUrl = true } = {}) {
                 syncCityFeedControls();
                 renderCityEvents();
                 if (!feedReady) loadCityFeed();
-              } else if (mode === 'feed' && state.activeTab === 'dutch' && new URLSearchParams(location.search).get('view') === 'city') {
+              } else if (dutchView && mode === 'feed' && state.activeTab === 'dutch' && new URLSearchParams(location.search).get('view') === 'city') {
                 history.replaceState(history.state, '', '/');
               }
             },
@@ -1745,14 +1745,10 @@ function discoveryUrl({ city = selectedCity, period = cityPeriod, source = 'comm
 
 function syncDiscoveryControls() {
   if ($('citySelect')) $('citySelect').value = selectedCity;
+  if ($('buddyPeriodSelect')) $('buddyPeriodSelect').value = cityPeriod;
   if ($('buddyCityWrap')) $('buddyCityWrap').hidden = state.buddyMode === 'online';
   for (const button of $('buddyModeSwitch')?.querySelectorAll('[data-buddy-mode]') || []) {
     const active = button.dataset.buddyMode === state.buddyMode;
-    button.classList.toggle('active', active);
-    button.setAttribute('aria-pressed', String(active));
-  }
-  for (const button of $('cityEventFilters')?.querySelectorAll('button') || []) {
-    const active = button.dataset.period === cityPeriod;
     button.classList.toggle('active', active);
     button.setAttribute('aria-pressed', String(active));
   }
@@ -1765,11 +1761,7 @@ function syncDiscoveryControls() {
 
 function syncCityFeedControls() {
   if ($('cityFeedSelect')) $('cityFeedSelect').value = cityFeedCity;
-  for (const button of $('cityPeriodFilters')?.querySelectorAll('button') || []) {
-    const active = button.dataset.cityPeriod === cityFeedPeriod;
-    button.classList.toggle('active', active);
-    button.setAttribute('aria-pressed', String(active));
-  }
+  if ($('cityFeedPeriodSelect')) $('cityFeedPeriodSelect').value = cityFeedPeriod;
 }
 
 function changeDiscovery(updates) {
@@ -1819,20 +1811,22 @@ function renderCityEvents() {
     return;
   }
   if (state.activeTab === 'dutch') document.title = siteTitle;
-  if ($('cityCheckedNote')) $('cityCheckedNote').textContent = feedReady ? `${feedUpdated.slice(5).replace('-', '/')} 核对` : '';
+  const cityPeriodNames = { weekend: '本周末', fortnight: '未来两周', all: '全部日期' };
+  const dateSuffix = cityFeedPeriod === 'weekend' ? `${weekendLabel(now)} · ` : '';
+  if ($('cityCheckedNote')) $('cityCheckedNote').textContent = feedReady ? `${dateSuffix}${feedUpdated.slice(5).replace('-', '/')} 核对` : '';
   if (!feedReady) {
     if ($('cityEvents')) $('cityEvents').innerHTML = renderSkeletonEvents();
     return;
   }
   const { local, nearby, inPeriod } = citySelection(feedEvents, cityFeedPeriod, now, cityFeedCity);
   dutchView?.setCityCount?.(local.length);
-  const cityName = cityLabels[cityFeedCity] || '全部荷兰城市', scope = periodNames[cityFeedPeriod] || '未来两周';
+  const cityName = cityLabels[cityFeedCity] || '全部荷兰城市', scope = cityPeriodNames[cityFeedPeriod] || '未来两周';
   const multiCity = cityFeedCity === 'all' || cityFeedCity === 'zuid-holland';
   const dates = cityFeedPeriod === 'weekend' ? `<span class="list-dates">${esc(weekendLabel(now))}</span>` : '';
   const status = feedFailed ? '<p class="feed-status" role="status">更新暂不可用，当前显示上次载入的活动。 <button type="button" class="text-btn" data-retry-feed>重试</button></p>' : '';
 
   if (local.length) {
-    $('cityEvents').innerHTML = status + `<div class="picks-heading"><h2>${esc(cityName)} · ${scope}</h2>${dates}</div>` + pickList(local, multiCity);
+    $('cityEvents').innerHTML = status + pickList(local, multiCity);
     return;
   }
   const links = [];
@@ -1851,10 +1845,7 @@ $('buddyModeSwitch')?.addEventListener('click', e => {
   const button = e.target.closest('[data-buddy-mode]');
   if (button) changeDiscovery({ mode: button.dataset.buddyMode });
 });
-$('cityEventFilters')?.addEventListener('click', e => {
-  const button = e.target.closest('[data-period]');
-  if (button) changeDiscovery({ period: button.dataset.period });
-});
+$('buddyPeriodSelect')?.addEventListener('change', () => changeDiscovery({ period: $('buddyPeriodSelect').value }));
 $('eventCategoryFilters')?.addEventListener('click', e => {
   const button = e.target.closest('[data-event-cat]');
   if (!button) return;
@@ -1865,10 +1856,7 @@ $('eventCategoryFilters')?.addEventListener('click', e => {
 $('citySelect')?.addEventListener('change', () => changeDiscovery({ city: $('citySelect').value }));
 
 $('cityFeedSelect')?.addEventListener('change', () => changeDiscovery({ source: 'city', city: $('cityFeedSelect').value }));
-$('cityPeriodFilters')?.addEventListener('click', e => {
-  const button = e.target.closest('[data-city-period]');
-  if (button) changeDiscovery({ source: 'city', period: button.dataset.cityPeriod });
-});
+$('cityFeedPeriodSelect')?.addEventListener('change', () => changeDiscovery({ source: 'city', period: $('cityFeedPeriodSelect').value }));
 
 $('panel-events').addEventListener('click', e => {
   const tpl = e.target.closest('[data-buddy-template]');
