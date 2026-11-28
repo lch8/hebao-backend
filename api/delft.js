@@ -1,7 +1,7 @@
 import { sql, ensureSchema, json, clipped, authId, isAdminUser, isUserBanned, cleanupOldTempRows } from './_delft-db.js';
 import { sendTransactionalEmail, notifyEventAttendees } from './_notify.js';
 import { isCosUrl, isDbImageUrl, deleteDbImagesFor } from './_image-store.js';
-import { loadDailyNewsEditions, generateDailyNews } from './_daily-news.js';
+import { loadDailyNewsEditions, generateDailyNews, ensureTodayDailyNews } from './_daily-news.js';
 export const config = { runtime: 'edge' };
 
 const statuses = new Set(['available', 'reserved', 'sold']);
@@ -188,6 +188,7 @@ export default async function handler(request) {
         return json({ events: result.rows.map(eventView) });
       }
       if (action === 'dailyNews') {
+        await ensureTodayDailyNews();
         const editions = await loadDailyNewsEditions(7);
         return json({ editions });
       }

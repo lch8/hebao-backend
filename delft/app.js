@@ -341,7 +341,7 @@ async function tab(name, { updateUrl = true } = {}) {
   }
   window.scrollTo({ top: 0, behavior: 'smooth' });
   if (name === 'market') await loadListings();
-  if (name === 'events') { renderCityEvents(); await Promise.all([loadEvents(), loadCityFeed()]); }
+  if (name === 'events') await loadEvents();
   if (name === 'mine') await loadMine();
   if (name === 'dutch') {
     try {
@@ -356,6 +356,26 @@ async function tab(name, { updateUrl = true } = {}) {
             onPractice: () => trackEvent('a2_practice'),
             onNewsRead: () => trackEvent('news_read'),
             onCopyText: (text, msg) => copyTextWithFallback(text, msg),
+            onNewsModeChange: mode => {
+              const showCity = mode === 'city';
+              if ($('cityInfoSection')) $('cityInfoSection').hidden = !showCity;
+              if (!showCity && activeActivity) {
+                activeActivity = '';
+                if ($('dutchBrowse')) $('dutchBrowse').hidden = false;
+                if ($('officialActivity')) $('officialActivity').hidden = true;
+              }
+              if (showCity) {
+                if (!activeActivity) {
+                  const url = discoveryUrl({ city: cityFeedCity, period: cityFeedPeriod, source: 'city' });
+                  if (url.href !== location.href) history.replaceState(history.state, '', url);
+                }
+                syncCityFeedControls();
+                renderCityEvents();
+                if (!feedReady) loadCityFeed();
+              } else if (mode === 'feed' && state.activeTab === 'dutch' && new URLSearchParams(location.search).get('view') === 'city') {
+                history.replaceState(history.state, '', '/news');
+              }
+            },
             onSharePoster: async spec => {
               try {
                 const { canvas } = await createStudyPoster(spec);
@@ -398,9 +418,11 @@ async function tab(name, { updateUrl = true } = {}) {
       } else {
         dutchView.syncCloud?.();
       }
+      if (!feedReady) loadCityFeed();
+      else renderCityEvents();
     } catch {
       dutchLoading = null;
-      $('dutchApp').innerHTML = '<div class="empty-state error-state"><p>练习暂未载入，请刷新页面重试。</p><a href="https://www.inburgeren.nl/examen-doen/oefenen.jsp" target="_blank" rel="noopener noreferrer">先做 DUO 官方练习 ↗</a></div>';
+      $('dutchApp').innerHTML = '<div class="empty-state error-state"><p>内容暂未载入，请刷新页面重试。</p><a href="https://www.inburgeren.nl/examen-doen/oefenen.jsp" target="_blank" rel="noopener noreferrer">先做 DUO 官方练习 ↗</a></div>';
     }
   }
 }
@@ -1666,6 +1688,7 @@ const dateText = iso => new Intl.DateTimeFormat('zh-CN', {
 }).format(new Date(iso));
 
 let selectedCity = 'zuid-holland', cityPeriod = 'fortnight', eventSource = 'community', activeActivity = '';
+let cityFeedCity = 'zuid-holland', cityFeedPeriod = 'fortnight';
 let feedEvents = cityEvents, feedUpdated = CITY_EVENTS_CHECKED, feedFailed = false, feedReady = false, feedRequest = 0;
 let eventsRequest = 0, eventDraftTouched = false, eventsFailed = false, eventsReady = false;
 const periodNames = { weekend: '本周末', fortnight: '未来两周', all: '近期' };
@@ -1693,125 +1716,123 @@ async function loadCityFeed() {
   renderCityEvents();
 }
 
-function discoveryUrl({ city = selectedCity, period = cityPeriod, source = eventSource, activity = '' } = {}) {
-  const url = new URL('/events', location.origin);
+function discoveryUrl({ city = selectedCity, period = cityPeriod, source = 'community', activity = '' } = {}) {
+  const url = new URL(source === 'city' || activity ? '/news' : '/events', location.origin);
+  if (activity) {
+    url.searchParams.set('activity', activity);
+    url.searchParams.set('city', city);
+    url.searchParams.set('period', period);
+    return url;
+  }
+  if (source === 'city') {
+    url.searchParams.set('view', 'city');
+    url.searchParams.set('city', city);
+    url.searchParams.set('period', period);
+    return url;
+  }
   url.searchParams.set('city', city);
   url.searchParams.set('period', period);
-  url.searchParams.set('source', source);
-  if (activity) url.searchParams.set('activity', activity);
   return url;
 }
 
 function syncDiscoveryControls() {
-  $('citySelect').value = selectedCity;
-  for (const [group, key, value] of [['cityEventFilters', 'period', cityPeriod], ['eventSourceSwitch', 'source', eventSource]]) {
-    for (const button of $(group).querySelectorAll('button')) {
-      const active = button.dataset[key] === value;
-      button.classList.toggle('active', active);
-      button.setAttribute('aria-pressed', String(active));
-    }
+  if ($('citySelect')) $('citySelect').value = selectedCity;
+  for (const button of $('cityEventFilters')?.querySelectorAll('button') || []) {
+    const active = button.dataset.period === cityPeriod;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
   }
-  const catGroup = $('eventCategoryFilters');
-  if (catGroup) {
-    catGroup.hidden = eventSource !== 'community';
-    for (const button of catGroup.querySelectorAll('button')) {
-      const active = button.dataset.eventCat === state.eventCategory;
-      button.classList.toggle('active', active);
-      button.setAttribute('aria-pressed', String(active));
-    }
+  for (const button of $('eventCategoryFilters')?.querySelectorAll('button') || []) {
+    const active = button.dataset.eventCat === state.eventCategory;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
   }
-  $('communitySection').hidden = eventSource !== 'community';
-  $('citySection').classList.toggle('companion-picks', eventSource === 'community');
+}
+
+function syncCityFeedControls() {
+  if ($('cityFeedSelect')) $('cityFeedSelect').value = cityFeedCity;
+  for (const button of $('cityPeriodFilters')?.querySelectorAll('button') || []) {
+    const active = button.dataset.cityPeriod === cityFeedPeriod;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
+  }
 }
 
 function changeDiscovery(updates) {
   if (updates.city) rememberCity(updates.city);
-  const url = discoveryUrl(updates);
+  if (updates.source === 'city') {
+    cityFeedCity = updates.city || cityFeedCity;
+    cityFeedPeriod = updates.period || cityFeedPeriod;
+    activeActivity = '';
+    syncCityFeedControls();
+    const url = discoveryUrl({ city: cityFeedCity, period: cityFeedPeriod, source: 'city' });
+    if (url.href !== location.href) history.pushState(null, '', url);
+    renderCityEvents();
+    return;
+  }
+  selectedCity = updates.city || selectedCity;
+  cityPeriod = updates.period || cityPeriod;
+  eventSource = 'community';
+  const url = discoveryUrl({ city: selectedCity, period: cityPeriod, source: 'community' });
   if (url.href !== location.href) history.pushState(null, '', url);
-  const filters = discoveryFilters(url.searchParams);
-  selectedCity = filters.city; cityPeriod = filters.period; eventSource = filters.source; activeActivity = '';
-  syncDiscoveryControls(); renderCityEvents(); renderEvents();
+  syncDiscoveryControls();
+  renderEvents();
 }
 
 function pickList(events, includeCity) {
   return `<div class="pick-list">${events.map((event, index) => activityCard(event, {
-    includeCity, eager: index === 0, href: discoveryUrl({ activity: event.id }).href,
+    includeCity, eager: index === 0, href: discoveryUrl({ city: cityFeedCity, period: cityFeedPeriod, source: 'city', activity: event.id }).href,
   })).join('')}</div>`;
 }
 
 function filterLink(text, updates) {
-  return `<a class="text-btn" data-discovery-link href="${esc(discoveryUrl(updates).href)}">${esc(text)} →</a>`;
+  return `<a class="text-btn" data-discovery-link href="${esc(discoveryUrl({ city: cityFeedCity, period: cityFeedPeriod, source: 'city', ...updates }).href)}">${esc(text)} →</a>`;
 }
 
 function renderCityEvents() {
-  const detail = $('officialActivity'), browse = $('eventBrowse');
-  browse.hidden = Boolean(activeActivity); detail.hidden = !activeActivity;
-  $('panel-events').setAttribute('aria-labelledby', activeActivity ? 'activityTitle' : 'eventsHeading');
+  const detail = $('officialActivity'), browse = $('dutchBrowse');
+  if (browse) browse.hidden = Boolean(activeActivity);
+  if (detail) detail.hidden = !activeActivity;
+  $('panel-dutch')?.setAttribute('aria-labelledby', activeActivity ? 'activityTitle' : 'dutchHeading');
   const now = new Date();
   if (activeActivity) {
     const event = feedEvents.find(ev => ev.id === activeActivity);
-    const query = new URLSearchParams(location.search);
-    const hasListContext = history.state?.fromActivityList || query.has('city') || query.has('period');
-    const returnUrl = hasListContext ? discoveryUrl() : discoveryUrl({ city: event?.city || selectedCity, period: 'all', source: 'city' });
+    const returnUrl = discoveryUrl({ city: event?.city || cityFeedCity, period: cityFeedPeriod, source: 'city' });
     const content = activityDetailContent(event, { ready: feedReady, failed: feedFailed, now });
-    if (state.activeTab === 'events') document.title = feedReady && event ? `${event.title} · 荷包` : siteTitle;
-    const returnLabel = hasListContext && eventSource === 'community' ? '返回找搭子' : '返回城市活动';
-    detail.innerHTML = `<a class="back-to-picks" data-activity-back href="${esc(returnUrl.href)}">← ${returnLabel}</a>${content}`;
+    if (state.activeTab === 'dutch') document.title = feedReady && event ? `${event.title} · 荷包` : siteTitle;
+    if (detail) detail.innerHTML = `<a class="back-to-picks" data-activity-back href="${esc(returnUrl.href)}">← 返回城市活动</a>${content}`;
     return;
   }
-  if (state.activeTab === 'events') document.title = siteTitle;
-  $('cityCheckedNote').textContent = eventSource === 'city' && feedReady ? `${feedUpdated.slice(5).replace('-', '/')} 核对` : '';
+  if (state.activeTab === 'dutch') document.title = siteTitle;
+  if ($('cityCheckedNote')) $('cityCheckedNote').textContent = feedReady ? `${feedUpdated.slice(5).replace('-', '/')} 核对` : '';
   if (!feedReady) {
-    $('cityCount').textContent = '';
-    $('cityEvents').innerHTML = renderSkeletonEvents();
+    if ($('cityEvents')) $('cityEvents').innerHTML = renderSkeletonEvents();
     return;
   }
-  const { local, nearby, inPeriod } = citySelection(feedEvents, cityPeriod, now, selectedCity);
-  const cityName = cityLabels[selectedCity] || '全部荷兰城市', scope = periodNames[cityPeriod];
-  const multiCity = selectedCity === 'all' || selectedCity === 'zuid-holland';
-  const dates = cityPeriod === 'weekend' ? `<span class="list-dates">${esc(weekendLabel(now))}</span>` : '';
+  const { local, nearby, inPeriod } = citySelection(feedEvents, cityFeedPeriod, now, cityFeedCity);
+  dutchView?.setCityCount?.(local.length);
+  const cityName = cityLabels[cityFeedCity] || '全部荷兰城市', scope = periodNames[cityFeedPeriod];
+  const multiCity = cityFeedCity === 'all' || cityFeedCity === 'zuid-holland';
+  const dates = cityFeedPeriod === 'weekend' ? `<span class="list-dates">${esc(weekendLabel(now))}</span>` : '';
   const status = feedFailed ? '<p class="feed-status" role="status">更新暂不可用，当前显示上次载入的活动。 <button type="button" class="text-btn" data-retry-feed>重试</button></p>' : '';
-  $('cityCount').textContent = String(local.length);
-
-  if (eventSource === 'community') {
-    let picks = local, context = `${cityName} · ${scope}`, more = { source: 'city' };
-    if (!picks.length && nearby.length) {
-      picks = nearby; context = `周边城市 · ${scope}`; more = { source: 'city', city: 'all' };
-    } else if (!picks.length && cityPeriod !== 'all') {
-      picks = upcomingCityEvents(feedEvents, 'all', now, selectedCity);
-      context = `${cityName} · 近期`; more = { source: 'city', period: 'all' };
-    }
-    if (!picks.length) {
-      $('cityEvents').innerHTML = status + filterLink('查看全荷近期城市活动', { source: 'city', city: 'all', period: 'all' });
-      return;
-    }
-    $('cityEvents').innerHTML = status +
-      `<div class="companion-picks-box"><div class="companion-picks-head"><div><h2>近期城市活动</h2><p>${esc(context)}</p></div>${filterLink(`全部 ${local.length || picks.length} 场`, more)}</div>` +
-      pickList(picks.slice(0, 3), multiCity || more.city === 'all') + '</div>';
-    return;
-  }
 
   if (local.length) {
     $('cityEvents').innerHTML = status + `<div class="picks-heading"><h2>${esc(cityName)} · ${scope}</h2>${dates}</div>` + pickList(local, multiCity);
     return;
   }
   const links = [];
-  if (cityPeriod !== 'all' && upcomingCityEvents(feedEvents, 'all', now, selectedCity).length) {
+  if (cityFeedPeriod !== 'all' && upcomingCityEvents(feedEvents, 'all', now, cityFeedCity).length) {
     links.push(filterLink(multiCity ? '看全部日期' : `看 ${cityName} 近期活动`, { period: 'all' }));
   }
-  if (selectedCity !== 'all' && inPeriod.length) links.push(filterLink('看全部荷兰城市', { city: 'all' }));
-  if (selectedCity === 'delft' && !links.length) links.push(`<a class="text-btn" href="${esc(CITY_AGENDA_URL)}" target="_blank" rel="noopener noreferrer">Delft 官方日历 ↗</a>`);
+  if (cityFeedCity !== 'all' && inPeriod.length) links.push(filterLink('看全部荷兰城市', { city: 'all' }));
+  if (cityFeedCity === 'delft' && !links.length) links.push(`<a class="text-btn" href="${esc(CITY_AGENDA_URL)}" target="_blank" rel="noopener noreferrer">Delft 官方日历 ↗</a>`);
   if (!links.length) links.push('<button type="button" class="text-btn" data-create-event="coffee">自己发个邀约</button>');
   const empty = `<div class="pick-empty"><div class="picks-heading"><h2>${esc(cityName)} ${scope}暂无精选场次</h2>${dates}</div><div class="empty-actions">${links.join('')}</div></div>`;
   const suggestions = nearby.length ? `<section class="nearby-picks"><div class="picks-heading"><h2>周边城市推荐</h2><span class="list-dates">${nearby.length} 场</span></div>${pickList(nearby, true)}</section>` : '';
   $('cityEvents').innerHTML = status + empty + suggestions;
 }
 
-$('eventSourceSwitch').addEventListener('click', e => {
-  const button = e.target.closest('[data-source]');
-  if (button) changeDiscovery({ source: button.dataset.source });
-});
-$('cityEventFilters').addEventListener('click', e => {
+$('cityEventFilters')?.addEventListener('click', e => {
   const button = e.target.closest('[data-period]');
   if (button) changeDiscovery({ period: button.dataset.period });
 });
@@ -1822,11 +1843,43 @@ $('eventCategoryFilters')?.addEventListener('click', e => {
   syncDiscoveryControls();
   renderEvents();
 });
-$('citySelect').addEventListener('change', () => changeDiscovery({ city: $('citySelect').value }));
-$('panel-events').addEventListener('error', e => {
+$('citySelect')?.addEventListener('change', () => changeDiscovery({ city: $('citySelect').value }));
+
+$('cityFeedSelect')?.addEventListener('change', () => changeDiscovery({ source: 'city', city: $('cityFeedSelect').value }));
+$('cityPeriodFilters')?.addEventListener('click', e => {
+  const button = e.target.closest('[data-city-period]');
+  if (button) changeDiscovery({ source: 'city', period: button.dataset.cityPeriod });
+});
+
+$('panel-events').addEventListener('click', e => {
+  const link = e.target.closest('a');
+  if (link?.matches('[data-discovery-link]')) {
+    e.preventDefault();
+    const params = new URL(link.href).searchParams;
+    changeDiscovery({ city: params.get('city') || selectedCity, period: params.get('period') || cityPeriod, source: 'community' });
+    return;
+  }
+  if (e.target.closest('[data-clear-event-cat]')) {
+    state.eventCategory = '';
+    syncDiscoveryControls();
+    renderEvents();
+    return;
+  }
+  if (e.target.closest('[data-open-city-info]')) {
+    tab('dutch', { updateUrl: false }).then(() => {
+      const url = discoveryUrl({ city: selectedCity, period: cityPeriod, source: 'city' });
+      if (url.href !== location.href) history.pushState(null, '', url);
+      cityFeedCity = selectedCity;
+      cityFeedPeriod = cityPeriod;
+      dutchView?.openView?.('city');
+    });
+  }
+});
+
+$('panel-dutch').addEventListener('error', e => {
   if (e.target.matches('img')) e.target.closest('[data-activity-photo]')?.remove();
 }, true);
-$('panel-events').addEventListener('click', e => {
+$('panel-dutch').addEventListener('click', e => {
   const link = e.target.closest('a');
   if (link && (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)) return;
   if (link?.matches('[data-activity-link]')) {
@@ -1841,19 +1894,19 @@ $('panel-events').addEventListener('click', e => {
   if (link?.matches('[data-activity-back]')) {
     e.preventDefault();
     if (history.state?.fromActivityList) history.back();
-    else { history.replaceState(null, '', link.href); applyRoute(); }
+    else {
+      activeActivity = '';
+      history.replaceState(null, '', link.href);
+      dutchView?.openView?.('city');
+      renderCityEvents();
+    }
     return;
   }
   if (link?.matches('[data-discovery-link]')) {
     e.preventDefault();
-    changeDiscovery(discoveryFilters(new URL(link.href).searchParams));
-    $('citySelect').focus({ preventScroll: true });
-    return;
-  }
-  if (e.target.closest('[data-clear-event-cat]')) {
-    state.eventCategory = '';
-    syncDiscoveryControls();
-    renderEvents();
+    const params = new URL(link.href).searchParams;
+    changeDiscovery({ source: 'city', city: params.get('city') || cityFeedCity, period: params.get('period') || cityFeedPeriod });
+    $('cityFeedSelect')?.focus({ preventScroll: true });
     return;
   }
   if (e.target.closest('[data-retry-feed]')) { loadCityFeed(); return; }
@@ -2041,12 +2094,12 @@ function buildDemoEvents() {
 function renderEvents() {
   $('meetupHelp').hidden = true;
   if (eventsFailed) {
-    $('communityCount').textContent = '';
+    if ($('communityCountNote')) $('communityCountNote').textContent = '';
     $('eventsList').innerHTML = '<div class="invites-empty"><h2>邀约暂时没能加载</h2><button type="button" class="text-btn" data-retry-events>重新加载邀约</button></div>';
     return;
   }
   if (!eventsReady) {
-    $('communityCount').textContent = '';
+    if ($('communityCountNote')) $('communityCountNote').textContent = '';
     $('eventsList').innerHTML = renderSkeletonEvents();
     return;
   }
@@ -2054,7 +2107,7 @@ function renderEvents() {
   const inScope = upcomingCityEvents(state.events, cityPeriod, now, selectedCity);
   const events = state.eventCategory ? inScope.filter(ev => ev.category === state.eventCategory) : inScope;
   const showCity = selectedCity === 'all' || selectedCity === 'zuid-holland';
-  $('communityCount').textContent = String(inScope.length);
+  if ($('communityCountNote')) $('communityCountNote').textContent = inScope.length ? `${inScope.length} 场邀约` : '';
 
   const metaIcon = {
     time: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
@@ -2073,7 +2126,7 @@ function renderEvents() {
       alternatives.push(filterLink('看其他日期的邀约', { period: 'all', source: 'community' }));
     }
     if (selectedCity !== 'zuid-holland' && upcomingCityEvents(state.events, 'all', now, 'zuid-holland').length) {
-      alternatives.push(filterLink('看南荷兰省活跃邀约', { city: 'zuid-holland', period: 'all', source: 'community' }));
+      alternatives.push(filterLink('看南荷兰省邀约', { city: 'zuid-holland', period: 'all', source: 'community' }));
     } else if (selectedCity !== 'all' && upcomingCityEvents(state.events, cityPeriod, now, 'all').length) {
       alternatives.push(filterLink('看全部荷兰城市邀约', { city: 'all', source: 'community' }));
     }
@@ -2092,8 +2145,8 @@ function renderEvents() {
       </article>`).join('');
       return;
     }
-    const prompts = '<button type="button" class="outline-btn" data-create-event="walk">约人散步</button><button type="button" class="outline-btn" data-create-event="coffee">约杯咖啡</button>';
-    $('eventsList').innerHTML = `<div class="invites-empty"><div><h2>${esc(scope)} · ${periodNames[cityPeriod]}暂无网友邀约</h2><p>${alternatives.length ? '可切换范围，或挑下方城市活动约伴。' : '下方已整理本地城市活动，点「约人一起去」即可成局。'}</p></div><div class="invite-options">${alternatives.length ? alternatives.join('') : prompts}</div></div>`;
+    const prompts = '<button type="button" class="outline-btn" data-create-event="walk">约人散步</button><button type="button" class="outline-btn" data-create-event="coffee">约杯咖啡</button><button type="button" class="text-btn" data-open-city-info>去逛周末城市活动 →</button>';
+    $('eventsList').innerHTML = `<div class="invites-empty"><div><h2>${esc(scope)} · ${periodNames[cityPeriod]}暂无网友邀约</h2><p>${alternatives.length ? '可切换范围，或去「荷语资讯」挑一场城市活动约伴。' : '发个小局找同城伙伴，或去「荷语资讯」逛逛周末活动。'}</p></div><div class="invite-options">${alternatives.length ? alternatives.join('') : prompts}</div></div>`;
     return;
   }
 
@@ -2379,6 +2432,7 @@ $('createEventForm').addEventListener('submit', async e => {
     eventDraftTouched = false;
     $('sourceEventNote').hidden = true;
     toast('邀约已发布！可点「生成邀请卡」发到微信群');
+    if (state.activeTab !== 'events') await tab('events', { updateUrl: false });
     changeDiscovery({ source: 'community', city: cityVal, period: 'all' });
     loadEvents();
   } catch (error) {
@@ -2953,8 +3007,10 @@ async function applyRoute() {
   const previousActivity = activeActivity, current = location.href, query = new URL(current).searchParams;
   if (!$('activityShare').hidden) hideModal('activityShare');
   const item = query.get('item'), event = query.get('event');
-  const name = pageFromLocation(location);
+  let name = pageFromLocation(location);
   const prefCity = savedCity();
+  const wantsCityInfo = Boolean(!item && !event && (query.get('activity') || query.get('source') === 'city' || query.get('view') === 'city'));
+  if (wantsCityInfo) name = 'dutch';
 
   if (name === 'mine' && ['listings', 'events', 'messages', 'admin'].includes(query.get('view'))) {
     mineView = query.get('view');
@@ -2975,9 +3031,12 @@ async function applyRoute() {
   if (!query.has('city') && !event && !query.get('activity') && prefCity) {
     filters.city = prefCity;
   }
-  selectedCity = filters.city; cityPeriod = filters.period; eventSource = filters.source;
-  activeActivity = item || event ? '' : query.get('activity') || '';
+  selectedCity = filters.city; cityPeriod = filters.period; eventSource = 'community';
+  cityFeedCity = filters.city; cityFeedPeriod = filters.period;
+  const routeActivity = item || event ? '' : query.get('activity') || '';
+  activeActivity = routeActivity;
   syncDiscoveryControls();
+  syncCityFeedControls();
   if (!item && !$('detailModal').hidden) hideModal('detailModal', { updateUrl: false });
   await tab(name, { updateUrl: false });
   if (location.href !== current || state.activeTab !== name) return;
@@ -2985,9 +3044,13 @@ async function applyRoute() {
   const cleanPath = location.pathname.replace(/\/+$/, '') || '/';
   if (name === 'dutch') {
     const reqView = query.get('view');
-    if (cleanPath === '/news') {
+    if (wantsCityInfo) {
+      dutchView?.openView?.('city');
+      activeActivity = routeActivity;
+      renderCityEvents();
+    } else if (cleanPath === '/news') {
       dutchView?.openView?.('news');
-    } else if (['news', 'a2', 'prepare', 'today', 'exam'].includes(reqView)) {
+    } else if (['news', 'city', 'a2', 'prepare', 'today', 'exam'].includes(reqView)) {
       dutchView?.openView?.(reqView);
     } else {
       dutchView?.openView?.('news');
@@ -2998,7 +3061,7 @@ async function applyRoute() {
   if (legal) showModal(legal === 'privacy' ? 'privacyModal' : 'termsModal');
 
   if (item) await openListing(item, { itemId: query.get('product'), updateUrl: false });
-  if (previousActivity && name === 'events' && !item && !event && !activeActivity) {
+  if (previousActivity && name === 'dutch' && !item && !event && !activeActivity) {
     $('cityEvents').querySelector(`[data-activity-link="${CSS.escape(previousActivity)}"]`)?.focus({ preventScroll: true });
   }
   if (event && !item && !eventsFailed) {
@@ -3026,7 +3089,8 @@ applyRoute();
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
     refreshUnreadBadge();
-    if (state.activeTab === 'events') { loadCityFeed(); renderEvents(); }
+    if (state.activeTab === 'events') renderEvents();
+    if (state.activeTab === 'dutch') loadCityFeed();
   }
 });
 

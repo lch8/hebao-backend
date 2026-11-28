@@ -378,6 +378,14 @@ test('marketProducts filters free items, price ceilings, and buyer favorites wit
   assert.match(shortNewsMeta.title, /每日荷语新闻简报/);
   assert.equal(shortNewsMeta.url, 'https://hebaogj.xyz/news');
 
+  const cityFeedMeta = await resolveShareMeta({
+    pathname: '/news',
+    searchParams: new URLSearchParams('view=city'),
+    origin: 'https://hebaogj.xyz',
+  });
+  assert.match(cityFeedMeta.title, /城市活动/);
+  assert.equal(cityFeedMeta.url, 'https://hebaogj.xyz/news?view=city');
+
   const dutchDefaultMeta = await resolveShareMeta({
     pathname: '/dutch-a2',
     searchParams: new URLSearchParams(''),
@@ -398,6 +406,40 @@ test('marketProducts filters free items, price ceilings, and buyer favorites wit
   assert.match(dutchSrc, /id="a2SubNav" hidden/);
   assert.match(dutchSrc, /data-dutch-pillar="news"/);
   assert.match(dutchSrc, /data-dutch-pillar="a2"/);
+
+  // Plan C separation: #panel-events is pure community meetups; #cityInfoSection & #officialActivity live in #panel-dutch
+  assert.doesNotMatch(html, /id="eventSourceSwitch"/);
+  assert.match(html, /<section id="panel-dutch"[\s\S]*id="cityInfoSection"[\s\S]*id="officialActivity"/);
+
+  // Inline Dutch word annotation + ruby glosses (XSS-safe, non-overlapping)
+  const { annotateDutchBody } = await import('../delft/a2-news.js');
+  const plainTokens = annotateDutchBody(
+    'Bij harde windstoten en <script> gladheid let je op.',
+    [
+      { nl: 'de windstoot', match: 'windstoten', zh: '阵风 / 强风' },
+      { nl: 'de gladheid', zh: '路面湿滑（结冰）' },
+    ],
+    'n1',
+    false,
+    -1
+  );
+  assert.match(plainTokens, /&lt;script&gt;/);
+  assert.match(plainTokens, /data-news-inspect="n1" data-vocab-idx="0"[^>]*>windstoten<\/button>/);
+  assert.doesNotMatch(plainTokens, /<rt>/);
+
+  const glossed = annotateDutchBody(
+    'Bij harde windstoten en gladheid let je op.',
+    [
+      { nl: 'de windstoot', match: 'windstoten', zh: '阵风 / 强风' },
+      { nl: 'de gladheid', zh: '路面湿滑（结冰）' },
+    ],
+    'n1',
+    true,
+    0
+  );
+  assert.match(glossed, /<ruby>windstoten<rt>阵风<\/rt><\/ruby>/);
+  assert.match(glossed, /<ruby>gladheid<rt>路面湿滑<\/rt><\/ruby>/);
+  assert.match(glossed, /class="nl-tok has-gloss selected"/);
 
   const sitemap = readFileSync(new URL('../sitemap.xml', import.meta.url), 'utf8');
   assert.match(sitemap, /https:\/\/hebaogj\.xyz\/news/);

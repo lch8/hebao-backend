@@ -24,11 +24,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,500&family=Noto+Serif+SC:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'" />
-  <link rel="stylesheet" href="/delft/styles.css?v=20261128i" />
-  <link rel="stylesheet" href="/delft/dutch.css?v=20261128i" />
-  <link rel="stylesheet" href="/delft/a2-prep.css?v=20261128i" />
-  <link rel="stylesheet" href="/delft/theme.css?v=20261128i" />
-  <script type="module" src="/delft/app.js?v=20261128i"></script>
+  <link rel="stylesheet" href="/delft/styles.css?v=20261128j" />
+  <link rel="stylesheet" href="/delft/dutch.css?v=20261128j" />
+  <link rel="stylesheet" href="/delft/a2-prep.css?v=20261128j" />
+  <link rel="stylesheet" href="/delft/theme.css?v=20261128j" />
+  <script type="module" src="/delft/app.js?v=20261128j"></script>
 </head>
 <body>
   <a class="skip-link" href="#workspace">跳到主要内容</a>
@@ -36,7 +36,7 @@
     <a class="brand" href="/events" data-brand-home aria-label="荷包首页"><span class="brand-icon">荷</span><strong>荷包</strong><span class="brand-city">在荷同城 · 闲置 · 荷语</span></a>
     <nav class="tabs" aria-label="主要功能">
       <button type="button" class="tab active" data-tab="events" aria-controls="panel-events" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.4"/><path d="M2 20v-1a7 7 0 0 1 14 0v1M16 5a3.4 3.4 0 0 1 0 6.5M18 14a6 6 0 0 1 4 5.5"/></svg><span>找搭子</span></button>
-      <button type="button" class="tab" data-tab="dutch" aria-controls="panel-dutch" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v15M12 6C9 3 5 3 2 4v15c3-1 7-1 10 2M12 6c3-3 7-3 10-2v15c-3-1-7-1-10 2"/></svg><span>荷兰语学习</span></button>
+      <button type="button" class="tab" data-tab="dutch" aria-controls="panel-dutch" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v15M12 6C9 3 5 3 2 4v15c3-1 7-1 10 2M12 6c3-3 7-3 10-2v15c-3-1-7-1-10 2"/></svg><span>荷语资讯</span></button>
       <button type="button" class="tab" data-tab="market" aria-controls="panel-market" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16v11H4zM3 9l2-5h14l2 5M9 20v-7h6v7"/></svg><span>逛闲置</span></button>
       <button type="button" class="tab" data-tab="mine" aria-controls="panel-mine" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2"/></svg><span>我的</span><span id="mineTabBadge" class="unread-dot" hidden>0</span></button>
     </nav>
@@ -54,10 +54,6 @@
           </div>
           <img class="companion-cover" src="/delft/canal-houses.webp?v=20261128e" alt="" width="991" height="768" fetchpriority="high" />
         </div>
-        <div class="view-switch" id="eventSourceSwitch" role="group" aria-label="浏览邀约或官方活动">
-          <button type="button" class="active" data-source="community" aria-pressed="true">同城邀约 <span id="communityCount"></span></button>
-          <button type="button" data-source="city" aria-pressed="false">城市活动 <span id="cityCount"></span></button>
-        </div>
         <div class="event-tools">
           <label class="city-selector"><span class="city-selector-label">范围</span> <select id="citySelect">
             <option value="zuid-holland">南荷兰省（Delft·海牙·鹿特丹）</option>
@@ -74,7 +70,7 @@
             <button class="category-chip active" type="button" data-period="fortnight" aria-pressed="true">未来两周</button>
             <button class="category-chip" type="button" data-period="all" aria-pressed="false">全部日期</button>
           </div>
-          <span class="event-checked" id="cityCheckedNote"></span>
+          <span class="event-checked" id="communityCountNote"></span>
         </div>
         <div class="category-filters event-category-filters" id="eventCategoryFilters" role="group" aria-label="活动类别筛选">
           <button class="category-chip active" type="button" data-event-cat="" aria-pressed="true">全部类别</button>
@@ -91,27 +87,49 @@
           </div>
           <details class="meetup-note" id="meetupHelp" hidden><summary>报名与集合说明</summary><p>报名后可查看联络暗号并在「集合沟通」留言，改期或取消将邮件提醒。</p></details>
         </div>
-        <div id="citySection"><div id="cityEvents"></div></div>
         <button type="button" class="weekend-shortcut news-promo-shortcut" id="eventsNewsShortcut">
           <div class="news-promo-copy">
-            <span class="news-promo-eyebrow">每日荷语简报 · A2+/B1</span>
-            <strong id="eventsNewsHeadline">每日 3 条荷兰本地新闻精读，配朗读与生词本</strong>
+            <span class="news-promo-eyebrow">荷兰资讯 · 今日新闻与周末活动</span>
+            <strong id="eventsNewsHeadline">每日 3 条荷兰本地新闻精读，含六城周末活动日历</strong>
           </div>
           <span aria-hidden="true">↗</span>
         </button>
       </div>
-      <div id="officialActivity" hidden></div>
     </section>
 
     <section id="panel-dutch" class="panel" aria-labelledby="dutchHeading">
-      <div class="section-heading dutch-heading">
-        <div>
-          <h1 id="dutchHeading">荷兰语学习</h1>
+      <div id="dutchBrowse">
+        <div class="section-heading dutch-heading">
+          <div>
+            <h1 id="dutchHeading">荷语资讯</h1>
+          </div>
+        </div>
+        <div id="dutchApp">
+          <div class="skeleton-card" aria-hidden="true"><div class="skeleton-line short"></div><div class="skeleton-line tall"></div><div class="skeleton-line medium"></div></div>
+        </div>
+        <div id="cityInfoSection" class="city-info-section" hidden>
+          <div class="event-tools">
+            <label class="city-selector"><span class="city-selector-label">城市</span> <select id="cityFeedSelect">
+              <option value="zuid-holland">南荷兰省（Delft·海牙·鹿特丹）</option>
+              <option value="delft">Delft</option>
+              <option value="den-haag">Den Haag</option>
+              <option value="rotterdam">Rotterdam</option>
+              <option value="amsterdam">Amsterdam</option>
+              <option value="utrecht">Utrecht</option>
+              <option value="eindhoven">Eindhoven</option>
+              <option value="all">全部荷兰城市</option>
+            </select></label>
+            <div class="category-filters" id="cityPeriodFilters" role="group" aria-label="活动日期筛选">
+              <button class="category-chip" type="button" data-city-period="weekend" aria-pressed="false">本周末</button>
+              <button class="category-chip active" type="button" data-city-period="fortnight" aria-pressed="true">未来两周</button>
+              <button class="category-chip" type="button" data-city-period="all" aria-pressed="false">全部日期</button>
+            </div>
+            <span class="event-checked" id="cityCheckedNote"></span>
+          </div>
+          <div id="cityEvents"></div>
         </div>
       </div>
-      <div id="dutchApp">
-        <div class="skeleton-card" aria-hidden="true"><div class="skeleton-line short"></div><div class="skeleton-line tall"></div><div class="skeleton-line medium"></div></div>
-      </div>
+      <div id="officialActivity" hidden></div>
     </section>
 
     <section id="panel-market" class="panel" aria-labelledby="marketHeading">

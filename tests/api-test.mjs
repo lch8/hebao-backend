@@ -509,16 +509,21 @@ test('daily Dutch news serves starter fallback initially and cron securely inges
   const unauthCron=await cronHandler(new Request('https://example.test/api/daily-news-cron'));
   assert.equal(unauthCron.status,401);
 
+  const freshDate = new Date(Date.now() - 2 * 3600 * 1000).toUTCString();
+  const staleDate = new Date(Date.now() - 96 * 3600 * 1000).toUTCString();
   const sampleRss=`<?xml version="1.0" encoding="UTF-8"?><rss><channel>
-    <item><title><![CDATA[NS past dienstregeling in december aan]]></title><link>https://nos.nl/artikel/1001-ns-dienstregeling</link><description>Vanaf december rijden er extra treinen tussen Delft en Rotterdam.</description></item>
-    <item><title>Nieuwe regels voor huurtoeslag vanaf volgend jaar</title><link>https://www.rijksoverheid.nl/actueel/nieuws/huurtoeslag</link><description>Meer huurders kunnen volgend jaar huurtoeslag aanvragen.</description></item>
+    <item><title>Oud nieuws van vier dagen geleden</title><link>https://nos.nl/artikel/0000-old</link><pubDate>${staleDate}</pubDate><description>Oud bericht.</description></item>
+    <item><title><![CDATA[NS past dienstregeling in december aan]]></title><link>https://nos.nl/artikel/1001-ns-dienstregeling</link><pubDate>${freshDate}</pubDate><description>Vanaf december rijden er extra treinen tussen Delft en Rotterdam.</description></item>
+    <item><title>Nieuwe regels voor huurtoeslag vanaf volgend jaar</title><link>https://www.rijksoverheid.nl/actueel/nieuws/huurtoeslag</link><pubDate>${freshDate}</pubDate><description>Meer huurders kunnen volgend jaar huurtoeslag aanvragen.</description></item>
   </channel></rss>`;
 
+  let geminiCalls = 0;
   mock.mockExternal(async(url)=>{
-    if(url.startsWith('https://feeds.')){
+    if(url.startsWith('https://feeds.') || url.startsWith('https://www.nu.nl/')){
       return new Response(sampleRss,{status:200,headers:{'Content-Type':'application/xml'}});
     }
     if(url.startsWith('https://generativelanguage.googleapis.com/')){
+      geminiCalls++;
       return Response.json({candidates:[{content:{parts:[{text:JSON.stringify({
         items:[
           {
@@ -528,10 +533,11 @@ test('daily Dutch news serves starter fallback initially and cron securely inges
             titleNl:'Extra treinen tussen Delft en Rotterdam',
             titleZh:'Delft 至鹿特丹 12 月起增开班次',
             bodyNl:'Vanaf december laat de NS extra treinen rijden tussen Delft en Rotterdam. Voor studenten en forenzen wordt reizen in de spits daardoor makkelijker. Kijk voor vertrek in de reisplanner voor de nieuwe vertrektijden.',
+            bodyZh:'从 12 月起，荷兰铁路 NS 将在 Delft 和鹿特丹之间加开列车。学生和通勤族在高峰期出行会更加轻松。出发前请查看行程规划确认最新发车时间。',
             summaryZh:'NS 将从 12 月起在 Delft 与鹿特丹之间增加列车班次，缓解高峰期通勤压力。',
             vocab:[
-              {nl:'de dienstregeling',zh:'列车时刻表',note:'NS 每年 12 月调整'},
-              {nl:'de forens',zh:'通勤族',note:'复数 forenzen'}
+              {nl:'de spits',match:'spits',zh:'高峰时段',note:'早晚通勤高峰'},
+              {nl:'de forens',match:'forenzen',zh:'通勤族',note:'复数 forenzen'}
             ],
             question:{
               promptNl:'Waar rijden vanaf december extra treinen?',
@@ -558,6 +564,18 @@ test('daily Dutch news serves starter fallback initially and cron securely inges
   assert.equal(live.editions[0].isStarter,false);
   assert.equal(live.editions[0].items[0].sourceUrl,'https://nos.nl/artikel/1001-ns-dienstregeling');
   assert.equal(live.editions[0].items[0].level,'A2+');
+  assert.match(live.editions[0].items[0].bodyZh,/12 月起/);
+  assert.equal(live.editions[0].items[0].vocab[1].match,'forenzen');
+  assert.ok(live.editions[0].items[0].publishedAt);
+  assert.equal(geminiCalls,1);
+
+  // Verify on-demand auto-refresh when today's row is missing and GEMINI_API_KEY is set
+  mock.db.prepare('DELETE FROM delft_daily_news').run();
+  mock.db.prepare('DELETE FROM delft_notify_log').run();
+  const autoRefreshed=(await ask('dailyNews')).data;
+  assert.equal(autoRefreshed.editions[0].isStarter,false);
+  assert.equal(autoRefreshed.editions[0].items[0].sourceUrl,'https://nos.nl/artikel/1001-ns-dienstregeling');
+  assert.equal(geminiCalls,2);
 
   delete process.env.CRON_SECRET;
   delete process.env.GEMINI_API_KEY;

@@ -158,19 +158,35 @@ export async function resolveShareMeta({
     };
   }
   if (cleanPath === '/news') {
+    if (searchParams.get('view') === 'city') {
+      return {
+        title: '荷兰六城近期城市活动 · 荷包',
+        description: '精选 Delft、海牙、鹿特丹、阿姆斯特丹、乌特勒支与埃因霍温近期市集、展览与免费城市活动。',
+        url: `${cleanOrigin}/news?view=city`,
+        image: defaultImage,
+      };
+    }
     return {
       title: '每日荷语新闻简报（A2+/B1 精读）· 荷包',
-      description: '每日精选 3 条荷兰本地生活、交通与政策资讯，AI 改写为地道 A2+/B1 荷语短文，配语音朗读、实用生词本与理解自测。',
+      description: '每日精选 3 条荷兰本地生活、交通与政策资讯，AI 改写为地道 A2+/B1 荷语短文，配难词词注、中文译文翻转、朗读与理解自测。',
       url: `${cleanOrigin}/news`,
       image: defaultImage,
     };
   }
   if (cleanPath === '/dutch-a2' || cleanPath === '/dutch') {
     const viewParam = searchParams.get('view');
+    if (viewParam === 'city') {
+      return {
+        title: '荷兰六城近期城市活动 · 荷包',
+        description: '精选 Delft、海牙、鹿特丹、阿姆斯特丹、乌特勒支与埃因霍温近期市集、展览与免费城市活动。',
+        url: `${cleanOrigin}/news?view=city`,
+        image: defaultImage,
+      };
+    }
     if (viewParam === 'news') {
       return {
         title: '每日荷语新闻简报（A2+/B1 精读）· 荷包',
-        description: '每日精选 3 条荷兰本地生活、交通与政策资讯，AI 改写为地道 A2+/B1 荷语短文，配语音朗读、实用生词本与理解自测。',
+        description: '每日精选 3 条荷兰本地生活、交通与政策资讯，AI 改写为地道 A2+/B1 荷语短文，配难词词注、中文译文翻转、朗读与理解自测。',
         url: `${cleanOrigin}/dutch-a2?view=news`,
         image: defaultImage,
       };
