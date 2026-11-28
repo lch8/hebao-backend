@@ -41,7 +41,7 @@ test('drills and both mock papers have distinct materials and cover all the list
     for (const form of forms) {
       const items=BANK[subject][form];
       assert.deepEqual([...new Set(items.map(q=>q.type))].sort(),types);
-      assert.equal(items.length,form==='practice'||!productive(subject)?6:4);
+      assert.equal(items.length,form==='practice'?18:!productive(subject)?6:4);
       for (const q of items) {
         assert.match(q.id,/^[a-z0-9-]+$/);
         assert.ok(!ids.has(q.id) && !prompts.has(q.text),'reused ID or source text '+q.id);
@@ -60,7 +60,7 @@ test('drills and both mock papers have distinct materials and cover all the list
     }
     assert.ok(MOCK_MINUTES[subject]<=guide[subject].minutes);
   }
-  assert.equal(ids.size,82);
+  assert.equal(ids.size,142);
 });
 
 test('every listening task has a matching local MP3 and the directory has no orphan recordings',()=>{
@@ -82,8 +82,8 @@ test('listening requires hearing the passage and assisted practice is counted se
     [three.id]:{choice:three.answer}
   };
   const stats=summarize('listen',items,responses);
-  assert.deepEqual([stats.total,stats.attempted,stats.correct],[6,2,1]);
-  assert.deepEqual(stats.byType[one.type],{total:2,attempted:2,correct:1});
+  assert.deepEqual([stats.total,stats.attempted,stats.correct],[18,2,1]);
+  assert.deepEqual(stats.byType[one.type],{total:6,attempted:2,correct:1});
 });
 
 test('writing needs every requested field, speaking needs a response and neither gets an automatic quality score',()=>{

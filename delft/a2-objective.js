@@ -43,6 +43,90 @@ export const A2_OBJECTIVE = {
         prompt: 'Iman wil lunchen zonder extra te betalen. Wat kan ze doen?',
         options: ['Een kaartje voor de wandeling kopen.', 'In de ochtend zes euro betalen.', 'Zelf brood meenemen.'], answer: 2,
         why: '可以带自己的午饭。六欧元是订午餐的额外费用，徒步活动的门票与午餐无关。'
+      },
+      {
+        id: 'read-p-library-hours', type: 'notice',
+        text: 'Let op: deze zaterdag sluit de bibliotheek al om drie uur in plaats van vijf uur. Vanaf maandag gelden weer de normale tijden. Geleende boeken kunt u altijd inleveren via de brievenbus bij de ingang.',
+        prompt: 'Mila wil zaterdag om vier uur een boek terugbrengen. Wat kan ze doen?',
+        options: ['Het boek binnen aan de balie geven.', 'Het boek in de brievenbus bij de ingang doen.', 'Wachten tot maandag, want inleveren kan niet.'], answer: 1,
+        why: '周六三点闭馆，但门口的还书投递口（brievenbus）全天都可以还书。'
+      },
+      {
+        id: 'read-p-train-bus', type: 'notice',
+        text: 'Zondag rijden er geen treinen tussen Delft en Rotterdam door werk aan het spoor. De vervangende bus vertrekt vanaf de achterzijde van het station. Vergeet niet in te checken bij de gele paal naast de bushalte.',
+        prompt: 'Waar moet een reiziger zondag opstappen voor de bus naar Rotterdam?',
+        options: ['Bij de hoofdingang van het station.', 'Op spoor 1 bij de trein.', 'Aan de achterkant van het station.'], answer: 2,
+        why: 'achterzijde 指车站后门/背面。乘替代巴士前也要记得在站台旁的黄柱刷卡。'
+      },
+      {
+        id: 'read-p-dentist-move', type: 'notice',
+        text: 'Onze tandartspraktijk verhuist op 1 mei naar de Koornmarkt 24. Heeft u deze week nog een afspraak? Dan verwachten we u gewoon op ons oude adres aan de Voorstraat. Ons telefoonnummer verandert niet.',
+        prompt: 'Niels heeft donderdag een afspraak bij de tandarts. Waar gaat hij naartoe?',
+        options: ['Naar de Voorstraat.', 'Naar de Koornmarkt 24.', 'Hij moet eerst bellen voor een nieuw nummer.'], answer: 0,
+        why: '诊所 5 月 1 日才搬去新址。本周的预约仍在旧地址 Voorstraat，电话号码也不变。'
+      },
+      {
+        id: 'read-p-market-parking', type: 'notice',
+        text: 'Zaterdag is er weekmarkt op de Markt. Tussen zes uur ’s ochtends en vijf uur ’s middags mogen auto’s hier niet rijden. Komt u op de fiets? Loop dan met uw fiets aan de hand over het plein. Auto’s kunnen parkeren in garage Zuidpoort.',
+        prompt: 'Wat geldt zaterdagmiddag voor bezoekers met een fiets op de Markt?',
+        options: ['Ze mogen langzaam over de markt fietsen.', 'Ze moeten afstappen en met de fiets lopen.', 'Ze moeten hun fiets in garage Zuidpoort zetten.'], answer: 1,
+        why: 'met uw fiets aan de hand lopen 表示下车推着自行车走。Zuidpoort 是给汽车停的。'
+      },
+      {
+        id: 'read-p-potluck', type: 'message',
+        text: 'Hoi team, vrijdag eten we samen bij mij thuis. Ik maak al tomatensoep en een grote salade. Eva neemt taart mee voor na het eten. Kun jij brood en iets te drinken meenemen? Tot vrijdag! Groet, Bram',
+        prompt: 'Wat vraagt Bram aan zijn collega om mee te nemen?',
+        options: ['Tomatensoep en salade.', 'Taart voor na het eten.', 'Brood en drinken.'], answer: 2,
+        why: '汤和沙拉是 Bram 自己做，蛋糕是 Eva 带，请收信人带的是面包和饮料。'
+      },
+      {
+        id: 'read-p-class-room', type: 'message',
+        text: 'Beste cursisten, dinsdagavond hebben we een ander lokaal. De schilder werkt in lokaal 204. We zitten daarom beneden in lokaal 108. De les begint nog steeds om zeven uur. Neem je werkboek mee. Groet, docent Lotte',
+        prompt: 'Wat is dinsdagavond anders aan de taalles?',
+        options: ['Het lokaal waarin de les is.', 'De tijd waarop de les begint.', 'Het boek dat cursisten moeten meenemen.'], answer: 0,
+        why: '204 教室在粉刷，所以改到一楼 108 教室；上课时间仍是七点，同样要带练习册。'
+      },
+      {
+        id: 'read-p-babysit', type: 'message',
+        text: 'Hoi Karin, mijn trein heeft veel vertraging en ik red het niet om drie uur bij school te zijn. Kun jij Sam ophalen en even bij jou laten spelen? Ik ben rond half zes bij jou voor de deur. Heel erg bedankt! Groetjes, Mei',
+        prompt: 'Hoe laat komt Mei haar kind ophalen bij Karin?',
+        options: ['Om drie uur.', 'Rond half zes.', 'Zodra de trein vertrekt.'], answer: 1,
+        why: '三点是请 Karin 去学校接孩子的时间，Mei 自己大约五点半（rond half zes）到 Karin 家接回孩子。'
+      },
+      {
+        id: 'read-p-sofa-sale', type: 'message',
+        text: 'Dag Omar, bedankt voor je bericht. De eettafel is vanochtend al verkocht, maar de grijze bank staat er nog. Als je wilt komen kijken, ben ik woensdagavond na zeven uur thuis. Laat je weten of je komt? Groet, Tim',
+        prompt: 'Wat kan Omar woensdagavond nog bekijken?',
+        options: ['Alleen de eettafel.', 'De eettafel en de grijze bank.', 'Alleen de grijze bank.'], answer: 2,
+        why: '餐桌（eettafel）今天上午已经卖出，目前只剩灰色沙发（de grijze bank）还在。'
+      },
+      {
+        id: 'read-p-museum-card', type: 'conditions',
+        text: 'Een kaartje voor het museum kost 14 euro. Met een Museumkaart is de toegang altijd gratis. Studenten betalen niets op woensdag. Kinderen onder de twaalf jaar mogen elke dag gratis naar binnen. Een rondleiding met gids kost voor iedereen 4 euro extra.',
+        prompt: 'Anouk is student en wil op woensdag met de gids mee. Hoeveel betaalt ze?',
+        options: ['4 euro.', '14 euro.', 'Niets.'], answer: 0,
+        why: '学生周三免门票，但导览（rondleiding）明确写明 voor iedereen 4 euro extra（所有人另付 4 欧）。'
+      },
+      {
+        id: 'read-p-swim-pass', type: 'conditions',
+        text: 'Met een 10-badenkaart zwem je goedkoper. De kaart staat op naam en mag niet worden uitgeleend. Je kunt de tien beurten zes maanden lang gebruiken. Voor een kluisje heb je een munt van 50 cent nodig; die krijg je na afloop terug.',
+        prompt: 'Youssef heeft een 10-badenkaart. Wat mag hij wel doen?',
+        options: ['De kaart een keer aan zijn broer lenen.', 'De kaart na acht maanden nog gebruiken.', 'Zijn spullen voor 50 cent statiegeld in een kluisje doen.'], answer: 2,
+        why: '次卡记名不可外借且有效期仅六个月；存物柜投 50 欧分硬币用完会退还（statiegeld）。'
+      },
+      {
+        id: 'read-p-library-print', type: 'conditions',
+        text: 'Leden van de bibliotheek mogen elke maand tien pagina’s gratis in zwart-wit printen. Extra zwart-wit pagina’s kosten 10 cent. Voor kleurenprints betaalt iedereen 25 cent per pagina, ook leden. Ben je geen lid? Dan betaal je altijd 10 cent voor zwart-wit.',
+        prompt: 'Sanne is lid en print deze maand twee pagina’s in kleur. Hoeveel betaalt ze?',
+        options: ['Niets.', '50 cent.', '20 cent.'], answer: 1,
+        why: '会员免费额度仅限黑白打印；彩色打印所有人每页 25 分，2 页就是 50 分。'
+      },
+      {
+        id: 'read-p-shop-return', type: 'conditions',
+        text: 'Kleding mag binnen veertien dagen worden teruggebracht als het kaartje er nog aan zit en u de bon meeneemt. Voor artikelen uit de uitverkoop geven wij geen geld terug. U kunt die wel ruilen voor een andere maat of een tegoedbon krijgen.',
+        prompt: 'Fleur kocht een jas in de uitverkoop, maar hij is te klein. Ze heeft de bon nog. Wat kan ze krijgen?',
+        options: ['Een andere maat of een tegoedbon.', 'Haar geld contant terug.', 'Niets, want uitverkoop mag nooit terug.'], answer: 0,
+        why: '打折商品（uitverkoop）不退现金，但带小票和吊牌可以换尺码或换代金券（tegoedbon）。'
       }
     ],
     a: [
@@ -177,6 +261,90 @@ export const A2_OBJECTIVE = {
         prompt: 'Wat doe je als de aarde nat is?',
         options: ['Je geeft geen water.', 'Je geeft een klein beetje water.', 'Je zet de plant in water.'], answer: 0,
         why: '泥土仍湿时让植物保持原样。only/alleen 的条件是土干了才浇水。'
+      },
+      {
+        id: 'listen-p-train-split', type: 'announcement',
+        text: 'Beste reizigers, op station Rotterdam Centraal wordt deze trein gesplitst. Het voorste deel rijdt verder naar Den Haag en Leiden. Het achterste deel blijft achter in Rotterdam. Reist u naar Leiden? Loop dan nu alvast naar voren.',
+        prompt: 'Waar moeten reizigers naar Leiden gaan zitten?',
+        options: ['In het voorste deel van de trein.', 'In het achterste deel van de trein.', 'Ze moeten in Rotterdam een andere bus nemen.'], answer: 0,
+        why: '列车在鹿特丹解编，前半截（het voorste deel）继续开往海牙和莱顿，后半截留在鹿特丹。'
+      },
+      {
+        id: 'listen-p-supermarket', type: 'announcement',
+        text: 'Beste klanten, over vijf minuten sluit kassa drie. Heeft u een volle winkelwagen? Dan helpen wij u graag bij kassa één of twee. Klanten met een mandje kunnen direct doorlopen naar de zelfscankassa’s rechts van de uitgang.',
+        prompt: 'Waar kunnen klanten met alleen een mandje het snelst betalen?',
+        options: ['Bij kassa drie.', 'Bij de zelfscankassa’s.', 'Alleen bij kassa één.'], answer: 1,
+        why: '3 号收银台五分钟后关闭，推满车去 1、2 号，拎篮子（met een mandje）可直接去自助结账区。'
+      },
+      {
+        id: 'listen-p-museum-close', type: 'announcement',
+        text: 'Dames en heren, het is bijna kwart voor vijf. Het museumcafé sluit nu zijn deuren. De zalen blijven nog open tot vijf uur. Onze museumwinkel bij de uitgang is vandaag extra open tot kwart over vijf. Vergeet uw jas niet uit de garderobe.',
+        prompt: 'Welke ruimte in het museum blijft het langst open?',
+        options: ['Het museumcafé.', 'De tentoonstellingszalen.', 'De museumwinkel.'], answer: 2,
+        why: '咖啡馆 16:45 关，展厅 17:00 关，博物馆商店（museumwinkel）开到 17:15。'
+      },
+      {
+        id: 'listen-p-clinic-wait', type: 'announcement',
+        text: 'Goedemorgen patiënten in de wachtkamer. Dokter de Vries heeft een spoedgeval gehad en loopt ongeveer twintig minuten uit. Heeft u een afspraak bij de assistente voor bloedprikken? Dan wordt u gewoon op de afgesproken tijd binnengeroepen.',
+        prompt: 'Voor wie gaat de afspraak gewoon op tijd door?',
+        options: ['Voor patiënten die komen bloedprikken.', 'Voor alle patiënten van dokter de Vries.', 'Voor niemand, iedereen wacht twintig minuten.'], answer: 0,
+        why: '只有 de Vries 医生延误二十分钟；找助理抽血（bloedprikken）的预约按原定时间叫号。'
+      },
+      {
+        id: 'listen-p-shoe-size', type: 'conversation',
+        text: 'Goedemiddag, heeft u deze zwarte sportschoenen in maat 41? Ik kijk even voor u. Zwart hebben we alleen nog in maat 42. In maat 41 heb ik wel donkerblauw. Mag ik die donkerblauwe even passen? Ja hoor. Ze zitten heerlijk, ik neem ze mee.',
+        prompt: 'Welke schoenen koopt de klant uiteindelijk?',
+        options: ['Zwarte schoenen in maat 41.', 'Zwarte schoenen in maat 42.', 'Donkerblauwe schoenen in maat 41.'], answer: 2,
+        why: '黑色 41 码售罄，店员拿来深蓝色 41 码试穿后，顾客觉得很合脚并买下。'
+      },
+      {
+        id: 'listen-p-doctor-appt', type: 'conversation',
+        text: 'Huisartsenpraktijk Centrum, goedemorgen. Hallo, ik wil graag een afspraak maken voor dinsdagochtend. Dinsdag zitten we helaas helemaal vol. Woensdag om half elf is er plek. Dan moet ik werken. Kan het woensdag in de middag? Ja, om kwart over twee. Prima, noteert u die maar.',
+        prompt: 'Wanneer heeft de beller de afspraak bij de huisarts?',
+        options: ['Dinsdagochtend.', 'Woensdag om kwart over twee.', 'Woensdag om half elf.'], answer: 1,
+        why: '周二已满，周三十点半要上班，最后敲定周三下午两点一刻（kwart over twee）。'
+      },
+      {
+        id: 'listen-p-train-ticket', type: 'conversation',
+        text: 'Mag ik een kaartje naar Utrecht, alstublieft? Gaat u vandaag ook weer terug? Dan is een dagretour makkelijker. Nee, ik blijf het hele weekend bij mijn zus en reis pas zondag terug. Goed, dan geef ik u een enkele reis.',
+        prompt: 'Welk treinkaartje koopt de reiziger?',
+        options: ['Een enkele reis.', 'Een dagretour.', 'Een weekendkaart voor twee personen.'], answer: 0,
+        why: '售票员先推荐当日往返票，但乘客周末住姐姐家、周日才回，所以买了单程票（enkele reis）。'
+      },
+      {
+        id: 'listen-p-farewell-gift', type: 'conversation',
+        text: 'Wat zullen we kopen voor het afscheid van onze collega Maya? Misschien bloemen? Die zijn snel uitgebloeid als ze volgende week op vakantie gaat. Chocolade dan? Nee, ze eet geen suiker. Ik zag een leuk Nederlands kookboek. Wat een goed idee, laten we dat samen halen.',
+        prompt: 'Wat besluiten de collega’s voor Maya te kopen?',
+        options: ['Een boeket bloemen.', 'Een doos chocolade.', 'Een Nederlands kookboek.'], answer: 2,
+        why: '花容易谢、巧克力含糖都被否决，两人最终决定一起买一本荷兰语食谱书。'
+      },
+      {
+        id: 'listen-p-coffee-machine', type: 'instruction',
+        text: 'Zo werkt het nieuwe koffieapparaat op kantoor. Zet eerst een beker onder het tuitje. Kies daarna of je koffie of thee wilt. Knippert het rode lampje rechtsboven? Leeg dan eerst de lekbak voordat je op start drukt.',
+        prompt: 'Wat moet je doen als het rode lampje knippert?',
+        options: ['Meteen op start drukken.', 'Eerst de lekbak legen.', 'Een grotere beker pakken.'], answer: 1,
+        why: '红灯闪烁时的指令是 eerst de lekbak legen（先倒掉接水盘），再按开始键。'
+      },
+      {
+        id: 'listen-p-bike-garage', type: 'instruction',
+        text: 'Welkom in de fietsenstalling van het station. Houd uw OV-chipkaart tegen de scanner bij het poortje. Zet een gewone fiets alleen in de groene rijen. De gele vakken vooraan zijn alleen voor bakfietsen. Onthoud het nummer van uw rij.',
+        prompt: 'Waar mag je een gewone fiets parkeren?',
+        options: ['In de gele vakken vooraan.', 'In de groene rijen.', 'Direct naast het poortje.'], answer: 1,
+        why: '普通自行车停在绿色排（groene rijen），前面黄色区域仅供载货车（bakfietsen）。'
+      },
+      {
+        id: 'listen-p-waste-pass', type: 'instruction',
+        text: 'Wilt u uw vuilniszak weggooien in de container op straat? Houd uw afvalpas tegen het scherm totdat u een klik hoort. Trek dan de klep open, doe de dichtgeknoopte zak erin en sluit de klep weer. Oud karton hoort niet hierin, maar in de blauwe bak ernaast.',
+        prompt: 'Wat doe je met een oude kartonnen doos?',
+        options: ['Die doe je in de blauwe bak naast de container.', 'Die doe je samen met de vuilniszak in de container.', 'Die leg je boven op de klep.'], answer: 0,
+        why: '最后一句明确提示旧纸板（oud karton）不要丢进垃圾井，而要放进旁边的蓝色纸张回收箱。'
+      },
+      {
+        id: 'listen-p-ear-drops', type: 'instruction',
+        text: 'U gebruikt deze oordruppels vijf dagen lang, ’s ochtends en ’s avonds. Houd het flesje eerst een minuut in uw hand zodat de druppels niet te koud zijn. Buig uw hoofd opzij en doe drie druppels in het oor. Bewaar het flesje in de kast, niet in de koelkast.',
+        prompt: 'Waar moet je het flesje oordruppels bewaren?',
+        options: ['In de koelkast.', 'In de kast op kamertemperatuur.', 'In warm water.'], answer: 1,
+        why: '用手捂一分钟是滴之前的操作；存放位置在末句：in de kast, niet in de koelkast（放柜子里，不要放冰箱）。'
       }
     ],
     a: [
@@ -317,6 +485,102 @@ export const A2_OBJECTIVE = {
         options: ['Er begint een optocht voor Koningsdag.', 'Er zijn twee minuten stilte.', 'De mensen vieren het begin van het nieuwe jaar.'], answer: 1,
         why: '5 月 4 日是全国悼念日。晚上八点默哀两分钟。',
         source: 'https://www.4en5mei.nl/herdenken/nationale-herdenking-op-de-dam'
+      },
+      {
+        id: 'knm-p-sick', type: 'work',
+        text: 'Joris wordt op maandagochtend wakker met koorts. Hij kan vandaag niet werken. Hij belt zijn leidinggevende om zich ziek te melden.',
+        prompt: 'Wat mag zijn werkgever tijdens dit telefoongesprek NIET vragen?',
+        options: ['Op welk telefoonnummer Joris bereikbaar is.', 'Welke medische ziekte Joris precies heeft.', 'Wanneer Joris denkt weer te kunnen werken.'], answer: 1,
+        why: '根据荷兰隐私与劳动法，雇主可以问联系地址和预计返岗时间，但无权追问具体病情，医疗信息仅由职业健康医生（bedrijfsarts）了解。',
+        source: 'https://www.rijksoverheid.nl/onderwerpen/ziekteverzuim-van-het-werk/vraag-en-antwoord/ziek-melden-bij-werkgever'
+      },
+      {
+        id: 'knm-p-proeftijd', type: 'work',
+        text: 'Layla begint bij een nieuw bedrijf en heeft een proeftijd van één maand in haar contract. Na twee weken merkt ze dat het werk helemaal niet bij haar past.',
+        prompt: 'Wat geldt tijdens een geldige proeftijd in Nederland?',
+        options: ['Zowel Layla als de werkgever mag het contract direct stoppen.', 'Alleen de werkgever mag het contract stoppen.', 'Layla moet altijd eerst nog een maand blijven werken.'], answer: 0,
+        why: '在合法试用期（proeftijd）内，员工与雇主双方都可以立即终止劳动合同，无需提前通知期。',
+        source: 'https://www.rijksoverheid.nl/onderwerpen/arbeidsovereenkomst-en-cao/vraag-en-antwoord/wat-is-een-proeftijd'
+      },
+      {
+        id: 'knm-p-ww', type: 'work',
+        text: 'Het bedrijf waar Karim drie jaar werkte gaat failliet. Hij verliest zonder eigen schuld zijn baan en wil een werkloosheidsuitkering (WW) aanvragen.',
+        prompt: 'Bij welke organisatie vraagt Karim een WW-uitkering aan?',
+        options: ['Bij de Belastingdienst.', 'Bij het UWV.', 'Bij zijn zorgverzekeraar.'], answer: 1,
+        why: '非因本人过错失业时，应向荷兰员工保险机构 UWV 申请失业金（WW-uitkering），并履行求职义务。',
+        source: 'https://www.uwv.nl/nl/ww-uitkering'
+      },
+      {
+        id: 'knm-p-minimumloon', type: 'work',
+        text: 'Noa van 23 jaar werkt bij een klein restaurant. Ze ziet op haar loonstrook dat haar uurloon lager is dan het wettelijk minimumuurloon.',
+        prompt: 'Wat is waar over het wettelijk minimumloon in Nederland?',
+        options: ['Kleine bedrijven mogen zelf minder betalen.', 'Elke werkgever moet minstens het wettelijk minimumloon betalen.', 'Het minimumloon geldt alleen voor werk bij de overheid.'], answer: 1,
+        why: '荷兰法定最低时薪适用于所有企业和行业，雇主无论规模大小都不得低于法定标准发薪。',
+        source: 'https://www.rijksoverheid.nl/onderwerpen/minimumloon'
+      },
+      {
+        id: 'knm-p-huisarts', type: 'services',
+        text: 'Daria hoest al een week en slaapt daardoor slecht. Ze heeft geen levensbedreigende klachten, maar wil wel medisch advies.',
+        prompt: 'Wie neemt Daria in Nederland als eerste contact mee op?',
+        options: ['Met haar eigen huisarts.', 'Met de spoedeisende hulp in het ziekenhuis.', 'Met alarmnummer 112.'], answer: 0,
+        why: '荷兰实行分级诊疗，非危及生命的日常不适先联系家庭医生（huisarts）；112 和医院急诊仅用于紧急重症。',
+        source: 'https://www.rijksoverheid.nl/onderwerpen/eerstelijnszorg/huisarts'
+      },
+      {
+        id: 'knm-p-zorgverzekering', type: 'services',
+        text: 'Ali en Sara wonen in Nederland en hebben een dochter van zes jaar. Ze willen weten hoe het zit met de basiszorgverzekering voor hun kind.',
+        prompt: 'Wat geldt voor de basiszorgverzekering van kinderen onder de 18 jaar?',
+        options: ['Kinderen onder de 18 zijn gratis meeverzekerd bij een ouder.', 'Ouders moeten een apart duur pakket voor schoolkinderen betalen.', 'Kinderen mogen pas vanaf hun 18e naar de huisarts.'], answer: 0,
+        why: '在荷兰居住满 18 岁须强制投保基础医保，18 岁以下儿童免费随父母之一参保（gratis meeverzekerd），且免除自付额。',
+        source: 'https://www.rijksoverheid.nl/onderwerpen/zorgverzekering/vraag-en-antwoord/wanneer-moet-ik-een-zorgverzekering-afsluiten'
+      },
+      {
+        id: 'knm-p-huurtoeslag', type: 'services',
+        text: 'Tarek woont alleen in een zelfstandige huurwoning en heeft een laag inkomen. Hij wil onderzoeken of hij recht heeft op huurtoeslag.',
+        prompt: 'Waar vraagt Tarek huurtoeslag aan?',
+        options: ['Bij zijn verhuurder.', 'Bij de gemeente.', 'Bij Dienst Toeslagen (Mijn Toeslagen).'], answer: 2,
+        why: '租房补贴（huurtoeslag）由税务局下属补贴署 Dienst Toeslagen 审核发放，通过 DigiD 在 Mijn Toeslagen 申请。',
+        source: 'https://www.belastingdienst.nl/wps/wcm/connect/nl/huurtoeslag/huurtoeslag'
+      },
+      {
+        id: 'knm-p-eigen-risico', type: 'services',
+        text: 'Mina gaat met keelpijn op bezoek bij haar huisarts. Ze vraagt zich af of dit bezoek van haar verplichte eigen risico afgaat.',
+        prompt: 'Betaalt Mina eigen risico voor een gewoon bezoek aan de huisarts?',
+        options: ['Nee, een bezoek aan de huisarts valt buiten het eigen risico.', 'Ja, ze betaalt elk bezoek volledig zelf.', 'Alleen als ze in het weekend belt.'], answer: 0,
+        why: '看家庭医生（huisarts）本身不计入年度自付额（eigen risico），由基础医保直接全额覆盖；抽血化验或转诊医院才可能触发自付额。',
+        source: 'https://www.rijksoverheid.nl/onderwerpen/zorgverzekering/vraag-en-antwoord/eigen-risico-zorgverzekering'
+      },
+      {
+        id: 'knm-p-leerplicht', type: 'society',
+        text: 'De ouders van een jongen van zeven jaar willen in november een week goedkoop op vakantie gaan. Dat is buiten de officiële schoolvakanties.',
+        prompt: 'Mag een kind van zeven jaar zomaar een week wegblijven van school voor vakantie?',
+        options: ['Ja, als de ouders het een week vooraf melden.', 'Nee, vanwege de leerplicht moet het kind naar school.', 'Ja, onder de tien jaar geldt nog geen leerplicht.'], answer: 1,
+        why: '荷兰自满 5 岁起实行强制义务教育（leerplicht），家长不得因机票便宜擅自在非官方假期带孩子离校旅游。',
+        source: 'https://www.rijksoverheid.nl/onderwerpen/leerplicht/vraag-en-antwoord/leerplicht-en-kwalificatieplicht'
+      },
+      {
+        id: 'knm-p-discriminatie', type: 'society',
+        text: 'Omid solliciteert naar een baan als bezorger. Het bedrijf wijst hem af en schrijft dat ze alleen mensen aannemen die in Nederland zijn geboren.',
+        prompt: 'Wat zegt de Nederlandse wet over deze reden voor afwijzing?',
+        options: ['Dat is verboden discriminatie volgens artikel 1 van de Grondwet.', 'Dat mag, zolang het bedrijf dat per e-mail uitlegt.', 'Dat mag alleen bij kleine winkels.'], answer: 0,
+        why: '荷兰宪法第一条（Artikel 1）明确禁止基于出身、宗教、性别等的歧视，雇主不得以出生地拒绝求职者。',
+        source: 'https://www.rijksoverheid.nl/onderwerpen/discriminatie'
+      },
+      {
+        id: 'knm-p-koningsdag', type: 'society',
+        text: 'Op 27 april ziet Wei overal in de stad mensen in oranje kleding. Op straat verkopen kinderen en buurtbewoners tweedehands spullen op kleedjes.',
+        prompt: 'Welke nationale feestdag wordt er gevierd?',
+        options: ['Bevrijdingsdag.', 'Sinterklaas.', 'Koningsdag.'], answer: 2,
+        why: '4 月 27 日是荷兰国王节（Koningsdag），标志是橙色服饰和全城自由二手地摊市集（vrijmarkt）。',
+        source: 'https://www.rijksoverheid.nl/onderwerpen/koningshuis/koningsdag'
+      },
+      {
+        id: 'knm-p-bike-rules', type: 'society',
+        text: 'Het is donker en Lucas fietst naar huis. Onderweg krijgt hij een appje op zijn telefoon en zijn voorlicht is kapot.',
+        prompt: 'Wat is volgens de Nederlandse verkeersregels verplicht op de fiets?',
+        options: ['Goede verlichting gebruiken in het donker en geen telefoon vasthouden.', 'Alleen achterlicht gebruiken; een telefoon vasthouden mag langzaam wel.', 'Op de stoep fietsen als het licht kapot is.'], answer: 0,
+        why: '荷兰交规强制要求天黑骑车须开启前白/黄灯与后红灯，且骑行时严禁手持手机，违者将被警方罚款。',
+        source: 'https://www.rijksoverheid.nl/onderwerpen/fiets/vraag-en-antwoord/wat-zijn-de-regels-voor-fietsverlichting-en-reflectie-op-een-fiets'
       }
     ],
     a: [

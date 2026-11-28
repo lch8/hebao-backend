@@ -180,7 +180,7 @@ export function createExamSession(root, ledger, hooks, storage) {
     return false;
   }
   function audio(item, response) {
-    const audioSrc = new URL(`./a2-audio/${encodeURIComponent(item.id)}.mp3`, import.meta.url).pathname;
+    const audioSrc = `${new URL(`./a2-audio/${encodeURIComponent(item.id)}.mp3`, import.meta.url).pathname}?v=20261128g`;
     return `<div class="a2-listening"><div class="a2-audio-top"><span>听力材料 · 荷兰语录音</span>
       <div class="a2-speed-group" role="group" aria-label="语速切换">
         <button type="button" class="a2-speed-btn ${playbackRate===0.85?'active':''}" data-a2-speed="0.85" aria-pressed="${playbackRate===0.85}">0.85x 慢速</button>
