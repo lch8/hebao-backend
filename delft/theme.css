@@ -925,16 +925,24 @@ footer { border-top-color: var(--line); color: var(--muted); font-size: 12px; }
 .dutch-pillar.active strong { color: #fff; }
 .dutch-pillar.active span { color: #d1e1f6; }
 .study-cloud-bar {
-  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 14px;
+  flex-wrap: wrap;
+  background: var(--surface-2);
   border: 1px solid var(--line);
-  border-radius: 15px;
-  box-shadow: var(--shadow-xs);
-  color: var(--ink-2);
-  padding: 12px 18px;
+  border-radius: 12px;
+  box-shadow: none;
+  color: var(--muted);
+  font-size: 12.5px;
+  padding: 8px 14px;
+  margin-bottom: 14px;
 }
 .study-cloud-bar.synced { background: var(--surface-2); color: var(--muted); }
-.cloud-inline-btn { min-height: 0 !important; padding: 0 2px !important; font-size: 13px !important; }
-.study-nav.view-switch { margin-bottom: 22px; }
+.cloud-tag { font-size: 11.5px; color: var(--sage); font-weight: 600; flex-shrink: 0; }
+.cloud-inline-btn { min-height: 0 !important; padding: 0 2px !important; font-size: 12.5px !important; flex-shrink: 0; }
+.study-nav.view-switch { margin-bottom: 18px; }
 .study-nav.view-switch > button { font-size: 15px; }
 
 .a2-content :is(button, a, summary, select, input, textarea):focus-visible {
@@ -943,8 +951,8 @@ footer { border-top-color: var(--line); color: var(--muted); font-size: 12px; }
 }
 .a2-content h2 { font-family: var(--font-serif); font-weight: 700; letter-spacing: -.02em; color: var(--ink); }
 .a2-content h3 { font-weight: 700; color: var(--ink); }
-.a2-picker-head { margin-bottom: 12px; }
-.a2-picker { gap: 10px; margin-bottom: 18px; }
+.a2-picker-head { margin-bottom: 10px; }
+.a2-picker { gap: 10px; margin-bottom: 14px; }
 .a2-subject-choice {
   border-radius: 14px;
   border: 1px solid var(--line);
@@ -975,34 +983,34 @@ footer { border-top-color: var(--line); color: var(--muted); font-size: 12px; }
 .a2-subject-choice[aria-pressed=true] .a2-subject-top i { background: rgb(255 255 255 / .2); color: #fff; }
 
 .a2-subject-brief {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 12px 24px; flex-wrap: wrap;
-  padding: 20px 24px;
-  border-radius: 18px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  padding: 14px 18px;
+  border-radius: 15px;
   border: 1px solid var(--gold-line);
   border-left: 4px solid var(--gold);
   background: linear-gradient(115deg, #fdfaf1 0%, #f9f3e2 100%);
   box-shadow: var(--shadow-xs);
   color: var(--ink);
 }
-.a2-brief-copy { flex: 1 1 460px; max-width: none; }
-.a2-brief-top { display: flex; align-items: center; gap: 10px 12px; flex-wrap: wrap; margin-bottom: 6px; }
-.a2-content .a2-brief-top h2 { font-size: 21px; font-weight: 700; color: var(--ink); }
+.a2-brief-top { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; margin: 0; }
+.a2-brief-title { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.a2-content .a2-brief-top h2 { font-size: 19px; font-weight: 700; color: var(--ink); margin: 0; }
+.a2-brief-top > a { font-size: 12.5px; font-weight: 600; color: var(--blue); text-decoration: none; white-space: nowrap; }
+.a2-brief-top > a:hover { text-decoration: underline; }
 .a2-dutch-pill {
-  font-size: 12px; font-weight: 600; color: #7d5717;
+  font-size: 11.5px; font-weight: 600; color: #7d5717;
   background: rgb(255 255 255 / .84); border: 1px solid var(--gold-line);
-  border-radius: 999px; padding: 2px 10px;
+  border-radius: 999px; padding: 2px 9px;
 }
-.a2-brief-copy > p { font-size: 14.5px; color: var(--ink-2); line-height: 1.65; }
-.a2-challenge-inline { color: #5b4a2e; }
-.a2-challenge-inline strong { color: #8c5c16; }
-.a2-brief-side a {
-  display: inline-flex; align-items: center; min-height: 38px; padding: 6px 14px;
-  border-radius: 10px; background: #fff; border: 1px solid var(--gold-line);
-  color: var(--blue); font-size: 13px; font-weight: 600; text-decoration: none;
-  box-shadow: var(--shadow-xs);
-}
-.a2-brief-side a:hover { background: var(--blue-50); border-color: var(--blue-200); }
+.a2-subject-brief > p { margin: 0; font-size: 13.5px; color: var(--ink-2); line-height: 1.55; }
+.a2-brief-more { font-size: 13px; color: #5b4a2e; }
+.a2-brief-more > summary { cursor: pointer; font-weight: 600; color: #8c5c16; }
+.a2-brief-more > p { margin: 5px 0 0; line-height: 1.55; }
+
+.a2-section-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.a2-section-row h3 { margin: 0; }
 
 .a2-resume {
   background: var(--blue-50); border: 1px solid var(--blue-100);
@@ -1037,14 +1045,19 @@ footer { border-top-color: var(--line); color: var(--muted); font-size: 12px; }
 .a2-drill-pill.retry { background: var(--clay-50); color: var(--clay); }
 
 .a2-assess {
-  background: #fff; border: 1px solid var(--line); border-radius: 18px;
-  box-shadow: var(--shadow-sm); padding: 22px 24px;
+  background: #fff; border: 1px solid var(--line); border-radius: 16px;
+  box-shadow: var(--shadow-sm); padding: 18px 20px;
 }
+.a2-assess.is-compact { grid-template-columns: 1fr; }
 .a2-signal { border-left-color: var(--line); }
 .a2-official-card {
-  padding: 22px 24px; border-radius: 18px;
+  padding: 18px 20px; border-radius: 16px;
   background: var(--surface-2); border: 1px solid var(--line);
 }
+.a2-official-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.a2-official-head h3 { margin: 0; }
+.a2-official-head a { font-size: 13px; font-weight: 600; color: var(--blue); text-decoration: none; white-space: nowrap; }
+.a2-official-head a:hover { text-decoration: underline; }
 .a2-official-links li a {
   border-radius: 11px; border-color: var(--line-strong);
   box-shadow: var(--shadow-xs); font-weight: 550; text-decoration: none;
@@ -1209,12 +1222,18 @@ footer { border-top-color: var(--line); color: var(--muted); font-size: 12px; }
 .flash-done p { margin: 0; color: var(--muted); }
 
 /* ---------- Daily Dutch News (Editorial Dutch Newspaper Aesthetic) ---------- */
-.news-shell { display: grid; gap: 16px; }
+.news-shell { display: grid; gap: 14px; }
+.news-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px 14px; flex-wrap: wrap;
+}
+.news-read-count { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.news-poster-btn { min-height: 34px !important; padding: 5px 12px !important; font-size: 12.5px !important; }
 .news-day-chips { margin: 0; }
 .news-starter-note {
-  padding: 12px 16px; border-radius: 14px;
+  padding: 8px 13px; border-radius: 11px;
   background: var(--gold-50); border: 1px solid var(--gold-line);
-  color: #6a4c18; font-size: 13px; line-height: 1.55;
+  color: #6a4c18; font-size: 12.5px; line-height: 1.45;
 }
 .news-edition-bar {
   display: flex; align-items: center; justify-content: space-between;
@@ -1418,30 +1437,31 @@ footer { border-top-color: var(--line); color: var(--muted); font-size: 12px; }
   #eventBrowse .event-checked { font-size: 11.5px; align-self: center; }
   .companion-hero {
     grid-template-columns: minmax(0, 1.5fr) minmax(112px, 1fr);
-    min-height: 164px;
+    min-height: 138px;
     border-radius: 18px;
     margin-bottom: 14px;
   }
   .companion-hero::before { inset: 7px; border-radius: 12px; }
-  .companion-intro { padding: 18px 14px 18px 16px; }
-  .companion-intro h1 { font-size: 26px; }
-  .companion-intro p { font-size: 12.5px; line-height: 1.55; margin: 6px 0 12px; }
-  .companion-intro .primary-btn { min-height: 40px; padding: 7px 14px; font-size: 13.5px; }
+  .companion-intro { padding: 16px 14px 16px 16px; }
+  .companion-intro h1 { font-size: 25px; }
+  .companion-intro p { font-size: 12.5px; line-height: 1.45; margin: 5px 0 11px; }
+  .companion-intro .primary-btn { min-height: 38px; padding: 7px 14px; font-size: 13.5px; }
   .companion-cover { max-height: none; object-position: 66% 58%; }
 
   .view-switch > button { font-size: 15px; }
   .event-card { padding: 18px 16px 14px; border-radius: 16px; }
   .event-card h2 { font-size: 17px; }
   .event-meta { font-size: 13px; }
-  .companion-picks-box { padding: 18px 15px; border-radius: 18px; margin-top: 22px; }
-  .companion-picks-head { flex-direction: column; align-items: flex-start; gap: 2px; }
-  .companion-picks-head h2 { font-size: 19px; }
-  .companion-picks-head a { font-size: 13px; margin-top: 4px; }
+  .companion-picks-box { padding: 16px 14px; border-radius: 18px; margin-top: 20px; }
+  .companion-picks-head { flex-direction: row; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .companion-picks-head h2 { font-size: 18px; }
+  .companion-picks-head a { font-size: 13px; margin-top: 0; white-space: nowrap; }
   .pick-card { padding: 14px; border-radius: 16px; }
   .pick-date { padding: 8px 0; align-content: center; border-radius: 11px; }
   .pick-actions { padding-top: 6px; }
 
   /* 逛闲置 mobile controls & horizontal chip rails */
+  .result-line > span { display: none; }
   .market-controls { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
   .market-controls .search-box { grid-column: 1 / -1; }
   .market-controls > label { min-width: 0; }
@@ -1467,27 +1487,31 @@ footer { border-top-color: var(--line); color: var(--muted); font-size: 12px; }
   .weekend-shortcut strong { font-size: 13px; }
 
   /* 荷兰语学习 & 每日简报 mobile */
-  .dutch-pillars { gap: 9px; margin-bottom: 12px; }
-  .dutch-pillar { padding: 12px 13px 14px; border-radius: 14px; gap: 3px; }
+  .dutch-pillars { gap: 9px; margin-bottom: 10px; }
+  .dutch-pillar { padding: 11px 13px 13px; border-radius: 14px; gap: 2px; }
   .dutch-pillar strong { font-size: 15px; }
   .dutch-pillar span { font-size: 11.5px; line-height: 1.4; }
   .dutch-pillar.active::after { left: 13px; right: 13px; }
-  .study-nav.view-switch { gap: 18px; overflow-x: auto; scrollbar-width: none; }
+  .study-cloud-bar { padding: 7px 12px; font-size: 12px; margin-bottom: 12px; flex-wrap: nowrap; gap: 8px; }
+  .news-toolbar { gap: 8px; }
+  .news-toolbar .word-mode-switch > button { padding: 5px 11px; min-height: 32px; font-size: 12.5px; }
+  .news-read-count { display: none; }
+  .study-nav.view-switch { gap: 18px; margin-bottom: 14px; overflow-x: auto; scrollbar-width: none; }
   .study-nav.view-switch::-webkit-scrollbar { display: none; }
   .study-nav.view-switch > button { white-space: nowrap; font-size: 14.5px; }
-  .a2-subject-brief { padding: 16px; border-radius: 16px; }
-  .a2-content .a2-brief-top h2 { font-size: 19px; }
-  .a2-assess, .a2-official-card { padding: 18px 16px; border-radius: 16px; }
+  .a2-subject-brief { padding: 12px 14px; border-radius: 14px; }
+  .a2-content .a2-brief-top h2 { font-size: 17px; }
+  .a2-assess, .a2-official-card { padding: 16px 15px; border-radius: 15px; }
   .a2-mistakes-bar { padding: 12px 14px; border-radius: 14px; }
   .a2-words .word-row-actions { grid-column: 2; grid-row: 1; }
   .a2-words small { grid-column: auto; grid-row: auto; }
   .flash-card { padding: 18px 16px 16px; border-radius: 16px; }
   .flash-actions { display: grid; grid-template-columns: 1fr; }
   .flash-actions > button { width: 100%; }
-  .news-card { padding: 18px 16px; border-radius: 16px; }
-  .news-card h3 { font-size: 18.5px; }
-  .news-body-nl { padding: 13px 14px; font-size: 15.5px; }
-  .news-source-link { margin-left: 0; }
+  .news-card { padding: 16px 15px; border-radius: 16px; gap: 10px; }
+  .news-card h3 { font-size: 18px; }
+  .news-body-nl { padding: 12px 14px; font-size: 15.5px; }
+  .news-source-link { margin-left: auto; }
 
   /* 发布 & 详情 & 我的 mobile */
   .upload-zone > svg { width: 48px; height: 48px; }

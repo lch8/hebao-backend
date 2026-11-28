@@ -58,10 +58,10 @@ export function mountDailyNews(root, storage, hooks = {}) {
   function renderVocabView(data) {
     const words = data.newsWords || [];
     if (!words.length) {
-      return `<div class="empty-state"><h3>新闻生词本还是空的</h3><p>阅读每日简报时，点击词汇右侧的「☆」即可收藏到这里，登录邮箱自动跨设备同步。</p><button type="button" class="outline-btn" data-news-mode="feed">回到今日简报</button></div>`;
+      return `<div class="empty-state"><h3>还没有收藏新闻生词</h3><p>阅读简报时点词汇右侧「☆」即可收藏。</p><button type="button" class="outline-btn" data-news-mode="feed">回到今日简报</button></div>`;
     }
     return `<div class="news-edition-bar">
-      <span>共收藏 ${words.length} 个实用荷语表达</span>
+      <span>共 ${words.length} 个生词</span>
       <button type="button" class="outline-btn" data-news-copy-vocab>复制生词清单</button>
     </div>
     <dl class="a2-words news-vocab-list">${words.map(w => `<div>
@@ -83,12 +83,11 @@ export function mountDailyNews(root, storage, hooks = {}) {
     }
     const edition = currentEdition();
     if (!edition || !edition.items?.length) {
-      return `<div class="empty-state"><h3>今日荷语简报正在准备中</h3><p>每日荷兰时间早上 7:00 自动更新 3 条在荷实用资讯。</p></div>`;
+      return `<div class="empty-state"><h3>今日简报准备中</h3><p>每日荷兰时间早 7:00 更新。</p></div>`;
     }
 
     const savedSet = new Set((data.newsWords || []).map(w => w.nl.toLowerCase()));
     const readSet = new Set(data.newsRead || []);
-    const readInEdition = edition.items.filter(it => readSet.has(it.id)).length;
 
     const dateChips = editions.length > 1
       ? `<div class="category-filters news-day-chips" role="group" aria-label="选择简报日期">${editions.map((ed, idx) =>
@@ -97,7 +96,7 @@ export function mountDailyNews(root, storage, hooks = {}) {
       : '';
 
     const starterBanner = edition.isStarter
-      ? `<div class="news-starter-note"><strong>精选入门样刊</strong> · 每日荷兰时间早 7:00 自动拉取 NOS / Rijksoverheid 最新资讯并改写为 A2+/B1 精读简报。</div>`
+      ? `<div class="news-starter-note"><strong>入门样刊</strong> · 每日早 7:00 自动更新 NOS 与政务资讯</div>`
       : '';
 
     const cards = edition.items.map((item, idx) => {
@@ -116,14 +115,14 @@ export function mountDailyNews(root, storage, hooks = {}) {
 
       const q = item.question;
       const quizHtml = q ? `<div class="news-quiz">
-        <p class="news-quiz-q"><span class="pill">理解快测</span> <span lang="nl">${esc(q.promptNl)}</span></p>
+        <p class="news-quiz-q"><span class="pill">快测</span> <span lang="nl">${esc(q.promptNl)}</span></p>
         <div class="news-quiz-opts">${q.options.map((opt, oi) => {
           const picked = answered?.choice === oi;
           const isRight = answered && oi === q.answer;
           const isWrong = answered && picked && oi !== q.answer;
           return `<button type="button" class="news-opt-btn ${isRight ? 'correct' : isWrong ? 'wrong' : ''}" data-news-quiz="${esc(item.id)}" data-news-opt="${oi}" ${answered ? 'disabled' : ''} lang="nl">${esc(opt)}</button>`;
         }).join('')}</div>
-        ${answered ? `<p class="news-quiz-fb ${answered.correct ? 'ok' : 'miss'}"><strong>${answered.correct ? '✓ 理解准确！已记为已读' : '再看一眼关键句'}</strong> · ${esc(q.whyZh)}</p>` : ''}
+        ${answered ? `<p class="news-quiz-fb ${answered.correct ? 'ok' : 'miss'}"><strong>${answered.correct ? '✓ 理解准确' : '再看关键句'}</strong> · ${esc(q.whyZh)}</p>` : ''}
       </div>` : '';
 
       return `<article class="news-card ${isRead ? 'is-read' : ''}">
@@ -139,41 +138,41 @@ export function mountDailyNews(root, storage, hooks = {}) {
         <p class="news-title-zh">${esc(item.titleZh)}</p>
         <p class="news-body-nl" lang="nl">${esc(item.bodyNl)}</p>
         <div class="news-audio-bar">
-          <button type="button" class="soft-btn news-tts-btn" data-news-speak="${esc(item.bodyNl)}" data-news-rate="0.82">🔊 慢速朗读 (0.82x)</button>
-          <button type="button" class="outline-btn news-tts-btn" data-news-speak="${esc(item.bodyNl)}" data-news-rate="0.98">🔊 原速朗读</button>
-          <a class="text-btn news-source-link" href="${esc(item.sourceUrl)}" target="_blank" rel="noopener noreferrer">${esc(item.sourceName || '官方原文')} ↗</a>
+          <button type="button" class="soft-btn news-tts-btn" data-news-speak="${esc(item.bodyNl)}" data-news-rate="0.82">🔊 慢速</button>
+          <button type="button" class="outline-btn news-tts-btn" data-news-speak="${esc(item.bodyNl)}" data-news-rate="0.98">🔊 原速</button>
+          <a class="text-btn news-source-link" href="${esc(item.sourceUrl)}" target="_blank" rel="noopener noreferrer">${esc(item.sourceName || '原文')} ↗</a>
         </div>
-        <details class="news-zh-details"><summary>查看中文要点对照</summary><p>${esc(item.summaryZh)}</p></details>
-        <div class="news-vocab-section"><h4>实用荷语词汇（点 ☆ 收进生词本）</h4><div class="news-vocab-grid">${vocabHtml}</div></div>
+        <details class="news-zh-details"><summary>中文要点</summary><p>${esc(item.summaryZh)}</p></details>
+        <div class="news-vocab-section"><h4>核心词汇</h4><div class="news-vocab-grid">${vocabHtml}</div></div>
         ${quizHtml}
       </article>`;
     }).join('');
 
     return `${dateChips}${starterBanner}
-      <div class="news-edition-bar">
-        <span>本期刊共 ${edition.items.length} 条 · 已精读 ${readInEdition}/${edition.items.length} 条</span>
-        <div class="news-edition-actions">
-          <button type="button" class="text-btn" data-news-copy-link>复制简报链接</button>
-          <button type="button" class="outline-btn" data-news-poster>生成今日荷语打卡图</button>
-        </div>
-      </div>
-      <p id="newsSpeakStatus" class="a2-meta" role="status"></p>
+      <p id="newsSpeakStatus" class="a2-meta" role="status" hidden></p>
       <div class="news-list">${cards}</div>`;
   }
 
   function render() {
     const data = ledger.read();
     const vocabCount = (data.newsWords || []).length;
+    const edition = currentEdition();
+    const readSet = new Set(data.newsRead || []);
+    const readInEdition = edition?.items ? edition.items.filter(it => readSet.has(it.id)).length : 0;
+    const feedActions = viewMode === 'feed' && edition?.items?.length
+      ? `<div class="news-edition-actions">
+          <span class="news-read-count">已读 ${readInEdition}/${edition.items.length}</span>
+          <button type="button" class="text-btn" data-news-copy-link>分享</button>
+          <button type="button" class="outline-btn news-poster-btn" data-news-poster>打卡图</button>
+        </div>`
+      : '';
     root.innerHTML = `<div class="a2-content news-shell">
-      <div class="a2-overhead">
-        <div>
-          <h2>每日荷语简报 · A2+/B1 精读</h2>
-          <p>面向已有基础的在荷华人：每日 2 分钟读懂荷兰交通、租房、政策与社会热点的简易荷语改写版，原文外链直达。</p>
-        </div>
+      <div class="news-toolbar">
         <div class="word-mode-switch" role="group" aria-label="简报与生词本切换">
           <button type="button" class="${viewMode === 'feed' ? 'active' : ''}" data-news-mode="feed" aria-pressed="${viewMode === 'feed'}">今日简报</button>
           <button type="button" class="${viewMode === 'vocab' ? 'active' : ''}" data-news-mode="vocab" aria-pressed="${viewMode === 'vocab'}">★ 新闻生词 (${vocabCount})</button>
         </div>
+        ${feedActions}
       </div>
       ${viewMode === 'vocab' ? renderVocabView(data) : renderFeedView(data)}
     </div>`;
@@ -200,7 +199,7 @@ export function mountDailyNews(root, storage, hooks = {}) {
     if (speakBtn) {
       const ok = speakDutch(speakBtn.dataset.newsSpeak, Number(speakBtn.dataset.newsRate) || 0.92);
       const status = root.querySelector('#newsSpeakStatus');
-      if (status) status.textContent = ok ? '正在用荷兰语朗读…' : '当前浏览器未检测到荷兰语语音包，可直接对照中文大意精读。';
+      if (status) { status.hidden = false; status.textContent = ok ? '正在用荷兰语朗读…' : '当前浏览器未检测到荷兰语语音包，可直接对照中文要点精读。'; }
       return;
     }
     const wordBtn = e.target.closest('[data-news-word]');

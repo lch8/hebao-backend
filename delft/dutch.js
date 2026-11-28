@@ -13,11 +13,10 @@ export function mountDutch(root, hooks = {}){
   const loaded=loadStudy(storage);
   let study=loaded.state,storageOK=loaded.available,view='news',lastA2View='prepare',session=null,quiz=null,quizTimer,recorder,stream,recordingUrl='',recordingTimeout,mediaRequest=0,resetPending=false,cloudSynced=false,syncTimer;
   const el=id=>root.querySelector(`#${id}`);
-  root.innerHTML=`<div class="dutch-pillars" role="tablist" aria-label="荷兰语学习板块"><button type="button" class="dutch-pillar active" data-dutch-pillar="news" role="tab" aria-selected="true" aria-pressed="true"><strong>每日新闻资讯</strong><span>A2+/B1 荷语精读 · 生词本</span></button><button type="button" class="dutch-pillar" data-dutch-pillar="a2" role="tab" aria-selected="false" aria-pressed="false"><strong>荷兰语 A2 备考</strong><span>DUO 五科专项 · AI 批改</span></button></div><div class="study-cloud-bar" id="studyCloudBar"></div><nav class="study-nav view-switch" id="a2SubNav" hidden aria-label="荷兰语 A2 备考"><button type="button" data-study-view="prepare">分科备考</button><button type="button" data-study-view="today">生活场景 <span id="studyReviewBadge" hidden></span></button><button type="button" data-study-view="exam">报考排期</button></nav><div id="a2NewsRoot"></div><div id="a2ExamRoot" hidden></div><div id="studyBody" hidden></div><button type="button" class="weekend-shortcut" id="dutchWeekendPromo" data-tab="events"><strong id="dutchPromoText">读完今日简报？去看看同城咖啡局或周末活动，找人线下聊聊</strong><span aria-hidden="true">↗</span></button><div class="study-foot"><span id="studySaveStatus" role="status" aria-live="polite"></span><details><summary>关于内容与学习记录</summary><p>每日荷语简报基于荷兰公开新闻源（NOS / Rijksoverheid）原创改写为 A2+/B1 精读文本并附官方原文链接；荷兰语 A2 备考专项与站内模拟卷由荷包编写，全荷通用。</p><p>未登录时记录保存在当前浏览器；登录邮箱后自动云端备份进度、生词本与错题。录音和作答正文仅在当前页面保留。</p><button type="button" class="text-btn danger" data-study-action="reset">清除本机学习记录</button></details></div>`;
+  root.innerHTML=`<div class="dutch-pillars" role="tablist" aria-label="荷兰语学习板块"><button type="button" class="dutch-pillar active" data-dutch-pillar="news" role="tab" aria-selected="true" aria-pressed="true"><strong>每日新闻资讯</strong><span>A2+/B1 荷语精读 · 生词本</span></button><button type="button" class="dutch-pillar" data-dutch-pillar="a2" role="tab" aria-selected="false" aria-pressed="false"><strong>荷兰语 A2 备考</strong><span>DUO 五科专项 · AI 批改</span></button></div><div class="study-cloud-bar" id="studyCloudBar"></div><nav class="study-nav view-switch" id="a2SubNav" hidden aria-label="荷兰语 A2 备考"><button type="button" data-study-view="prepare">分科备考</button><button type="button" data-study-view="today">生活场景 <span id="studyReviewBadge" hidden></span></button><button type="button" data-study-view="exam">报考排期</button></nav><div id="a2NewsRoot"></div><div id="a2ExamRoot" hidden></div><div id="studyBody" hidden></div><div class="study-foot"><span id="studySaveStatus" role="status" aria-live="polite"></span><details><summary>内容与数据说明</summary><p>每日荷语简报基于 NOS / Rijksoverheid 公开新闻原创改写并附原文链接；A2 专项与模拟卷由荷包编写，全荷通用。登录邮箱自动云端备份进度、生词本与错题。</p><button type="button" class="text-btn danger" data-study-action="reset">清除本机学习记录</button></details></div>`;
   const prep=mountExamPrep(el('a2ExamRoot'),storage,{
     onChange:()=>{renderCloudBar();saveStatus();pushCloudSoon();},
     onPractice:()=>hooks.onPractice?.(),
-    onSessionChange:()=>updatePromoVisibility(),
     gradeWriting:payload=>hooks.gradeWriting?.(payload),
     onSharePoster:spec=>hooks.onSharePoster?.(spec),
   });
@@ -31,14 +30,6 @@ export function mountDutch(root, hooks = {}){
 
   function readLocalPrep(){
     try{return JSON.parse(storage?.getItem(PREP_KEY)||'null');}catch{return null;}
-  }
-  function updatePromoVisibility(){
-    const promo=el('dutchWeekendPromo');
-    if(!promo)return;
-    const busy=(view==='prepare'&&prep.inSession())||view==='practice'||(view==='quiz'&&quiz&&!quiz.finished);
-    promo.hidden=busy;
-    const txt=el('dutchPromoText');
-    if(txt) txt.textContent=view==='news'?'读完今日简报？去看看同城咖啡局或周末活动，找人线下聊聊':'背完一轮？去看看同城咖啡局或周末活动，找人线下喘口气';
   }
   function pushCloudSoon(){
     if(!hooks.isSignedIn?.())return;
@@ -76,12 +67,12 @@ export function mountDutch(root, hooks = {}){
       const newsWordsCount=(localPrep?.newsWords||[]).length;
       const summary=`已精读 ${p.newsReadCount||0} 篇简报 · ★ 新闻生词 ${newsWordsCount} 个`;
       if(hooks.isSignedIn?.()){
-        bar.innerHTML=`<span><strong>${cloudSynced?'已开启云端备份':'正在同步云端记录…'}</strong> · ${summary}</span>`;
+        bar.innerHTML=`<span>${summary}</span><span class="cloud-tag">${cloudSynced?'已同步':'同步中…'}</span>`;
         bar.classList.add('synced');
       }else{
         bar.classList.remove('synced');
         const hasAny=(p.newsReadCount||0)>0||newsWordsCount>0;
-        bar.innerHTML=`<span><strong>${hasAny?summary:'收藏新闻生词与精读记录'}</strong> · 登录邮箱跨手机/电脑同步</span><button type="button" class="outline-btn" data-study-action="cloud-login">邮箱登录备份</button>`;
+        bar.innerHTML=`<span>${hasAny?summary:'登录同步生词与阅读记录'}</span><button type="button" class="text-btn cloud-inline-btn" data-study-action="cloud-login">邮箱登录 →</button>`;
       }
       return;
     }
@@ -91,18 +82,18 @@ export function mountDutch(root, hooks = {}){
     const badge=el('studyReviewBadge');
     if(badge){badge.hidden=!dueCount;badge.textContent=String(dueCount);}
     const summary=`专项 ${p.drillsDone}/${p.drillsTotal} · 模拟卷 ${p.mocksDone}/${p.mocksTotal}`;
-    const reviewBtn=totalMistakes?` · <button type="button" class="text-btn cloud-inline-btn" data-study-action="jump-review">${totalMistakes} 道错题待攻克 →</button>`:'';
+    const reviewBtn=totalMistakes?` · <button type="button" class="text-btn cloud-inline-btn" data-study-action="jump-review">${totalMistakes} 道错题 →</button>`:'';
     if(hooks.isSignedIn?.()){
-      bar.innerHTML=`<span><strong>${cloudSynced?'已开启云端备份':'正在同步云端进度…'}</strong> · ${summary}${reviewBtn}</span>`;
+      bar.innerHTML=`<span>${summary}${reviewBtn}</span><span class="cloud-tag">${cloudSynced?'已同步':'同步中…'}</span>`;
       bar.classList.add('synced');
     }else{
       bar.classList.remove('synced');
       const hasAny=p.drillsDone||p.mocksDone||p.officialDone||p.mistakesCount||p.savedWordsCount||study.completed.length||Object.keys(study.answers||{}).length;
-      bar.innerHTML=`<span><strong>${hasAny?summary:'保存 A2 备考进度、词库与错题'}</strong>${reviewBtn} · 登录邮箱跨手机/电脑同步</span><button type="button" class="outline-btn" data-study-action="cloud-login">邮箱登录备份</button>`;
+      bar.innerHTML=`<span>${hasAny?summary:'登录同步进度、词库与错题'}${reviewBtn}</span><button type="button" class="text-btn cloud-inline-btn" data-study-action="cloud-login">邮箱登录 →</button>`;
     }
   }
   function save(){storageOK=saveStudy(storage,study);saveStatus();renderCloudBar();pushCloudSoon();}
-  function saveStatus(){el('studySaveStatus').textContent=hooks.isSignedIn?.()&&cloudSynced?'学习记录已云端备份':storageOK?'记录保存在本机 · 登录可云端备份':'浏览器暂不能保存记录，建议登录备份';}
+  function saveStatus(){el('studySaveStatus').textContent=hooks.isSignedIn?.()&&cloudSynced?'已开启云端备份':storageOK?'本机保存 · 登录可云端备份':'浏览器暂不能保存记录';}
   function pauseMedia(){
     prep.pause();
     news.pause();
@@ -135,12 +126,8 @@ export function mountDutch(root, hooks = {}){
     });
     const selected=['lessons','quiz'].includes(view)?'today':view;
     root.querySelectorAll('.study-nav [data-study-view]').forEach(button=>{const active=button.dataset.studyView===selected;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));});
-    const kicker=document.getElementById('dutchKicker');
-    const badgeEl=document.getElementById('dutchBadge');
-    if(kicker) kicker.textContent=isNews?'荷兰本地资讯 · A2+/B1 每日精读与生词本':'DUO 融入考试全科备考 · 全荷通用';
-    if(badgeEl) badgeEl.textContent=isNews?'每日早 7:00 更新 · 朗读与生词本':'五科专项 · 模拟卷 · AI 写作批改';
     if(view==='today')renderToday();if(view==='lessons')renderLessons();if(view==='quiz')renderQuiz();if(view==='exam')renderExam();
-    renderCloudBar();saveStatus();updatePromoVisibility();
+    renderCloudBar();saveStatus();
   }
   function renderToday(){
     const next=recommendedLesson(study)||LESSONS[0],review=dueTasks(study),completed=study.completed.length;
@@ -166,7 +153,7 @@ export function mountDutch(root, hooks = {}){
   function renderTask(){
     if(!session)return;
     if(session.index>=session.tasks.length){renderSessionResult();return;}
-    const task=currentTask();view='practice';updatePromoVisibility();
+    const task=currentTask();view='practice';
     const output=task.kind==='output';
     el('studyBody').innerHTML=`<div class="study-practice">${practiceTop()}<div class="study-task-label">${output?'自己表达一次':task.skill==='knm'?'生活里的社会知识':task.skill==='listen'?'先听，再抓住重点':'读懂一条生活消息'}<span>本站自编</span></div>${task.skill==='listen'?`<div class="study-listen"><button class="soft-btn" type="button" data-study-action="listen">▶ 播放荷兰语</button><span>设备荷兰语语音 · 可重听</span><p id="studyAudioStatus" role="status" aria-live="polite"></p><button class="text-btn" type="button" data-study-action="transcript">查看原文</button><p id="studyTranscript" lang="nl" hidden>${esc(task.text)}</p></div>`:task.text?`<div class="study-message" lang="nl">${esc(task.text)}</div>`:''}<h2 class="study-question" lang="nl">${esc(task.prompt)}</h2>${output?renderOutput(task):renderChoices(task)}<p id="studyTaskNotice" class="study-task-notice" role="status" aria-live="polite"></p><div id="studyFeedback" class="study-feedback" role="status" aria-live="polite" hidden></div></div>`;
     if(session.checked)renderSavedFeedback();
@@ -204,7 +191,7 @@ export function mountDutch(root, hooks = {}){
   }
   function renderSessionResult(){
     if(!session.done){if(session.lessonId)study=completeLesson(study,session.lessonId);session.done=true;save();hooks.onPractice?.();}
-    view='today-result';updatePromoVisibility();
+    view='today-result';
     const total=session.tasks.length,objective=session.results.filter(result=>!result.selfRated),self=session.results.filter(result=>result.selfRated),independent=objective.filter(result=>result.independent).length;
     el('studyBody').innerHTML=`<div class="study-finish"><span class="study-finish-mark" aria-hidden="true">✓</span><p class="study-eyebrow">这一步，完成了</p><h2>${session.lessonId?esc(LESSONS.find(lesson=>lesson.id===session.lessonId).title):'给记忆加深了一点印象。'}</h2><p>完成 ${total} 个小练习${objective.length?`，其中 ${independent} 道选择题独立答对`:''}${self.length?`；${self.length} 道表达题已自查`:''}。</p><p class="study-small">需要再练的内容会回到错题复习中；${hooks.isSignedIn?.()?'已同步到你的邮箱账号。':'登录邮箱可把进度和错题备份到云端。'}</p><div class="study-question-actions"><button class="primary-btn" type="button" data-study-action="finish">返回场景列表</button>${!hooks.isSignedIn?.()?'<button class="outline-btn" type="button" data-study-action="cloud-login">登录保存进度</button>':''}<button class="text-btn" type="button" data-study-view="lessons">再选一个场景 →</button></div></div>`;
   }
@@ -239,13 +226,13 @@ export function mountDutch(root, hooks = {}){
     }catch{stream?.getTracks().forEach(track=>track.stop());stream=null;if(button.isConnected){button.disabled=false;el('studyRecordStatus').textContent='未能开启麦克风。你仍可开口练习，再对照示例自查。';}}
   }
   function renderQuiz(){
-    updatePromoVisibility();
+    
     if(quiz?.finished){renderQuizResult();return;}
     if(quiz){renderQuizTask();return;}
     const last=study.quizHistory.at(-1);
     el('studyBody').innerHTML=`<div class="study-page-heading"><h2>关掉提示，独立试一次。</h2><p>日常阅读 + KNM · 6 道本站自编题 · 10 分钟</p></div><div class="study-quiz-intro"><h3>这一轮，检验自己能否快速找准信息。</h3><ul><li>作答时不展示中文与答案，提交后统一解析。</li><li>这里是生活综合快测；分科专项与 A/B 模拟卷请切到「分科备考」。</li><li>题组固定，再次练习会遇到相同题目。</li></ul><button class="primary-btn" type="button" data-study-action="start-quiz">开始 6 题快测 →</button>${last?`<p class="study-small">上次练习：${last.day} · ${last.correct} / 6 题答对</p>`:''}</div><div class="study-resource-line"><span>口语、听力、写作及完整练习</span>${sourceLink('practice')}</div>`;
   }
-  function startQuiz(){quiz={index:0,answers:{},expires:Date.now()+600000,finished:false};clearInterval(quizTimer);quizTimer=setInterval(tickQuiz,1000);updatePromoVisibility();renderQuizTask();}
+  function startQuiz(){quiz={index:0,answers:{},expires:Date.now()+600000,finished:false};clearInterval(quizTimer);quizTimer=setInterval(tickQuiz,1000);renderQuizTask();}
   function tickQuiz(){
     if(!quiz||quiz.finished)return;
     const left=Math.max(0,Math.ceil((quiz.expires-Date.now())/1000));
@@ -260,7 +247,7 @@ export function mountDutch(root, hooks = {}){
     if(!quiz||quiz.finished)return;quiz.finished=true;clearInterval(quizTimer);
     quiz.correct=QUIZ.filter(task=>quiz.answers[task.id]===task.answer).length;
     study.quizHistory=[...study.quizHistory,{day:dayKey(),correct:quiz.correct}].slice(-5);save();hooks.onPractice?.();
-    updatePromoVisibility();
+    
     if(view==='quiz')renderQuizResult();
   }
   function renderQuizResult(){

@@ -24,11 +24,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,500&family=Noto+Serif+SC:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'" />
-  <link rel="stylesheet" href="/delft/styles.css?v=20261128h" />
-  <link rel="stylesheet" href="/delft/dutch.css?v=20261128h" />
-  <link rel="stylesheet" href="/delft/a2-prep.css?v=20261128h" />
-  <link rel="stylesheet" href="/delft/theme.css?v=20261128h" />
-  <script type="module" src="/delft/app.js?v=20261128h"></script>
+  <link rel="stylesheet" href="/delft/styles.css?v=20261128i" />
+  <link rel="stylesheet" href="/delft/dutch.css?v=20261128i" />
+  <link rel="stylesheet" href="/delft/a2-prep.css?v=20261128i" />
+  <link rel="stylesheet" href="/delft/theme.css?v=20261128i" />
+  <script type="module" src="/delft/app.js?v=20261128i"></script>
 </head>
 <body>
   <a class="skip-link" href="#workspace">跳到主要内容</a>
@@ -49,7 +49,7 @@
         <div class="companion-hero">
           <div class="companion-intro">
             <h1 id="eventsHeading">找搭子</h1>
-            <p>2–12 人同城小局，公开地标集合；报名后解锁集合联络与行前留言，改期或新消息邮件即时提醒。</p>
+            <p>2–12 人同城小局，公开地标碰头</p>
             <button class="primary-btn" type="button" id="openCreateEvent">发个邀约 <span aria-hidden="true">＋</span></button>
           </div>
           <img class="companion-cover" src="/delft/canal-houses.webp?v=20261128e" alt="" width="991" height="768" fetchpriority="high" />
@@ -89,13 +89,13 @@
             <div class="skeleton-card" aria-hidden="true"><div class="skeleton-line short"></div><div class="skeleton-line tall"></div><div class="skeleton-line medium"></div><div class="skeleton-line short"></div></div>
             <div class="skeleton-card" aria-hidden="true"><div class="skeleton-line short"></div><div class="skeleton-line tall"></div><div class="skeleton-line medium"></div><div class="skeleton-line short"></div></div>
           </div>
-          <details class="meetup-note" id="meetupHelp" hidden><summary>报名后怎么碰头？遇到临时变故怎么办？</summary><p>确认报名后即可查看发起人预留的集合联络方式，并在「集合沟通」里留言；如时间地点调整或临时取消，系统会向报名邮箱发送即时通知。</p></details>
+          <details class="meetup-note" id="meetupHelp" hidden><summary>报名与集合说明</summary><p>报名后可查看联络暗号并在「集合沟通」留言，改期或取消将邮件提醒。</p></details>
         </div>
         <div id="citySection"><div id="cityEvents"></div></div>
         <button type="button" class="weekend-shortcut news-promo-shortcut" id="eventsNewsShortcut">
           <div class="news-promo-copy">
-            <span class="news-promo-eyebrow">每日荷语简报 · A2+/B1 精读</span>
-            <strong id="eventsNewsHeadline">每天 2 分钟读懂荷兰本地新闻，配荷语朗读、生词本与理解自测</strong>
+            <span class="news-promo-eyebrow">每日荷语简报 · A2+/B1</span>
+            <strong id="eventsNewsHeadline">每日 3 条荷兰本地新闻精读，配朗读与生词本</strong>
           </div>
           <span aria-hidden="true">↗</span>
         </button>
@@ -106,10 +106,8 @@
     <section id="panel-dutch" class="panel" aria-labelledby="dutchHeading">
       <div class="section-heading dutch-heading">
         <div>
-          <p class="section-kicker" id="dutchKicker">荷兰本地资讯 · A2+/B1 每日精读与生词本</p>
           <h1 id="dutchHeading">荷兰语学习</h1>
         </div>
-        <span class="dutch-level" id="dutchBadge">每日早 7:00 更新 · 朗读与生词本</span>
       </div>
       <div id="dutchApp">
         <div class="skeleton-card" aria-hidden="true"><div class="skeleton-line short"></div><div class="skeleton-line tall"></div><div class="skeleton-line medium"></div></div>
@@ -119,7 +117,6 @@
     <section id="panel-market" class="panel" aria-labelledby="marketHeading">
       <div class="section-heading">
         <div>
-          <p class="section-kicker">14 天在售确认 · 单件直发，多件可出微信实时库存海报</p>
           <h1 id="marketHeading">在荷闲置</h1>
         </div>
         <button type="button" class="primary-btn" data-tab="sell" aria-controls="panel-sell">＋ 发布闲置</button>
@@ -147,33 +144,32 @@
         <button class="category-chip" type="button" data-price-filter="50" aria-pressed="false">≤ €50</button>
         <button class="category-chip" type="button" data-price-filter="fav" aria-pressed="false">★ 我的收藏 <span id="favCountBadge" hidden></span></button>
       </div>
-      <div class="result-line"><p id="marketSummary" role="status" aria-live="polite"></p><span>卖家近 14 天确认在售 · 咨询邮件直达</span></div>
+      <div class="result-line"><p id="marketSummary" role="status" aria-live="polite"></p><span>14 天内在售</span></div>
       <div class="cards-grid" id="marketGrid" aria-live="polite">
         <div class="skeleton-card" aria-hidden="true"><div class="skeleton-photo"></div><div class="skeleton-line short"></div><div class="skeleton-line medium"></div></div>
         <div class="skeleton-card" aria-hidden="true"><div class="skeleton-photo"></div><div class="skeleton-line short"></div><div class="skeleton-line medium"></div></div>
         <div class="skeleton-card" aria-hidden="true"><div class="skeleton-photo"></div><div class="skeleton-line short"></div><div class="skeleton-line medium"></div></div>
         <div class="skeleton-card" aria-hidden="true"><div class="skeleton-photo"></div><div class="skeleton-line short"></div><div class="skeleton-line medium"></div></div>
       </div>
-      <button type="button" class="weekend-shortcut" data-tab="events"><strong>周末有空？去看看同城小局与城市活动</strong><span aria-hidden="true">↗</span></button>
     </section>
 
     <section id="panel-sell" class="panel" aria-labelledby="sellHeading">
       <button type="button" class="text-btn" data-tab="market">← 返回闲置</button>
-      <div class="section-heading sell-heading"><div><h1 id="sellHeading">发布闲置</h1><p class="sell-subtitle">1 件也能发 · 多件一起发可生成微信海报</p></div><span class="saved-status" id="draftStatus" role="status" aria-live="polite">草稿自动保存</span></div>
+      <div class="section-heading sell-heading"><div><h1 id="sellHeading">发布闲置</h1><p class="sell-subtitle">单件直发 · 多件可生成海报</p></div><span class="saved-status" id="draftStatus" role="status" aria-live="polite">草稿自动保存</span></div>
       <div id="wechatDraftBanner" class="wechat-banner" hidden>
-        <span>微信内置浏览器缓存易被系统回收。建议先登录邮箱开启云端备份，或点右上角「⋯」在系统浏览器打开编辑。</span>
-        <button type="button" class="outline-btn" id="wechatCloudSaveBtn">登录备份草稿</button>
+        <span>微信内缓存易丢失，建议先登录云端备份，或在系统浏览器打开。</span>
+        <button type="button" class="outline-btn" id="wechatCloudSaveBtn">登录备份</button>
       </div>
       <div class="sell-toolbar"><div class="sell-steps" role="group" aria-label="编辑步骤"><button type="button" class="active" id="sellItemsStep" aria-pressed="true"><span>1</span> 添加商品</button><span class="step-line" aria-hidden="true"></span><button type="button" id="sellShareStep" aria-pressed="false"><span>2</span> 填写信息并发布</button></div><button type="button" class="text-btn danger" id="newDraft" hidden>清空草稿</button></div>
-      <div class="edit-banner" id="editBanner" hidden><strong>正在编辑已发布清单</strong><span>保存后原分享链接不变，商品预订/售出状态会保留。</span></div>
+      <div class="edit-banner" id="editBanner" hidden><strong>正在编辑已发布清单</strong><span>保存后分享链接与在售状态保留。</span></div>
       <div id="sellValidation" class="validation-note" role="alert" hidden></div>
       <div class="layout">
         <div class="main-column">
           <div id="sellItemsPanel">
-            <div class="paper-card upload-card"><button class="upload-zone" type="button" id="choosePhotos"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h4l2-3h4l2 3h4v13H4Z"/><circle cx="12" cy="13" r="4"/></svg><strong id="uploadLabel">添加商品照片</strong><span>1 张照片对应 1 件商品，最多 12 件 · 每件还可补充 3 张细节图</span></button><input id="photoInput" type="file" accept="image/*" multiple hidden /><input id="extraPhotoInput" type="file" accept="image/*" multiple hidden /><div class="photo-tools" id="photoTools" hidden><span id="photoCount"></span><button id="btnAnalyze" class="text-btn" type="button">✦ AI 补全商品名</button><details class="inline-disclosure"><summary>照片如何使用</summary><p>照片在本地浏览器自动压缩；仅在登录后点击「AI 补全商品名」时发送至 Google Gemini 识别，点「发布到集市」时才上传。</p></details></div></div>
+            <div class="paper-card upload-card"><button class="upload-zone" type="button" id="choosePhotos"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h4l2-3h4l2 3h4v13H4Z"/><circle cx="12" cy="13" r="4"/></svg><strong id="uploadLabel">添加商品照片</strong><span>每张对应 1 件，最多 12 件（每件可补 3 张细节图）</span></button><input id="photoInput" type="file" accept="image/*" multiple hidden /><input id="extraPhotoInput" type="file" accept="image/*" multiple hidden /><div class="photo-tools" id="photoTools" hidden><span id="photoCount"></span><button id="btnAnalyze" class="text-btn" type="button">✦ AI 补全商品名</button><details class="inline-disclosure"><summary>照片说明</summary><p>照片在本地压缩，点击「发布到集市」才上传；仅点击「AI 补全商品名」时发送至 Gemini 识别。</p></details></div></div>
             <div id="itemEditor" class="item-editor"></div>
             <button type="button" id="addManualItem" class="text-btn manual-add">＋ 不传照片，手动添加</button>
-            <div class="flow-actions"><span>名称必填，价格可留空（留空显示「待议」并排在低价排序末尾）</span><button type="button" class="primary-btn" id="sellNext" disabled>下一步 <span aria-hidden="true">→</span></button></div>
+            <div class="flow-actions"><span>名称必填，价格可留空（待议）</span><button type="button" class="primary-btn" id="sellNext" disabled>下一步 <span aria-hidden="true">→</span></button></div>
           </div>
           <div id="sellSharePanel" hidden>
             <div class="paper-card share-fields">
@@ -190,13 +186,13 @@
                 </select></label>
                 <label>昵称<input id="sellerName" maxlength="35" placeholder="如何称呼你" /></label>
               </div>
-              <label>自取区域<input id="pickup" maxlength="85" placeholder="例如：TU 图书馆 / 火车站附近" /><small>填公共街区或地标，请勿填具体门牌号</small></label>
-              <details class="extra-note"><summary>添加补充说明 <span>选填</span></summary><label class="sr-only" for="listingNote">补充说明</label><textarea id="listingNote" maxlength="350" rows="3" placeholder="例如：本周末可取，多件可小刀"></textarea></details>
+              <label>自取区域<input id="pickup" maxlength="85" placeholder="例如：TU 图书馆 / 火车站附近" /><small>填街区或地标，勿填门牌号</small></label>
+              <details class="extra-note"><summary>补充说明 <span>选填</span></summary><label class="sr-only" for="listingNote">补充说明</label><textarea id="listingNote" maxlength="350" rows="3" placeholder="例如：本周末可取，多件可小刀"></textarea></details>
             </div>
             <div class="paper-card share-actions">
-              <div class="publish-block"><div><h2>发布到荷包集市</h2><p>所有人都能在「逛闲置」看到，买家咨询会邮件通知你；卖出后可随时改状态。</p></div><button type="button" class="primary-btn" id="btnPublish">发布到集市</button></div>
+              <div class="publish-block"><div><h2>发布到荷包集市</h2><p>发布后展示在「逛闲置」，咨询邮件通知。</p></div><button type="button" class="primary-btn" id="btnPublish">发布到集市</button></div>
               <div id="shareResult" class="share-result" hidden></div>
-              <details class="share-block share-disclosure" id="wechatShareDisclosure"><summary>分享到微信群 / 朋友圈 <span class="optional" id="shareDisclosureTag">可选 · 发布后解锁实时库存二维码</span></summary><p id="shareDisclosureHint">建议先点上方「发布到集市」：生成的海报二维码会自动指向实时在售状态。</p><label class="checkline poster-only-check"><input type="checkbox" id="posterAvailableOnly" /><span id="posterAvailableOnlyLabel">仅包含仍在售商品（卖掉一半后重发清仓海报）</span></label><div class="button-stack"><button type="button" class="outline-btn" id="btnPoster">生成微信海报</button><button type="button" class="outline-btn" id="btnCopy">复制群文案</button></div></details>
+              <details class="share-block share-disclosure" id="wechatShareDisclosure"><summary>分享到微信群 / 朋友圈 <span class="optional" id="shareDisclosureTag">可选</span></summary><p id="shareDisclosureHint">先发布再生成，海报二维码自动同步在售状态。</p><label class="checkline poster-only-check"><input type="checkbox" id="posterAvailableOnly" /><span id="posterAvailableOnlyLabel">仅包含仍在售商品</span></label><div class="button-stack"><button type="button" class="outline-btn" id="btnPoster">生成微信海报</button><button type="button" class="outline-btn" id="btnCopy">复制群文案</button></div></details>
             </div>
             <button type="button" class="text-btn" id="sellBack">← 返回编辑商品</button>
           </div>
@@ -219,36 +215,36 @@
       <div id="myMessages" class="stack" hidden></div>
       <div id="myAdmin" class="stack" hidden></div>
       <details class="gdpr-box" id="accountDataBox" hidden>
-        <summary>账号与个人数据管理（欧盟 GDPR）</summary>
-        <p class="hint">你可以随时导出与当前邮箱关联的全部个人数据（JSON），或永久注销账号并清除全部已发布的闲置、邀约、私信及学习记录。</p>
+        <summary>账号与数据管理（GDPR）</summary>
+        <p class="hint">可导出全部个人数据（JSON），或永久注销账号并清除全部内容与学习记录。</p>
         <div class="gdpr-actions">
-          <button type="button" class="outline-btn" id="exportDataBtn">导出我的数据 (JSON)</button>
-          <button type="button" class="text-btn danger" id="deleteAccountBtn">永久注销账号并删除数据</button>
+          <button type="button" class="outline-btn" id="exportDataBtn">导出数据 (JSON)</button>
+          <button type="button" class="text-btn danger" id="deleteAccountBtn">永久注销账号</button>
         </div>
       </details>
     </section>
 
     <footer>
-      <span><strong>荷包</strong> · 在荷同城与闲置工具</span>
+      <span><strong>荷包</strong> · hebaogj.xyz</span>
       <div class="footer-links">
-        <button type="button" class="text-btn" id="openFeedbackBtn">问题反馈与建议</button>
+        <button type="button" class="text-btn" id="openFeedbackBtn">反馈与建议</button>
         <button type="button" class="text-btn" data-open-legal="privacy">隐私政策 (GDPR)</button>
-        <button type="button" class="text-btn" data-open-legal="terms">使用条款与安全</button>
+        <button type="button" class="text-btn" data-open-legal="terms">使用条款</button>
       </div>
     </footer>
   </main>
 
-  <div class="overlay" id="loginModal" hidden><div class="modal" role="dialog" aria-modal="true" aria-labelledby="loginHeading"><button type="button" class="modal-x" data-close="loginModal" aria-label="关闭登录窗口">✕</button><h2 id="loginHeading">邮箱验证码登录</h2><p>支持 Gmail、Outlook、学校邮箱（如 @tudelft.nl）及 QQ/163 邮箱；6 位验证码约 10 秒送达，免注册直接登录，用于接收私信与活动通知。</p><form id="loginForm"><label>邮箱<input id="authEmail" type="email" autocomplete="email" required placeholder="you@example.com" /></label><div class="field-grid otp-row"><label>验证码<input id="authCode" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="6 位数字" required /></label><button type="button" class="outline-btn" id="sendCode">获取验证码</button></div><p class="auth-status" id="authStatus" role="status"></p><button type="submit" class="primary-btn wide" id="verifyCode">登录并继续</button></form></div></div>
+  <div class="overlay" id="loginModal" hidden><div class="modal" role="dialog" aria-modal="true" aria-labelledby="loginHeading"><button type="button" class="modal-x" data-close="loginModal" aria-label="关闭登录窗口">✕</button><h2 id="loginHeading">邮箱验证码登录</h2><p>输入邮箱获取 6 位验证码，免注册直接登录。</p><form id="loginForm"><label>邮箱<input id="authEmail" type="email" autocomplete="email" required placeholder="you@example.com" /></label><div class="field-grid otp-row"><label>验证码<input id="authCode" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="6 位数字" required /></label><button type="button" class="outline-btn" id="sendCode">获取验证码</button></div><p class="auth-status" id="authStatus" role="status"></p><button type="submit" class="primary-btn wide" id="verifyCode">登录并继续</button></form></div></div>
 
-  <div class="overlay" id="detailModal" hidden><div class="modal large-modal" role="dialog" aria-modal="true" aria-labelledby="detailHeading"><button type="button" class="modal-x" data-close="detailModal" aria-label="关闭商品详情">✕</button><div id="detailContent"></div><div class="line-actions"><button type="button" class="text-btn" id="copyListingLink">复制链接</button><button type="button" class="text-btn danger" id="reportListingBtn">举报此内容</button></div><div class="inquiry-box"><label for="inquiryText">问问卖家</label><textarea id="inquiryText" maxlength="500" rows="2" placeholder="想要哪一件？什么时候方便自取？"></textarea><button class="primary-btn wide" type="button" id="sendInquiry">发送咨询（邮件通知卖家）</button><div id="inquirySentNote" class="inquiry-sent-note" role="status" hidden></div><p class="fineprint">发送后系统会即时发邮件提醒卖家；卖家回复时也会发邮件通知你，并在「我的 → 私信」查看。请坚持公共场所当面验货，切勿提前转账付定金。</p></div></div></div>
+  <div class="overlay" id="detailModal" hidden><div class="modal large-modal" role="dialog" aria-modal="true" aria-labelledby="detailHeading"><button type="button" class="modal-x" data-close="detailModal" aria-label="关闭商品详情">✕</button><div id="detailContent"></div><div class="line-actions"><button type="button" class="text-btn" id="copyListingLink">复制链接</button><button type="button" class="text-btn danger" id="reportListingBtn">举报此内容</button></div><div class="inquiry-box"><label for="inquiryText">问问卖家</label><textarea id="inquiryText" maxlength="500" rows="2" placeholder="想要哪一件？什么时候方便自取？"></textarea><button class="primary-btn wide" type="button" id="sendInquiry">发送咨询（邮件通知卖家）</button><div id="inquirySentNote" class="inquiry-sent-note" role="status" hidden></div><p class="fineprint">回复将邮件通知并在「我的 → 私信」查看。请当面验货，切勿提前付定金。</p></div></div></div>
 
-  <div class="overlay" id="rsvpModal" hidden><div class="modal" role="dialog" aria-modal="true" aria-labelledby="rsvpHeading"><button type="button" class="modal-x" data-close="rsvpModal" aria-label="关闭报名窗口">✕</button><h2 id="rsvpHeading">报名参加</h2><p>你的邮箱不会公开；报名成功后可查看发起人的集合联络说明，并在活动页内行前沟通。如活动改期或取消，你将收到邮件提醒。</p><label>活动昵称<input id="rsvpName" maxlength="35" placeholder="如何称呼你" /></label><button class="primary-btn wide" id="confirmRsvp" type="button">确认报名</button></div></div>
+  <div class="overlay" id="rsvpModal" hidden><div class="modal" role="dialog" aria-modal="true" aria-labelledby="rsvpHeading"><button type="button" class="modal-x" data-close="rsvpModal" aria-label="关闭报名窗口">✕</button><h2 id="rsvpHeading">报名参加</h2><p>邮箱不公开；报名后解锁集合联络与活动留言，改期邮件提醒。</p><label>活动昵称<input id="rsvpName" maxlength="35" placeholder="如何称呼你" /></label><button class="primary-btn wide" id="confirmRsvp" type="button">确认报名</button></div></div>
 
-  <div class="overlay" id="createEventBox" hidden><div class="modal large-modal" role="dialog" aria-modal="true" aria-labelledby="createEventHeading"><button type="button" id="closeCreateEvent" class="modal-x" aria-label="关闭邀约窗口">✕</button><h2 id="createEventHeading">发个邀约</h2><div class="source-event-note" id="sourceEventNote" hidden></div><form id="createEventForm"><label>活动名称<input name="title" required maxlength="75" placeholder="例如：周六下午四人桌游 / 图书馆口语练习" /></label><div class="field-grid"><label>集合时间<input type="datetime-local" name="startsAt" required /><small>荷兰当地时间（Europe/Amsterdam）</small></label><label>人数上限（含你）<input type="number" min="2" max="12" name="capacity" value="5" required /></label></div><label>活动城市<select name="city"><option value="delft">Delft（活跃）</option><option value="den-haag">Den Haag（活跃）</option><option value="rotterdam">Rotterdam（活跃）</option><option value="amsterdam">Amsterdam</option><option value="utrecht">Utrecht</option><option value="eindhoven">Eindhoven</option></select><small>冷启动期优先推荐南荷兰省（Delft / 海牙 / 鹿特丹）同城小局，更容易凑齐人</small></label><label>公共集合地点<input name="place" required maxlength="100" placeholder="例如：Delft 火车站正门星巴克门口" /></label><div class="field-grid"><label>你的昵称<input name="host" id="hostName" required maxlength="35" placeholder="如何称呼你" /></label><label>类别<select name="category"><option>桌游</option><option>散步</option><option>运动</option><option>咖啡</option><option>其他</option></select></label></div><label>报名后可见的集合联络方式 <span class="optional">推荐填写 · 仅已报名成员可见</span><input name="contactHint" maxlength="180" placeholder="例如：微信号 xxx（备注桌游）/ 穿深绿冲锋衣在门口等" /></label><label>活动说明 <span class="optional">选填</span><textarea name="description" rows="3" maxlength="450" placeholder="聊聊玩什么、AA 费用说明和遇到下雨的备选安排"></textarea></label><label class="checkline" id="eventRulesCheckline"><input name="rules" type="checkbox" required />我已满 18 岁，同意在公共场所文明、安全地组织活动；如临时改期或取消将及时通过站内更新通知参与者。</label><button class="primary-btn wide" id="submitEventBtn" type="submit">发布邀约</button></form></div></div>
+  <div class="overlay" id="createEventBox" hidden><div class="modal large-modal" role="dialog" aria-modal="true" aria-labelledby="createEventHeading"><button type="button" id="closeCreateEvent" class="modal-x" aria-label="关闭邀约窗口">✕</button><h2 id="createEventHeading">发个邀约</h2><div class="source-event-note" id="sourceEventNote" hidden></div><form id="createEventForm"><label>活动名称<input name="title" required maxlength="75" placeholder="例如：周六下午四人桌游 / 图书馆口语练习" /></label><div class="field-grid"><label>集合时间<input type="datetime-local" name="startsAt" required /><small>荷兰当地时间（Europe/Amsterdam）</small></label><label>人数上限（含你）<input type="number" min="2" max="12" name="capacity" value="5" required /></label></div><label>活动城市<select name="city"><option value="delft">Delft</option><option value="den-haag">Den Haag</option><option value="rotterdam">Rotterdam</option><option value="amsterdam">Amsterdam</option><option value="utrecht">Utrecht</option><option value="eindhoven">Eindhoven</option></select></label><label>公共集合地点<input name="place" required maxlength="100" placeholder="例如：Delft 火车站正门星巴克门口" /></label><div class="field-grid"><label>你的昵称<input name="host" id="hostName" required maxlength="35" placeholder="如何称呼你" /></label><label>类别<select name="category"><option>桌游</option><option>散步</option><option>运动</option><option>咖啡</option><option>其他</option></select></label></div><label>集合联络暗号 <span class="optional">选填 · 仅报名成员可见</span><input name="contactHint" maxlength="180" placeholder="例如：微信号 xxx（备注桌游）/ 穿深绿冲锋衣在门口等" /></label><label>活动说明 <span class="optional">选填</span><textarea name="description" rows="3" maxlength="450" placeholder="玩什么、费用AA或雨天备选"></textarea></label><label class="checkline" id="eventRulesCheckline"><input name="rules" type="checkbox" required />我已满 18 岁，同意在公共场所文明安全组织活动，变动及时更新通知。</label><button class="primary-btn wide" id="submitEventBtn" type="submit">发布邀约</button></form></div></div>
 
-  <div class="overlay" id="eventCoordModal" hidden><div class="modal large-modal" role="dialog" aria-modal="true" aria-labelledby="coordHeading"><button type="button" class="modal-x" data-close="eventCoordModal" aria-label="关闭集合沟通窗口">✕</button><h2 id="coordHeading">集合沟通与行前联络</h2><div class="coord-meta-row"><span id="coordMeta" class="hint"></span><button type="button" class="text-btn" id="coordCalendarBtn">＋ 加入手机日历</button></div><div id="coordContactBox" class="contact-unlock-box" hidden></div><div id="coordAttendeesBox" class="coord-attendees" hidden></div><div id="coordHostTools" class="line-actions" hidden></div><div id="coordMessages" class="coord-messages" aria-live="polite"></div><form id="coordReplyForm" class="message-reply"><input id="coordMessageInput" maxlength="400" required placeholder="发送行前留言（如：晚到5分钟 / 下雨改室内桌）…" aria-label="活动留言" /><button type="submit" class="primary-btn">发送</button></form><p class="fineprint">发起人发布重要通知或修改时间地点时，系统会自动发邮件提醒所有已报名成员。</p></div></div>
+  <div class="overlay" id="eventCoordModal" hidden><div class="modal large-modal" role="dialog" aria-modal="true" aria-labelledby="coordHeading"><button type="button" class="modal-x" data-close="eventCoordModal" aria-label="关闭集合沟通窗口">✕</button><h2 id="coordHeading">集合沟通</h2><div class="coord-meta-row"><span id="coordMeta" class="hint"></span><button type="button" class="text-btn" id="coordCalendarBtn">＋ 加入日历</button></div><div id="coordContactBox" class="contact-unlock-box" hidden></div><div id="coordAttendeesBox" class="coord-attendees" hidden></div><div id="coordHostTools" class="line-actions" hidden></div><div id="coordMessages" class="coord-messages" aria-live="polite"></div><form id="coordReplyForm" class="message-reply"><input id="coordMessageInput" maxlength="400" required placeholder="发送行前留言…" aria-label="活动留言" /><button type="submit" class="primary-btn">发送</button></form><p class="fineprint">修改时间地点或取消将自动邮件通知报名成员。</p></div></div>
 
-  <div class="overlay" id="posterModal" hidden><div class="modal poster-modal" role="dialog" aria-modal="true" aria-labelledby="posterHeading"><button type="button" class="modal-x" data-close="posterModal" aria-label="关闭海报预览">✕</button><h2 id="posterHeading">海报准备好了</h2><p id="posterHint">手机长按上方图片即可保存或直接转发微信好友。</p><textarea id="eventShareText" rows="4" readonly hidden aria-label="邀请文案"></textarea><img id="posterImage" alt="包含商品名称、价格、状态与荷包二维码的分享海报" /><div class="poster-actions"><button id="copyPosterCopy" class="primary-btn" type="button" hidden>复制群发文案</button><button id="copyEventShare" class="outline-btn" type="button" hidden>复制邀请文案</button><a id="downloadPoster" class="primary-btn" download="荷包-闲置海报.jpg">下载海报图片</a><button id="sharePoster" class="outline-btn" type="button" hidden>系统分享</button></div></div></div>
+  <div class="overlay" id="posterModal" hidden><div class="modal poster-modal" role="dialog" aria-modal="true" aria-labelledby="posterHeading"><button type="button" class="modal-x" data-close="posterModal" aria-label="关闭海报预览">✕</button><h2 id="posterHeading">海报准备好了</h2><p id="posterHint">长按图片保存或转发微信好友。</p><textarea id="eventShareText" rows="4" readonly hidden aria-label="邀请文案"></textarea><img id="posterImage" alt="分享海报" /><div class="poster-actions"><button id="copyPosterCopy" class="primary-btn" type="button" hidden>复制群发文案</button><button id="copyEventShare" class="outline-btn" type="button" hidden>复制邀请文案</button><a id="downloadPoster" class="primary-btn" download="荷包-闲置海报.jpg">下载海报图片</a><button id="sharePoster" class="outline-btn" type="button" hidden>系统分享</button></div></div></div>
 
   <div class="overlay" id="photoLightboxModal" hidden><div class="modal lightbox-modal" role="dialog" aria-modal="true" aria-label="商品照片大图预览"><button type="button" class="modal-x" data-close="photoLightboxModal" aria-label="关闭大图预览">✕</button><div class="lightbox-stage"><button type="button" class="lightbox-nav prev" id="lightboxPrev" aria-label="上一张照片" hidden>‹</button><img id="lightboxImage" alt="" /><button type="button" class="lightbox-nav next" id="lightboxNext" aria-label="下一张照片" hidden>›</button></div><div class="lightbox-meta"><p id="lightboxCaption" class="hint"></p><span id="lightboxCounter" class="pill gray" hidden></span></div></div></div>
 
@@ -259,16 +255,16 @@
       <button type="button" class="modal-x" data-close="activityShare" aria-label="关闭分享窗口">✕</button>
       <h2 id="activityShareHeading">分享给朋友</h2>
       <p id="activityShareTitle"></p>
-      <label for="activityShareUrl">复制链接，粘贴到微信或 WhatsApp（自带活动预览卡片）</label>
+      <label for="activityShareUrl">复制链接发到微信或 WhatsApp</label>
       <input id="activityShareUrl" type="url" readonly />
       <div class="line-actions"><button id="copyActivity" class="primary-btn" type="button">复制链接</button><button id="nativeActivityShare" class="outline-btn" type="button" hidden>系统分享</button></div>
       <p id="activityShareStatus" role="status"></p>
     </div>
   </div>
 
-  <div class="overlay" id="reportModal" hidden><div class="modal" role="dialog" aria-modal="true" aria-labelledby="reportHeading"><button type="button" class="modal-x" data-close="reportModal" aria-label="关闭举报窗口">✕</button><h2 id="reportHeading">举报不当或可疑内容</h2><p id="reportTargetLabel">提交后我们将尽快核查处理。</p><form id="reportForm"><label>举报原因<select id="reportReason" required><option value="疑似诈骗或定金诱导">疑似诈骗或要求提前转账定金</option><option value="虚假或违禁商品">虚假信息或违禁物品</option><option value="骚扰或不当言论">骚扰或不当言论</option><option value="活动信息失实">活动信息失实或诱导营销</option><option value="其他问题">其他问题</option></select></label><label>补充说明 <span class="optional">选填</span><textarea id="reportDetail" rows="3" maxlength="500" placeholder="请简述具体情况，帮助我们快速核实"></textarea></label><button type="submit" class="primary-btn wide" id="submitReportBtn">提交举报</button></form></div></div>
+  <div class="overlay" id="reportModal" hidden><div class="modal" role="dialog" aria-modal="true" aria-labelledby="reportHeading"><button type="button" class="modal-x" data-close="reportModal" aria-label="关闭举报窗口">✕</button><h2 id="reportHeading">举报不当内容</h2><p id="reportTargetLabel">提交后将尽快核查。</p><form id="reportForm"><label>举报原因<select id="reportReason" required><option value="疑似诈骗或定金诱导">疑似诈骗或要求提前转账定金</option><option value="虚假或违禁商品">虚假信息或违禁物品</option><option value="骚扰或不当言论">骚扰或不当言论</option><option value="活动信息失实">活动信息失实或诱导营销</option><option value="其他问题">其他问题</option></select></label><label>补充说明 <span class="optional">选填</span><textarea id="reportDetail" rows="3" maxlength="500" placeholder="简述具体情况"></textarea></label><button type="submit" class="primary-btn wide" id="submitReportBtn">提交举报</button></form></div></div>
 
-  <div class="overlay" id="feedbackModal" hidden><div class="modal" role="dialog" aria-modal="true" aria-labelledby="feedbackHeading"><button type="button" class="modal-x" data-close="feedbackModal" aria-label="关闭反馈窗口">✕</button><h2 id="feedbackHeading">问题反馈与产品建议</h2><p>遇到图片上传卡顿、收不到邮件、或有希望增加的新功能？欢迎直接告诉我们。</p><form id="feedbackForm"><label>反馈类型<select id="feedbackCategory"><option value="问题反馈">Bug / 问题反馈</option><option value="功能建议">功能建议</option><option value="体验吐槽">体验吐槽</option><option value="其他">其他</option></select></label><label>具体内容<textarea id="feedbackContent" rows="4" maxlength="800" required placeholder="例如：在 iOS 微信里点某按钮没反应…"></textarea></label><label>回复邮箱或微信号 <span class="optional">选填 · 方便我们跟进回复你</span><input id="feedbackContact" maxlength="100" placeholder="选填" /></label><button type="submit" class="primary-btn wide" id="submitFeedbackBtn">发送反馈</button></form></div></div>
+  <div class="overlay" id="feedbackModal" hidden><div class="modal" role="dialog" aria-modal="true" aria-labelledby="feedbackHeading"><button type="button" class="modal-x" data-close="feedbackModal" aria-label="关闭反馈窗口">✕</button><h2 id="feedbackHeading">反馈与建议</h2><p>遇到 Bug 或有新功能建议，欢迎留言。</p><form id="feedbackForm"><label>类型<select id="feedbackCategory"><option value="问题反馈">Bug / 问题反馈</option><option value="功能建议">功能建议</option><option value="体验吐槽">体验吐槽</option><option value="其他">其他</option></select></label><label>内容<textarea id="feedbackContent" rows="4" maxlength="800" required placeholder="例如：在 iOS 微信里点某按钮没反应…"></textarea></label><label>联系方式 <span class="optional">选填</span><input id="feedbackContact" maxlength="100" placeholder="邮箱或微信号" /></label><button type="submit" class="primary-btn wide" id="submitFeedbackBtn">发送反馈</button></form></div></div>
 
   <div class="overlay" id="privacyModal" hidden><div class="modal large-modal" role="dialog" aria-modal="true" aria-labelledby="privacyHeading"><button type="button" class="modal-x" data-close="privacyModal" aria-label="关闭隐私政策">✕</button><h2 id="privacyHeading">隐私政策（欧盟 GDPR 合规声明）</h2><div class="legal-prose">
     <p>生效与最近更新日期：2026 年 11 月。荷包（hebaogj.xyz）面向荷兰本地用户提供同城活动组局、二手闲置清单工具及荷兰语 A2 备考服务，严格遵循《欧盟通用数据保护条例》（GDPR）。</p>

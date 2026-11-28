@@ -82,7 +82,7 @@ export function mountExamPrep(root, storage, callbacks = {}) {
         <span class="a2-subject-top"><strong>${esc(g.zh)}</strong>${done?`<i>${done}/5</i>`:''}</span><span lang="nl">${esc(name)}</span></button>`;
     });
     const savedN = data.savedWords?.length || 0;
-    return `<div class="a2-picker-head"><h2 id="a2PickerTitle">选择考试科目</h2><div class="a2-picker-links">${command('words',`${GUIDE[subject].zh}与全科词库 / 闪卡（${totalWords}）${savedN?` · ★${savedN}`:''}`,subject,'text-btn')}</div></div>
+    return `<div class="a2-picker-head"><h2 id="a2PickerTitle">选择科目</h2><div class="a2-picker-links">${command('words',`词库 / 闪卡（${totalWords}）${savedN?` · ★${savedN}`:''}`,subject,'text-btn')}</div></div>
       <div class="a2-picker" role="group" aria-labelledby="a2PickerTitle">${buttons.join('')}</div>`;
   }
   function typeCards(g, data) {
@@ -96,7 +96,7 @@ export function mountExamPrep(root, storage, callbacks = {}) {
         else if(d.correct===count) badge=`<span class="a2-drill-pill done">✓ 满分 ${d.correct}/${count}</span>`;
         else badge=`<span class="a2-drill-pill retry">上次 ${d.correct}/${count} 对</span>`;
       }
-      const btnLabel=d?'再练一次':`开始练习（${count} 题）`;
+      const btnLabel=d?'再练一次':'开始练习';
       const btnClass=d&&(output||d.correct===count)?'outline-btn':'soft-btn';
       return `<article class="a2-type ${d?'is-practiced':''}">
         <div class="a2-type-head"><h4>${esc(t.label)}</h4>${badge}</div>
@@ -109,18 +109,19 @@ export function mountExamPrep(root, storage, callbacks = {}) {
     const output = productive(subject);
     const papers = g.official.map(p => {
       const mark=data.official[p.url];
-      return `<li>${link(p.url,p.label)}${mark?`<small>${statusNames[mark.result]} · ${mark.timed?'限时独立':'练习记录'}</small>`:''}</li>`;
+      return `<li>${link(p.url,p.label)}${mark?`<small>${statusNames[mark.result]} · ${mark.timed?'限时':'练习'}</small>`:''}</li>`;
     }).join('');
-    return `<section class="a2-section a2-official-card" id="a2Official"><h3>DUO 官方模拟卷</h3><p>${output?'按正式时长完成整套。口语、写作的表达质量建议请熟悉 A2 标准的教师复核。':'按正式时长独立完成整套，再按官方练习给出的反馈核对。'}${subject==='speak'?' 官方口语样卷请使用 Safari 以外的浏览器。':''}</p>
+    return `<section class="a2-section a2-official-card" id="a2Official"><div class="a2-official-head"><h3>DUO 官方模拟卷</h3>${link(practiceHub,'全部样题 ↗')}</div>${subject==='speak'?'<p class="a2-meta">官方口语样卷请使用 Safari 以外的浏览器。</p>':''}
       <ul class="a2-official-links">${papers}</ul>
-      <details class="a2-disclosure"><summary>记录一份官方模拟卷的结果</summary>
-      <form id="a2OfficialForm"><label>哪一份样卷<select name="paper">${g.official.map((p,i)=>`<option value="${i}">${esc(p.label)}</option>`).join('')}</select></label>
-      <label>核对情况<select name="result"><option value="pending">已做，待核对</option><option value="review">核对后仍需练习</option><option value="met">${output?'经教师复核达标':'按官方练习反馈核对达标'}</option></select></label>
-      <label class="a2-check"><input type="checkbox" name="timed">在 ${g.minutes} 分钟内独立完成整套</label><button type="submit" class="outline-btn">保存这次结果</button></form></details></section>`;
+      <details class="a2-disclosure"><summary>记录官方卷成绩</summary>
+      <form id="a2OfficialForm"><label>样卷<select name="paper">${g.official.map((p,i)=>`<option value="${i}">${esc(p.label)}</option>`).join('')}</select></label>
+      <label>结果<select name="result"><option value="pending">已做，待核对</option><option value="review">仍需练习</option><option value="met">${output?'教师复核达标':'核对达标'}</option></select></label>
+      <label class="a2-check"><input type="checkbox" name="timed">在 ${g.minutes} 分钟内独立完成</label><button type="submit" class="outline-btn">保存结果</button></form></details></section>`;
   }
   function showSubject(notice = '') {
     setPage('subject');
     const g=GUIDE[subject], data=ledger.read(), signal=readiness(subject,data);
+    const hasMockHistory = Boolean(data.forms[subject+'/a']?.first || data.forms[subject+'/b']?.first || g.official.some(p => data.official[p.url]));
     const forms=['a','b'].map(form=>{
       const record=data.forms[subject+'/'+form], s=record?.first;
       let status='未做过';
@@ -129,17 +130,17 @@ export function mountExamPrep(root, storage, callbacks = {}) {
     }).join('');
     layout(`${resumeBanner()}${mistakeBanner(data)}${subjectPicker(data)}
       <section class="a2-subject-brief" aria-labelledby="a2SubjectTitle">
-        <div class="a2-brief-copy">
-          <div class="a2-brief-top"><h2 id="a2SubjectTitle">${esc(g.zh)}怎么考</h2><span class="a2-dutch-pill"><span lang="nl">${esc(g.nl)}</span> · 正式考试 ${g.minutes} 分钟</span></div>
-          <p>${esc(g.format)} <span class="a2-challenge-inline"><strong>常见难点：</strong>${esc(g.challenge)}</span></p>
+        <div class="a2-brief-top">
+          <div class="a2-brief-title"><h2 id="a2SubjectTitle">${esc(g.zh)}</h2><span class="a2-dutch-pill"><span lang="nl">${esc(g.nl)}</span> · ${g.minutes} 分钟</span></div>
+          ${link(g.formatUrl,'DUO 说明 ↗')}
         </div>
-        <div class="a2-brief-side">${link(g.formatUrl,'DUO 考试说明 ↗')}</div>
+        <p>${esc(g.format)}</p>
+        <details class="a2-brief-more"><summary>常见难点</summary><p>${esc(g.challenge)}</p></details>
       </section>
-      <section class="a2-section" aria-labelledby="a2PracticeTitle"><div class="a2-overhead"><div><h3 id="a2PracticeTitle">专项练习</h3><p>${subject==='write'?'按题型逐题练习，提交后支持 ✦ AI 按 DUO A2 标准即时批改':'按题型逐题核对解析，不限时；错题自动收入错题本'}</p></div></div><div class="a2-types">${typeCards(g, data)}</div></section>
-      <section class="a2-assess" aria-labelledby="a2MockTitle"><div><h3 id="a2MockTitle">限时自测</h3><p>本站模拟卷 · 每卷 ${BANK[subject].a.length} 题，${MOCK_MINUTES[subject]} 分钟</p><div class="a2-actions">${forms}</div><p class="a2-meta">选卷即开始计时，交卷后看各题型对错与解析；未交卷答案会自动暂存，切出页面不丢失。${subject==='speak'?' 本站用文字给出情境，完整视频题见官方样卷。':''}</p></div>
-      <div class="a2-signal"><h4>${esc(signal.title)}</h4><p>${esc(signal.detail)}</p></div></section>
+      <section class="a2-section" aria-labelledby="a2PracticeTitle"><div class="a2-section-row"><h3 id="a2PracticeTitle">专项练习</h3>${subject==='write'?'<span class="pill">✦ 支持 AI 批改</span>':''}</div><div class="a2-types">${typeCards(g, data)}</div></section>
+      <section class="a2-assess ${hasMockHistory?'':'is-compact'}" aria-labelledby="a2MockTitle"><div><div class="a2-section-row"><h3 id="a2MockTitle">限时模拟卷</h3><span class="a2-meta">每卷 ${BANK[subject].a.length} 题 · ${MOCK_MINUTES[subject]} 分钟</span></div><div class="a2-actions">${forms}</div>${subject==='speak'?'<p class="a2-meta">本站为文字情境，完整视频题见官方样卷。</p>':''}</div>
+      ${hasMockHistory?`<div class="a2-signal"><h4>${esc(signal.title)}</h4><p>${esc(signal.detail)}</p></div>`:''}</section>
       ${officialSection(g,data)}
-      <div class="a2-bottom"><span>个人应考科目请查 Mijn Inburgering。</span>${link(practiceHub,'DUO 官方样题总目录 ↗')}</div>
       <p role="status" class="a2-notice" id="a2Notice">${esc(notice)}</p>`);
   }
   function filteredWords() {
